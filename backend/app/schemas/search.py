@@ -1,0 +1,91 @@
+from typing import Any, Optional
+from pydantic import BaseModel
+
+PAGE_SIZE = 10
+
+
+class PersonSearchRequest(BaseModel):
+    # Name & LinkedIn
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    # Profile details
+    headline: Optional[str] = None
+    summary: Optional[str] = None
+    twitter_handle: Optional[str] = None
+    languages: Optional[list[str]] = None
+    skills: Optional[list[str]] = None
+    certifications: Optional[str] = None
+    degree: Optional[str] = None
+    school: Optional[str] = None
+    field_of_study: Optional[str] = None
+    linkedin_connections_min: Optional[int] = None
+    # Title & seniority
+    job_title: Optional[str] = None
+    seniority: Optional[list[str]] = None
+    function: Optional[str] = None
+    years_experience_min: Optional[int] = None
+    years_experience_max: Optional[int] = None
+    # Current company
+    company_name: Optional[str] = None
+    company_linkedin_url: Optional[str] = None
+    company_domain: Optional[str] = None
+    industry: Optional[str] = None
+    company_size: Optional[str] = None
+    # Past roles & companies
+    past_companies: Optional[str] = None
+    past_titles: Optional[str] = None
+    past_seniority: Optional[list[str]] = None
+    past_function: Optional[str] = None
+    # Person location
+    country: Optional[str] = None
+    state: Optional[str] = None
+    city: Optional[str] = None
+    # Company HQ location
+    hq_country: Optional[str] = None
+    hq_state: Optional[str] = None
+    hq_city: Optional[str] = None
+    # Cursor-based pagination (replaces `from`)
+    scroll_token: Optional[str] = None
+
+
+class CompanySearchRequest(BaseModel):
+    # Name & domain
+    company_name: Optional[str] = None
+    website_domain: Optional[str] = None
+    # Industry & type
+    industry: Optional[str] = None
+    type: Optional[str] = None
+    stock_exchange: Optional[str] = None
+    # HQ location
+    hq_country: Optional[str] = None
+    hq_state: Optional[str] = None
+    hq_city: Optional[str] = None
+    # Headcount, revenue & growth
+    employee_count_min: Optional[int] = None
+    employee_count_max: Optional[int] = None
+    annual_revenue: Optional[str] = None
+    employee_growth_min: Optional[float] = None
+    # Founded, funding & IPO
+    year_founded_min: Optional[int] = None
+    year_founded_max: Optional[int] = None
+    last_funding_round: Optional[str] = None
+    total_funding_min: Optional[float] = None
+    most_recent_funding_after: Optional[str] = None
+    # Role mix & hiring growth
+    role_composition_role: Optional[str] = None
+    role_composition_min: Optional[int] = None
+    # Cursor-based pagination (replaces `from`)
+    scroll_token: Optional[str] = None
+
+
+class SearchMeta(BaseModel):
+    total: int
+    # Returned by PDL — pass back to frontend to fetch the next page.
+    # Absent when there are no more results.
+    scroll_token: Optional[str] = None
+
+
+class SearchResponse(BaseModel):
+    data: list[Any]
+    meta: SearchMeta

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.peopledatalabs.com)",
+      "Bash(curl -s \"https://docs.peopledatalabs.com/docs/input-parameters-person-search-api\")"
+    ]
+  }
+}
