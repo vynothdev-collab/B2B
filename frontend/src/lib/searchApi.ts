@@ -1,6 +1,24 @@
 import { apiClient } from "@/lib/api";
 import type { CompanyFilters, PersonFilters, SearchResponse } from "@/types/search";
 
+export interface AutocompleteSuggestion {
+  name: string;
+  count: number;
+  meta?: Record<string, unknown>;
+}
+
+export async function fetchAutocomplete(
+  field: string,
+  text: string,
+  size = 10
+): Promise<AutocompleteSuggestion[]> {
+  if (!text.trim()) return [];
+  const { data } = await apiClient.get<AutocompleteSuggestion[]>("/search/autocomplete", {
+    params: { field, text, size },
+  });
+  return data;
+}
+
 function cleanStr(v: string): string | undefined {
   return v.trim() || undefined;
 }
@@ -11,10 +29,6 @@ function cleanNum(v: string): number | undefined {
 function cleanFloat(v: string): number | undefined {
   const n = parseFloat(v);
   return isNaN(n) ? undefined : n;
-}
-function cleanList(v: string): string[] | undefined {
-  const arr = v.split(",").map((s) => s.trim()).filter(Boolean);
-  return arr.length ? arr : undefined;
 }
 
 export async function searchPersons(
@@ -29,35 +43,35 @@ export async function searchPersons(
     summary: cleanStr(filters.summary),
     twitter_handle: cleanStr(filters.twitterHandle),
     github_url: cleanStr(filters.githubUrl),
-    languages: cleanList(filters.languages),
-    skills: cleanList(filters.skills),
-    interests: cleanList(filters.interests),
+    languages: filters.languages.length ? filters.languages : undefined,
+    skills: filters.skills.length ? filters.skills : undefined,
+    interests: filters.interests.length ? filters.interests : undefined,
     certifications: cleanStr(filters.certifications),
     degree: cleanStr(filters.degree),
     school: cleanStr(filters.school),
     field_of_study: cleanStr(filters.fieldOfStudy),
     linkedin_connections_min: cleanNum(filters.linkedinConnectionsMin),
-    job_title: cleanStr(filters.jobTitle),
+    job_title: filters.jobTitle.length ? filters.jobTitle : undefined,
     seniority: filters.seniority.length ? filters.seniority : undefined,
-    function: cleanStr(filters.function),
+    department: filters.department.length ? filters.department : undefined,
     years_experience_min: cleanNum(filters.yearsExperienceMin),
     years_experience_max: cleanNum(filters.yearsExperienceMax),
-    company_name: cleanStr(filters.companyName),
+    company_name: filters.companyName.length ? filters.companyName : undefined,
     company_linkedin_url: cleanStr(filters.companyLinkedinUrl),
     company_domain: cleanStr(filters.companyDomain),
-    industry: cleanStr(filters.industry),
-    company_size: cleanStr(filters.companySize),
-    company_type: cleanStr(filters.companyType),
-    company_revenue: cleanStr(filters.companyRevenue),
-    past_companies: cleanStr(filters.pastCompanies),
-    past_titles: cleanStr(filters.pastTitles),
+    industry: filters.industry.length ? filters.industry : undefined,
+    company_size: filters.companySize.length ? filters.companySize : undefined,
+    company_type: filters.companyType.length ? filters.companyType : undefined,
+    company_revenue: filters.companyRevenue.length ? filters.companyRevenue : undefined,
+    past_companies: filters.pastCompanies.length ? filters.pastCompanies : undefined,
+    past_titles: filters.pastTitles.length ? filters.pastTitles : undefined,
     past_seniority: filters.pastSeniority.length ? filters.pastSeniority : undefined,
-    past_function: cleanStr(filters.pastFunction),
-    country: cleanStr(filters.country),
-    state: cleanStr(filters.state),
+    past_department: filters.pastDepartment.length ? filters.pastDepartment : undefined,
+    country: filters.country.length ? filters.country : undefined,
+    state: filters.state.length ? filters.state : undefined,
     city: cleanStr(filters.city),
-    hq_country: cleanStr(filters.hqCountry),
-    hq_state: cleanStr(filters.hqState),
+    hq_country: filters.hqCountry.length ? filters.hqCountry : undefined,
+    hq_state: filters.hqState.length ? filters.hqState : undefined,
     hq_city: cleanStr(filters.hqCity),
     scroll_token: scrollToken,
   };
@@ -73,28 +87,29 @@ export async function searchCompanies(
   const body = {
     company_name: cleanStr(filters.companyName),
     website_domain: cleanStr(filters.websiteDomain),
-    industry: cleanStr(filters.industry),
-    type: cleanStr(filters.type),
+    industry: filters.industry.length ? filters.industry : undefined,
+    type: filters.type.length ? filters.type : undefined,
     stock_exchange: cleanStr(filters.stockExchange),
-    hq_country: cleanStr(filters.hqCountry),
-    hq_state: cleanStr(filters.hqState),
+    hq_country: filters.hqCountry.length ? filters.hqCountry : undefined,
+    hq_state: filters.hqState.length ? filters.hqState : undefined,
     hq_city: cleanStr(filters.hqCity),
     hq_metro: cleanStr(filters.hqMetro),
+    employee_count_ranges: filters.employeeCountRanges.length ? filters.employeeCountRanges : undefined,
     employee_count_min: cleanNum(filters.employeeCountMin),
     employee_count_max: cleanNum(filters.employeeCountMax),
-    annual_revenue: cleanStr(filters.annualRevenue),
+    annual_revenue: filters.annualRevenue.length ? filters.annualRevenue : undefined,
     employee_growth_min: cleanFloat(filters.employeeGrowthMin),
     year_founded_min: cleanNum(filters.yearFoundedMin),
     year_founded_max: cleanNum(filters.yearFoundedMax),
-    last_funding_round: cleanStr(filters.lastFundingRound),
+    last_funding_round: filters.lastFundingRound.length ? filters.lastFundingRound : undefined,
     total_funding_min: cleanFloat(filters.totalFundingMin),
     most_recent_funding_after: cleanStr(filters.mostRecentFundingAfter),
     role_composition_rules: filters.roleCompositionRules
-      .filter((r) => r.role && r.min)
+      .filter((r) => r.role && (r.minCount || r.minGrowth))
       .map((r) => ({
         role: r.role,
-        metric: r.metric,
-        min: r.metric === "growth" ? parseFloat(r.min) / 100 : parseInt(r.min, 10),
+        min_count: r.minCount ? parseInt(r.minCount, 10) : undefined,
+        min_growth: r.minGrowth ? parseFloat(r.minGrowth) / 100 : undefined,
       })),
     scroll_token: scrollToken,
   };

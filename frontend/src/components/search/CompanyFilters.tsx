@@ -1,9 +1,11 @@
 "use client";
 import { useState } from "react";
 import FilterSection from "./FilterSection";
-import type { CompanyFilters } from "@/types/search";
-import type { RoleCompositionRule } from "@/types/search";
-import { COMPANY_TYPE_OPTIONS, COUNTRY_OPTIONS, FUNDING_ROUND_OPTIONS, FUNCTION_OPTIONS, INDUSTRY_OPTIONS, REVENUE_OPTIONS, ROLE_METRIC_OPTIONS, US_STATE_OPTIONS } from "@/types/search";
+import AutocompleteInput from "./AutocompleteInput";
+import MultiChipAutocomplete from "./MultiChipAutocomplete";
+import MultiChipSelect from "./MultiChipSelect";
+import type { CompanyFilters, RoleCompositionRule } from "@/types/search";
+import { COMPANY_SIZE_OPTIONS, COMPANY_TYPE_OPTIONS, FUNDING_ROUND_OPTIONS, REVENUE_OPTIONS } from "@/types/search";
 
 interface Props {
   filters: CompanyFilters;
@@ -34,19 +36,6 @@ function TextInput({ label, placeholder, value, onChange }: {
   );
 }
 
-function SelectInput({ label, placeholder, value, onChange, options }: {
-  label: string; placeholder: string; value: string;
-  onChange: (v: string) => void; options: { value: string; label: string }[];
-}) {
-  return (
-    <Field label={label}>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
-        <option value="">{placeholder}</option>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </Field>
-  );
-}
 
 function NumInput({ label, placeholder, value, onChange }: {
   label: string; placeholder: string; value: string; onChange: (v: string) => void;
@@ -70,34 +59,26 @@ export default function CompanyFilters({ filters, onChange }: Props) {
   return (
     <>
       <FilterSection title="Company Name & Domain" isOpen={open === "name"} onToggle={() => toggle("name")}>
-        <TextInput label="Company name" placeholder="e.g. /tech" value={filters.companyName} onChange={(v) => onChange({ companyName: v })} />
-        <TextInput label="Website domain" placeholder="e.g. www.example.com" value={filters.websiteDomain} onChange={(v) => onChange({ websiteDomain: v })} />
+        <AutocompleteInput label="Company name" placeholder="e.g. Acme Corp" value={filters.companyName} onChange={(v) => onChange({ companyName: v })} field="company" />
+        <AutocompleteInput label="Website domain" placeholder="e.g. example.com" value={filters.websiteDomain} onChange={(v) => onChange({ websiteDomain: v })} field="website" />
       </FilterSection>
 
       <FilterSection title="Industry & Type" isOpen={open === "industry"} onToggle={() => toggle("industry")}>
-        <Field label="Industry">
-          <select value={filters.industry} onChange={(e) => onChange({ industry: e.target.value })} className={inputCls}>
-            <option value="">Select industry</option>
-            {INDUSTRY_OPTIONS.map((o) => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
-          </select>
-        </Field>
-        <SelectInput label="Company type" placeholder="Select type" value={filters.type} onChange={(v) => onChange({ type: v })} options={COMPANY_TYPE_OPTIONS} />
+        <MultiChipAutocomplete label="Industry" placeholder="e.g. Software" field="industry" values={filters.industry} onChange={(v) => onChange({ industry: v })} />
+        <MultiChipSelect label="Company type" placeholder="Select type" options={COMPANY_TYPE_OPTIONS} values={filters.type} onChange={(v) => onChange({ type: v })} />
         <TextInput label="Stock exchange" placeholder="e.g. XNAS" value={filters.stockExchange} onChange={(v) => onChange({ stockExchange: v })} />
       </FilterSection>
 
       <FilterSection title="HQ Location" isOpen={open === "hq"} onToggle={() => toggle("hq")}>
-        <SelectInput label="Country" placeholder="Select country" value={filters.hqCountry} onChange={(v) => onChange({ hqCountry: v, hqState: "" })} options={COUNTRY_OPTIONS} />
-        {filters.hqCountry === "united states" ? (
-          <SelectInput label="State" placeholder="Select state" value={filters.hqState} onChange={(v) => onChange({ hqState: v })} options={US_STATE_OPTIONS} />
-        ) : (
-          <TextInput label="State / Province" placeholder="e.g. ontario" value={filters.hqState} onChange={(v) => onChange({ hqState: v })} />
-        )}
-        <TextInput label="City" placeholder="e.g. san francisco" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} />
-        <TextInput label="Most employees in (Metro)" placeholder="e.g. san francisco, california" value={filters.hqMetro} onChange={(v) => onChange({ hqMetro: v })} />
+        <MultiChipAutocomplete label="Country" placeholder="e.g. United States" field="country" values={filters.hqCountry} onChange={(v) => onChange({ hqCountry: v })} />
+        <MultiChipAutocomplete label="State / Province" placeholder="e.g. California" field="region" values={filters.hqState} onChange={(v) => onChange({ hqState: v })} />
+        <AutocompleteInput label="City" placeholder="e.g. San Francisco" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} field="location_name" />
+        <AutocompleteInput label="Most employees in (Metro)" placeholder="e.g. San Francisco, California" value={filters.hqMetro} onChange={(v) => onChange({ hqMetro: v })} field="location_name" />
       </FilterSection>
 
       <FilterSection title="Headcount, Revenue & Growth" isOpen={open === "headcount"} onToggle={() => toggle("headcount")}>
-        <Field label="Employee count">
+        <MultiChipSelect label="Employee count (ranges)" placeholder="Select headcount ranges" options={COMPANY_SIZE_OPTIONS} values={filters.employeeCountRanges} onChange={(v) => onChange({ employeeCountRanges: v })} />
+        <Field label="Employee count (min / max)">
           <div className="flex gap-1.5">
             <input type="number" placeholder="Min" value={filters.employeeCountMin}
               onChange={(e) => onChange({ employeeCountMin: e.target.value })} className={inputCls} />
@@ -105,7 +86,7 @@ export default function CompanyFilters({ filters, onChange }: Props) {
               onChange={(e) => onChange({ employeeCountMax: e.target.value })} className={inputCls} />
           </div>
         </Field>
-        <SelectInput label="Annual revenue" placeholder="Select range" value={filters.annualRevenue} onChange={(v) => onChange({ annualRevenue: v })} options={REVENUE_OPTIONS} />
+        <MultiChipSelect label="Annual revenue" placeholder="Select range" options={REVENUE_OPTIONS} values={filters.annualRevenue} onChange={(v) => onChange({ annualRevenue: v })} />
         <NumInput label="12-month growth (%)" placeholder="Min growth %" value={filters.employeeGrowthMin} onChange={(v) => onChange({ employeeGrowthMin: v })} />
       </FilterSection>
 
@@ -118,7 +99,7 @@ export default function CompanyFilters({ filters, onChange }: Props) {
               onChange={(e) => onChange({ yearFoundedMax: e.target.value })} className={inputCls} />
           </div>
         </Field>
-        <SelectInput label="Last funding round" placeholder="Select round" value={filters.lastFundingRound} onChange={(v) => onChange({ lastFundingRound: v })} options={FUNDING_ROUND_OPTIONS} />
+        <MultiChipSelect label="Last funding round" placeholder="Select round" options={FUNDING_ROUND_OPTIONS} values={filters.lastFundingRound} onChange={(v) => onChange({ lastFundingRound: v })} />
         <NumInput label="Min total funding ($)" placeholder="e.g. 1000000" value={filters.totalFundingMin} onChange={(v) => onChange({ totalFundingMin: v })} />
         <Field label="Funded after">
           <input type="date" value={filters.mostRecentFundingAfter}
@@ -144,42 +125,46 @@ export default function CompanyFilters({ filters, onChange }: Props) {
                   Remove
                 </button>
               </div>
-              <select
+              <AutocompleteInput
+                placeholder="Search role e.g. Engineering"
                 value={rule.role}
-                onChange={(e) => {
-                  const rules = filters.roleCompositionRules.map((r, j) => j === i ? { ...r, role: e.target.value } : r);
+                onChange={(v) => {
+                  const rules = filters.roleCompositionRules.map((r, j) => j === i ? { ...r, role: v } : r);
                   onChange({ roleCompositionRules: rules });
                 }}
-                className={inputCls}
-              >
-                <option value="">Select role</option>
-                {FUNCTION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <select
-                value={rule.metric}
-                onChange={(e) => {
-                  const rules = filters.roleCompositionRules.map((r, j) => j === i ? { ...r, metric: e.target.value as "count" | "growth", min: "" } : r);
-                  onChange({ roleCompositionRules: rules });
-                }}
-                className={inputCls}
-              >
-                {ROLE_METRIC_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <input
-                type="number"
-                placeholder={rule.metric === "growth" ? "Min growth % e.g. 10" : "Min employees e.g. 50"}
-                value={rule.min}
-                onChange={(e) => {
-                  const rules = filters.roleCompositionRules.map((r, j) => j === i ? { ...r, min: e.target.value } : r);
-                  onChange({ roleCompositionRules: rules });
-                }}
-                className={inputCls}
+                field="role"
               />
+              <div>
+                <span className="block text-[10px] text-gray-400 mb-1">Min employee count</span>
+                <input
+                  type="number"
+                  placeholder="e.g. 50"
+                  value={rule.minCount}
+                  onChange={(e) => {
+                    const rules = filters.roleCompositionRules.map((r, j) => j === i ? { ...r, minCount: e.target.value } : r);
+                    onChange({ roleCompositionRules: rules });
+                  }}
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <span className="block text-[10px] text-gray-400 mb-1">Min 12-month growth %</span>
+                <input
+                  type="number"
+                  placeholder="e.g. 10"
+                  value={rule.minGrowth}
+                  onChange={(e) => {
+                    const rules = filters.roleCompositionRules.map((r, j) => j === i ? { ...r, minGrowth: e.target.value } : r);
+                    onChange({ roleCompositionRules: rules });
+                  }}
+                  className={inputCls}
+                />
+              </div>
             </div>
           ))}
           <button
             type="button"
-            onClick={() => onChange({ roleCompositionRules: [...filters.roleCompositionRules, { role: "", metric: "count", min: "" }] })}
+            onClick={() => onChange({ roleCompositionRules: [...filters.roleCompositionRules, { role: "", minCount: "", minGrowth: "" }] })}
             className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-xs font-medium text-gray-500 hover:border-purple-400 hover:text-purple-600 transition-colors"
           >
             + Add rule

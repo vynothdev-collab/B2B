@@ -12,40 +12,40 @@ export interface PersonFilters {
   summary: string;
   twitterHandle: string;
   githubUrl: string;
-  languages: string;
-  skills: string;
-  interests: string;
+  languages: string[];
+  skills: string[];
+  interests: string[];
   certifications: string;
   degree: string;
   school: string;
   fieldOfStudy: string;
   linkedinConnectionsMin: string;
   // Title & seniority
-  jobTitle: string;
+  jobTitle: string[];
   seniority: string[];
-  function: string;
+  department: string[];
   yearsExperienceMin: string;
   yearsExperienceMax: string;
   // Current company
-  companyName: string;
+  companyName: string[];
   companyLinkedinUrl: string;
   companyDomain: string;
-  industry: string;
-  companySize: string;
-  companyType: string;
-  companyRevenue: string;
+  industry: string[];
+  companySize: string[];
+  companyType: string[];
+  companyRevenue: string[];
   // Past roles & companies
-  pastCompanies: string;
-  pastTitles: string;
+  pastCompanies: string[];
+  pastTitles: string[];
   pastSeniority: string[];
-  pastFunction: string;
+  pastDepartment: string[];
   // Person location
-  country: string;
-  state: string;
+  country: string[];
+  state: string[];
   city: string;
   // Company HQ location
-  hqCountry: string;
-  hqState: string;
+  hqCountry: string[];
+  hqState: string[];
   hqCity: string;
 }
 
@@ -54,23 +54,24 @@ export interface CompanyFilters {
   companyName: string;
   websiteDomain: string;
   // Industry & type
-  industry: string;
-  type: string;
+  industry: string[];
+  type: string[];
   stockExchange: string;
   // HQ location
-  hqCountry: string;
-  hqState: string;
+  hqCountry: string[];
+  hqState: string[];
   hqCity: string;
   hqMetro: string;
   // Headcount, revenue & growth
+  employeeCountRanges: string[];
   employeeCountMin: string;
   employeeCountMax: string;
-  annualRevenue: string;
+  annualRevenue: string[];
   employeeGrowthMin: string;
   // Founded, funding & IPO
   yearFoundedMin: string;
   yearFoundedMax: string;
-  lastFundingRound: string;
+  lastFundingRound: string[];
   totalFundingMin: string;
   mostRecentFundingAfter: string;
   // Role mix & hiring growth — multiple rules
@@ -79,32 +80,32 @@ export interface CompanyFilters {
 
 export interface RoleCompositionRule {
   role: string;
-  metric: "count" | "growth";
-  min: string;
+  minCount: string;
+  minGrowth: string;
 }
 
 export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   firstName: "", lastName: "", linkedinUrl: "",
   headline: "", summary: "", twitterHandle: "", githubUrl: "",
-  languages: "", skills: "", interests: "", certifications: "",
+  languages: [], skills: [], interests: [], certifications: "",
   degree: "", school: "", fieldOfStudy: "", linkedinConnectionsMin: "",
-  jobTitle: "", seniority: [], function: "",
+  jobTitle: [], seniority: [], department: [],
   yearsExperienceMin: "", yearsExperienceMax: "",
-  companyName: "", companyLinkedinUrl: "", companyDomain: "",
-  industry: "", companySize: "", companyType: "", companyRevenue: "",
-  pastCompanies: "", pastTitles: "", pastSeniority: [], pastFunction: "",
-  country: "", state: "", city: "",
-  hqCountry: "", hqState: "", hqCity: "",
+  companyName: [], companyLinkedinUrl: "", companyDomain: "",
+  industry: [], companySize: [], companyType: [], companyRevenue: [],
+  pastCompanies: [], pastTitles: [], pastSeniority: [], pastDepartment: [],
+  country: [], state: [], city: "",
+  hqCountry: [], hqState: [], hqCity: "",
 };
 
 export const DEFAULT_COMPANY_FILTERS: CompanyFilters = {
   companyName: "", websiteDomain: "",
-  industry: "", type: "", stockExchange: "",
-  hqCountry: "", hqState: "", hqCity: "", hqMetro: "",
-  employeeCountMin: "", employeeCountMax: "",
-  annualRevenue: "", employeeGrowthMin: "",
+  industry: [], type: [], stockExchange: "",
+  hqCountry: [], hqState: [], hqCity: "", hqMetro: "",
+  employeeCountRanges: [], employeeCountMin: "", employeeCountMax: "",
+  annualRevenue: [], employeeGrowthMin: "",
   yearFoundedMin: "", yearFoundedMax: "",
-  lastFundingRound: "", totalFundingMin: "", mostRecentFundingAfter: "",
+  lastFundingRound: [], totalFundingMin: "", mostRecentFundingAfter: "",
   roleCompositionRules: [],
 };
 
@@ -280,117 +281,6 @@ export const FUNDING_ROUND_OPTIONS = [
   { value: "funding_round", label: "Funding Round" },
   { value: "non_equity_assistance", label: "Non-equity Assistance" },
   { value: "undisclosed", label: "Undisclosed" },
-];
-
-export const COUNTRY_OPTIONS = [
-  { value: "united states", label: "United States" },
-  { value: "united kingdom", label: "United Kingdom" },
-  { value: "canada", label: "Canada" },
-  { value: "australia", label: "Australia" },
-  { value: "india", label: "India" },
-  { value: "germany", label: "Germany" },
-  { value: "france", label: "France" },
-  { value: "netherlands", label: "Netherlands" },
-  { value: "sweden", label: "Sweden" },
-  { value: "switzerland", label: "Switzerland" },
-  { value: "denmark", label: "Denmark" },
-  { value: "norway", label: "Norway" },
-  { value: "finland", label: "Finland" },
-  { value: "ireland", label: "Ireland" },
-  { value: "belgium", label: "Belgium" },
-  { value: "austria", label: "Austria" },
-  { value: "spain", label: "Spain" },
-  { value: "italy", label: "Italy" },
-  { value: "portugal", label: "Portugal" },
-  { value: "poland", label: "Poland" },
-  { value: "czech republic", label: "Czech Republic" },
-  { value: "hungary", label: "Hungary" },
-  { value: "romania", label: "Romania" },
-  { value: "ukraine", label: "Ukraine" },
-  { value: "russia", label: "Russia" },
-  { value: "turkey", label: "Turkey" },
-  { value: "israel", label: "Israel" },
-  { value: "united arab emirates", label: "United Arab Emirates" },
-  { value: "saudi arabia", label: "Saudi Arabia" },
-  { value: "qatar", label: "Qatar" },
-  { value: "singapore", label: "Singapore" },
-  { value: "hong kong", label: "Hong Kong" },
-  { value: "japan", label: "Japan" },
-  { value: "china", label: "China" },
-  { value: "south korea", label: "South Korea" },
-  { value: "taiwan", label: "Taiwan" },
-  { value: "indonesia", label: "Indonesia" },
-  { value: "malaysia", label: "Malaysia" },
-  { value: "thailand", label: "Thailand" },
-  { value: "philippines", label: "Philippines" },
-  { value: "vietnam", label: "Vietnam" },
-  { value: "pakistan", label: "Pakistan" },
-  { value: "bangladesh", label: "Bangladesh" },
-  { value: "new zealand", label: "New Zealand" },
-  { value: "brazil", label: "Brazil" },
-  { value: "mexico", label: "Mexico" },
-  { value: "argentina", label: "Argentina" },
-  { value: "colombia", label: "Colombia" },
-  { value: "chile", label: "Chile" },
-  { value: "south africa", label: "South Africa" },
-  { value: "nigeria", label: "Nigeria" },
-  { value: "kenya", label: "Kenya" },
-  { value: "egypt", label: "Egypt" },
-  { value: "greece", label: "Greece" },
-];
-
-export const US_STATE_OPTIONS = [
-  { value: "alabama", label: "Alabama" },
-  { value: "alaska", label: "Alaska" },
-  { value: "arizona", label: "Arizona" },
-  { value: "arkansas", label: "Arkansas" },
-  { value: "california", label: "California" },
-  { value: "colorado", label: "Colorado" },
-  { value: "connecticut", label: "Connecticut" },
-  { value: "delaware", label: "Delaware" },
-  { value: "florida", label: "Florida" },
-  { value: "georgia", label: "Georgia" },
-  { value: "hawaii", label: "Hawaii" },
-  { value: "idaho", label: "Idaho" },
-  { value: "illinois", label: "Illinois" },
-  { value: "indiana", label: "Indiana" },
-  { value: "iowa", label: "Iowa" },
-  { value: "kansas", label: "Kansas" },
-  { value: "kentucky", label: "Kentucky" },
-  { value: "louisiana", label: "Louisiana" },
-  { value: "maine", label: "Maine" },
-  { value: "maryland", label: "Maryland" },
-  { value: "massachusetts", label: "Massachusetts" },
-  { value: "michigan", label: "Michigan" },
-  { value: "minnesota", label: "Minnesota" },
-  { value: "mississippi", label: "Mississippi" },
-  { value: "missouri", label: "Missouri" },
-  { value: "montana", label: "Montana" },
-  { value: "nebraska", label: "Nebraska" },
-  { value: "nevada", label: "Nevada" },
-  { value: "new hampshire", label: "New Hampshire" },
-  { value: "new jersey", label: "New Jersey" },
-  { value: "new mexico", label: "New Mexico" },
-  { value: "new york", label: "New York" },
-  { value: "north carolina", label: "North Carolina" },
-  { value: "north dakota", label: "North Dakota" },
-  { value: "ohio", label: "Ohio" },
-  { value: "oklahoma", label: "Oklahoma" },
-  { value: "oregon", label: "Oregon" },
-  { value: "pennsylvania", label: "Pennsylvania" },
-  { value: "rhode island", label: "Rhode Island" },
-  { value: "south carolina", label: "South Carolina" },
-  { value: "south dakota", label: "South Dakota" },
-  { value: "tennessee", label: "Tennessee" },
-  { value: "texas", label: "Texas" },
-  { value: "utah", label: "Utah" },
-  { value: "vermont", label: "Vermont" },
-  { value: "virginia", label: "Virginia" },
-  { value: "washington", label: "Washington" },
-  { value: "west virginia", label: "West Virginia" },
-  { value: "wisconsin", label: "Wisconsin" },
-  { value: "wyoming", label: "Wyoming" },
-  { value: "district of columbia", label: "District of Columbia" },
 ];
 
 export const ROLE_METRIC_OPTIONS = [

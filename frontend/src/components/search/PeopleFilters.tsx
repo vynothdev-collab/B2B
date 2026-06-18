@@ -1,16 +1,16 @@
 "use client";
 import { useState } from "react";
 import FilterSection from "./FilterSection";
+import SearchableSelect from "./SearchableSelect";
+import AutocompleteInput from "./AutocompleteInput";
+import MultiChipAutocomplete from "./MultiChipAutocomplete";
+import MultiChipSelect from "./MultiChipSelect";
 import type { PersonFilters } from "@/types/search";
 import {
   COMPANY_SIZE_OPTIONS,
   COMPANY_TYPE_OPTIONS,
-  COUNTRY_OPTIONS,
-  FUNCTION_OPTIONS,
-  INDUSTRY_OPTIONS,
   REVENUE_OPTIONS,
   SENIORITY_OPTIONS,
-  US_STATE_OPTIONS,
 } from "@/types/search";
 
 interface Props {
@@ -42,19 +42,6 @@ function TextInput({ label, placeholder, value, onChange }: {
   );
 }
 
-function SelectInput({ label, placeholder, value, onChange, options }: {
-  label: string; placeholder: string; value: string;
-  onChange: (v: string) => void; options: { value: string; label: string }[];
-}) {
-  return (
-    <Field label={label}>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
-        <option value="">{placeholder}</option>
-        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </Field>
-  );
-}
 
 function NumInput({ label, placeholder, value, onChange }: {
   label: string; placeholder: string; value: string; onChange: (v: string) => void;
@@ -64,28 +51,6 @@ function NumInput({ label, placeholder, value, onChange }: {
       <input type="number" placeholder={placeholder} value={value}
         onChange={(e) => onChange(e.target.value)} className={inputCls} />
     </Field>
-  );
-}
-
-function MultiCheckbox({ label, options, selected, onChange }: {
-  label: string; options: { value: string; label: string }[];
-  selected: string[]; onChange: (v: string[]) => void;
-}) {
-  const toggle = (val: string) =>
-    onChange(selected.includes(val) ? selected.filter((v) => v !== val) : [...selected, val]);
-  return (
-    <div>
-      <span className={labelCls}>{label}</span>
-      <div className="grid grid-cols-2 gap-1 max-h-32 overflow-y-auto">
-        {options.map((o) => (
-          <label key={o.value} className="flex items-center gap-1.5 cursor-pointer">
-            <input type="checkbox" checked={selected.includes(o.value)} onChange={() => toggle(o.value)}
-              className="h-3 w-3 rounded border-gray-300 text-purple-600 focus:ring-purple-400" />
-            <span className="text-[10px] text-gray-600">{o.label}</span>
-          </label>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -112,11 +77,11 @@ export default function PeopleFilters({ filters, onChange }: Props) {
         <TextInput label="Summary contains" placeholder="Keywords in summary" value={filters.summary} onChange={(v) => onChange({ summary: v })} />
         <TextInput label="Twitter handle" placeholder="e.g. elonmusk" value={filters.twitterHandle} onChange={(v) => onChange({ twitterHandle: v })} />
         <TextInput label="GitHub username / URL" placeholder="e.g. torvalds" value={filters.githubUrl} onChange={(v) => onChange({ githubUrl: v })} />
-        <TextInput label="Languages" placeholder="e.g. English, French" value={filters.languages} onChange={(v) => onChange({ languages: v })} />
-        <TextInput label="Skills" placeholder="e.g. Python, React" value={filters.skills} onChange={(v) => onChange({ skills: v })} />
-        <TextInput label="Interests" placeholder="e.g. AI, Startups" value={filters.interests} onChange={(v) => onChange({ interests: v })} />
+        <MultiChipAutocomplete label="Languages" placeholder="e.g. English (press Enter)" values={filters.languages} onChange={(v) => onChange({ languages: v })} />
+        <MultiChipAutocomplete label="Skills" placeholder="e.g. Python, React" field="skill" values={filters.skills} onChange={(v) => onChange({ skills: v })} />
+        <MultiChipAutocomplete label="Interests" placeholder="e.g. AI (press Enter)" values={filters.interests} onChange={(v) => onChange({ interests: v })} />
         <TextInput label="Certifications" placeholder="e.g. AWS Certified" value={filters.certifications} onChange={(v) => onChange({ certifications: v })} />
-        <SelectInput label="Degree" placeholder="Select degree" value={filters.degree} onChange={(v) => onChange({ degree: v })} options={[
+        <SearchableSelect label="Degree" placeholder="Select degree" value={filters.degree} onChange={(v) => onChange({ degree: v })} options={[
           { value: "associate", label: "Associate" },
           { value: "bachelors", label: "Bachelor's" },
           { value: "masters", label: "Master's" },
@@ -124,15 +89,15 @@ export default function PeopleFilters({ filters, onChange }: Props) {
           { value: "phd", label: "PhD / Doctorate" },
           { value: "juris doctor", label: "Juris Doctor" },
         ]} />
-        <TextInput label="School" placeholder="University name" value={filters.school} onChange={(v) => onChange({ school: v })} />
-        <TextInput label="Field of study" placeholder="e.g. Computer Science" value={filters.fieldOfStudy} onChange={(v) => onChange({ fieldOfStudy: v })} />
+        <AutocompleteInput label="School" placeholder="University name" value={filters.school} onChange={(v) => onChange({ school: v })} field="school" />
+        <AutocompleteInput label="Field of study" placeholder="e.g. Computer Science" value={filters.fieldOfStudy} onChange={(v) => onChange({ fieldOfStudy: v })} field="major" />
         <NumInput label="Min LinkedIn connections" placeholder="e.g. 500" value={filters.linkedinConnectionsMin} onChange={(v) => onChange({ linkedinConnectionsMin: v })} />
       </FilterSection>
 
       <FilterSection title="Title & Seniority" isOpen={open === "title"} onToggle={() => toggle("title")}>
-        <TextInput label="Job title" placeholder="e.g. Software Engineer" value={filters.jobTitle} onChange={(v) => onChange({ jobTitle: v })} />
-        <MultiCheckbox label="Seniority level" options={SENIORITY_OPTIONS} selected={filters.seniority} onChange={(v) => onChange({ seniority: v })} />
-        <SelectInput label="Function / Role" placeholder="Select function" value={filters.function} onChange={(v) => onChange({ function: v })} options={FUNCTION_OPTIONS} />
+        <MultiChipAutocomplete label="Job title" placeholder="e.g. Software Engineer" field="title" values={filters.jobTitle} onChange={(v) => onChange({ jobTitle: v })} />
+        <MultiChipSelect label="Seniority level" placeholder="Select seniority levels" options={SENIORITY_OPTIONS} values={filters.seniority} onChange={(v) => onChange({ seniority: v })} />
+        <MultiChipAutocomplete label="Department" placeholder="e.g. Engineering" field="role" values={filters.department} onChange={(v) => onChange({ department: v })} />
         <Field label="Years of experience">
           <div className="flex gap-1.5">
             <input type="number" placeholder="Min" value={filters.yearsExperienceMin}
@@ -144,45 +109,32 @@ export default function PeopleFilters({ filters, onChange }: Props) {
       </FilterSection>
 
       <FilterSection title="Current Company" isOpen={open === "company"} onToggle={() => toggle("company")}>
-        <TextInput label="Company name" placeholder="e.g. Stripe" value={filters.companyName} onChange={(v) => onChange({ companyName: v })} />
+        <MultiChipAutocomplete label="Company name" placeholder="e.g. Stripe" field="company" values={filters.companyName} onChange={(v) => onChange({ companyName: v })} />
         <TextInput label="Company LinkedIn URL" placeholder="linkedin.com/company/..." value={filters.companyLinkedinUrl} onChange={(v) => onChange({ companyLinkedinUrl: v })} />
-        <TextInput label="Company domain" placeholder="e.g. stripe.com" value={filters.companyDomain} onChange={(v) => onChange({ companyDomain: v })} />
-        <Field label="Industry">
-          <select value={filters.industry} onChange={(e) => onChange({ industry: e.target.value })} className={inputCls}>
-            <option value="">Select industry</option>
-            {INDUSTRY_OPTIONS.map((o) => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
-          </select>
-        </Field>
-        <SelectInput label="Company size" placeholder="Select headcount" value={filters.companySize} onChange={(v) => onChange({ companySize: v })} options={COMPANY_SIZE_OPTIONS} />
-        <SelectInput label="Company type" placeholder="Select type" value={filters.companyType} onChange={(v) => onChange({ companyType: v })} options={COMPANY_TYPE_OPTIONS} />
-        <SelectInput label="Company revenue" placeholder="Select revenue range" value={filters.companyRevenue} onChange={(v) => onChange({ companyRevenue: v })} options={REVENUE_OPTIONS} />
+        <AutocompleteInput label="Company domain" placeholder="e.g. stripe.com" value={filters.companyDomain} onChange={(v) => onChange({ companyDomain: v })} field="website" />
+        <MultiChipAutocomplete label="Industry" placeholder="e.g. Information Technology" field="industry" values={filters.industry} onChange={(v) => onChange({ industry: v })} />
+        <MultiChipSelect label="Company size" placeholder="Select headcount" options={COMPANY_SIZE_OPTIONS} values={filters.companySize} onChange={(v) => onChange({ companySize: v })} />
+        <MultiChipSelect label="Company type" placeholder="Select type" options={COMPANY_TYPE_OPTIONS} values={filters.companyType} onChange={(v) => onChange({ companyType: v })} />
+        <MultiChipSelect label="Company revenue" placeholder="Select revenue range" options={REVENUE_OPTIONS} values={filters.companyRevenue} onChange={(v) => onChange({ companyRevenue: v })} />
       </FilterSection>
 
       <FilterSection title="Past Roles & Companies" isOpen={open === "past"} onToggle={() => toggle("past")}>
-        <TextInput label="Past company" placeholder="Company name" value={filters.pastCompanies} onChange={(v) => onChange({ pastCompanies: v })} />
-        <TextInput label="Past job title" placeholder="e.g. VP of Sales" value={filters.pastTitles} onChange={(v) => onChange({ pastTitles: v })} />
-        <MultiCheckbox label="Past seniority" options={SENIORITY_OPTIONS} selected={filters.pastSeniority} onChange={(v) => onChange({ pastSeniority: v })} />
-        <SelectInput label="Past function" placeholder="Select function" value={filters.pastFunction} onChange={(v) => onChange({ pastFunction: v })} options={FUNCTION_OPTIONS} />
+        <MultiChipAutocomplete label="Past company" placeholder="e.g. Google" field="company" values={filters.pastCompanies} onChange={(v) => onChange({ pastCompanies: v })} />
+        <MultiChipAutocomplete label="Past job title" placeholder="e.g. VP of Sales" field="title" values={filters.pastTitles} onChange={(v) => onChange({ pastTitles: v })} />
+        <MultiChipSelect label="Past seniority" placeholder="Select seniority levels" options={SENIORITY_OPTIONS} values={filters.pastSeniority} onChange={(v) => onChange({ pastSeniority: v })} />
+        <MultiChipAutocomplete label="Past department" placeholder="e.g. Sales" field="role" values={filters.pastDepartment} onChange={(v) => onChange({ pastDepartment: v })} />
       </FilterSection>
 
       <FilterSection title="Person Location" isOpen={open === "location"} onToggle={() => toggle("location")}>
-        <SelectInput label="Country" placeholder="Select country" value={filters.country} onChange={(v) => onChange({ country: v, state: "" })} options={COUNTRY_OPTIONS} />
-        {filters.country === "united states" ? (
-          <SelectInput label="State" placeholder="Select state" value={filters.state} onChange={(v) => onChange({ state: v })} options={US_STATE_OPTIONS} />
-        ) : (
-          <TextInput label="State / Province" placeholder="e.g. ontario" value={filters.state} onChange={(v) => onChange({ state: v })} />
-        )}
-        <TextInput label="City" placeholder="e.g. san francisco" value={filters.city} onChange={(v) => onChange({ city: v })} />
+        <MultiChipAutocomplete label="Country" placeholder="e.g. United States" field="country" values={filters.country} onChange={(v) => onChange({ country: v })} />
+        <MultiChipAutocomplete label="State / Province" placeholder="e.g. California" field="region" values={filters.state} onChange={(v) => onChange({ state: v })} />
+        <AutocompleteInput label="City" placeholder="e.g. San Francisco" value={filters.city} onChange={(v) => onChange({ city: v })} field="location_name" />
       </FilterSection>
 
       <FilterSection title="Company HQ Location" isOpen={open === "hq"} onToggle={() => toggle("hq")}>
-        <SelectInput label="HQ Country" placeholder="Select country" value={filters.hqCountry} onChange={(v) => onChange({ hqCountry: v, hqState: "" })} options={COUNTRY_OPTIONS} />
-        {filters.hqCountry === "united states" ? (
-          <SelectInput label="HQ State" placeholder="Select state" value={filters.hqState} onChange={(v) => onChange({ hqState: v })} options={US_STATE_OPTIONS} />
-        ) : (
-          <TextInput label="HQ State / Province" placeholder="e.g. new york" value={filters.hqState} onChange={(v) => onChange({ hqState: v })} />
-        )}
-        <TextInput label="HQ City" placeholder="e.g. new york city" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} />
+        <MultiChipAutocomplete label="HQ Country" placeholder="e.g. United States" field="country" values={filters.hqCountry} onChange={(v) => onChange({ hqCountry: v })} />
+        <MultiChipAutocomplete label="HQ State / Province" placeholder="e.g. New York" field="region" values={filters.hqState} onChange={(v) => onChange({ hqState: v })} />
+        <AutocompleteInput label="HQ City" placeholder="e.g. New York City" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} field="location_name" />
       </FilterSection>
     </>
   );

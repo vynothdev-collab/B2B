@@ -9,6 +9,7 @@ import PeopleTable from "./PeopleTable";
 import CompanyTable from "./CompanyTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
+import ActiveFilters from "./ActiveFilters";
 import type { PersonResult, CompanyResult } from "@/types/search";
 
 const CREDITS = 258;
@@ -56,7 +57,9 @@ export default function SearchPage() {
         });
       }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Search failed";
+      const axiosDetail =
+        (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      const msg = axiosDetail ?? (e instanceof Error ? e.message : "Search failed");
       setError(msg);
     } finally {
       setLoading(false);
@@ -213,6 +216,15 @@ export default function SearchPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Active filter chips — single scrollable row */}
+              <ActiveFilters
+                tab={tab}
+                personFilters={personFilters}
+                companyFilters={companyFilters}
+                onPersonChange={(patch) => setPersonFilters((f) => ({ ...f, ...patch }))}
+                onCompanyChange={(patch) => setCompanyFilters((f) => ({ ...f, ...patch }))}
+              />
 
               {/* Error */}
               {error && (
