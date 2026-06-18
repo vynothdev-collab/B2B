@@ -1,5 +1,11 @@
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from pydantic import BaseModel
+
+
+class RoleCompositionRule(BaseModel):
+    role: str
+    metric: Literal["count", "growth"]
+    min: float
 
 PAGE_SIZE = 10
 
@@ -13,8 +19,10 @@ class PersonSearchRequest(BaseModel):
     headline: Optional[str] = None
     summary: Optional[str] = None
     twitter_handle: Optional[str] = None
+    github_url: Optional[str] = None
     languages: Optional[list[str]] = None
     skills: Optional[list[str]] = None
+    interests: Optional[list[str]] = None
     certifications: Optional[str] = None
     degree: Optional[str] = None
     school: Optional[str] = None
@@ -32,6 +40,8 @@ class PersonSearchRequest(BaseModel):
     company_domain: Optional[str] = None
     industry: Optional[str] = None
     company_size: Optional[str] = None
+    company_type: Optional[str] = None
+    company_revenue: Optional[str] = None
     # Past roles & companies
     past_companies: Optional[str] = None
     past_titles: Optional[str] = None
@@ -61,6 +71,7 @@ class CompanySearchRequest(BaseModel):
     hq_country: Optional[str] = None
     hq_state: Optional[str] = None
     hq_city: Optional[str] = None
+    hq_metro: Optional[str] = None
     # Headcount, revenue & growth
     employee_count_min: Optional[int] = None
     employee_count_max: Optional[int] = None
@@ -73,8 +84,7 @@ class CompanySearchRequest(BaseModel):
     total_funding_min: Optional[float] = None
     most_recent_funding_after: Optional[str] = None
     # Role mix & hiring growth
-    role_composition_role: Optional[str] = None
-    role_composition_min: Optional[int] = None
+    role_composition_rules: Optional[list[RoleCompositionRule]] = None
     # Cursor-based pagination (replaces `from`)
     scroll_token: Optional[str] = None
 

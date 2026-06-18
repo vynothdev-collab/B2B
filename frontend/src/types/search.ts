@@ -11,8 +11,10 @@ export interface PersonFilters {
   headline: string;
   summary: string;
   twitterHandle: string;
+  githubUrl: string;
   languages: string;
   skills: string;
+  interests: string;
   certifications: string;
   degree: string;
   school: string;
@@ -30,6 +32,8 @@ export interface PersonFilters {
   companyDomain: string;
   industry: string;
   companySize: string;
+  companyType: string;
+  companyRevenue: string;
   // Past roles & companies
   pastCompanies: string;
   pastTitles: string;
@@ -57,6 +61,7 @@ export interface CompanyFilters {
   hqCountry: string;
   hqState: string;
   hqCity: string;
+  hqMetro: string;
   // Headcount, revenue & growth
   employeeCountMin: string;
   employeeCountMax: string;
@@ -68,20 +73,25 @@ export interface CompanyFilters {
   lastFundingRound: string;
   totalFundingMin: string;
   mostRecentFundingAfter: string;
-  // Role mix & hiring growth
-  roleCompositionRole: string;
-  roleCompositionMin: string;
+  // Role mix & hiring growth — multiple rules
+  roleCompositionRules: RoleCompositionRule[];
+}
+
+export interface RoleCompositionRule {
+  role: string;
+  metric: "count" | "growth";
+  min: string;
 }
 
 export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   firstName: "", lastName: "", linkedinUrl: "",
-  headline: "", summary: "", twitterHandle: "", languages: "",
-  skills: "", certifications: "", degree: "", school: "",
-  fieldOfStudy: "", linkedinConnectionsMin: "",
+  headline: "", summary: "", twitterHandle: "", githubUrl: "",
+  languages: "", skills: "", interests: "", certifications: "",
+  degree: "", school: "", fieldOfStudy: "", linkedinConnectionsMin: "",
   jobTitle: "", seniority: [], function: "",
   yearsExperienceMin: "", yearsExperienceMax: "",
   companyName: "", companyLinkedinUrl: "", companyDomain: "",
-  industry: "", companySize: "",
+  industry: "", companySize: "", companyType: "", companyRevenue: "",
   pastCompanies: "", pastTitles: "", pastSeniority: [], pastFunction: "",
   country: "", state: "", city: "",
   hqCountry: "", hqState: "", hqCity: "",
@@ -90,12 +100,12 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
 export const DEFAULT_COMPANY_FILTERS: CompanyFilters = {
   companyName: "", websiteDomain: "",
   industry: "", type: "", stockExchange: "",
-  hqCountry: "", hqState: "", hqCity: "",
+  hqCountry: "", hqState: "", hqCity: "", hqMetro: "",
   employeeCountMin: "", employeeCountMax: "",
   annualRevenue: "", employeeGrowthMin: "",
   yearFoundedMin: "", yearFoundedMax: "",
   lastFundingRound: "", totalFundingMin: "", mostRecentFundingAfter: "",
-  roleCompositionRole: "", roleCompositionMin: "",
+  roleCompositionRules: [],
 };
 
 // ─── API Response Types ───────────────────────────────────────────────────────
@@ -105,21 +115,36 @@ export interface PersonResult {
   full_name?: string;
   first_name?: string;
   last_name?: string;
+  linkedin_url?: string;
+  linkedin_username?: string;
+  linkedin_connections?: number;
+  industry?: string;
+  // Job / title
   job_title?: string;
   job_title_role?: string;
   job_title_sub_role?: string;
+  job_title_class?: string;
   job_title_levels?: string[];
-  job_company_name?: string;
+  // Company
   job_company_id?: string;
+  job_company_name?: string;
+  job_company_website?: string;
   job_company_size?: string;
+  job_company_founded?: number;
   job_company_industry?: string;
-  work_email?: string;
-  phone_numbers?: string[];
+  job_company_linkedin_url?: string;
+  job_company_location_country?: string;
+  job_company_location_region?: string;
+  job_company_location_locality?: string;
+  // Location — PDL masks sensitive sub-fields as `true` when not revealed
   location_country?: string;
-  location_region?: string;
-  location_locality?: string;
-  linkedin_url?: string;
-  linkedin_connections?: number;
+  location_region?: string | boolean;
+  location_locality?: string | boolean;
+  // Contact — masked as `true` until credits are spent to reveal
+  work_email?: string | boolean;
+  mobile_phone?: string | boolean;
+  phone_numbers?: string[] | boolean;
+  emails?: string[] | boolean;
 }
 
 export interface CompanyResult {
@@ -166,29 +191,30 @@ export const SENIORITY_OPTIONS = [
 ];
 
 export const FUNCTION_OPTIONS = [
-  { value: "engineering", label: "Engineering" },
-  { value: "sales", label: "Sales" },
-  { value: "marketing", label: "Marketing" },
-  { value: "product", label: "Product" },
-  { value: "finance", label: "Finance" },
-  { value: "human_resources", label: "Human Resources" },
-  { value: "operations", label: "Operations" },
-  { value: "legal", label: "Legal" },
-  { value: "research", label: "Research" },
+  { value: "advisory", label: "Advisory" },
   { value: "analyst", label: "Analyst" },
   { value: "creative", label: "Creative" },
   { value: "education", label: "Education" },
+  { value: "engineering", label: "Engineering" },
+  { value: "finance", label: "Finance" },
+  { value: "fulfillment", label: "Fulfillment" },
   { value: "health", label: "Health" },
-  { value: "support", label: "Support" },
+  { value: "hospitality", label: "Hospitality" },
+  { value: "human_resources", label: "Human Resources" },
+  { value: "legal", label: "Legal" },
   { value: "manufacturing", label: "Manufacturing" },
+  { value: "marketing", label: "Marketing" },
+  { value: "operations", label: "Operations" },
   { value: "partnerships", label: "Partnerships" },
+  { value: "product", label: "Product" },
   { value: "professional_service", label: "Professional Service" },
   { value: "public_service", label: "Public Service" },
+  { value: "research", label: "Research" },
+  { value: "sales", label: "Sales" },
   { value: "sales_engineering", label: "Sales Engineering" },
-  { value: "advisory", label: "Advisory" },
-  { value: "fulfillment", label: "Fulfillment" },
-  { value: "hospitality", label: "Hospitality" },
+  { value: "support", label: "Support" },
   { value: "trade", label: "Trade" },
+  { value: "unemployed", label: "Unemployed" },
 ];
 
 export const COMPANY_SIZE_OPTIONS = [
@@ -233,16 +259,143 @@ export const FUNDING_ROUND_OPTIONS = [
   { value: "series_c", label: "Series C" },
   { value: "series_d", label: "Series D" },
   { value: "series_e", label: "Series E" },
+  { value: "series_f", label: "Series F" },
+  { value: "series_g", label: "Series G" },
+  { value: "series_h", label: "Series H" },
+  { value: "series_i", label: "Series I" },
+  { value: "series_j", label: "Series J" },
   { value: "series_unknown", label: "Series (Unknown)" },
   { value: "convertible_note", label: "Convertible Note" },
   { value: "corporate_round", label: "Corporate Round" },
   { value: "debt_financing", label: "Debt Financing" },
   { value: "equity_crowdfunding", label: "Equity Crowdfunding" },
+  { value: "product_crowdfunding", label: "Product Crowdfunding" },
   { value: "grant", label: "Grant" },
+  { value: "initial_coin_offering", label: "Initial Coin Offering" },
   { value: "private_equity", label: "Private Equity" },
   { value: "post_ipo_equity", label: "Post-IPO Equity" },
   { value: "post_ipo_debt", label: "Post-IPO Debt" },
+  { value: "post_ipo_secondary", label: "Post-IPO Secondary" },
+  { value: "secondary_market", label: "Secondary Market" },
+  { value: "funding_round", label: "Funding Round" },
+  { value: "non_equity_assistance", label: "Non-equity Assistance" },
   { value: "undisclosed", label: "Undisclosed" },
+];
+
+export const COUNTRY_OPTIONS = [
+  { value: "united states", label: "United States" },
+  { value: "united kingdom", label: "United Kingdom" },
+  { value: "canada", label: "Canada" },
+  { value: "australia", label: "Australia" },
+  { value: "india", label: "India" },
+  { value: "germany", label: "Germany" },
+  { value: "france", label: "France" },
+  { value: "netherlands", label: "Netherlands" },
+  { value: "sweden", label: "Sweden" },
+  { value: "switzerland", label: "Switzerland" },
+  { value: "denmark", label: "Denmark" },
+  { value: "norway", label: "Norway" },
+  { value: "finland", label: "Finland" },
+  { value: "ireland", label: "Ireland" },
+  { value: "belgium", label: "Belgium" },
+  { value: "austria", label: "Austria" },
+  { value: "spain", label: "Spain" },
+  { value: "italy", label: "Italy" },
+  { value: "portugal", label: "Portugal" },
+  { value: "poland", label: "Poland" },
+  { value: "czech republic", label: "Czech Republic" },
+  { value: "hungary", label: "Hungary" },
+  { value: "romania", label: "Romania" },
+  { value: "ukraine", label: "Ukraine" },
+  { value: "russia", label: "Russia" },
+  { value: "turkey", label: "Turkey" },
+  { value: "israel", label: "Israel" },
+  { value: "united arab emirates", label: "United Arab Emirates" },
+  { value: "saudi arabia", label: "Saudi Arabia" },
+  { value: "qatar", label: "Qatar" },
+  { value: "singapore", label: "Singapore" },
+  { value: "hong kong", label: "Hong Kong" },
+  { value: "japan", label: "Japan" },
+  { value: "china", label: "China" },
+  { value: "south korea", label: "South Korea" },
+  { value: "taiwan", label: "Taiwan" },
+  { value: "indonesia", label: "Indonesia" },
+  { value: "malaysia", label: "Malaysia" },
+  { value: "thailand", label: "Thailand" },
+  { value: "philippines", label: "Philippines" },
+  { value: "vietnam", label: "Vietnam" },
+  { value: "pakistan", label: "Pakistan" },
+  { value: "bangladesh", label: "Bangladesh" },
+  { value: "new zealand", label: "New Zealand" },
+  { value: "brazil", label: "Brazil" },
+  { value: "mexico", label: "Mexico" },
+  { value: "argentina", label: "Argentina" },
+  { value: "colombia", label: "Colombia" },
+  { value: "chile", label: "Chile" },
+  { value: "south africa", label: "South Africa" },
+  { value: "nigeria", label: "Nigeria" },
+  { value: "kenya", label: "Kenya" },
+  { value: "egypt", label: "Egypt" },
+  { value: "greece", label: "Greece" },
+];
+
+export const US_STATE_OPTIONS = [
+  { value: "alabama", label: "Alabama" },
+  { value: "alaska", label: "Alaska" },
+  { value: "arizona", label: "Arizona" },
+  { value: "arkansas", label: "Arkansas" },
+  { value: "california", label: "California" },
+  { value: "colorado", label: "Colorado" },
+  { value: "connecticut", label: "Connecticut" },
+  { value: "delaware", label: "Delaware" },
+  { value: "florida", label: "Florida" },
+  { value: "georgia", label: "Georgia" },
+  { value: "hawaii", label: "Hawaii" },
+  { value: "idaho", label: "Idaho" },
+  { value: "illinois", label: "Illinois" },
+  { value: "indiana", label: "Indiana" },
+  { value: "iowa", label: "Iowa" },
+  { value: "kansas", label: "Kansas" },
+  { value: "kentucky", label: "Kentucky" },
+  { value: "louisiana", label: "Louisiana" },
+  { value: "maine", label: "Maine" },
+  { value: "maryland", label: "Maryland" },
+  { value: "massachusetts", label: "Massachusetts" },
+  { value: "michigan", label: "Michigan" },
+  { value: "minnesota", label: "Minnesota" },
+  { value: "mississippi", label: "Mississippi" },
+  { value: "missouri", label: "Missouri" },
+  { value: "montana", label: "Montana" },
+  { value: "nebraska", label: "Nebraska" },
+  { value: "nevada", label: "Nevada" },
+  { value: "new hampshire", label: "New Hampshire" },
+  { value: "new jersey", label: "New Jersey" },
+  { value: "new mexico", label: "New Mexico" },
+  { value: "new york", label: "New York" },
+  { value: "north carolina", label: "North Carolina" },
+  { value: "north dakota", label: "North Dakota" },
+  { value: "ohio", label: "Ohio" },
+  { value: "oklahoma", label: "Oklahoma" },
+  { value: "oregon", label: "Oregon" },
+  { value: "pennsylvania", label: "Pennsylvania" },
+  { value: "rhode island", label: "Rhode Island" },
+  { value: "south carolina", label: "South Carolina" },
+  { value: "south dakota", label: "South Dakota" },
+  { value: "tennessee", label: "Tennessee" },
+  { value: "texas", label: "Texas" },
+  { value: "utah", label: "Utah" },
+  { value: "vermont", label: "Vermont" },
+  { value: "virginia", label: "Virginia" },
+  { value: "washington", label: "Washington" },
+  { value: "west virginia", label: "West Virginia" },
+  { value: "wisconsin", label: "Wisconsin" },
+  { value: "wyoming", label: "Wyoming" },
+  { value: "district of columbia", label: "District of Columbia" },
+];
+
+export const ROLE_METRIC_OPTIONS = [
+  { value: "count", label: "Employee count" },
+  { value: "growth", label: "12-month growth %" },
 ];
 
 export const INDUSTRY_OPTIONS = [

@@ -22,51 +22,53 @@ export default function FilterSidebar({
   onApply, onReset,
 }: Props) {
   return (
-    <aside className="flex h-full w-52 shrink-0 flex-col border-r border-gray-200 bg-white">
+    <aside className="flex w-72 shrink-0 flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
 
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-1.5">
-          <SlidersHorizontal className="h-4 w-4 text-purple-600" />
+          <SlidersHorizontal className="h-3.5 w-3.5 text-purple-600" />
           <span className="text-sm font-semibold text-gray-800">Filters</span>
         </div>
         <button
           onClick={onReset}
           type="button"
-          className="text-xs text-purple-600 hover:text-purple-800 font-medium"
+          className="text-xs text-gray-400 hover:text-purple-600 font-medium transition-colors"
         >
           Clear all
         </button>
       </div>
 
-      {/* People / Company underline tabs */}
-      <div className="flex border-b border-gray-200 px-3">
-        <button
-          type="button"
-          onClick={() => onTabChange("people")}
-          className={`flex-1 pb-2 text-xs font-semibold transition-colors ${
-            tab === "people"
-              ? "border-b-2 border-purple-600 text-purple-600"
-              : "text-gray-400 hover:text-gray-600"
-          }`}
-        >
-          People
-        </button>
-        <button
-          type="button"
-          onClick={() => onTabChange("company")}
-          className={`flex-1 pb-2 text-xs font-semibold transition-colors ${
-            tab === "company"
-              ? "border-b-2 border-purple-600 text-purple-600"
-              : "text-gray-400 hover:text-gray-600"
-          }`}
-        >
-          Company
-        </button>
+      {/* People / Company pill tabs */}
+      <div className="px-3 py-2.5 border-b border-gray-100">
+        <div className="flex gap-1 rounded-full bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => onTabChange("people")}
+            className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all ${
+              tab === "people"
+                ? "bg-white text-purple-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            People
+          </button>
+          <button
+            type="button"
+            onClick={() => onTabChange("company")}
+            className={`flex-1 rounded-full py-1.5 text-xs font-semibold transition-all ${
+              tab === "company"
+                ? "bg-white text-purple-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Company
+          </button>
+        </div>
       </div>
 
       {/* Scrollable filter sections */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto py-1">
         {tab === "people" ? (
           <PeopleFilters filters={personFilters} onChange={onPersonChange} />
         ) : (
@@ -79,14 +81,14 @@ export default function FilterSidebar({
         <button
           type="button"
           onClick={onReset}
-          className="rounded-md border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+          className="rounded-lg border border-gray-200 px-4 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
         >
           Reset
         </button>
         <button
           type="button"
           onClick={onApply}
-          className="flex-1 rounded-md bg-purple-600 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors"
+          className="flex-1 rounded-lg bg-purple-600 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors"
         >
           Apply filters
         </button>

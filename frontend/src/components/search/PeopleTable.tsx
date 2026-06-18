@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MoreHorizontal, Eye, UserRound, Building2, ListPlus, Mail, Globe, Users } from "lucide-react";
 import type { PersonResult } from "@/types/search";
 
@@ -45,6 +45,17 @@ function SizeBadge({ size }: { size?: string }) {
 
 function ActionMenu({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen((v) => !v);
+  };
+
   const items = [
     { icon: <UserRound className="h-3.5 w-3.5" />, label: "View profile" },
     { icon: <Building2 className="h-3.5 w-3.5" />, label: "Push to CRM" },
@@ -52,18 +63,22 @@ function ActionMenu({ id }: { id: string }) {
     { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email" },
   ];
   return (
-    <div className="relative">
+    <div>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleOpen}
         className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
       >
         <MoreHorizontal className="h-4 w-4" />
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+            style={{ top: pos.top, right: pos.right }}
+          >
             {items.map((item) => (
               <button
                 key={item.label}
@@ -167,7 +182,12 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-gray-800">{person.job_company_name}</p>
-                        <SizeBadge size={person.job_company_size} />
+                        {person.job_company_id && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400">
+                            {person.job_company_id.slice(0, 2).toUpperCase()}-{person.job_company_id.slice(2, 7)}{" "}
+                            <span className="text-gray-300">⊙</span>
+                          </span>
+                        )}
                       </div>
                     </div>
                   ) : <span className="text-xs text-gray-400">—</span>}
@@ -191,24 +211,38 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
 
                 {/* Email */}
                 <td className="px-3 py-3">
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors"
-                  >
-                    <Eye className="h-3 w-3" />
-                    Reveal
-                  </button>
+                  {person.work_email !== false ? (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Reveal
+                    </button>
+                  ) : (
+                    <span className="flex items-center gap-1 rounded-md border border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-300 cursor-not-allowed select-none">
+                      <Eye className="h-3 w-3" />
+                      Reveal
+                    </span>
+                  )}
                 </td>
 
                 {/* Phone */}
                 <td className="px-3 py-3">
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <Eye className="h-3 w-3" />
-                    Reveal
-                  </button>
+                  {person.mobile_phone !== false ? (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Reveal
+                    </button>
+                  ) : (
+                    <span className="flex items-center gap-1 rounded-md border border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-300 cursor-not-allowed select-none">
+                      <Eye className="h-3 w-3" />
+                      Reveal
+                    </span>
+                  )}
                 </td>
 
                 {/* Location */}
@@ -216,11 +250,11 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm">{flag(person.location_country)}</span>
                     <div className="min-w-0">
-                      <p className="truncate text-xs text-gray-700 capitalize">
+                      <p className="truncate text-xs text-gray-700">
                         {person.location_country ?? "—"}
                       </p>
-                      {person.location_locality && (
-                        <p className="truncate text-[10px] text-gray-400 capitalize">
+                      {typeof person.location_locality === "string" && (
+                        <p className="truncate text-[10px] text-gray-400">
                           {person.location_locality}
                         </p>
                       )}

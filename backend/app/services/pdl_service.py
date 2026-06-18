@@ -13,6 +13,33 @@ from app.schemas.search import (
 )
 
 
+# ─── Degree mapping ───────────────────────────────────────────────────────────
+# PDL uses full canonical strings for education.degrees — not shorthand keys.
+
+_DEGREE_MAP: dict[str, list[str]] = {
+    "associate": [
+        "associate", "associates", "associate of arts", "associate of science",
+        "associate of applied science",
+    ],
+    "bachelors": [
+        "bachelors", "bachelor", "bachelor of arts", "bachelor of science",
+        "bachelor of engineering", "bachelor of business administration",
+        "bachelor of fine arts", "bachelor of applied science",
+    ],
+    "masters": [
+        "masters", "master", "master of arts", "master of science",
+        "master of engineering", "master of fine arts",
+        "master of public administration", "master of public policy",
+    ],
+    "mba": ["master of business administration", "mba"],
+    "phd": [
+        "doctor of philosophy", "doctor of medicine", "doctorate", "doctorates",
+        "phd", "doctor of science", "doctor of education",
+    ],
+    "juris doctor": ["juris doctor", "juris doctorate"],
+}
+
+
 # ─── Query Builders ───────────────────────────────────────────────────────────
 
 def _add_multi_term(clauses: list, field: str, values: list[str]) -> None:
@@ -33,6 +60,7 @@ def _add_multi_term(clauses: list, field: str, values: list[str]) -> None:
 def build_person_query(f: PersonSearchRequest) -> dict:
     must: list[dict] = []
     filters: list[dict] = []
+    should: list[dict] = []
 
     # Name & LinkedIn
     if f.first_name:
@@ -49,16 +77,31 @@ def build_person_query(f: PersonSearchRequest) -> dict:
         must.append({"match": {"summary": f.summary}})
     if f.twitter_handle:
         filters.append({"term": {"twitter_username": f.twitter_handle.lstrip("@").lower()}})
+    if f.github_url:
+        handle = f.github_url.lower().rstrip("/").split("/")[-1]
+        filters.append({"term": {"github_username": handle}})
     if f.languages:
         for lang in f.languages:
             filters.append({"term": {"languages.name": lang.lower()}})
     if f.skills:
         for skill in f.skills:
             filters.append({"term": {"skills": skill.lower()}})
+    if f.interests:
+        for interest in f.interests:
+            filters.append({"term": {"interests": interest.lower()}})
     if f.certifications:
         must.append({"match": {"certifications.name": f.certifications}})
     if f.degree:
-        filters.append({"term": {"education.degrees": f.degree.lower()}})
+        mapped = _DEGREE_MAP.get(f.degree.lower(), [f.degree.lower()])
+        if len(mapped) == 1:
+            filters.append({"term": {"education.degrees": mapped[0]}})
+        else:
+            filters.append({
+                "bool": {
+                    "should": [{"term": {"education.degrees": v}} for v in mapped],
+                    "minimum_should_match": 1,
+                }
+            })
     if f.school:
         must.append({"match": {"education.school.name": f.school}})
     if f.field_of_study:
@@ -70,7 +113,8 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     if f.job_title:
         must.append({"match": {"job_title": f.job_title}})
     if f.seniority:
-        _add_multi_term(filters, "job_title_levels", f.seniority)
+        for v in f.seniority:
+            should.append({"term": {"job_title_levels": v.lower()}})
     if f.function:
         filters.append({"term": {"job_title_role": f.function.lower()}})
     exp_range: dict[str, int] = {}
@@ -93,6 +137,10 @@ def build_person_query(f: PersonSearchRequest) -> dict:
         filters.append({"term": {"job_company_industry": f.industry.lower()}})
     if f.company_size:
         filters.append({"term": {"job_company_size": f.company_size}})
+    if f.company_type:
+        filters.append({"term": {"job_company_type": f.company_type.lower()}})
+    if f.company_revenue:
+        filters.append({"term": {"job_company_inferred_revenue": f.company_revenue}})
 
     # Past roles & companies
     if f.past_companies:
@@ -120,7 +168,7 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     if f.hq_city:
         filters.append({"term": {"job_company_location_locality": f.hq_city.lower()}})
 
-    if not must and not filters:
+    if not must and not filters and not should:
         return {"match_all": {}}
 
     bool_q: dict[str, Any] = {}
@@ -128,6 +176,9 @@ def build_person_query(f: PersonSearchRequest) -> dict:
         bool_q["must"] = must
     if filters:
         bool_q["filter"] = filters
+    if should:
+        bool_q["should"] = should
+        bool_q["minimum_should_match"] = 1
     return {"bool": bool_q}
 
 
@@ -157,6 +208,8 @@ def build_company_query(f: CompanySearchRequest) -> dict:
         filters.append({"term": {"location.region": f.hq_state.lower()}})
     if f.hq_city:
         filters.append({"term": {"location.locality": f.hq_city.lower()}})
+    if f.hq_metro:
+        filters.append({"term": {"location.metro": f.hq_metro.lower()}})
 
     # Headcount
     emp_range: dict[str, int] = {}
@@ -190,15 +243,15 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     if f.most_recent_funding_after:
         filters.append({"range": {"last_funding_date": {"gte": f.most_recent_funding_after}}})
 
-    # Role composition (Premium Insights)
-    if f.role_composition_role and f.role_composition_min is not None:
-        filters.append({
-            "range": {
-                f"employee_count_by_role.{f.role_composition_role.lower()}": {
-                    "gte": f.role_composition_min
-                }
-            }
-        })
+    # Role mix & hiring growth (Premium Insights)
+    for rule in (f.role_composition_rules or []):
+        if not rule.role:
+            continue
+        role = rule.role.lower()
+        if rule.metric == "count":
+            filters.append({"range": {f"employee_count_by_role.{role}": {"gte": rule.min}}})
+        else:
+            filters.append({"range": {f"employee_growth_rate_12_month_by_role.{role}": {"gte": rule.min}}})
 
     if not must and not filters:
         return {"match_all": {}}

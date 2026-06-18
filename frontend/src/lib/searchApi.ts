@@ -28,8 +28,10 @@ export async function searchPersons(
     headline: cleanStr(filters.headline),
     summary: cleanStr(filters.summary),
     twitter_handle: cleanStr(filters.twitterHandle),
+    github_url: cleanStr(filters.githubUrl),
     languages: cleanList(filters.languages),
     skills: cleanList(filters.skills),
+    interests: cleanList(filters.interests),
     certifications: cleanStr(filters.certifications),
     degree: cleanStr(filters.degree),
     school: cleanStr(filters.school),
@@ -45,6 +47,8 @@ export async function searchPersons(
     company_domain: cleanStr(filters.companyDomain),
     industry: cleanStr(filters.industry),
     company_size: cleanStr(filters.companySize),
+    company_type: cleanStr(filters.companyType),
+    company_revenue: cleanStr(filters.companyRevenue),
     past_companies: cleanStr(filters.pastCompanies),
     past_titles: cleanStr(filters.pastTitles),
     past_seniority: filters.pastSeniority.length ? filters.pastSeniority : undefined,
@@ -75,6 +79,7 @@ export async function searchCompanies(
     hq_country: cleanStr(filters.hqCountry),
     hq_state: cleanStr(filters.hqState),
     hq_city: cleanStr(filters.hqCity),
+    hq_metro: cleanStr(filters.hqMetro),
     employee_count_min: cleanNum(filters.employeeCountMin),
     employee_count_max: cleanNum(filters.employeeCountMax),
     annual_revenue: cleanStr(filters.annualRevenue),
@@ -84,8 +89,13 @@ export async function searchCompanies(
     last_funding_round: cleanStr(filters.lastFundingRound),
     total_funding_min: cleanFloat(filters.totalFundingMin),
     most_recent_funding_after: cleanStr(filters.mostRecentFundingAfter),
-    role_composition_role: cleanStr(filters.roleCompositionRole),
-    role_composition_min: cleanNum(filters.roleCompositionMin),
+    role_composition_rules: filters.roleCompositionRules
+      .filter((r) => r.role && r.min)
+      .map((r) => ({
+        role: r.role,
+        metric: r.metric,
+        min: r.metric === "growth" ? parseFloat(r.min) / 100 : parseInt(r.min, 10),
+      })),
     scroll_token: scrollToken,
   };
 
