@@ -82,35 +82,41 @@ export default function MultiChipSelect({
   return (
     <div>
       {label && <span className={labelCls}>{label}</span>}
+
+      {values.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-1">
+          {values.map((val) => (
+            <span
+              key={val}
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ${getChipColor(val)}`}
+            >
+              {getLabel(val)}
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
+                className="hover:opacity-70 transition-opacity"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <div
         ref={containerRef}
-        className="min-h-[36px] w-full rounded-lg bg-gray-100 px-2 py-1.5 flex flex-wrap gap-1 items-center cursor-text focus-within:ring-2 focus-within:ring-purple-400/50 transition-colors"
+        className="w-full rounded-lg bg-gray-100 px-3 py-2 focus-within:ring-2 focus-within:ring-purple-400/50 transition-colors cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
-        {values.map((val) => (
-          <span
-            key={val}
-            className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ${getChipColor(val)}`}
-          >
-            {getLabel(val)}
-            <button
-              type="button"
-              onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
-              className="hover:opacity-70 transition-opacity"
-            >
-              <X className="h-2.5 w-2.5" />
-            </button>
-          </span>
-        ))}
         <input
           ref={inputRef}
           type="text"
-          placeholder={values.length === 0 ? placeholder : ""}
+          placeholder={placeholder}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           onFocus={openDropdown}
           onKeyDown={handleKey}
-          className="flex-1 min-w-[80px] bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none py-0.5"
+          className="w-full bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
         />
       </div>
 

@@ -28,6 +28,8 @@ class PersonSearchRequest(BaseModel):
     school: Optional[str] = None
     field_of_study: Optional[str] = None
     linkedin_connections_min: Optional[int] = None
+    name: Optional[str] = None
+    keywords: Optional[str] = None
     # Title & seniority
     job_title: Optional[list[str]] = None
     seniority: Optional[list[str]] = None
@@ -84,6 +86,7 @@ class CompanySearchRequest(BaseModel):
     last_funding_round: Optional[list[str]] = None
     total_funding_min: Optional[float] = None
     most_recent_funding_after: Optional[str] = None
+    keywords: Optional[str] = None
     # Role mix & hiring growth
     role_composition_rules: Optional[list[RoleCompositionRule]] = None
     # Cursor-based pagination (replaces `from`)

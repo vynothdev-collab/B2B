@@ -96,6 +96,10 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     must: list[dict] = []
     filters: list[dict] = []
 
+    if f.name:
+        must.append({"match": {"full_name": f.name.lower()}})
+    if f.keywords:
+        must.append({"match": {"headline": f.keywords}})
     if f.first_name:
         must.append({"match": {"first_name": f.first_name.lower()}})
     if f.last_name:
@@ -173,6 +177,8 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     must: list[dict] = []
     filters: list[dict] = []
 
+    if f.keywords:
+        must.append({"match": {"headline": f.keywords}})
     if f.company_name:
         must.append({"match": {"name": f.company_name.lower()}})
     if f.website_domain:

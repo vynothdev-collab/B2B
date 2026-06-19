@@ -48,6 +48,8 @@ export async function searchPersons(
   scrollToken?: string
 ): Promise<SearchResponse> {
   const body = {
+    name: cleanStr(filters.name),
+    keywords: cleanStr(filters.keywords),
     first_name: cleanStr(filters.firstName),
     last_name: cleanStr(filters.lastName),
     linkedin_url: cleanStr(filters.linkedinUrl),
@@ -63,20 +65,32 @@ export async function searchPersons(
     school: cleanStr(filters.school),
     field_of_study: cleanStr(filters.fieldOfStudy),
     linkedin_connections_min: cleanNum(filters.linkedinConnectionsMin),
-    job_title: filters.jobTitle.length ? filters.jobTitle : undefined,
+    job_title: (() => {
+      const titles = filters.jobTitle.length ? filters.jobTitle : undefined;
+      return filters.jobTitleTimeframe !== "past" ? titles : undefined;
+    })(),
     seniority: filters.seniority.length ? filters.seniority : undefined,
     department: filters.department.length ? filters.department : undefined,
     years_experience_min: cleanNum(filters.yearsExperienceMin),
     years_experience_max: cleanNum(filters.yearsExperienceMax),
-    company_name: filters.companyName.length ? filters.companyName : undefined,
+    company_name: (() => {
+      const names = filters.companySearch.length ? filters.companySearch : (filters.companyName.length ? filters.companyName : undefined);
+      return filters.companyTimeframe !== "past" ? names : undefined;
+    })(),
     company_linkedin_url: cleanStr(filters.companyLinkedinUrl),
     company_domain: cleanStr(filters.companyDomain),
     industry: filters.industry.length ? filters.industry : undefined,
     company_size: filters.companySize.length ? filters.companySize : undefined,
     company_type: filters.companyType.length ? filters.companyType : undefined,
     company_revenue: filters.companyRevenue.length ? filters.companyRevenue : undefined,
-    past_companies: filters.pastCompanies.length ? filters.pastCompanies : undefined,
-    past_titles: filters.pastTitles.length ? filters.pastTitles : undefined,
+    past_companies: (() => {
+      const names = filters.companySearch.length ? filters.companySearch : (filters.pastCompanies.length ? filters.pastCompanies : undefined);
+      return filters.companyTimeframe !== "current" ? names : undefined;
+    })(),
+    past_titles: (() => {
+      const titles = filters.jobTitle.length ? filters.jobTitle : (filters.pastTitles.length ? filters.pastTitles : undefined);
+      return filters.jobTitleTimeframe !== "current" ? titles : undefined;
+    })(),
     past_seniority: filters.pastSeniority.length ? filters.pastSeniority : undefined,
     past_department: filters.pastDepartment.length ? filters.pastDepartment : undefined,
     country: filters.country.length ? filters.country : undefined,
@@ -116,6 +130,7 @@ export async function searchCompanies(
     last_funding_round: filters.lastFundingRound.length ? filters.lastFundingRound : undefined,
     total_funding_min: cleanFloat(filters.totalFundingMin),
     most_recent_funding_after: cleanStr(filters.mostRecentFundingAfter),
+    keywords: cleanStr(filters.keywords),
     role_composition_rules: filters.roleCompositionRules
       .filter((r) => r.role && (r.minCount || r.minGrowth))
       .map((r) => ({

@@ -2,7 +2,15 @@ export type TabType = "people" | "company";
 
 // ─── Filter State ─────────────────────────────────────────────────────────────
 
+export type CompanyTimeframe = "current" | "past" | "both";
+
 export interface PersonFilters {
+  // Simplified top-level fields
+  name: string;
+  keywords: string;
+  companySearch: string[];
+  companyTimeframe: CompanyTimeframe;
+  jobTitleTimeframe: CompanyTimeframe;
   // Name & LinkedIn
   firstName: string;
   lastName: string;
@@ -74,6 +82,7 @@ export interface CompanyFilters {
   lastFundingRound: string[];
   totalFundingMin: string;
   mostRecentFundingAfter: string;
+  keywords: string;
   // Role mix & hiring growth — multiple rules
   roleCompositionRules: RoleCompositionRule[];
 }
@@ -85,6 +94,7 @@ export interface RoleCompositionRule {
 }
 
 export const DEFAULT_PERSON_FILTERS: PersonFilters = {
+  name: "", keywords: "", companySearch: [], companyTimeframe: "current", jobTitleTimeframe: "current",
   firstName: "", lastName: "", linkedinUrl: "",
   headline: "", summary: "", twitterHandle: "", githubUrl: "",
   languages: [], skills: [], interests: [], certifications: "",
@@ -105,7 +115,7 @@ export const DEFAULT_COMPANY_FILTERS: CompanyFilters = {
   employeeCountRanges: [], employeeCountMin: "", employeeCountMax: "",
   annualRevenue: [], employeeGrowthMin: "",
   yearFoundedMin: "", yearFoundedMax: "",
-  lastFundingRound: [], totalFundingMin: "", mostRecentFundingAfter: "",
+  lastFundingRound: [], totalFundingMin: "", mostRecentFundingAfter: "", keywords: "",
   roleCompositionRules: [],
 };
 

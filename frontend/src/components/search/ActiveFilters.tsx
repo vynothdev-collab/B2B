@@ -40,6 +40,8 @@ function buildPersonChips(
     );
   };
 
+  str("name");
+  str("keywords");
   str("firstName");
   str("lastName");
   str("linkedinUrl");
@@ -55,7 +57,12 @@ function buildPersonChips(
   str("school");
   str("fieldOfStudy");
   if (f.linkedinConnectionsMin) chips.push({ label: `≥${f.linkedinConnectionsMin} connections`, onRemove: () => onChange({ linkedinConnectionsMin: "" }) });
-  arr("jobTitle", f.jobTitle);
+  f.jobTitle.forEach((v) =>
+    chips.push({
+      label: `${v} (${f.jobTitleTimeframe === "both" ? "current & past" : f.jobTitleTimeframe})`,
+      onRemove: () => onChange({ jobTitle: f.jobTitle.filter((x) => x !== v) }),
+    })
+  );
   arr("seniority", f.seniority, (v) => labelFor(SENIORITY_OPTIONS, v));
   arr("department", f.department);
   if (f.yearsExperienceMin || f.yearsExperienceMax) {
@@ -64,6 +71,12 @@ function buildPersonChips(
       : f.yearsExperienceMin ? `≥${f.yearsExperienceMin} yrs exp` : `≤${f.yearsExperienceMax} yrs exp`;
     chips.push({ label, onRemove: () => onChange({ yearsExperienceMin: "", yearsExperienceMax: "" }) });
   }
+  f.companySearch.forEach((v) =>
+    chips.push({
+      label: `${v} (${f.companyTimeframe === "both" ? "current & past" : f.companyTimeframe})`,
+      onRemove: () => onChange({ companySearch: f.companySearch.filter((x) => x !== v) }),
+    })
+  );
   arr("companyName", f.companyName);
   str("companyLinkedinUrl");
   str("companyDomain");
@@ -137,6 +150,7 @@ function buildCompanyChips(
   arr("lastFundingRound", f.lastFundingRound, (v) => labelFor(FUNDING_ROUND_OPTIONS, v));
   if (f.totalFundingMin) chips.push({ label: `≥$${f.totalFundingMin} funding`, onRemove: () => onChange({ totalFundingMin: "" }) });
   if (f.mostRecentFundingAfter) chips.push({ label: `Funded after ${f.mostRecentFundingAfter}`, onRemove: () => onChange({ mostRecentFundingAfter: "" }) });
+  str("keywords");
   f.roleCompositionRules.forEach((rule, i) => {
     if (!rule.role) return;
     if (rule.minCount) chips.push({
