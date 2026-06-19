@@ -90,6 +90,16 @@ class CompanySearchRequest(BaseModel):
     scroll_token: Optional[str] = None
 
 
+class PersonRevealRequest(BaseModel):
+    pdl_id: str
+
+class PersonRevealResponse(BaseModel):
+    work_email: Optional[str] = None
+    recommended_personal_email: Optional[str] = None
+    mobile_phone: Optional[str] = None
+    phone_numbers: Optional[list[str]] = None
+
+
 class SearchMeta(BaseModel):
     total: int
     # Returned by PDL — pass back to frontend to fetch the next page.

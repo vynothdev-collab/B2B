@@ -1,6 +1,18 @@
 import { apiClient } from "@/lib/api";
 import type { CompanyFilters, PersonFilters, SearchResponse } from "@/types/search";
 
+export interface PersonRevealData {
+  work_email?: string;
+  recommended_personal_email?: string;
+  mobile_phone?: string;
+  phone_numbers?: string[];
+}
+
+export async function revealPerson(pdlId: string): Promise<PersonRevealData> {
+  const { data } = await apiClient.post<PersonRevealData>("/search/reveal/person", { pdl_id: pdlId });
+  return data;
+}
+
 export interface AutocompleteSuggestion {
   name: string;
   count: number;

@@ -1,7 +1,8 @@
 "use client";
 import { useRef, useState } from "react";
-import { MoreHorizontal, Eye, UserRound, Building2, ListPlus, Mail, Globe, Users } from "lucide-react";
+import { MoreHorizontal, Eye, UserRound, Building2, ListPlus, Mail, Globe, Users, Loader2 } from "lucide-react";
 import type { PersonResult } from "@/types/search";
+import { revealPerson, type PersonRevealData } from "@/lib/searchApi";
 
 const AVATAR_COLORS = [
   "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500",
@@ -106,6 +107,21 @@ interface Props {
 
 export default function PeopleTable({ data, selected, onSelect, onSelectAll }: Props) {
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
+  const [revealed, setRevealed] = useState<Record<string, PersonRevealData>>({});
+  const [revealing, setRevealing] = useState<Set<string>>(new Set());
+
+  const handleReveal = async (id: string) => {
+    if (revealed[id] || revealing.has(id)) return;
+    setRevealing((prev) => new Set(prev).add(id));
+    try {
+      const data = await revealPerson(id);
+      setRevealed((prev) => ({ ...prev, [id]: data }));
+    } catch {
+      setRevealed((prev) => ({ ...prev, [id]: {} }));
+    } finally {
+      setRevealing((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    }
+  };
 
   return (
     <div className="overflow-x-auto">
@@ -211,12 +227,22 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
 
                 {/* Email */}
                 <td className="px-3 py-3">
-                  {person.work_email !== false ? (
+                  {revealed[person.id] ? (
+                    revealed[person.id].work_email || revealed[person.id].recommended_personal_email ? (
+                      <span className="block text-xs text-gray-800 font-medium truncate max-w-[160px]">
+                        {revealed[person.id].work_email ?? revealed[person.id].recommended_personal_email}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">Not found</span>
+                    )
+                  ) : person.work_email !== false ? (
                     <button
                       type="button"
-                      className="flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors"
+                      onClick={() => handleReveal(person.id)}
+                      disabled={revealing.has(person.id)}
+                      className="flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors disabled:opacity-60"
                     >
-                      <Eye className="h-3 w-3" />
+                      {revealing.has(person.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
                       Reveal
                     </button>
                   ) : (
@@ -229,12 +255,22 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
 
                 {/* Phone */}
                 <td className="px-3 py-3">
-                  {person.mobile_phone !== false ? (
+                  {revealed[person.id] ? (
+                    revealed[person.id].mobile_phone || revealed[person.id].phone_numbers?.length ? (
+                      <span className="block text-xs text-gray-800 font-medium truncate max-w-[140px]">
+                        {revealed[person.id].mobile_phone ?? revealed[person.id].phone_numbers![0]}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">Not found</span>
+                    )
+                  ) : person.mobile_phone !== false ? (
                     <button
                       type="button"
-                      className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                      onClick={() => handleReveal(person.id)}
+                      disabled={revealing.has(person.id)}
+                      className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
                     >
-                      <Eye className="h-3 w-3" />
+                      {revealing.has(person.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
                       Reveal
                     </button>
                   ) : (

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Eye, MoreHorizontal, Building2, ListPlus, Mail, ExternalLink, Users, Globe } from "lucide-react";
+import { MoreHorizontal, Building2, ListPlus, Mail, ExternalLink, Users, Globe } from "lucide-react";
 import type { CompanyResult } from "@/types/search";
 
 const AVATAR_COLORS = [
@@ -105,7 +105,6 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Employees</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Website</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[120px]">Location</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Email</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Actions</th>
           </tr>
         </thead>
@@ -199,17 +198,6 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                       {city && <p className="truncate text-[10px] text-gray-400 capitalize">{city}</p>}
                     </div>
                   </div>
-                </td>
-
-                {/* Email reveal */}
-                <td className="px-3 py-3">
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors"
-                  >
-                    <Eye className="h-3 w-3" />
-                    Reveal
-                  </button>
                 </td>
 
                 {/* Actions */}

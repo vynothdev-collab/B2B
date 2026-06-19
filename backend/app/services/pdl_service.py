@@ -7,6 +7,8 @@ from app.core.config import settings
 from app.schemas.search import (
     PAGE_SIZE,
     CompanySearchRequest,
+    PersonRevealRequest,
+    PersonRevealResponse,
     PersonSearchRequest,
     SearchMeta,
     SearchResponse,
@@ -357,3 +359,35 @@ async def search_companies(req: CompanySearchRequest) -> SearchResponse:
 
     body = resp.json()
     return SearchResponse(data=body.get("data", []), meta=_make_meta(body))
+
+
+async def enrich_person(req: PersonRevealRequest) -> PersonRevealResponse:
+    if not settings.PDL_API_KEY:
+        raise HTTPException(status_code=500, detail="PDL_API_KEY is not configured")
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.get(
+            f"{settings.PDL_BASE_URL}/person/enrich",
+            headers={"X-Api-Key": settings.PDL_API_KEY},
+            params={
+                "pdl_id": req.pdl_id,
+                "min_likelihood": 6,
+                "required": "work_email OR recommended_personal_email OR mobile_phone",
+            },
+        )
+
+    if resp.status_code == 404:
+        raise HTTPException(status_code=404, detail="No contact data found for this person")
+    if resp.status_code == 402:
+        raise HTTPException(status_code=402, detail="Credit balance exhausted")
+    if resp.status_code != 200:
+        raise HTTPException(status_code=resp.status_code, detail=_extract_pdl_error(resp.json()))
+
+    body = resp.json()
+    data = body.get("data", {})
+    return PersonRevealResponse(
+        work_email=data.get("work_email"),
+        recommended_personal_email=data.get("recommended_personal_email"),
+        mobile_phone=data.get("mobile_phone"),
+        phone_numbers=data.get("phone_numbers"),
+    )
