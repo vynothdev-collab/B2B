@@ -12,8 +12,7 @@ PAGE_SIZE = 10
 
 class PersonSearchRequest(BaseModel):
     # Name & LinkedIn
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    name: Optional[str] = None
     linkedin_url: Optional[str] = None
     # Profile details
     headline: Optional[str] = None
@@ -24,14 +23,14 @@ class PersonSearchRequest(BaseModel):
     skills: Optional[list[str]] = None
     interests: Optional[list[str]] = None
     certifications: Optional[str] = None
-    degree: Optional[str] = None
+    degree: Optional[list[str]] = None
     school: Optional[str] = None
     field_of_study: Optional[str] = None
     linkedin_connections_min: Optional[int] = None
     # Title & seniority
     job_title: Optional[list[str]] = None
     seniority: Optional[list[str]] = None
-    function: Optional[list[str]] = None
+    department: Optional[list[str]] = None
     years_experience_min: Optional[int] = None
     years_experience_max: Optional[int] = None
     # Current company
@@ -46,7 +45,7 @@ class PersonSearchRequest(BaseModel):
     past_companies: Optional[list[str]] = None
     past_titles: Optional[list[str]] = None
     past_seniority: Optional[list[str]] = None
-    past_function: Optional[list[str]] = None
+    past_department: Optional[list[str]] = None
     # Person location
     country: Optional[list[str]] = None
     state: Optional[list[str]] = None

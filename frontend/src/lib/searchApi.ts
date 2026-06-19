@@ -48,8 +48,7 @@ export async function searchPersons(
   scrollToken?: string
 ): Promise<SearchResponse> {
   const body = {
-    first_name: cleanStr(filters.firstName),
-    last_name: cleanStr(filters.lastName),
+    name: cleanStr(filters.name),
     linkedin_url: cleanStr(filters.linkedinUrl),
     headline: cleanStr(filters.headline),
     summary: cleanStr(filters.summary),
@@ -59,7 +58,7 @@ export async function searchPersons(
     skills: filters.skills.length ? filters.skills : undefined,
     interests: filters.interests.length ? filters.interests : undefined,
     certifications: cleanStr(filters.certifications),
-    degree: cleanStr(filters.degree),
+    degree: filters.degree.length ? filters.degree : undefined,
     school: cleanStr(filters.school),
     field_of_study: cleanStr(filters.fieldOfStudy),
     linkedin_connections_min: cleanNum(filters.linkedinConnectionsMin),

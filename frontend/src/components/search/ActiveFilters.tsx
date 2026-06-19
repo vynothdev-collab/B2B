@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import type { CompanyFilters, PersonFilters } from "@/types/search";
 import {
   SENIORITY_OPTIONS, COMPANY_SIZE_OPTIONS, COMPANY_TYPE_OPTIONS,
-  REVENUE_OPTIONS, FUNDING_ROUND_OPTIONS,
+  DEGREE_OPTIONS, REVENUE_OPTIONS, FUNDING_ROUND_OPTIONS,
 } from "@/types/search";
 
 interface Chip {
@@ -40,8 +40,7 @@ function buildPersonChips(
     );
   };
 
-  str("firstName");
-  str("lastName");
+  str("name");
   str("linkedinUrl");
   str("headline");
   str("summary");
@@ -51,7 +50,7 @@ function buildPersonChips(
   arr("skills", f.skills);
   arr("interests", f.interests);
   str("certifications");
-  str("degree");
+  arr("degree", f.degree, (v) => labelFor(DEGREE_OPTIONS, v));
   str("school");
   str("fieldOfStudy");
   if (f.linkedinConnectionsMin) chips.push({ label: `≥${f.linkedinConnectionsMin} connections`, onRemove: () => onChange({ linkedinConnectionsMin: "" }) });

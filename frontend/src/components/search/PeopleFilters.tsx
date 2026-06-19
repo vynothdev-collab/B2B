@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import FilterSection from "./FilterSection";
-import SearchableSelect from "./SearchableSelect";
 import AutocompleteInput from "./AutocompleteInput";
 import MultiChipAutocomplete from "./MultiChipAutocomplete";
 import MultiChipSelect from "./MultiChipSelect";
@@ -9,6 +8,7 @@ import type { PersonFilters } from "@/types/search";
 import {
   COMPANY_SIZE_OPTIONS,
   COMPANY_TYPE_OPTIONS,
+  DEGREE_OPTIONS,
   REVENUE_OPTIONS,
   SENIORITY_OPTIONS,
 } from "@/types/search";
@@ -67,8 +67,7 @@ export default function PeopleFilters({ filters, onChange }: Props) {
   return (
     <>
       <FilterSection title="Name & LinkedIn" isOpen={open === "name"} onToggle={() => toggle("name")}>
-        <TextInput label="First name" placeholder="e.g. Joshua" value={filters.firstName} onChange={(v) => onChange({ firstName: v })} />
-        <TextInput label="Last name" placeholder="e.g. Parker" value={filters.lastName} onChange={(v) => onChange({ lastName: v })} />
+        <TextInput label="Name" placeholder="e.g. Joshua Parker" value={filters.name} onChange={(v) => onChange({ name: v })} />
         <TextInput label="LinkedIn URL" placeholder="linkedin.com/in/..." value={filters.linkedinUrl} onChange={(v) => onChange({ linkedinUrl: v })} />
       </FilterSection>
 
@@ -81,14 +80,7 @@ export default function PeopleFilters({ filters, onChange }: Props) {
         <MultiChipAutocomplete label="Skills" placeholder="e.g. Python, React" field="skill" values={filters.skills} onChange={(v) => onChange({ skills: v })} />
         <MultiChipAutocomplete label="Interests" placeholder="e.g. AI (press Enter)" values={filters.interests} onChange={(v) => onChange({ interests: v })} />
         <TextInput label="Certifications" placeholder="e.g. AWS Certified" value={filters.certifications} onChange={(v) => onChange({ certifications: v })} />
-        <SearchableSelect label="Degree" placeholder="Select degree" value={filters.degree} onChange={(v) => onChange({ degree: v })} options={[
-          { value: "associate", label: "Associate" },
-          { value: "bachelors", label: "Bachelor's" },
-          { value: "masters", label: "Master's" },
-          { value: "mba", label: "MBA" },
-          { value: "phd", label: "PhD / Doctorate" },
-          { value: "juris doctor", label: "Juris Doctor" },
-        ]} />
+        <MultiChipSelect label="Degree" placeholder="Select degree(s)" options={DEGREE_OPTIONS} values={filters.degree} onChange={(v) => onChange({ degree: v })} />
         <AutocompleteInput label="School" placeholder="University name" value={filters.school} onChange={(v) => onChange({ school: v })} field="school" />
         <AutocompleteInput label="Field of study" placeholder="e.g. Computer Science" value={filters.fieldOfStudy} onChange={(v) => onChange({ fieldOfStudy: v })} field="major" />
         <NumInput label="Min LinkedIn connections" placeholder="e.g. 500" value={filters.linkedinConnectionsMin} onChange={(v) => onChange({ linkedinConnectionsMin: v })} />

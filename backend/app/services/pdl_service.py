@@ -16,26 +16,192 @@ from app.schemas.search import (
 
 
 _DEGREE_MAP: dict[str, list[str]] = {
+    "high_school": [
+        "high school diploma", "ged", "secondary school diploma",
+        "high school", "secondary education",
+    ],
     "associate": [
-        "associate", "associates", "associate of arts",
-        "associate of science", "associate of applied science",
+        "associates", "associate of arts",
     ],
     "bachelors": [
-        "bachelors", "bachelor", "bachelor of arts", "bachelor of science",
-        "bachelor of engineering", "bachelor of business administration",
-        "bachelor of fine arts", "bachelor of applied science",
+        "bachelors",
+        "bachelor of aerospace engineering",
+        "bachelor of applied science",
+        "bachelor of architecture",
+        "bachelor of arts",
+        "bachelor of arts in business administration",
+        "bachelor of arts in communication",
+        "bachelor of arts in education",
+        "bachelor of biosystems engineering",
+        "bachelor of business administration",
+        "bachelor of chemical engineering",
+        "bachelor of civil engineering",
+        "bachelor of commerce",
+        "bachelor of design",
+        "bachelor of education",
+        "bachelor of electrical engineering",
+        "bachelor of engineering",
+        "bachelor of fine arts",
+        "bachelor of general studies",
+        "bachelor of industrial & systems engineering",
+        "bachelor of industrial design",
+        "bachelor of interdisciplinary studies",
+        "bachelor of interior architecture",
+        "bachelor of law",
+        "bachelor of liberal arts",
+        "bachelor of liberal arts and sciences",
+        "bachelor of materials engineering",
+        "bachelor of mathematics",
+        "bachelor of mechanical engineering",
+        "bachelor of medicine",
+        "bachelor of music",
+        "bachelor of music education",
+        "bachelor of pharmacy",
+        "bachelor of polymer and fiber engineering",
+        "bachelor of professional health science",
+        "bachelor of science",
+        "bachelor of science in aerospace engineering",
+        "bachelor of science in biomedical engineering",
+        "bachelor of science in business administration",
+        "bachelor of science in chemical engineering",
+        "bachelor of science in chemistry",
+        "bachelor of science in civil engineering",
+        "bachelor of science in commerce business administration",
+        "bachelor of science in computer science",
+        "bachelor of science in education",
+        "bachelor of science in electrical engineering",
+        "bachelor of science in engineering",
+        "bachelor of science in engineering technology",
+        "bachelor of science in geology",
+        "bachelor of science in human environmental sciences",
+        "bachelor of science in materials engineering",
+        "bachelor of science in mechanical engineering",
+        "bachelor of science in metallurgical engineering",
+        "bachelor of science in microbiology",
+        "bachelor of science in nursing",
+        "bachelor of science in social work",
+        "bachelor of social work",
+        "bachelor of software engineering",
+        "bachelor of technology",
+        "bachelor of textile engineering",
+        "bachelor of textile management and technology",
+        "bachelor of veterinary science",
+        "bachelor of wireless engineering",
     ],
     "masters": [
-        "masters", "master", "master of arts", "master of science",
-        "master of engineering", "master of fine arts",
-        "master of public administration", "master of public policy",
+        "masters",
+        "master of accountancy",
+        "master of accounting",
+        "master of aerospace engineering",
+        "master of agriculture",
+        "master of applied mathematics",
+        "master of aquaculture",
+        "master of arts",
+        "master of arts in education",
+        "master of arts in teaching",
+        "master of building construction",
+        "master of chemical engineering",
+        "master of civil engineering",
+        "master of commerce",
+        "master of communication disorders",
+        "master of community planning",
+        "master of dental surgery",
+        "master of design",
+        "master of divinity",
+        "master of education",
+        "master of electrical engineering",
+        "master of engineering",
+        "master of fine arts",
+        "master of health science",
+        "master of hispanic studies",
+        "master of industrial design",
+        "master of integrated design and construction",
+        "master of international studies",
+        "master of landscape architecture",
+        "master of laws",
+        "master of liberal arts",
+        "master of library & information studies",
+        "master of library science",
+        "master of materials engineering",
+        "master of mechanical engineering",
+        "master of music",
+        "master of natural resources",
+        "master of nurse anesthesia",
+        "master of political science",
+        "master of probability and statistics",
+        "master of professional studies",
+        "master of public administration",
+        "master of public health",
+        "master of real estate development",
+        "master of rehabilitation counseling",
+        "master of science",
+        "master of science in aerospace engineering",
+        "master of science in basic medical sciences",
+        "master of science in biomedical engineering",
+        "master of science in chemical engineering",
+        "master of science in chemistry",
+        "master of science in civil engineering",
+        "master of science in computer science",
+        "master of science in criminal justice",
+        "master of science in education",
+        "master of science in electrical engineering",
+        "master of science in engineering science & mechanics",
+        "master of science in forensic science",
+        "master of science in health administration",
+        "master of science in health informatics",
+        "master of science in human environmental sciences",
+        "master of science in industrial engineering",
+        "master of science in information systems",
+        "master of science in instructional leadership administration",
+        "master of science in justice and public safety",
+        "master of science in marine science",
+        "master of science in materials engineering",
+        "master of science in mechanical engineering",
+        "master of science in metallurgical engineering",
+        "master of science in nursing",
+        "master of science in occupational therapy",
+        "master of science in operations research",
+        "master of science in physician assistant studies",
+        "master of science in public health",
+        "master of science in software engineering",
+        "master of social work",
+        "master of software engineering",
+        "master of tax accounting",
+        "master of taxation",
+        "master of technical & professional communication",
+        "master of technology",
+        "master of urban and regional planning",
+        "magister juris",
+        "magisters",
     ],
-    "mba": ["master of business administration", "mba"],
+    "mba": ["master of business administration"],
     "phd": [
-        "doctor of philosophy", "doctor of medicine", "doctorate", "doctorates",
-        "phd", "doctor of science", "doctor of education",
+        "doctor of philosophy",
+        "doctor of science",
+        "doctor of education",
+        "doctor of business administration",
+        "doctor of audiology",
+        "doctor of chiropractic",
+        "doctor of musical arts",
+        "doctor of ministry",
+        "doctor of nursing practice",
+        "doctor of physical therapy",
+        "doctor of psychology",
+        "doctor of public health",
+        "doctorates",
     ],
-    "juris doctor": ["juris doctor", "juris doctorate"],
+    "md": ["doctor of medicine"],
+    "juris_doctor": [
+        "doctor of jurisprudence",
+    ],
+    "dds": [
+        "doctor of dental surgery",
+        "doctor of medical dentistry",
+    ],
+    "pharmd": ["doctor of pharmacy"],
+    "dvm": ["doctor of veterinary medicine"],
+    "od": ["doctor of optometry"],
+    "do": ["doctor of osteophathy"],
 }
 
 
@@ -96,10 +262,8 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     must: list[dict] = []
     filters: list[dict] = []
 
-    if f.first_name:
-        must.append({"match": {"first_name": f.first_name.lower()}})
-    if f.last_name:
-        must.append({"match": {"last_name": f.last_name.lower()}})
+    if f.name:
+        must.append({"match": {"full_name": f.name.lower()}})
     if f.linkedin_url:
         filters.append({"term": {"linkedin_url": f.linkedin_url.lower().rstrip("/")}})
 
@@ -121,8 +285,10 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     if f.certifications:
         must.append({"match": {"certifications.name": f.certifications}})
     if f.degree:
-        mapped = _DEGREE_MAP.get(f.degree.lower(), [f.degree.lower()])
-        _add_multi_term(filters, "education.degrees", mapped)
+        canonical: list[str] = []
+        for d in f.degree:
+            canonical.extend(_DEGREE_MAP.get(d.lower(), [d.lower()]))
+        _add_multi_term(filters, "education.degrees", canonical)
     if f.school:
         must.append({"match": {"education.school.name": f.school}})
     if f.field_of_study:
@@ -132,7 +298,7 @@ def build_person_query(f: PersonSearchRequest) -> dict:
 
     _add_multi_match(must, "job_title", f.job_title or [])
     _add_multi_term(filters, "job_title_levels", f.seniority or [])
-    _add_multi_term(filters, "job_title_role", f.function or [])
+    _add_multi_term(filters, "job_title_role", f.department or [])
     exp_range: dict[str, int] = {}
     if f.years_experience_min is not None:
         exp_range["gte"] = f.years_experience_min
@@ -154,7 +320,7 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     _add_multi_match(must, "experience.company.name", f.past_companies or [])
     _add_multi_match(must, "experience.title.name", f.past_titles or [])
     _add_multi_term(filters, "experience.title.levels", f.past_seniority or [])
-    _add_multi_term(filters, "experience.title.role", f.past_function or [])
+    _add_multi_term(filters, "experience.title.role", f.past_department or [])
 
     _add_multi_term(filters, "location_country", f.country or [])
     _add_multi_term(filters, "location_region", f.state or [])
