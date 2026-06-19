@@ -72,8 +72,8 @@ export default function CompanyFilters({ filters, onChange }: Props) {
       <FilterSection title="HQ Location" isOpen={open === "hq"} onToggle={() => toggle("hq")}>
         <MultiChipAutocomplete label="Country" placeholder="e.g. United States" field="country" values={filters.hqCountry} onChange={(v) => onChange({ hqCountry: v })} />
         <MultiChipAutocomplete label="State / Province" placeholder="e.g. California" field="region" values={filters.hqState} onChange={(v) => onChange({ hqState: v })} />
-        <AutocompleteInput label="City" placeholder="e.g. San Francisco" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} field="location_name" />
-        <AutocompleteInput label="Most employees in (Metro)" placeholder="e.g. San Francisco, California" value={filters.hqMetro} onChange={(v) => onChange({ hqMetro: v })} field="location_name" />
+        <AutocompleteInput label="City" placeholder="e.g. San Francisco" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} field="location" />
+        <AutocompleteInput label="Most employees in (Metro)" placeholder="e.g. San Francisco, California" value={filters.hqMetro} onChange={(v) => onChange({ hqMetro: v })} field="location" />
       </FilterSection>
 
       <FilterSection title="Headcount, Revenue & Growth" isOpen={open === "headcount"} onToggle={() => toggle("headcount")}>

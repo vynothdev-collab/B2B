@@ -10,8 +10,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // All /api/* calls from the browser are proxied to the FastAPI backend.
-  // BACKEND_URL is server-side only — never exposed to the client.
   async rewrites() {
     return [
       {

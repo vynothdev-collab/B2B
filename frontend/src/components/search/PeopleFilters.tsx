@@ -120,13 +120,13 @@ export default function PeopleFilters({ filters, onChange }: Props) {
       <FilterSection title="Person Location" isOpen={open === "location"} onToggle={() => toggle("location")}>
         <MultiChipAutocomplete label="Country" placeholder="e.g. United States" field="country" values={filters.country} onChange={(v) => onChange({ country: v })} />
         <MultiChipAutocomplete label="State / Province" placeholder="e.g. California" field="region" values={filters.state} onChange={(v) => onChange({ state: v })} />
-        <AutocompleteInput label="City" placeholder="e.g. San Francisco" value={filters.city} onChange={(v) => onChange({ city: v })} field="location_name" />
+        <AutocompleteInput label="City" placeholder="e.g. San Francisco" value={filters.city} onChange={(v) => onChange({ city: v })} field="location" />
       </FilterSection>
 
       <FilterSection title="Company HQ Location" isOpen={open === "hq"} onToggle={() => toggle("hq")}>
         <MultiChipAutocomplete label="HQ Country" placeholder="e.g. United States" field="country" values={filters.hqCountry} onChange={(v) => onChange({ hqCountry: v })} />
         <MultiChipAutocomplete label="HQ State / Province" placeholder="e.g. New York" field="region" values={filters.hqState} onChange={(v) => onChange({ hqState: v })} />
-        <AutocompleteInput label="HQ City" placeholder="e.g. New York City" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} field="location_name" />
+        <AutocompleteInput label="HQ City" placeholder="e.g. New York City" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} field="location" />
       </FilterSection>
     </>
   );

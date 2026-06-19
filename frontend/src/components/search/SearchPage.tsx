@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Bell, ChevronDown, Eye, HelpCircle, ListPlus, Search, X, Zap } from "lucide-react";
 import type { CompanyFilters, PersonFilters, SearchMeta, SearchResponse, TabType } from "@/types/search";
 import { DEFAULT_COMPANY_FILTERS, DEFAULT_PERSON_FILTERS } from "@/types/search";
@@ -27,13 +27,22 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  // Cursor-based pagination state
-  // tokenHistory[i] = scroll_token returned when on page i+1, used to fetch page i+2
-  // tokenHistory[0] = token from page 1 → used to fetch page 2
+
   const [currentPage, setCurrentPage] = useState(1);
   const [tokenHistory, setTokenHistory] = useState<string[]>([]);
 
+  const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
+
   const runSearch = useCallback(async (page: number, scrollToken?: string) => {
+    const cached = pageCacheRef.current.get(page);
+    if (cached) {
+      setResults(cached);
+      setMeta(cached.meta);
+      setCurrentPage(page);
+      setSelected(new Set());
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSelected(new Set());
@@ -48,14 +57,12 @@ export default function SearchPage() {
       setHasSearched(true);
       setCurrentPage(page);
 
-      // Store the returned scroll_token so we can fetch page+1 later
-      if (res.meta.scroll_token) {
-        setTokenHistory((prev) => {
-          const next = [...prev];
-          next[page - 1] = res.meta.scroll_token!;
-          return next;
-        });
-      }
+      pageCacheRef.current.set(page, res);
+      setTokenHistory((prev) => {
+        const next = prev.slice(0, page - 1);
+        if (res.meta.scroll_token) next.push(res.meta.scroll_token);
+        return next;
+      });
     } catch (e: unknown) {
       const axiosDetail =
         (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -66,15 +73,8 @@ export default function SearchPage() {
     }
   }, [tab, personFilters, companyFilters]);
 
-  // Fresh search — always page 1, no token
-  const startSearch = useCallback(() => {
-    setTokenHistory([]);
-    setCurrentPage(1);
-    runSearch(1, undefined);
-  }, [runSearch]);
-
-  const handleTabChange = (t: TabType) => {
-    setTab(t);
+  const clearSearchState = () => {
+    pageCacheRef.current = new Map();
     setResults(null);
     setMeta(null);
     setHasSearched(false);
@@ -83,15 +83,22 @@ export default function SearchPage() {
     setTokenHistory([]);
   };
 
+  const startSearch = useCallback(() => {
+    pageCacheRef.current = new Map();
+    setTokenHistory([]);
+    setCurrentPage(1);
+    runSearch(1, undefined);
+  }, [runSearch]);
+
+  const handleTabChange = (t: TabType) => {
+    setTab(t);
+    clearSearchState();
+  };
+
   const handleReset = () => {
     setPersonFilters(DEFAULT_PERSON_FILTERS);
     setCompanyFilters(DEFAULT_COMPANY_FILTERS);
-    setResults(null);
-    setMeta(null);
-    setHasSearched(false);
-    setSelected(new Set());
-    setCurrentPage(1);
-    setTokenHistory([]);
+    clearSearchState();
   };
 
 

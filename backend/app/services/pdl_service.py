@@ -405,8 +405,8 @@ def build_company_query(f: CompanySearchRequest) -> dict:
 
 
 _AUTOCOMPLETE_FIELDS: frozenset[str] = frozenset({
-    "all_location", "class", "company", "country", "industry",
-    "location_name", "major", "region", "role", "school",
+    "class", "company", "country", "industry", "location",
+    "major", "region", "role", "school",
     "skill", "sub_role", "title", "website",
 })
 
@@ -417,17 +417,18 @@ async def autocomplete(field: str, text: str, size: int = 10) -> list[dict]:
     if not settings.PDL_API_KEY:
         raise HTTPException(status_code=500, detail="PDL_API_KEY is not configured")
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            f"{settings.PDL_BASE_URL}/autocomplete",
-            headers={"X-Api-Key": settings.PDL_API_KEY},
-            params={"field": field, "text": text, "size": size, "titlecase": "true"},
-        )
-
-    if resp.status_code != 200:
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                f"{settings.PDL_BASE_URL}/autocomplete",
+                headers={"X-Api-Key": settings.PDL_API_KEY},
+                params={"field": field, "text": text, "size": size, "titlecase": "true"},
+            )
+        if resp.status_code != 200:
+            return []
+        return resp.json().get("data", [])
+    except Exception:
         return []
-
-    return resp.json().get("data", [])
 
 
 def _pdl_headers() -> dict[str, str]:
