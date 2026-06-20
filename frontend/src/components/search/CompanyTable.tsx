@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal, Building2, ListPlus, Mail, ExternalLink, Users, Globe } from "lucide-react";
 import type { CompanyResult } from "@/types/search";
 
@@ -40,25 +40,52 @@ const TYPE_COLORS: Record<string, string> = {
 
 function ActionMenu() {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setOpen((v) => !v);
+  };
+
   const items = [
     { icon: <Building2 className="h-3.5 w-3.5" />, label: "View company" },
     { icon: <ExternalLink className="h-3.5 w-3.5" />, label: "Push to CRM" },
     { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list" },
     { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email" },
   ];
+
   return (
-    <div className="relative">
+    <div>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleOpen}
         className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
       >
         <MoreHorizontal className="h-4 w-4" />
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+            style={{ top: pos.top, right: pos.right }}
+          >
             {items.map((item) => (
               <button
                 key={item.label}

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
-import { Bell, ChevronDown, Eye, HelpCircle, ListPlus, Search, X, Zap } from "lucide-react";
+import { Bell, ChevronDown, Eye, HelpCircle, ListPlus, LogOut, Search, X, Zap } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import type { CompanyFilters, PersonFilters, SearchMeta, SearchResponse, TabType } from "@/types/search";
 import { DEFAULT_COMPANY_FILTERS, DEFAULT_PERSON_FILTERS } from "@/types/search";
 import { searchCompanies, searchPersons } from "@/lib/searchApi";
@@ -16,6 +17,7 @@ const CREDITS = 258;
 const PAGE_SIZE = 10;
 
 export default function SearchPage() {
+  const { user, logout } = useAuth();
   const [tab, setTab] = useState<TabType>("people");
   const [personFilters, setPersonFilters] = useState<PersonFilters>(DEFAULT_PERSON_FILTERS);
   const [companyFilters, setCompanyFilters] = useState<CompanyFilters>(DEFAULT_COMPANY_FILTERS);
@@ -162,15 +164,25 @@ export default function SearchPage() {
         </button>
 
         {/* User */}
-        <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 transition-colors">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white text-xs font-bold shrink-0">
-            SY
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-lg px-2 py-1">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white text-xs font-bold shrink-0">
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : "??"}
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="text-xs font-semibold text-gray-800">{user?.name ?? "—"}</span>
+              <span className="text-[10px] text-gray-400 capitalize">{user?.role ?? ""}</span>
+            </div>
+            <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
           </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-xs font-semibold text-gray-800">Shyed</span>
-            <span className="text-[10px] text-gray-400">Admin</span>
-          </div>
-          <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+          <button
+            type="button"
+            onClick={logout}
+            title="Sign out"
+            className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </header>
 

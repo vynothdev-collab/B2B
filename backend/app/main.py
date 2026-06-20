@@ -5,13 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.config import settings
+from app.core.database import Base, engine
+import app.models  # noqa: F401 — registers all ORM models with Base.metadata
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # startup
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
-    # shutdown
 
 
 app = FastAPI(

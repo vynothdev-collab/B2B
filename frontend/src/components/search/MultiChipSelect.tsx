@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 interface Props {
@@ -22,61 +23,58 @@ const CHIP_COLORS = [
 
 function getChipColor(val: string): string {
   let hash = 0;
-  for (let i = 0; i < val.length; i++) {
-    hash = (hash * 31 + val.charCodeAt(i)) >>> 0;
-  }
+  for (let i = 0; i < val.length; i++) hash = (hash * 31 + val.charCodeAt(i)) >>> 0;
   return CHIP_COLORS[hash % CHIP_COLORS.length];
 }
 
-export default function MultiChipSelect({
-  label,
-  placeholder,
-  values,
-  onChange,
-  options,
-}: Props) {
+const DROPDOWN_MAX_H = 220;
+
+export default function MultiChipSelect({ label, placeholder, values, onChange, options }: Props) {
   const [inputText, setInputText] = useState("");
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const getLabel = (val: string): string => {
-    return options.find((o) => o.value === val)?.label ?? val;
-  };
+  const getLabel = (val: string) => options.find((o) => o.value === val)?.label ?? val;
 
   const filteredOptions = options.filter((o) => {
     const q = inputText.toLowerCase();
-    return (
-      o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q)
-    );
+    return o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q);
   });
 
-  const toggleValue = (val: string) => {
-    if (values.includes(val)) {
-      onChange(values.filter((v) => v !== val));
-    } else {
-      onChange([...values, val]);
-    }
-  };
-
-  const removeValue = (val: string) => {
-    onChange(values.filter((v) => v !== val));
-  };
-
-  const openDropdown = () => {
+  const calcPos = () => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
-    setPos({ top: r.bottom + 4, left: r.left, width: r.width });
-    setOpen(true);
+    const spaceBelow = window.innerHeight - r.bottom;
+    const top =
+      spaceBelow >= DROPDOWN_MAX_H || spaceBelow >= r.top
+        ? r.bottom + 4
+        : r.top - DROPDOWN_MAX_H - 4;
+    setPos({ top, left: r.left, width: r.width });
   };
 
+  const openDropdown = () => { calcPos(); setOpen(true); };
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+
+  const toggleValue = (val: string) =>
+    onChange(values.includes(val) ? values.filter((v) => v !== val) : [...values, val]);
+
+  const removeValue = (val: string) => onChange(values.filter((v) => v !== val));
+
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !inputText && values.length > 0) {
-      removeValue(values[values.length - 1]);
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
+    if (e.key === "Backspace" && !inputText && values.length > 0) removeValue(values[values.length - 1]);
+    else if (e.key === "Escape") setOpen(false);
   };
 
   return (
@@ -94,7 +92,7 @@ export default function MultiChipSelect({
               <button
                 type="button"
                 onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
-                className="hover:opacity-70 transition-opacity"
+                className="hover:opacity-70"
               >
                 <X className="h-2.5 w-2.5" />
               </button>
@@ -120,14 +118,14 @@ export default function MultiChipSelect({
         />
       </div>
 
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: 220 }}
+            className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
+            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: DROPDOWN_MAX_H }}
           >
-            <div className="overflow-y-auto" style={{ maxHeight: 220 }}>
+            <div className="overflow-y-auto" style={{ maxHeight: DROPDOWN_MAX_H }}>
               {filteredOptions.length === 0 ? (
                 <div className="px-3 py-2 text-xs text-gray-400">No options found</div>
               ) : (
@@ -154,7 +152,8 @@ export default function MultiChipSelect({
               )}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

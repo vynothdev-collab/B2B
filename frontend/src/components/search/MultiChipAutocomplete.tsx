@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { fetchAutocomplete, type AutocompleteSuggestion } from "@/lib/searchApi";
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const labelCls = "block text-xs text-gray-500 mb-1";
+const DROPDOWN_MAX_H = 220;
 
 function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -20,18 +22,7 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-function getChipColor(_val: string): string {
-  return "bg-gray-200 text-gray-700";
-}
-
-export default function MultiChipAutocomplete({
-  label,
-  placeholder,
-  values,
-  onChange,
-  field,
-  size = 8,
-}: Props) {
+export default function MultiChipAutocomplete({ label, placeholder, values, onChange, field, size = 8 }: Props) {
   const [inputText, setInputText] = useState("");
   const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -46,8 +37,24 @@ export default function MultiChipAutocomplete({
   const reposition = useCallback(() => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
-    setPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    const spaceBelow = window.innerHeight - r.bottom;
+    const top =
+      spaceBelow >= DROPDOWN_MAX_H || spaceBelow >= r.top
+        ? r.bottom + 4
+        : r.top - DROPDOWN_MAX_H - 4;
+    setPos({ top, left: r.left, width: r.width });
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -58,11 +65,7 @@ export default function MultiChipAutocomplete({
       skipFetch.current = false;
       return;
     }
-
-    if (skipFetch.current) {
-      skipFetch.current = false;
-      return;
-    }
+    if (skipFetch.current) { skipFetch.current = false; return; }
 
     timerRef.current = setTimeout(async () => {
       setLoading(true);
@@ -70,26 +73,17 @@ export default function MultiChipAutocomplete({
         const results = await fetchAutocomplete(field, inputText, size);
         const filtered = results.filter((s) => !values.includes(s.name));
         setSuggestions(filtered);
-        if (filtered.length > 0) {
-          reposition();
-          setOpen(true);
-        } else {
-          setOpen(false);
-        }
-      } catch {
-        setOpen(false);
-      } finally {
-        setLoading(false);
-      }
+        if (filtered.length > 0) { reposition(); setOpen(true); }
+        else setOpen(false);
+      } catch { setOpen(false); }
+      finally { setLoading(false); }
     }, 350);
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [inputText, field, size, values, reposition]);
 
   const addValue = (name: string) => {
-    if (!values.includes(name)) {
-      onChange([...values, name]);
-    }
+    if (!values.includes(name)) onChange([...values, name]);
     skipFetch.current = true;
     setInputText("");
     setSuggestions([]);
@@ -98,9 +92,7 @@ export default function MultiChipAutocomplete({
     inputRef.current?.focus();
   };
 
-  const removeValue = (val: string) => {
-    onChange(values.filter((v) => v !== val));
-  };
+  const removeValue = (val: string) => onChange(values.filter((v) => v !== val));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     skipFetch.current = false;
@@ -109,29 +101,13 @@ export default function MultiChipAutocomplete({
   };
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !inputText && values.length > 0) {
-      removeValue(values[values.length - 1]);
-      return;
-    }
-    // Free-form entry (no PDL field): Enter or comma adds the typed value as a chip
-    if (!field && (e.key === "Enter" || e.key === ",") && inputText.trim()) {
-      e.preventDefault();
-      addValue(inputText.trim());
-      return;
-    }
+    if (e.key === "Backspace" && !inputText && values.length > 0) { removeValue(values[values.length - 1]); return; }
+    if (!field && (e.key === "Enter" || e.key === ",") && inputText.trim()) { e.preventDefault(); addValue(inputText.trim()); return; }
     if (!open) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIdx((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter" && activeIdx >= 0) {
-      e.preventDefault();
-      addValue(suggestions[activeIdx].name);
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
+    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); }
+    else if (e.key === "Enter" && activeIdx >= 0) { e.preventDefault(); addValue(suggestions[activeIdx].name); }
+    else if (e.key === "Escape") setOpen(false);
   };
 
   return (
@@ -141,16 +117,9 @@ export default function MultiChipAutocomplete({
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1">
           {values.map((val) => (
-            <span
-              key={val}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ${getChipColor(val)}`}
-            >
+            <span key={val} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-gray-200 text-gray-700">
               {val}
-              <button
-                type="button"
-                onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
-                className="hover:opacity-70 transition-opacity"
-              >
+              <button type="button" onMouseDown={(e) => { e.preventDefault(); removeValue(val); }} className="hover:opacity-70">
                 <X className="h-2.5 w-2.5" />
               </button>
             </span>
@@ -180,14 +149,14 @@ export default function MultiChipAutocomplete({
         )}
       </div>
 
-      {open && (
+      {open && typeof document !== "undefined" && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: 220 }}
+            className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
+            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: DROPDOWN_MAX_H }}
           >
-            <div className="overflow-y-auto" style={{ maxHeight: 220 }}>
+            <div className="overflow-y-auto" style={{ maxHeight: DROPDOWN_MAX_H }}>
               {suggestions.map((s, i) => (
                 <button
                   key={s.name}
@@ -203,7 +172,8 @@ export default function MultiChipAutocomplete({
               ))}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

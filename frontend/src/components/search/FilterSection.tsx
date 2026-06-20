@@ -14,7 +14,7 @@ export default function FilterSection({ title, children, isOpen, onToggle }: Pro
       <button
         type="button"
         onClick={onToggle}
-        className="group flex w-full items-center justify-between px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 transition-colors bg-gray-100"
+        className="group flex w-full items-center justify-between px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500 transition-colors bg-gray-100"
       >
         {title}
         <ChevronDown
