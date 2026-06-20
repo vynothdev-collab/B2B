@@ -5,20 +5,14 @@ export type TabType = "people" | "company";
 export interface PersonFilters {
   // Name & LinkedIn
   name: string;
-  linkedinUrl: string;
+  linkedinUrls: string[];
   // Profile details
-  headline: string;
-  summary: string;
-  twitterHandle: string;
-  githubUrl: string;
   languages: string[];
   skills: string[];
-  interests: string[];
   certifications: string;
   degree: string[];
   school: string;
   fieldOfStudy: string;
-  linkedinConnectionsMin: string;
   // Title & seniority
   jobTitle: string[];
   seniority: string[];
@@ -27,17 +21,12 @@ export interface PersonFilters {
   yearsExperienceMax: string;
   // Current company
   companyName: string[];
-  companyLinkedinUrl: string;
+  companyLinkedinUrls: string[];
   companyDomain: string;
   industry: string[];
   companySize: string[];
   companyType: string[];
   companyRevenue: string[];
-  // Past roles & companies
-  pastCompanies: string[];
-  pastTitles: string[];
-  pastSeniority: string[];
-  pastDepartment: string[];
   // Person location
   country: string[];
   state: string[];
@@ -84,15 +73,13 @@ export interface RoleCompositionRule {
 }
 
 export const DEFAULT_PERSON_FILTERS: PersonFilters = {
-  name: "", linkedinUrl: "",
-  headline: "", summary: "", twitterHandle: "", githubUrl: "",
-  languages: [], skills: [], interests: [], certifications: "",
-  degree: [], school: "", fieldOfStudy: "", linkedinConnectionsMin: "",
+  name: "", linkedinUrls: [],
+  languages: [], skills: [], certifications: "",
+  degree: [], school: "", fieldOfStudy: "",
   jobTitle: [], seniority: [], department: [],
   yearsExperienceMin: "", yearsExperienceMax: "",
-  companyName: [], companyLinkedinUrl: "", companyDomain: "",
+  companyName: [], companyLinkedinUrls: [], companyDomain: "",
   industry: [], companySize: [], companyType: [], companyRevenue: [],
-  pastCompanies: [], pastTitles: [], pastSeniority: [], pastDepartment: [],
   country: [], state: [], city: "",
   hqCountry: [], hqState: [], hqCity: "",
 };
@@ -463,22 +450,121 @@ export const ROLE_METRIC_OPTIONS = [
   { value: "growth", label: "12-month growth %" },
 ];
 
-export const INDUSTRY_OPTIONS = [
-  "accounting", "airlines/aviation", "automotive", "banking", "biotechnology",
-  "broadcast media", "capital markets", "chemicals", "civil engineering",
-  "commercial real estate", "computer & network security", "computer games",
-  "computer hardware", "computer networking", "computer software", "construction",
-  "consumer electronics", "consumer goods", "defense & space", "e-learning",
-  "education management", "electrical/electronic manufacturing", "entertainment",
-  "environmental services", "financial services", "food & beverages",
-  "government administration", "health, wellness and fitness", "higher education",
-  "hospital & health care", "hospitality", "human resources",
-  "information technology and services", "insurance", "internet",
-  "investment banking", "investment management", "law practice", "legal services",
-  "logistics and supply chain", "management consulting", "marketing and advertising",
-  "media production", "medical devices", "medical practice", "mining & metals",
-  "non-profit organization management", "oil & energy", "pharmaceuticals",
-  "public relations and communications", "real estate", "research", "retail",
-  "semiconductors", "staffing and recruiting", "telecommunications",
-  "transportation/trucking/railroad", "venture capital & private equity", "wholesale",
+export const INDUSTRY_OPTIONS: { value: string; label: string }[] = [
+  // ── Technology ────────────────────────────────────────────────────────────
+  { value: "computer software", label: "Computer Software" },
+  { value: "information technology and services", label: "Information Technology & Services" },
+  { value: "internet", label: "Internet" },
+  { value: "computer hardware", label: "Computer Hardware" },
+  { value: "computer networking", label: "Computer Networking" },
+  { value: "computer & network security", label: "Computer & Network Security" },
+  { value: "computer games", label: "Computer Games" },
+  { value: "semiconductors", label: "Semiconductors" },
+  { value: "telecommunications", label: "Telecommunications" },
+  { value: "wireless", label: "Wireless" },
+  { value: "nanotechnology", label: "Nanotechnology" },
+  // ── Finance ──────────────────────────────────────────────────────────────
+  { value: "financial services", label: "Financial Services" },
+  { value: "banking", label: "Banking" },
+  { value: "investment banking", label: "Investment Banking" },
+  { value: "investment management", label: "Investment Management" },
+  { value: "venture capital & private equity", label: "Venture Capital & Private Equity" },
+  { value: "capital markets", label: "Capital Markets" },
+  { value: "insurance", label: "Insurance" },
+  { value: "accounting", label: "Accounting" },
+  // ── Healthcare & Life Sciences ───────────────────────────────────────────
+  { value: "hospital & health care", label: "Hospital & Health Care" },
+  { value: "pharmaceuticals", label: "Pharmaceuticals" },
+  { value: "medical devices", label: "Medical Devices" },
+  { value: "medical practice", label: "Medical Practice" },
+  { value: "biotechnology", label: "Biotechnology" },
+  { value: "health, wellness and fitness", label: "Health, Wellness & Fitness" },
+  { value: "mental health care", label: "Mental Health Care" },
+  { value: "alternative medicine", label: "Alternative Medicine" },
+  { value: "veterinary", label: "Veterinary" },
+  // ── Education ────────────────────────────────────────────────────────────
+  { value: "higher education", label: "Higher Education" },
+  { value: "education management", label: "Education Management" },
+  { value: "primary/secondary education", label: "Primary / Secondary Education" },
+  { value: "e-learning", label: "E-Learning" },
+  { value: "research", label: "Research" },
+  // ── Professional Services ────────────────────────────────────────────────
+  { value: "management consulting", label: "Management Consulting" },
+  { value: "staffing and recruiting", label: "Staffing & Recruiting" },
+  { value: "human resources", label: "Human Resources" },
+  { value: "legal services", label: "Legal Services" },
+  { value: "law practice", label: "Law Practice" },
+  { value: "marketing and advertising", label: "Marketing & Advertising" },
+  { value: "public relations and communications", label: "Public Relations & Communications" },
+  { value: "outsourcing/offshoring", label: "Outsourcing / Offshoring" },
+  // ── Media & Entertainment ────────────────────────────────────────────────
+  { value: "entertainment", label: "Entertainment" },
+  { value: "media production", label: "Media Production" },
+  { value: "broadcast media", label: "Broadcast Media" },
+  { value: "publishing", label: "Publishing" },
+  { value: "newspapers", label: "Newspapers" },
+  { value: "online media", label: "Online Media" },
+  { value: "motion pictures and film", label: "Motion Pictures & Film" },
+  { value: "music", label: "Music" },
+  { value: "photography", label: "Photography" },
+  // ── Real Estate & Construction ───────────────────────────────────────────
+  { value: "real estate", label: "Real Estate" },
+  { value: "commercial real estate", label: "Commercial Real Estate" },
+  { value: "construction", label: "Construction" },
+  { value: "civil engineering", label: "Civil Engineering" },
+  { value: "architecture & planning", label: "Architecture & Planning" },
+  // ── Retail & Consumer ────────────────────────────────────────────────────
+  { value: "retail", label: "Retail" },
+  { value: "consumer goods", label: "Consumer Goods" },
+  { value: "consumer electronics", label: "Consumer Electronics" },
+  { value: "food & beverages", label: "Food & Beverages" },
+  { value: "food production", label: "Food Production" },
+  { value: "luxury goods & jewelry", label: "Luxury Goods & Jewelry" },
+  { value: "apparel & fashion", label: "Apparel & Fashion" },
+  { value: "cosmetics", label: "Cosmetics" },
+  { value: "sporting goods", label: "Sporting Goods" },
+  { value: "supermarkets", label: "Supermarkets" },
+  { value: "wholesale", label: "Wholesale" },
+  // ── Manufacturing & Industry ─────────────────────────────────────────────
+  { value: "automotive", label: "Automotive" },
+  { value: "chemicals", label: "Chemicals" },
+  { value: "electrical/electronic manufacturing", label: "Electrical / Electronic Manufacturing" },
+  { value: "machinery", label: "Machinery" },
+  { value: "mechanical or industrial engineering", label: "Mechanical or Industrial Engineering" },
+  { value: "plastics", label: "Plastics" },
+  { value: "packaging and containers", label: "Packaging & Containers" },
+  { value: "paper & forest products", label: "Paper & Forest Products" },
+  { value: "textiles", label: "Textiles" },
+  { value: "glass, ceramics & concrete", label: "Glass, Ceramics & Concrete" },
+  // ── Energy & Environment ─────────────────────────────────────────────────
+  { value: "oil & energy", label: "Oil & Energy" },
+  { value: "mining & metals", label: "Mining & Metals" },
+  { value: "utilities", label: "Utilities" },
+  { value: "renewables & environment", label: "Renewables & Environment" },
+  { value: "environmental services", label: "Environmental Services" },
+  // ── Logistics & Transportation ───────────────────────────────────────────
+  { value: "logistics and supply chain", label: "Logistics & Supply Chain" },
+  { value: "transportation/trucking/railroad", label: "Transportation / Trucking / Railroad" },
+  { value: "airlines/aviation", label: "Airlines / Aviation" },
+  { value: "maritime", label: "Maritime" },
+  { value: "warehousing", label: "Warehousing" },
+  // ── Government & Non-Profit ──────────────────────────────────────────────
+  { value: "government administration", label: "Government Administration" },
+  { value: "non-profit organization management", label: "Non-Profit Organization Management" },
+  { value: "civic & social organization", label: "Civic & Social Organization" },
+  { value: "political organization", label: "Political Organization" },
+  { value: "military", label: "Military" },
+  { value: "defense & space", label: "Defense & Space" },
+  // ── Hospitality & Travel ─────────────────────────────────────────────────
+  { value: "hospitality", label: "Hospitality" },
+  { value: "restaurants", label: "Restaurants" },
+  { value: "leisure, travel & tourism", label: "Leisure, Travel & Tourism" },
+  { value: "sports", label: "Sports" },
+  { value: "gambling & casinos", label: "Gambling & Casinos" },
+  // ── Other ────────────────────────────────────────────────────────────────
+  { value: "farming", label: "Farming" },
+  { value: "agriculture", label: "Agriculture" },
+  { value: "import and export", label: "Import & Export" },
+  { value: "arts and crafts", label: "Arts & Crafts" },
+  { value: "individual & family services", label: "Individual & Family Services" },
 ];

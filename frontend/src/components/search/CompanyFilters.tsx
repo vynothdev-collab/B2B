@@ -2,10 +2,10 @@
 import { useState } from "react";
 import FilterSection from "./FilterSection";
 import AutocompleteInput from "./AutocompleteInput";
-import MultiChipAutocomplete from "./MultiChipAutocomplete";
 import MultiChipSelect from "./MultiChipSelect";
+import LocationMultiSelect from "./LocationMultiSelect";
 import type { CompanyFilters, RoleCompositionRule } from "@/types/search";
-import { COMPANY_SIZE_OPTIONS, COMPANY_TYPE_OPTIONS, FUNDING_ROUND_OPTIONS, REVENUE_OPTIONS } from "@/types/search";
+import { COMPANY_SIZE_OPTIONS, COMPANY_TYPE_OPTIONS, FUNDING_ROUND_OPTIONS, INDUSTRY_OPTIONS, REVENUE_OPTIONS } from "@/types/search";
 
 interface Props {
   filters: CompanyFilters;
@@ -64,16 +64,16 @@ export default function CompanyFilters({ filters, onChange }: Props) {
       </FilterSection>
 
       <FilterSection title="Industry & Type" isOpen={open === "industry"} onToggle={() => toggle("industry")}>
-        <MultiChipAutocomplete label="Industry" placeholder="e.g. Software" field="industry" values={filters.industry} onChange={(v) => onChange({ industry: v })} />
+        <MultiChipSelect label="Industry" placeholder="Select industry…" options={INDUSTRY_OPTIONS} values={filters.industry} onChange={(v) => onChange({ industry: v })} />
         <MultiChipSelect label="Company type" placeholder="Select type" options={COMPANY_TYPE_OPTIONS} values={filters.type} onChange={(v) => onChange({ type: v })} />
         <TextInput label="Stock exchange" placeholder="e.g. XNAS" value={filters.stockExchange} onChange={(v) => onChange({ stockExchange: v })} />
       </FilterSection>
 
       <FilterSection title="HQ Location" isOpen={open === "hq"} onToggle={() => toggle("hq")}>
-        <MultiChipAutocomplete label="Country" placeholder="e.g. United States" field="country" values={filters.hqCountry} onChange={(v) => onChange({ hqCountry: v })} />
-        <MultiChipAutocomplete label="State / Province" placeholder="e.g. California" field="region" values={filters.hqState} onChange={(v) => onChange({ hqState: v })} />
-        <AutocompleteInput label="City" placeholder="e.g. San Francisco" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} field="location" />
-        <AutocompleteInput label="Most employees in (Metro)" placeholder="e.g. San Francisco, California" value={filters.hqMetro} onChange={(v) => onChange({ hqMetro: v })} field="location" />
+        <LocationMultiSelect label="Country" placeholder="Search country…" type="country" values={filters.hqCountry} onChange={(v) => onChange({ hqCountry: v })} />
+        <LocationMultiSelect label="State / Province" placeholder="Search state…" type="state" selectedCountries={filters.hqCountry} values={filters.hqState} onChange={(v) => onChange({ hqState: v })} />
+        <TextInput label="City" placeholder="e.g. San Francisco" value={filters.hqCity} onChange={(v) => onChange({ hqCity: v })} />
+        <TextInput label="Most employees in (Metro)" placeholder="e.g. San Francisco, California" value={filters.hqMetro} onChange={(v) => onChange({ hqMetro: v })} />
       </FilterSection>
 
       <FilterSection title="Headcount, Revenue & Growth" isOpen={open === "headcount"} onToggle={() => toggle("headcount")}>

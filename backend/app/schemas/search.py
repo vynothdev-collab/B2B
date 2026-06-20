@@ -13,7 +13,7 @@ PAGE_SIZE = 10
 class PersonSearchRequest(BaseModel):
     # Name & LinkedIn
     name: Optional[str] = None
-    linkedin_url: Optional[str] = None
+    linkedin_url: Optional[list[str]] = None
     # Profile details
     headline: Optional[str] = None
     summary: Optional[str] = None
@@ -35,7 +35,7 @@ class PersonSearchRequest(BaseModel):
     years_experience_max: Optional[int] = None
     # Current company
     company_name: Optional[list[str]] = None
-    company_linkedin_url: Optional[str] = None
+    company_linkedin_url: Optional[list[str]] = None
     company_domain: Optional[str] = None
     industry: Optional[list[str]] = None
     company_size: Optional[list[str]] = None

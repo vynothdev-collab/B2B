@@ -32,9 +32,10 @@ const DROPDOWN_MAX_H = 220;
 export default function MultiChipSelect({ label, placeholder, values, onChange, options }: Props) {
   const [inputText, setInputText] = useState("");
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const getLabel = (val: string) => options.find((o) => o.value === val)?.label ?? val;
 
@@ -46,19 +47,18 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
   const calcPos = () => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - r.bottom;
-    const top =
-      spaceBelow >= DROPDOWN_MAX_H || spaceBelow >= r.top
-        ? r.bottom + 4
-        : r.top - DROPDOWN_MAX_H - 4;
-    setPos({ top, left: r.left, width: r.width });
+    const avail = Math.max(80, window.innerHeight - r.bottom - 8);
+    setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxH: Math.min(DROPDOWN_MAX_H, avail) });
   };
 
   const openDropdown = () => { calcPos(); setOpen(true); };
 
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
+    const close = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
     window.addEventListener("scroll", close, true);
     window.addEventListener("resize", close);
     return () => {
@@ -122,10 +122,11 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
         <>
           <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
           <div
+            ref={dropdownRef}
             className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: DROPDOWN_MAX_H }}
+            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH }}
           >
-            <div className="overflow-y-auto" style={{ maxHeight: DROPDOWN_MAX_H }}>
+            <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
               {filteredOptions.length === 0 ? (
                 <div className="px-3 py-2 text-xs text-gray-400">No options found</div>
               ) : (

@@ -41,19 +41,13 @@ function buildPersonChips(
   };
 
   str("name");
-  str("linkedinUrl");
-  str("headline");
-  str("summary");
-  str("twitterHandle");
-  str("githubUrl");
+  arr("linkedinUrls", f.linkedinUrls);
   arr("languages", f.languages);
   arr("skills", f.skills);
-  arr("interests", f.interests);
   str("certifications");
   arr("degree", f.degree, (v) => labelFor(DEGREE_OPTIONS, v));
   str("school");
   str("fieldOfStudy");
-  if (f.linkedinConnectionsMin) chips.push({ label: `≥${f.linkedinConnectionsMin} connections`, onRemove: () => onChange({ linkedinConnectionsMin: "" }) });
   arr("jobTitle", f.jobTitle);
   arr("seniority", f.seniority, (v) => labelFor(SENIORITY_OPTIONS, v));
   arr("department", f.department);
@@ -64,16 +58,12 @@ function buildPersonChips(
     chips.push({ label, onRemove: () => onChange({ yearsExperienceMin: "", yearsExperienceMax: "" }) });
   }
   arr("companyName", f.companyName);
-  str("companyLinkedinUrl");
+  arr("companyLinkedinUrls", f.companyLinkedinUrls);
   str("companyDomain");
   arr("industry", f.industry);
   arr("companySize", f.companySize, (v) => labelFor(COMPANY_SIZE_OPTIONS, v));
   arr("companyType", f.companyType, (v) => labelFor(COMPANY_TYPE_OPTIONS, v));
   arr("companyRevenue", f.companyRevenue, (v) => labelFor(REVENUE_OPTIONS, v));
-  arr("pastCompanies", f.pastCompanies);
-  arr("pastTitles", f.pastTitles);
-  arr("pastSeniority", f.pastSeniority, (v) => labelFor(SENIORITY_OPTIONS, v));
-  arr("pastDepartment", f.pastDepartment);
   arr("country", f.country);
   arr("state", f.state);
   str("city");
