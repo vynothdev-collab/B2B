@@ -5,7 +5,6 @@ interface Props {
   page: number;
   total: number;
   pageSize: number;
-  /** Highest page the user can jump to (pages 1..maxReachable have stored tokens) */
   maxReachable: number;
   hasNext: boolean;
   onPage: (p: number) => void;
@@ -38,7 +37,6 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
 
   return (
     <div className="flex items-center justify-between px-4 py-3">
-      {/* Info */}
       <p className="text-xs text-gray-500 hidden sm:block">
         <span className="font-medium text-gray-700">{((page - 1) * pageSize + 1).toLocaleString()}</span>–
         <span className="font-medium text-gray-700">{Math.min(page * pageSize, total).toLocaleString()}</span>
@@ -47,7 +45,6 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
       </p>
 
       <div className="flex items-center gap-0.5 mx-auto sm:mx-0">
-        {/* Previous */}
         <button
           type="button"
           onClick={() => onPage(page - 1)}
@@ -58,7 +55,6 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
           Previous
         </button>
 
-        {/* Page numbers */}
         {pages.map((p, i) =>
           p === "..." ? (
             <span key={`e-${i}`} className="px-1.5 py-1.5 text-xs text-gray-400 select-none">…</span>
@@ -81,7 +77,6 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
           )
         )}
 
-        {/* Next */}
         <button
           type="button"
           onClick={() => onPage(page + 1)}

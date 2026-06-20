@@ -44,16 +44,13 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen">
 
-      {/* ── Left panel ── */}
       <div className="hidden lg:flex lg:w-[44%] flex-col justify-between bg-gradient-to-br from-purple-700 via-purple-600 to-indigo-700 p-12 relative overflow-hidden">
 
-        {/* Background circles */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-white/5" />
           <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-white/5" />
         </div>
 
-        {/* Logo */}
         <div className="relative flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm">
             B2B
@@ -61,7 +58,6 @@ export default function RegisterPage() {
           <span className="text-white font-bold text-lg tracking-tight">B2B Platform</span>
         </div>
 
-        {/* Main copy */}
         <div className="relative space-y-8">
           <div>
             <h2 className="text-4xl font-bold text-white leading-tight">
@@ -72,7 +68,6 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* Perks */}
           <ul className="space-y-3.5">
             {PERKS.map((p) => (
               <li key={p} className="flex items-center gap-3">
@@ -82,7 +77,6 @@ export default function RegisterPage() {
             ))}
           </ul>
 
-          {/* Social proof */}
           <div className="rounded-2xl bg-white/10 border border-white/10 p-5">
             <div className="flex items-center gap-1 mb-2">
               {[1,2,3,4,5].map((i) => (
@@ -106,7 +100,6 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Free badge */}
         <div className="relative">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/20 px-4 py-2 text-xs font-semibold text-white">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -115,11 +108,9 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* ── Right panel ── */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-white overflow-y-auto">
         <div className="w-full max-w-[400px]">
 
-          {/* Mobile logo */}
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-xs">
               B2B
@@ -127,13 +118,11 @@ export default function RegisterPage() {
             <span className="font-bold text-gray-900">B2B Platform</span>
           </div>
 
-          {/* Heading */}
           <div className="mb-7">
             <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
             <p className="mt-1.5 text-sm text-gray-500">Free forever · No credit card needed</p>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3">
               <div className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-red-400 flex items-center justify-center">
@@ -144,7 +133,6 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-700">Full name</label>
               <input
@@ -158,7 +146,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Email */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-700">Work email</label>
               <input
@@ -172,7 +159,6 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-700">Password</label>
               <div className="relative">
@@ -194,7 +180,6 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {/* Password strength */}
               {password.length > 0 && (
                 <div className="mt-2 flex items-center gap-2">
                   <div className="flex gap-1 flex-1">
@@ -216,7 +201,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-700">Confirm password</label>
               <input
@@ -237,7 +221,6 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -249,7 +232,6 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          {/* Footer */}
           <p className="mt-6 text-center text-sm text-gray-500">
             Already have an account?{" "}
             <Link href="/login" className="font-semibold text-purple-600 hover:text-purple-700 transition-colors">

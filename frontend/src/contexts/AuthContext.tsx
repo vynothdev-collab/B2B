@@ -20,9 +20,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On mount: restore session from stored tokens.
-  // Checks refresh_token too — if only the access token has expired (30-min
-  // window), the api.ts interceptor will silently refresh it during apiGetMe.
   useEffect(() => {
     if (typeof window === "undefined") {
       setIsLoading(false);
@@ -38,7 +35,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     apiGetMe()
       .then((u) => setUser(u))
       .catch(() => {
-        // Both access token and refresh failed — session is truly expired
         clearTokens();
       })
       .finally(() => setIsLoading(false));

@@ -24,7 +24,6 @@ export default function FilterSection({ title, children, isOpen, onToggle }: Pro
         />
       </button>
 
-      {/* Smooth accordion using grid trick */}
       <div
         className={`grid transition-all duration-300 ease-in-out ${
           isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"

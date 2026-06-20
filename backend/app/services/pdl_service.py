@@ -221,8 +221,6 @@ def _add_multi_term(
     values: list[str],
     lowercase: bool = True,
 ) -> None:
-    """Append a term (single) or terms (multi-OR) clause. Use lowercase=False for
-    case-sensitive PDL enum fields like company_size and revenue."""
     if not values:
         return
     processed = [v.lower() for v in values] if lowercase else list(values)
@@ -233,7 +231,6 @@ def _add_multi_term(
 
 
 def _add_multi_match(clauses: list[dict], field: str, values: list[str]) -> None:
-    """Append a match (single) or nested bool/should of matches (multi-OR) clause."""
     if not values:
         return
     if len(values) == 1:

@@ -22,7 +22,6 @@ export default function EmptyState({ onQuery }: Props) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-8 py-16">
-      {/* Orb */}
       <div className="mb-6 h-20 w-20 rounded-full bg-gradient-to-br from-purple-400 to-indigo-600 opacity-90 shadow-lg" />
 
       <h2 className="text-2xl font-bold text-gray-900">Find the right prospects</h2>
@@ -31,7 +30,6 @@ export default function EmptyState({ onQuery }: Props) {
         <span className="font-semibold text-purple-600">B2B AI</span> does the rest
       </p>
 
-      {/* AI query box */}
       <div className="mt-8 w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center gap-2 px-4 py-3">
           <span className="text-purple-500 text-base">✦</span>
@@ -69,7 +67,6 @@ export default function EmptyState({ onQuery }: Props) {
         </div>
       </div>
 
-      {/* Suggestion chips */}
       <p className="mt-8 text-xs font-semibold uppercase tracking-wider text-gray-400">
         Get started with an example below
       </p>

@@ -125,14 +125,11 @@ export default function SearchPage() {
   return (
     <div className="flex h-screen flex-col bg-gray-50 overflow-hidden">
 
-      {/* ── Top nav ── */}
       <header className="flex h-16 shrink-0 items-center gap-3 bg-white border-b border-gray-200 px-5 shadow-sm">
-        {/* Logo */}
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-xs shrink-0">
           B2B
         </div>
 
-        {/* Search */}
         <div className="flex flex-1 max-w-[300px] items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-2">
           <Search className="h-3.5 w-3.5 shrink-0 text-gray-400" />
           <span className="text-xs text-gray-400">Search people, companies...</span>
@@ -140,30 +137,25 @@ export default function SearchPage() {
 
         <div className="flex-1" />
 
-        {/* Credits */}
         <div className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5">
           <Zap className="h-3.5 w-3.5 text-yellow-500" />
           <span className="text-xs font-bold text-gray-800">{CREDITS}</span>
           <span className="text-xs text-gray-500">credits</span>
         </div>
 
-        {/* Upgrade */}
         <button type="button" className="flex items-center gap-1.5 rounded-full bg-purple-600 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors">
           <Zap className="h-3 w-3" />
           Upgrade
         </button>
 
-        {/* Help */}
         <button type="button" className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 transition-colors">
           <HelpCircle className="h-4.5 w-4.5" />
         </button>
 
-        {/* Bell */}
         <button type="button" className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 transition-colors">
           <Bell className="h-4 w-4" />
         </button>
 
-        {/* User */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 rounded-lg px-2 py-1">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-600 text-white text-xs font-bold shrink-0">
@@ -186,15 +178,8 @@ export default function SearchPage() {
         </div>
       </header>
 
-      {/* ── Main layout ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
-
-
-
-        {/* Content row: filter card + results */}
         <div className="flex flex-1 gap-4 overflow-hidden px-5 py-4">
-
-          {/* Filter card */}
           <FilterSidebar
             tab={tab}
             onTabChange={handleTabChange}
@@ -206,11 +191,8 @@ export default function SearchPage() {
             onReset={handleReset}
           />
 
-          {/* Results card */}
           <main className="flex flex-1 flex-col overflow-hidden">
           <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-
-              {/* Results header — always visible */}
               <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-2.5">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-gray-900 text-sm">
@@ -236,7 +218,6 @@ export default function SearchPage() {
                 </div>
               </div>
 
-              {/* Active filter chips — single scrollable row */}
               <ActiveFilters
                 tab={tab}
                 personFilters={personFilters}
@@ -245,14 +226,12 @@ export default function SearchPage() {
                 onCompanyChange={(patch) => setCompanyFilters((f) => ({ ...f, ...patch }))}
               />
 
-              {/* Error */}
               {error && (
                 <div className="m-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
                   {error}
                 </div>
               )}
 
-              {/* Loading */}
               {loading && (
                 <div className="flex flex-1 items-center justify-center">
                   <div className="flex flex-col items-center gap-3">
@@ -262,12 +241,10 @@ export default function SearchPage() {
                 </div>
               )}
 
-              {/* Empty state */}
               {!loading && showEmpty && (
                 <EmptyState onQuery={startSearch} />
               )}
 
-              {/* Table + pagination */}
               {!loading && showTable && (
                 <div className="relative flex flex-1 flex-col overflow-hidden">
                   <div className="flex-1 overflow-y-auto">
@@ -288,7 +265,6 @@ export default function SearchPage() {
                     )}
                   </div>
 
-                  {/* Pagination */}
                   {meta && (
                     <div className="shrink-0 border-t border-gray-100">
                       <Pagination
@@ -306,7 +282,6 @@ export default function SearchPage() {
                     </div>
                   )}
 
-                  {/* Bulk action — bottom overlay */}
                   {selected.size > 0 && (
                     <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 shadow-2xl">
                       <span className="text-xs font-semibold text-white whitespace-nowrap">

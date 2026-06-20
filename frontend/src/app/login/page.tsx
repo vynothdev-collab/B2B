@@ -29,17 +29,14 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
 
-      {/* ── Left panel ── */}
       <div className="hidden lg:flex lg:w-[52%] flex-col justify-between bg-gradient-to-br from-purple-700 via-purple-600 to-indigo-700 p-12 relative overflow-hidden">
 
-        {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-white/5" />
           <div className="absolute top-1/2 -right-24 h-80 w-80 rounded-full bg-white/5" />
           <div className="absolute -bottom-20 left-1/3 h-64 w-64 rounded-full bg-white/5" />
         </div>
 
-        {/* Logo */}
         <div className="relative flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm">
             B2B
@@ -47,7 +44,6 @@ export default function LoginPage() {
           <span className="text-white font-bold text-lg tracking-tight">B2B Platform</span>
         </div>
 
-        {/* Hero content */}
         <div className="relative space-y-8">
           <div>
             <h2 className="text-4xl font-bold text-white leading-tight">
@@ -58,7 +54,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Feature highlights */}
           <div className="space-y-4">
             {[
               { icon: <Search className="h-4 w-4" />, text: "Advanced people & company search" },
@@ -75,7 +70,6 @@ export default function LoginPage() {
             ))}
           </div>
 
-          {/* Stats */}
           <div className="flex gap-8 pt-2">
             {[
               { value: "800M+", label: "Profiles" },
@@ -90,7 +84,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Testimonial */}
         <div className="relative rounded-2xl bg-white/10 backdrop-blur-sm p-5 border border-white/10">
           <p className="text-sm text-purple-100 leading-relaxed">
             &ldquo;B2B Platform cut our prospecting time in half. The data quality is outstanding and the filters are incredibly precise.&rdquo;
@@ -107,11 +100,9 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── Right panel ── */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-white">
         <div className="w-full max-w-[380px]">
 
-          {/* Mobile logo */}
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-xs">
               B2B
@@ -119,13 +110,11 @@ export default function LoginPage() {
             <span className="font-bold text-gray-900">B2B Platform</span>
           </div>
 
-          {/* Heading */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
             <p className="mt-1.5 text-sm text-gray-500">Sign in to your account to continue</p>
           </div>
 
-          {/* Error */}
           {error && (
             <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 px-4 py-3">
               <div className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-red-400 flex items-center justify-center">
@@ -136,7 +125,6 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-700">
                 Email address
@@ -152,7 +140,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className="text-xs font-semibold text-gray-700">Password</label>
@@ -181,7 +168,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
@@ -193,14 +179,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Divider */}
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-gray-100" />
             <span className="text-xs text-gray-400">or</span>
             <div className="h-px flex-1 bg-gray-100" />
           </div>
 
-          {/* Footer */}
           <p className="text-center text-sm text-gray-500">
             Don&apos;t have an account?{" "}
             <Link href="/register" className="font-semibold text-purple-600 hover:text-purple-700 transition-colors">

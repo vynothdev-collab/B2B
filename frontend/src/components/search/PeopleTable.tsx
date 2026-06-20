@@ -166,7 +166,6 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                   />
                 </td>
 
-                {/* Name */}
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2.5">
                     <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold ${color}`}>
@@ -189,7 +188,6 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                   </div>
                 </td>
 
-                {/* Company */}
                 <td className="px-3 py-3">
                   {person.job_company_name ? (
                     <div className="flex items-center gap-2">
@@ -209,7 +207,6 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                   ) : <span className="text-xs text-gray-400">—</span>}
                 </td>
 
-                {/* Title */}
                 <td className="px-3 py-3">
                   <div className="min-w-0">
                     {person.job_title ? (
@@ -225,7 +222,6 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                   </div>
                 </td>
 
-                {/* Email */}
                 <td className="px-3 py-3">
                   {revealed[person.id] ? (
                     revealed[person.id].work_email || revealed[person.id].recommended_personal_email ? (
@@ -253,7 +249,6 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                   )}
                 </td>
 
-                {/* Phone */}
                 <td className="px-3 py-3">
                   {revealed[person.id] ? (
                     revealed[person.id].mobile_phone || revealed[person.id].phone_numbers?.length ? (
@@ -281,7 +276,6 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                   )}
                 </td>
 
-                {/* Location */}
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm">{flag(person.location_country)}</span>
@@ -298,7 +292,6 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                   </div>
                 </td>
 
-                {/* Actions */}
                 <td className="px-3 py-3">
                   <ActionMenu id={person.id} />
                 </td>

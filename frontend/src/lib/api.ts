@@ -7,25 +7,16 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-// Separate bare axios instance used ONLY for the token-refresh call.
-// This avoids the circular interceptor loop: if the refresh request went
-// through apiClient, a 401 on /auth/refresh would trigger another refresh,
-// causing an infinite loop.
 const refreshClient = axios.create({
   baseURL: "/api",
   headers: { "Content-Type": "application/json" },
 });
 
-// ── Request: attach access token ──────────────────────────────────────────────
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
-
-// ── Response: silent token refresh on 401 ────────────────────────────────────
-// Only one refresh call is made even if multiple requests fail simultaneously.
-// All other failed requests are queued and retried once the new token arrives.
 
 let isRefreshing = false;
 let waitQueue: Array<{
@@ -48,13 +39,11 @@ type RetryConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Guard: network errors have no config or response
     const original = error.config as RetryConfig | undefined;
     if (!original || error.response?.status !== 401 || original._retry) {
       return Promise.reject(error);
     }
 
-    // On auth pages: surface the error directly — no redirect, no refresh
     if (typeof window !== "undefined") {
       const path = window.location.pathname;
       if (path === "/login" || path === "/register") {
@@ -62,7 +51,6 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Queue this request while a refresh is already in progress
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         waitQueue.push({
@@ -82,7 +70,6 @@ apiClient.interceptors.response.use(
       const refreshToken = getRefreshToken();
       if (!refreshToken) throw new Error("No refresh token");
 
-      // Use refreshClient (no interceptors) to avoid recursive 401 handling
       const { data } = await refreshClient.post<{ access_token: string }>(
         "/auth/refresh",
         { refresh_token: refreshToken }

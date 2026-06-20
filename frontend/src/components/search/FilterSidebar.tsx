@@ -24,7 +24,6 @@ export default function FilterSidebar({
   return (
     <aside className="flex w-72 shrink-0 flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
 
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-1.5">
           <SlidersHorizontal className="h-3.5 w-3.5 text-purple-600" />
@@ -39,7 +38,6 @@ export default function FilterSidebar({
         </button>
       </div>
 
-      {/* People / Company pill tabs */}
       <div className="px-3 py-2.5 border-b border-gray-100">
         <div className="flex gap-1 rounded-full bg-gray-100 p-1">
           <button
@@ -67,7 +65,6 @@ export default function FilterSidebar({
         </div>
       </div>
 
-      {/* Scrollable filter sections */}
       <div className="flex-1 overflow-y-auto py-1">
         {tab === "people" ? (
           <PeopleFilters filters={personFilters} onChange={onPersonChange} />
@@ -76,7 +73,6 @@ export default function FilterSidebar({
         )}
       </div>
 
-      {/* Actions */}
       <div className="flex gap-2 border-t border-gray-100 px-3 py-3">
         <button
           type="button"

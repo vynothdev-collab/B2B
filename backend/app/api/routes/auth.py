@@ -47,7 +47,6 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
-# UserInfo defined first so TokenResponse can reference it without a forward ref
 class UserInfo(BaseModel):
     id: str
     email: str

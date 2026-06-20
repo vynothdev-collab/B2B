@@ -159,7 +159,6 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                   />
                 </td>
 
-                {/* Company */}
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2.5">
                     <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded text-white text-sm font-bold ${color}`}>
@@ -176,7 +175,6 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                   </div>
                 </td>
 
-                {/* Industry */}
                 <td className="px-3 py-3">
                   {company.industry ? (
                     <span className="inline-block max-w-[140px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600 capitalize">
@@ -187,7 +185,6 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                   )}
                 </td>
 
-                {/* Employees */}
                 <td className="px-3 py-3">
                   {company.size ? (
                     <div className="flex items-center gap-1 text-xs text-gray-700">
@@ -199,7 +196,6 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                   )}
                 </td>
 
-                {/* Website */}
                 <td className="px-3 py-3">
                   {company.website ? (
                     <a
@@ -216,7 +212,6 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                   )}
                 </td>
 
-                {/* Location */}
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm">{flag(country)}</span>
@@ -227,7 +222,6 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                   </div>
                 </td>
 
-                {/* Actions */}
                 <td className="px-3 py-3">
                   <ActionMenu />
                 </td>

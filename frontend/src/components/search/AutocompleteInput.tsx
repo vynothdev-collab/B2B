@@ -42,7 +42,6 @@ export default function AutocompleteInput({ label, placeholder, value, onChange,
       setInputText(value);
       if (!value) { setSuggestions([]); setOpen(false); }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const reposition = useCallback(() => {

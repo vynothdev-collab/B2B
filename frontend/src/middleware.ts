@@ -4,8 +4,6 @@ const PUBLIC_PATHS = ["/login", "/register"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  // Use refresh_token (7-day expiry) for session detection so users
-  // aren't kicked to /login every 30 min when the access token expires.
   const token = request.cookies.get("refresh_token")?.value;
 
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));

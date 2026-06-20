@@ -16,7 +16,6 @@ interface Props {
 const labelCls = "block text-xs text-gray-500 mb-1";
 const DROPDOWN_MAX_H = 220;
 
-// Build a lookup: country display-name → ISO code (used to load states)
 const COUNTRY_ISO: Record<string, string> = Object.fromEntries(
   Country.getAllCountries().map((c) => [c.name, c.isoCode])
 );
@@ -37,12 +36,10 @@ export default function LocationMultiSelect({
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Build full options list from static data
   const allOptions = useMemo<string[]>(() => {
     if (type === "country") {
       return Country.getAllCountries().map((c) => c.name);
     }
-    // State: show states for selected countries, or all states if none selected
     if (selectedCountries.length > 0) {
       const seen = new Set<string>();
       const result: string[] = [];
@@ -55,11 +52,9 @@ export default function LocationMultiSelect({
       }
       return result.sort();
     }
-    // No country selected: show empty (prompt user to pick country first)
     return [];
   }, [type, selectedCountries]);
 
-  // Filter by search text, exclude already-selected
   const suggestions = useMemo(() => {
     const q = inputText.toLowerCase();
     return allOptions
