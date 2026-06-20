@@ -32,7 +32,7 @@ export async function fetchAutocomplete(
 }
 
 function cleanStr(v: string): string | undefined {
-  return v.trim() || undefined;
+  return v.trim() || undefined; 
 }
 function cleanNum(v: string): number | undefined {
   const n = parseInt(v, 10);
