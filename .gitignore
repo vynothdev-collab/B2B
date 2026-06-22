@@ -64,6 +64,7 @@ frontend/next-env.d.ts
 frontend/.pnp
 frontend/.pnp.js
 frontend/.yarn/install-state.gz
+frontend/package-lock.json
 
 # Testing
 frontend/coverage/

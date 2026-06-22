@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, NoReturn, Optional
 
 import httpx
 from fastapi import HTTPException
@@ -423,10 +423,12 @@ async def autocomplete(field: str, text: str, size: int = 10) -> list[dict]:
                 headers={"X-Api-Key": settings.PDL_API_KEY},
                 params={"field": field, "text": text, "size": size, "titlecase": "true"},
             )
-        if resp.status_code != 200:
+        if resp.status_code == 200:
+            return resp.json().get("data", [])
+        if resp.status_code == 404:
             return []
-        return resp.json().get("data", [])
-    except Exception:
+        return []
+    except (httpx.TimeoutException, httpx.RequestError, Exception):
         return []
 
 
@@ -457,6 +459,23 @@ def _extract_pdl_error(body: dict) -> str:
     return body.get("error", {}).get("message", "") or "PDL API error"
 
 
+def _raise_pdl_error(pdl_status: int, body: dict) -> NoReturn:
+    msg = _extract_pdl_error(body)
+    if pdl_status == 400:
+        raise HTTPException(status_code=400, detail=f"Invalid search parameters: {msg}")
+    if pdl_status == 401:
+        raise HTTPException(status_code=503, detail="PDL API key is invalid or not configured")
+    if pdl_status == 402:
+        raise HTTPException(status_code=402, detail="PDL credit balance exhausted. Please upgrade your plan.")
+    if pdl_status == 405:
+        raise HTTPException(status_code=500, detail="Internal error: unsupported PDL request method")
+    if pdl_status == 429:
+        raise HTTPException(status_code=429, detail="PDL rate limit reached. Please wait a moment and try again.")
+    if pdl_status >= 500:
+        raise HTTPException(status_code=502, detail="PDL API is temporarily unavailable. Please try again later.")
+    raise HTTPException(status_code=pdl_status, detail=msg)
+
+
 async def search_persons(req: PersonSearchRequest) -> SearchResponse:
     if not settings.PDL_API_KEY:
         raise HTTPException(status_code=500, detail="PDL_API_KEY is not configured")
@@ -464,24 +483,24 @@ async def search_persons(req: PersonSearchRequest) -> SearchResponse:
     payload = _make_search_payload(build_person_query(req), req.scroll_token)
     payload["dataset"] = "all"
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(
-            f"{settings.PDL_BASE_URL}/person/search",
-            headers=_pdl_headers(),
-            json=payload,
-        )
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{settings.PDL_BASE_URL}/person/search",
+                headers=_pdl_headers(),
+                json=payload,
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
 
+    if resp.status_code == 200:
+        body = resp.json()
+        return SearchResponse(data=body.get("data", []), meta=_make_meta(body))
     if resp.status_code == 404:
         return SearchResponse(data=[], meta=SearchMeta(total=0))
-
-    if resp.status_code != 200:
-        raise HTTPException(
-            status_code=resp.status_code,
-            detail=_extract_pdl_error(resp.json()),
-        )
-
-    body = resp.json()
-    return SearchResponse(data=body.get("data", []), meta=_make_meta(body))
+    _raise_pdl_error(resp.status_code, resp.json())
 
 
 async def search_companies(req: CompanySearchRequest) -> SearchResponse:
@@ -491,69 +510,74 @@ async def search_companies(req: CompanySearchRequest) -> SearchResponse:
     url = f"{settings.PDL_BASE_URL}/company/search"
     headers = _pdl_headers()
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(
-            url,
-            headers=headers,
-            json=_make_search_payload(build_company_query(req), req.scroll_token),
-        )
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                url,
+                headers=headers,
+                json=_make_search_payload(build_company_query(req), req.scroll_token),
+            )
 
-        if resp.status_code == 404:
-            return SearchResponse(data=[], meta=SearchMeta(total=0))
+            if resp.status_code == 200:
+                body = resp.json()
+                return SearchResponse(data=body.get("data", []), meta=_make_meta(body))
+            if resp.status_code == 404:
+                return SearchResponse(data=[], meta=SearchMeta(total=0))
 
-        if resp.status_code != 200:
-            pdl_msg = _extract_pdl_error(resp.json())
+            if resp.status_code == 400:
+                pdl_msg = _extract_pdl_error(resp.json())
+                if "do not have access to query the field" in pdl_msg and req.role_composition_rules:
+                    fallback_req = req.model_copy(update={"role_composition_rules": []})
+                    resp2 = await client.post(
+                        url,
+                        headers=headers,
+                        json=_make_search_payload(build_company_query(fallback_req), req.scroll_token),
+                    )
+                    if resp2.status_code == 200:
+                        body2 = resp2.json()
+                        return SearchResponse(data=body2.get("data", []), meta=_make_meta(body2))
+                    if resp2.status_code == 404:
+                        return SearchResponse(data=[], meta=SearchMeta(total=0))
+                    _raise_pdl_error(resp2.status_code, resp2.json())
+                _raise_pdl_error(400, resp.json())
 
-            if (
-                resp.status_code == 400
-                and "do not have access to query the field" in pdl_msg
-                and req.role_composition_rules
-            ):
-                fallback_req = req.model_copy(update={"role_composition_rules": []})
-                resp2 = await client.post(
-                    url,
-                    headers=headers,
-                    json=_make_search_payload(build_company_query(fallback_req), req.scroll_token),
-                )
-                if resp2.status_code == 200:
-                    body2 = resp2.json()
-                    return SearchResponse(data=body2.get("data", []), meta=_make_meta(body2))
-                if resp2.status_code == 404:
-                    return SearchResponse(data=[], meta=SearchMeta(total=0))
+            _raise_pdl_error(resp.status_code, resp.json())
 
-            raise HTTPException(status_code=resp.status_code, detail=pdl_msg)
-
-    body = resp.json()
-    return SearchResponse(data=body.get("data", []), meta=_make_meta(body))
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
 
 
 async def enrich_person(req: PersonRevealRequest) -> PersonRevealResponse:
     if not settings.PDL_API_KEY:
         raise HTTPException(status_code=500, detail="PDL_API_KEY is not configured")
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        resp = await client.get(
-            f"{settings.PDL_BASE_URL}/person/enrich",
-            headers={"X-Api-Key": settings.PDL_API_KEY},
-            params={
-                "pdl_id": req.pdl_id,
-                "min_likelihood": 6,
-                "required": "work_email OR recommended_personal_email OR mobile_phone",
-            },
-        )
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                f"{settings.PDL_BASE_URL}/person/enrich",
+                headers={"X-Api-Key": settings.PDL_API_KEY},
+                params={
+                    "pdl_id": req.pdl_id,
+                    "min_likelihood": 6,
+                    "required": "work_email OR recommended_personal_email OR mobile_phone",
+                },
+            )
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
 
+    if resp.status_code == 200:
+        body = resp.json()
+        data = body.get("data", {})
+        return PersonRevealResponse(
+            work_email=data.get("work_email"),
+            recommended_personal_email=data.get("recommended_personal_email"),
+            mobile_phone=data.get("mobile_phone"),
+            phone_numbers=data.get("phone_numbers"),
+        )
     if resp.status_code == 404:
         raise HTTPException(status_code=404, detail="No contact data found for this person")
-    if resp.status_code == 402:
-        raise HTTPException(status_code=402, detail="Credit balance exhausted")
-    if resp.status_code != 200:
-        raise HTTPException(status_code=resp.status_code, detail=_extract_pdl_error(resp.json()))
-
-    body = resp.json()
-    data = body.get("data", {})
-    return PersonRevealResponse(
-        work_email=data.get("work_email"),
-        recommended_personal_email=data.get("recommended_personal_email"),
-        mobile_phone=data.get("mobile_phone"),
-        phone_numbers=data.get("phone_numbers"),
-    )
+    _raise_pdl_error(resp.status_code, resp.json())

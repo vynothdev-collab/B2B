@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { CompanyFilters, PersonFilters, SearchMeta, SearchResponse, TabType } from "@/types/search";
 import { DEFAULT_COMPANY_FILTERS, DEFAULT_PERSON_FILTERS } from "@/types/search";
 import { searchCompanies, searchPersons } from "@/lib/searchApi";
+import { toast } from "@/lib/toast";
 import FilterSidebar from "./FilterSidebar";
 import PeopleTable from "./PeopleTable";
 import CompanyTable from "./CompanyTable";
@@ -25,7 +26,6 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [meta, setMeta] = useState<SearchMeta | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -46,7 +46,6 @@ export default function SearchPage() {
     }
 
     setLoading(true);
-    setError(null);
     setSelected(new Set());
     try {
       const res =
@@ -66,10 +65,7 @@ export default function SearchPage() {
         return next;
       });
     } catch (e: unknown) {
-      const axiosDetail =
-        (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      const msg = axiosDetail ?? (e instanceof Error ? e.message : "Search failed");
-      setError(msg);
+      toast.apiError(e);
     } finally {
       setLoading(false);
     }
@@ -226,11 +222,6 @@ export default function SearchPage() {
                 onCompanyChange={(patch) => setCompanyFilters((f) => ({ ...f, ...patch }))}
               />
 
-              {error && (
-                <div className="m-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
-                  {error}
-                </div>
-              )}
 
               {loading && (
                 <div className="flex flex-1 items-center justify-center">

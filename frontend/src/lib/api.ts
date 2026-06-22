@@ -1,5 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { clearTokens, getAccessToken, getRefreshToken, updateAccessToken } from "./tokens";
+import { toast } from "./toast";
 
 export const apiClient = axios.create({
   baseURL: "/api",
@@ -40,7 +41,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config as RetryConfig | undefined;
-    if (!original || error.response?.status !== 401 || original._retry) {
+    const status = error.response?.status;
+    if (!original || (status !== 401 && status !== 403) || original._retry) {
       return Promise.reject(error);
     }
 
@@ -85,6 +87,7 @@ apiClient.interceptors.response.use(
     } catch (refreshError) {
       rejectQueue(refreshError);
       clearTokens();
+      toast.sessionExpired();
       if (typeof window !== "undefined") {
         window.location.href = "/login";
       }

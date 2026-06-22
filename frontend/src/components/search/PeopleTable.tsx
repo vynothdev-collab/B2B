@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { MoreHorizontal, Eye, UserRound, Building2, ListPlus, Mail, Globe, Users, Loader2 } from "lucide-react";
 import type { PersonResult } from "@/types/search";
 import { revealPerson, type PersonRevealData } from "@/lib/searchApi";
+import { toast } from "@/lib/toast";
 
 const AVATAR_COLORS = [
   "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500",
@@ -116,7 +117,12 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
     try {
       const data = await revealPerson(id);
       setRevealed((prev) => ({ ...prev, [id]: data }));
-    } catch {
+      if (data.work_email || data.recommended_personal_email || data.mobile_phone || data.phone_numbers?.length) {
+        toast.success("Contact info revealed");
+      }
+    } catch (e: unknown) {
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      if (status !== 404) toast.apiError(e);
       setRevealed((prev) => ({ ...prev, [id]: {} }));
     } finally {
       setRevealing((prev) => { const s = new Set(prev); s.delete(id); return s; });

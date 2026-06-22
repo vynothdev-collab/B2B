@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { useRouter } from "next/navigation";
 import { apiGetMe, apiLogin, apiRegister, type UserInfo } from "@/lib/authApi";
 import { clearTokens, getAccessToken, getRefreshToken, storeTokens } from "@/lib/tokens";
+import { toast } from "@/lib/toast";
 
 interface AuthContextValue {
   user: UserInfo | null;
@@ -45,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await apiLogin(email, password);
       storeTokens(res.access_token, res.refresh_token);
       setUser(res.user);
+      toast.success(`Welcome back, ${res.user.name}!`);
       router.replace("/search");
     },
     [router]
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await apiRegister(name, email, password);
       storeTokens(res.access_token, res.refresh_token);
       setUser(res.user);
+      toast.success("Account created! Welcome.");
       router.replace("/search");
     },
     [router]
