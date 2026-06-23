@@ -124,21 +124,21 @@ export default function RangeDropdown({
             maxHeight: pos.maxH,
           }}
         >
-          <div className="border-b border-gray-100 p-2.5">
-            <div className="grid grid-cols-2 gap-2">
+          <div className="border-b border-gray-100 px-2 py-1.5">
+            <div className="grid grid-cols-2 gap-1">
               <input
                 type="number"
                 placeholder="Min"
                 value={minValue}
                 onChange={(e) => onMinChange(e.target.value)}
-                className="rounded-md border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <input
                 type="number"
                 placeholder="Max"
                 value={maxValue}
                 onChange={(e) => onMaxChange(e.target.value)}
-                className="rounded-md border-2 border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>

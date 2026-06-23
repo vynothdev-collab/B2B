@@ -128,7 +128,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
 
       <div
         ref={containerRef}
-        className="relative w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 focus-within:border-purple-500 transition-colors"
+        className="relative w-full rounded-lg border-2 border-gray-200 bg-white px-2 py-1 focus-within:border-purple-500 transition-colors"
         onClick={() => inputRef.current?.focus()}
       >
         <input
