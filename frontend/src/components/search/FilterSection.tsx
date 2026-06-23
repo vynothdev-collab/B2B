@@ -17,7 +17,6 @@ export default function FilterSection({ title, icon, info, children, isOpen, onT
 
   useEffect(() => {
     if (isOpen && !prevOpenRef.current && wrapRef.current) {
-      // Wait for the expand transition to start so the element has its open size
       const t = window.setTimeout(() => {
         wrapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 60);
