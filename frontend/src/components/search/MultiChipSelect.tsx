@@ -13,19 +13,7 @@ interface Props {
 
 const labelCls = "block text-xs text-gray-500 mb-1";
 
-const CHIP_COLORS = [
-  "bg-purple-100 text-purple-700",
-  "bg-blue-100 text-blue-700",
-  "bg-emerald-100 text-emerald-700",
-  "bg-amber-100 text-amber-700",
-  "bg-rose-100 text-rose-700",
-];
-
-function getChipColor(val: string): string {
-  let hash = 0;
-  for (let i = 0; i < val.length; i++) hash = (hash * 31 + val.charCodeAt(i)) >>> 0;
-  return CHIP_COLORS[hash % CHIP_COLORS.length];
-}
+const CHIP_CLS = "bg-purple-100 text-purple-700";
 
 const DROPDOWN_MAX_H = 220;
 
@@ -86,7 +74,7 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
           {values.map((val) => (
             <span
               key={val}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ${getChipColor(val)}`}
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ${CHIP_CLS}`}
             >
               {getLabel(val)}
               <button

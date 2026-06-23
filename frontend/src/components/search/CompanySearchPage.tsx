@@ -1,13 +1,15 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
-import { ListPlus, Search, X } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ListPlus, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import CompanyFilterPanel from "./filters/CompanyFilterPanel";
 import CompanyTable from "./CompanyTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
+import ActiveFilterChips from "./ActiveFilterChips";
 import { searchCompanies } from "@/lib/searchApi";
+import { buildCompanyChips } from "@/lib/filterChips";
 import { toast } from "@/lib/toast";
 import {
   DEFAULT_COMPANY_FILTERS,
@@ -99,6 +101,33 @@ export default function CompanySearchPage() {
   const showTable = hasSearched && !loading && results && results.data.length > 0;
   const showEmpty = !hasSearched || (!loading && results?.data.length === 0);
 
+  const removeFilter = useCallback(async (patch: Partial<CompanyFilters>) => {
+    const next = { ...filters, ...patch };
+    setFilters(next);
+    if (!hasSearched) return;
+    pageCacheRef.current = new Map();
+    setTokenHistory([]);
+    setCurrentPage(1);
+    setLoading(true);
+    setSelected(new Set());
+    try {
+      const res = await searchCompanies(next);
+      setResults(res);
+      setMeta(res.meta);
+      pageCacheRef.current.set(1, res);
+      if (res.meta.scroll_token) setTokenHistory([res.meta.scroll_token]);
+    } catch (e) {
+      toast.apiError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, hasSearched]);
+
+  const chips = useMemo(
+    () => buildCompanyChips(filters, removeFilter),
+    [filters, removeFilter]
+  );
+
   return (
     <>
       <AppHeader title="Company search" />
@@ -122,15 +151,13 @@ export default function CompanySearchPage() {
                 )}
               </div>
               <div className="flex items-center gap-1.5">
-                <button type="button" className="rounded-md border border-gray-200 bg-white p-1.5 text-gray-400 hover:bg-gray-50">
-                  <Search className="h-3.5 w-3.5" />
-                </button>
-                <button type="button" className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700">
+                <button type="button" className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors">
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
                 </button>
               </div>
             </div>
+            <ActiveFilterChips chips={chips} />
 
             {loading && (
               <div className="flex flex-1 items-center justify-center">

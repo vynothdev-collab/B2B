@@ -116,7 +116,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1">
           {values.map((val) => (
-            <span key={val} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-gray-200 text-gray-700">
+            <span key={val} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-purple-100 text-purple-700">
               {val}
               <button type="button" onMouseDown={(e) => { e.preventDefault(); removeValue(val); }} className="hover:opacity-70">
                 <X className="h-2.5 w-2.5" />

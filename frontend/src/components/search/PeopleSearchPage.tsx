@@ -1,13 +1,15 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
-import { Eye, ListPlus, Search, X } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Eye, ListPlus, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import PeopleFilterPanel from "./filters/PeopleFilterPanel";
 import PeopleTable from "./PeopleTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
+import ActiveFilterChips from "./ActiveFilterChips";
 import { searchPersons } from "@/lib/searchApi";
+import { buildPersonChips } from "@/lib/filterChips";
 import { toast } from "@/lib/toast";
 import {
   DEFAULT_PERSON_FILTERS,
@@ -75,7 +77,7 @@ export default function PeopleSearchPage() {
     setTokenHistory([]);
     setCurrentPage(1);
     runSearch(1, undefined);
-  }, [runSearch]);
+  }, [runSearch, filters]);
 
   const handleReset = () => {
     setFilters(DEFAULT_PERSON_FILTERS);
@@ -98,6 +100,33 @@ export default function PeopleSearchPage() {
   const totalLabel = hasSearched ? totalCount.toLocaleString() : "0";
   const showTable = hasSearched && !loading && results && results.data.length > 0;
   const showEmpty = !hasSearched || (!loading && results?.data.length === 0);
+
+  const removeFilter = useCallback(async (patch: Partial<PersonFilters>) => {
+    const next = { ...filters, ...patch };
+    setFilters(next);
+    if (!hasSearched) return;
+    pageCacheRef.current = new Map();
+    setTokenHistory([]);
+    setCurrentPage(1);
+    setLoading(true);
+    setSelected(new Set());
+    try {
+      const res = await searchPersons(next);
+      setResults(res);
+      setMeta(res.meta);
+      pageCacheRef.current.set(1, res);
+      if (res.meta.scroll_token) setTokenHistory([res.meta.scroll_token]);
+    } catch (e) {
+      toast.apiError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, hasSearched]);
+
+  const chips = useMemo(
+    () => buildPersonChips(filters, removeFilter),
+    [filters, removeFilter]
+  );
 
   return (
     <>
@@ -122,15 +151,13 @@ export default function PeopleSearchPage() {
                 )}
               </div>
               <div className="flex items-center gap-1.5">
-                <button type="button" className="rounded-md border border-gray-200 bg-white p-1.5 text-gray-400 hover:bg-gray-50">
-                  <Search className="h-3.5 w-3.5" />
-                </button>
                 <button type="button" className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700">
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
                 </button>
               </div>
             </div>
+            <ActiveFilterChips chips={chips} />
 
             {loading && (
               <div className="flex flex-1 items-center justify-center">
