@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Users, Building2, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
@@ -21,13 +21,19 @@ export default function AppSidebar() {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
+  useEffect(() => {
+    // Auto-collapse on screens narrower than xl (1280px) at mount
+    setCollapsed(window.innerWidth < 1280);
+  }, []);
+
   return (
     <aside
-      className={`relative flex shrink-0 flex-col border-r border-gray-200 bg-white transition-all duration-300 ${
-        collapsed ? "w-16" : "w-60"
-      }`}
+      className={[
+        "relative flex shrink-0 flex-col border-r border-gray-200 bg-white transition-all duration-300",
+        collapsed ? "w-16" : "w-60",
+      ].join(" ")}
     >
-      {/* Toggle button — sits on the vertical border line, centered in header height */}
+      {/* Toggle button — straddles the vertical border line */}
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
@@ -57,13 +63,11 @@ export default function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-colors ${
-                  collapsed ? "justify-center" : ""
-                } ${
-                  active
-                    ? "bg-purple-50 text-purple-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={[
+                  "flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium transition-colors",
+                  collapsed ? "justify-center" : "",
+                  active ? "bg-purple-50 text-purple-700" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                ].join(" ")}
               >
                 <span className={active ? "text-purple-600" : "text-gray-400"}>{item.icon}</span>
                 {!collapsed && <span className="flex-1 truncate">{item.label}</span>}
@@ -75,7 +79,7 @@ export default function AppSidebar() {
 
       {/* User footer */}
       <div className="border-t border-gray-100 px-3 py-3">
-        <div className={`flex items-center gap-2.5 ${collapsed ? "justify-center" : ""}`}>
+        <div className={["flex items-center gap-2.5", collapsed ? "justify-center" : ""].join(" ")}>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-600 text-xs font-bold text-white">
             {user?.name ? user.name.slice(0, 2).toUpperCase() : "??"}
           </div>

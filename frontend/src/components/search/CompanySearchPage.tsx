@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ListPlus, X } from "lucide-react";
+import { ListPlus, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import CompanyFilterPanel from "./filters/CompanyFilterPanel";
@@ -30,6 +30,7 @@ export default function CompanySearchPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [tokenHistory, setTokenHistory] = useState<string[]>([]);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
 
   const runSearch = useCallback(async (page: number, scrollToken?: string) => {
@@ -77,7 +78,7 @@ export default function CompanySearchPage() {
     setTokenHistory([]);
     setCurrentPage(1);
     runSearch(1, undefined);
-  }, [runSearch]);
+  }, [runSearch, filters]);
 
   const handleReset = () => {
     setFilters(DEFAULT_COMPANY_FILTERS);
@@ -132,7 +133,7 @@ export default function CompanySearchPage() {
     <>
       <AppHeader title="Company search" />
       <div className="flex flex-1 gap-2 overflow-hidden px-3 py-2">
-        <FilterPanelShell onReset={handleReset} onApply={startSearch}>
+        <FilterPanelShell onReset={handleReset} onApply={startSearch} open={filtersOpen} onClose={() => setFiltersOpen(false)}>
           <CompanyFilterPanel
             filters={filters}
             onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}
@@ -151,6 +152,14 @@ export default function CompanySearchPage() {
                 )}
               </div>
               <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(true)}
+                  className="lg:hidden flex items-center gap-1 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                  Filters
+                </button>
                 <button type="button" className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors">
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
