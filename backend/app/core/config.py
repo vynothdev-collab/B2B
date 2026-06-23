@@ -8,28 +8,28 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    APP_NAME: str = "B2B API"
-    APP_VERSION: str = "0.1.0"
+    APP_NAME: str = ""
+    APP_VERSION: str = ""
     DEBUG: bool = False
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: str = ""
 
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: list[str] = [""]
 
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/b2b_db"
+    DATABASE_URL: str = ""
 
-    SECRET_KEY: str = "change-this-secret-key-in-production"
-    ALGORITHM: str = "HS256"
+    SECRET_KEY: str = ""
+    ALGORITHM: str = ""
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = ""
 
     PDL_API_KEY: str = ""
     PDL_PREVIEW_KEY: str = ""
-    PDL_BASE_URL: str = "https://api.peopledatalabs.com/v5"
+    PDL_BASE_URL: str = ""
 
 
 settings = Settings()

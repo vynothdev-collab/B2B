@@ -262,7 +262,7 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     if f.name:
         must.append({"match": {"full_name": f.name.lower()}})
     if f.linkedin_url:
-        cleaned = [u.lower().rstrip("/") for u in f.linkedin_url]
+        cleaned = [_normalize_domain(u) for u in f.linkedin_url]
         _add_multi_term(filters, "linkedin_url", cleaned)
 
     if f.headline:
@@ -307,7 +307,7 @@ def build_person_query(f: PersonSearchRequest) -> dict:
 
     _add_multi_match(must, "job_company_name", f.company_name or [])
     if f.company_linkedin_url:
-        cleaned = [u.lower().rstrip("/") for u in f.company_linkedin_url]
+        cleaned = [_normalize_domain(u) for u in f.company_linkedin_url]
         _add_multi_term(filters, "job_company_linkedin_url", cleaned)
     if f.company_domain:
         filters.append({"term": {"job_company_website": _normalize_domain(f.company_domain)}})

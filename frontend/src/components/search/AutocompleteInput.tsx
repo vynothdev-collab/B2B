@@ -79,7 +79,7 @@ export default function AutocompleteInput({ label, placeholder, value, onChange,
         else setOpen(false);
       } catch { setOpen(false); }
       finally { setLoading(false); }
-    }, 350);
+    }, 700);
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [inputText, field, size, reposition]);

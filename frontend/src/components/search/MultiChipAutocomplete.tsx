@@ -77,7 +77,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
         else setOpen(false);
       } catch { setOpen(false); }
       finally { setLoading(false); }
-    }, 350);
+    }, 700);
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [inputText, field, size, values, reposition]);
@@ -102,12 +102,11 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !inputText && values.length > 0) { removeValue(values[values.length - 1]); return; }
-    if (!field && (e.key === "Enter" || e.key === ",") && inputText.trim()) { e.preventDefault(); addValue(inputText.trim()); return; }
-    if (!open) return;
-    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1)); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); }
-    else if (e.key === "Enter" && activeIdx >= 0) { e.preventDefault(); addValue(suggestions[activeIdx].name); }
-    else if (e.key === "Escape") setOpen(false);
+    if (e.key === "ArrowDown" && open) { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1)); return; }
+    if (e.key === "ArrowUp" && open) { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); return; }
+    if (e.key === "Enter" && open && activeIdx >= 0) { e.preventDefault(); addValue(suggestions[activeIdx].name); return; }
+    if (e.key === "Escape") { setOpen(false); return; }
+    if ((e.key === "Enter" || (!field && e.key === ",")) && inputText.trim()) { e.preventDefault(); addValue(inputText.trim()); }
   };
 
   return (

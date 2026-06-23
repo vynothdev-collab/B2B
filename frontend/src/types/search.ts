@@ -145,7 +145,7 @@ export interface SearchResponse {
 
 
 export const DEGREE_OPTIONS = [
-  { value: "associates", label: "Associates" },
+  { value: "associate", label: "Associates (Any)" },
   { value: "associate of arts", label: "Associate of Arts" },
   { value: "bachelors", label: "Bachelor's (Any)" },
   { value: "bachelor of aerospace engineering", label: "Bachelor of Aerospace Engineering" },
@@ -295,7 +295,7 @@ export const DEGREE_OPTIONS = [
   { value: "master of urban and regional planning", label: "Master of Urban and Regional Planning" },
   { value: "magister juris", label: "Magister Juris" },
   { value: "magisters", label: "Magisters" },
-  { value: "doctorates", label: "Doctorate (Any)" },
+  { value: "phd", label: "Doctorate (Any)" },
   { value: "doctor of audiology", label: "Doctor of Audiology" },
   { value: "doctor of business administration", label: "Doctor of Business Administration" },
   { value: "doctor of chiropractic", label: "Doctor of Chiropractic" },
@@ -372,23 +372,19 @@ export const COMPANY_SIZE_OPTIONS = [
 export const COMPANY_TYPE_OPTIONS = [
   { value: "private", label: "Private" },
   { value: "public", label: "Public" },
-  { value: "nonprofit", label: "Non-profit" },
+  { value: "non profit", label: "Non-profit" },
   { value: "government", label: "Government" },
-  { value: "educational", label: "Educational" },
+  { value: "education", label: "Educational" },
   { value: "public_subsidiary", label: "Public Subsidiary" },
 ];
 
 export const REVENUE_OPTIONS = [
   { value: "$0-$1M", label: "$0 – $1M" },
   { value: "$1M-$10M", label: "$1M – $10M" },
-  { value: "$10M-$25M", label: "$10M – $25M" },
-  { value: "$25M-$50M", label: "$25M – $50M" },
-  { value: "$50M-$100M", label: "$50M – $100M" },
-  { value: "$100M-$250M", label: "$100M – $250M" },
-  { value: "$250M-$500M", label: "$250M – $500M" },
+  { value: "$10M-$50M", label: "$10M – $50M" },
+  { value: "$50M-$500M", label: "$50M – $500M" },
   { value: "$500M-$1B", label: "$500M – $1B" },
-  { value: "$1B-$10B", label: "$1B – $10B" },
-  { value: "$10B+", label: "$10B+" },
+  { value: "$1B+", label: "$1B+" },
 ];
 
 export const FUNDING_ROUND_OPTIONS = [
