@@ -39,9 +39,9 @@ export default function LoginPage() {
 
         <div className="relative flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm">
-            B2B
+            LB
           </div>
-          <span className="text-white font-bold text-lg tracking-tight">B2B Platform</span>
+          <span className="text-white font-bold text-lg tracking-tight">leadsbuddy.ai</span>
         </div>
 
         <div className="relative space-y-8">
@@ -86,7 +86,7 @@ export default function LoginPage() {
 
         <div className="relative rounded-2xl bg-white/10 backdrop-blur-sm p-5 border border-white/10">
           <p className="text-sm text-purple-100 leading-relaxed">
-            &ldquo;B2B Platform cut our prospecting time in half. The data quality is outstanding and the filters are incredibly precise.&rdquo;
+            &ldquo;leadsbuddy.ai cut our prospecting time in half. The data quality is outstanding and the filters are incredibly precise.&rdquo;
           </p>
           <div className="mt-3 flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-full bg-purple-400 flex items-center justify-center text-white text-xs font-bold">
@@ -105,9 +105,9 @@ export default function LoginPage() {
 
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-xs">
-              B2B
+              LB
             </div>
-            <span className="font-bold text-gray-900">B2B Platform</span>
+            <span className="font-bold text-gray-900">leadsbuddy.ai</span>
           </div>
 
           <div className="mb-8">

@@ -102,7 +102,7 @@ export default function PeopleSearchPage() {
   return (
     <>
       <AppHeader title="People search" />
-      <div className="flex flex-1 gap-4 overflow-hidden px-5 py-4">
+      <div className="flex flex-1 gap-2 overflow-hidden px-3 py-2">
         <FilterPanelShell onReset={handleReset} onApply={startSearch}>
           <PeopleFilterPanel
             filters={filters}

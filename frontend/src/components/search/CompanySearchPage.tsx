@@ -102,7 +102,7 @@ export default function CompanySearchPage() {
   return (
     <>
       <AppHeader title="Company search" />
-      <div className="flex flex-1 gap-4 overflow-hidden px-5 py-4">
+      <div className="flex flex-1 gap-2 overflow-hidden px-3 py-2">
         <FilterPanelShell onReset={handleReset} onApply={startSearch}>
           <CompanyFilterPanel
             filters={filters}

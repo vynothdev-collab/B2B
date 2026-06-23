@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "B2B Platform",
-  description: "B2B business platform",
+  title: "leadsbuddy.ai",
+  description: "leadsbuddy.ai — find leads and enrich contacts",
 };
 
 export default function RootLayout({

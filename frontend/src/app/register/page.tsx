@@ -53,9 +53,9 @@ export default function RegisterPage() {
 
         <div className="relative flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm">
-            B2B
+            LB
           </div>
-          <span className="text-white font-bold text-lg tracking-tight">B2B Platform</span>
+          <span className="text-white font-bold text-lg tracking-tight">leadsbuddy.ai</span>
         </div>
 
         <div className="relative space-y-8">
@@ -64,7 +64,7 @@ export default function RegisterPage() {
               Start closing<br />more deals today.
             </h2>
             <p className="mt-4 text-purple-200 text-base leading-relaxed">
-              Join thousands of sales teams who use B2B Platform to find and connect with their ideal customers.
+              Join thousands of sales teams who use leadsbuddy.ai to find and connect with their ideal customers.
             </p>
           </div>
 
@@ -113,9 +113,9 @@ export default function RegisterPage() {
 
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-xs">
-              B2B
+              LB
             </div>
-            <span className="font-bold text-gray-900">B2B Platform</span>
+            <span className="font-bold text-gray-900">leadsbuddy.ai</span>
           </div>
 
           <div className="mb-7">

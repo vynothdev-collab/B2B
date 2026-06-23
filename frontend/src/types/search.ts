@@ -240,15 +240,45 @@ export const REVENUE_OPTIONS = [
 ];
 
 export const EMPLOYEE_COUNT_PRESETS = [
-  { value: "1-10", label: "1 – 10", min: 1, max: 10 },
-  { value: "11-50", label: "11 – 50", min: 11, max: 50 },
-  { value: "51-200", label: "51 – 200", min: 51, max: 200 },
-  { value: "201-500", label: "201 – 500", min: 201, max: 500 },
-  { value: "501-1000", label: "501 – 1,000", min: 501, max: 1000 },
-  { value: "1001-5000", label: "1,001 – 5,000", min: 1001, max: 5000 },
-  { value: "5001-10000", label: "5,001 – 10,000", min: 5001, max: 10000 },
-  { value: "10001+", label: "10,001+", min: 10001, max: undefined as number | undefined },
+  { label: "1 – 10", min: 1, max: 10 },
+  { label: "11 – 50", min: 11, max: 50 },
+  { label: "51 – 200", min: 51, max: 200 },
+  { label: "201 – 500", min: 201, max: 500 },
+  { label: "501 – 1,000", min: 501, max: 1000 },
+  { label: "1,001 – 5,000", min: 1001, max: 5000 },
+  { label: "5,001 – 10,000", min: 5001, max: 10000 },
+  { label: "10,001+", min: 10001 },
 ];
+
+export const FUNDING_PRESETS = [
+  { label: "Under $1M", max: 1_000_000 },
+  { label: "$1M – $10M", min: 1_000_000, max: 10_000_000 },
+  { label: "$10M – $50M", min: 10_000_000, max: 50_000_000 },
+  { label: "$50M – $100M", min: 50_000_000, max: 100_000_000 },
+  { label: "$100M – $500M", min: 100_000_000, max: 500_000_000 },
+  { label: "$500M – $1B", min: 500_000_000, max: 1_000_000_000 },
+  { label: "$1B+", min: 1_000_000_000 },
+];
+
+export const GROWTH_PRESETS = [
+  { label: "Decline (<0%)", max: 0 },
+  { label: "0 – 25%", min: 0, max: 25 },
+  { label: "25 – 50%", min: 25, max: 50 },
+  { label: "50 – 100%", min: 50, max: 100 },
+  { label: "100 – 200%", min: 100, max: 200 },
+  { label: "200%+", min: 200 },
+];
+
+export const FOUNDED_YEAR_PRESETS = [
+  { label: "2020 – 2026", min: 2020, max: 2026 },
+  { label: "2015 – 2019", min: 2015, max: 2019 },
+  { label: "2010 – 2014", min: 2010, max: 2014 },
+  { label: "2000 – 2009", min: 2000, max: 2009 },
+  { label: "1990 – 1999", min: 1990, max: 1999 },
+  { label: "Before 1990", max: 1989 },
+];
+
+export const HEADCOUNT_RANGE_PRESETS = EMPLOYEE_COUNT_PRESETS;
 
 export const FUNDING_STAGE_OPTIONS = [
   { value: "pre_seed", label: "Pre-seed" },

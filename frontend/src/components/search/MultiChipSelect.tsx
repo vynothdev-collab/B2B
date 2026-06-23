@@ -103,7 +103,7 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
 
       <div
         ref={containerRef}
-        className="w-full rounded-lg bg-gray-100 px-3 py-2 focus-within:ring-2 focus-within:ring-purple-400/50 transition-colors cursor-text"
+        className="w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 focus-within:border-purple-500 transition-colors cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         <input

@@ -124,7 +124,7 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                 type="checkbox"
                 checked={allSelected}
                 onChange={(e) => onSelectAll(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-400"
+                className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
               />
             </th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[200px]">Company ↓</th>
@@ -155,7 +155,7 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                     type="checkbox"
                     checked={checked}
                     onChange={() => onSelect(company.id)}
-                    className="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-400"
+                    className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
                   />
                 </td>
 

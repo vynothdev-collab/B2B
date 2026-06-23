@@ -17,7 +17,7 @@ function Checkbox({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="h-3.5 w-3.5 rounded border-gray-300 text-purple-600 focus:ring-purple-400"
+        className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
       />
       <span className="text-purple-500">{icon}</span>
       <span className="text-xs font-medium text-gray-700">{label}</span>
