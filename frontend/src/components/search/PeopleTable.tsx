@@ -131,7 +131,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
+      <table className="w-full min-w-[700px] text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
             <th className="w-8 px-3 py-2.5">
