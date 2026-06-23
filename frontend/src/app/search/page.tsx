@@ -1,7 +1,5 @@
-import SearchPage from "@/components/search/SearchPage";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Hire & Source — B2B Platform" };
-
-export default function Page() {
-  return <SearchPage />;
+export default function SearchIndex() {
+  redirect("/search/people");
 }

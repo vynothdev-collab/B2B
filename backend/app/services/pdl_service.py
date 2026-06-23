@@ -15,210 +15,10 @@ from app.schemas.search import (
 )
 
 
-_DEGREE_MAP: dict[str, list[str]] = {
-    "high_school": [
-        "high school diploma", "ged", "secondary school diploma",
-        "high school", "secondary education",
-    ],
-    "associate": [
-        "associates", "associate of arts",
-    ],
-    "bachelors": [
-        "bachelors",
-        "bachelor of aerospace engineering",
-        "bachelor of applied science",
-        "bachelor of architecture",
-        "bachelor of arts",
-        "bachelor of arts in business administration",
-        "bachelor of arts in communication",
-        "bachelor of arts in education",
-        "bachelor of biosystems engineering",
-        "bachelor of business administration",
-        "bachelor of chemical engineering",
-        "bachelor of civil engineering",
-        "bachelor of commerce",
-        "bachelor of design",
-        "bachelor of education",
-        "bachelor of electrical engineering",
-        "bachelor of engineering",
-        "bachelor of fine arts",
-        "bachelor of general studies",
-        "bachelor of industrial & systems engineering",
-        "bachelor of industrial design",
-        "bachelor of interdisciplinary studies",
-        "bachelor of interior architecture",
-        "bachelor of law",
-        "bachelor of liberal arts",
-        "bachelor of liberal arts and sciences",
-        "bachelor of materials engineering",
-        "bachelor of mathematics",
-        "bachelor of mechanical engineering",
-        "bachelor of medicine",
-        "bachelor of music",
-        "bachelor of music education",
-        "bachelor of pharmacy",
-        "bachelor of polymer and fiber engineering",
-        "bachelor of professional health science",
-        "bachelor of science",
-        "bachelor of science in aerospace engineering",
-        "bachelor of science in biomedical engineering",
-        "bachelor of science in business administration",
-        "bachelor of science in chemical engineering",
-        "bachelor of science in chemistry",
-        "bachelor of science in civil engineering",
-        "bachelor of science in commerce business administration",
-        "bachelor of science in computer science",
-        "bachelor of science in education",
-        "bachelor of science in electrical engineering",
-        "bachelor of science in engineering",
-        "bachelor of science in engineering technology",
-        "bachelor of science in geology",
-        "bachelor of science in human environmental sciences",
-        "bachelor of science in materials engineering",
-        "bachelor of science in mechanical engineering",
-        "bachelor of science in metallurgical engineering",
-        "bachelor of science in microbiology",
-        "bachelor of science in nursing",
-        "bachelor of science in social work",
-        "bachelor of social work",
-        "bachelor of software engineering",
-        "bachelor of technology",
-        "bachelor of textile engineering",
-        "bachelor of textile management and technology",
-        "bachelor of veterinary science",
-        "bachelor of wireless engineering",
-    ],
-    "masters": [
-        "masters",
-        "master of accountancy",
-        "master of accounting",
-        "master of aerospace engineering",
-        "master of agriculture",
-        "master of applied mathematics",
-        "master of aquaculture",
-        "master of arts",
-        "master of arts in education",
-        "master of arts in teaching",
-        "master of building construction",
-        "master of chemical engineering",
-        "master of civil engineering",
-        "master of commerce",
-        "master of communication disorders",
-        "master of community planning",
-        "master of dental surgery",
-        "master of design",
-        "master of divinity",
-        "master of education",
-        "master of electrical engineering",
-        "master of engineering",
-        "master of fine arts",
-        "master of health science",
-        "master of hispanic studies",
-        "master of industrial design",
-        "master of integrated design and construction",
-        "master of international studies",
-        "master of landscape architecture",
-        "master of laws",
-        "master of liberal arts",
-        "master of library & information studies",
-        "master of library science",
-        "master of materials engineering",
-        "master of mechanical engineering",
-        "master of music",
-        "master of natural resources",
-        "master of nurse anesthesia",
-        "master of political science",
-        "master of probability and statistics",
-        "master of professional studies",
-        "master of public administration",
-        "master of public health",
-        "master of real estate development",
-        "master of rehabilitation counseling",
-        "master of science",
-        "master of science in aerospace engineering",
-        "master of science in basic medical sciences",
-        "master of science in biomedical engineering",
-        "master of science in chemical engineering",
-        "master of science in chemistry",
-        "master of science in civil engineering",
-        "master of science in computer science",
-        "master of science in criminal justice",
-        "master of science in education",
-        "master of science in electrical engineering",
-        "master of science in engineering science & mechanics",
-        "master of science in forensic science",
-        "master of science in health administration",
-        "master of science in health informatics",
-        "master of science in human environmental sciences",
-        "master of science in industrial engineering",
-        "master of science in information systems",
-        "master of science in instructional leadership administration",
-        "master of science in justice and public safety",
-        "master of science in marine science",
-        "master of science in materials engineering",
-        "master of science in mechanical engineering",
-        "master of science in metallurgical engineering",
-        "master of science in nursing",
-        "master of science in occupational therapy",
-        "master of science in operations research",
-        "master of science in physician assistant studies",
-        "master of science in public health",
-        "master of science in software engineering",
-        "master of social work",
-        "master of software engineering",
-        "master of tax accounting",
-        "master of taxation",
-        "master of technical & professional communication",
-        "master of technology",
-        "master of urban and regional planning",
-        "magister juris",
-        "magisters",
-    ],
-    "mba": ["master of business administration"],
-    "phd": [
-        "doctor of philosophy",
-        "doctor of science",
-        "doctor of education",
-        "doctor of business administration",
-        "doctor of audiology",
-        "doctor of chiropractic",
-        "doctor of musical arts",
-        "doctor of ministry",
-        "doctor of nursing practice",
-        "doctor of physical therapy",
-        "doctor of psychology",
-        "doctor of public health",
-        "doctorates",
-    ],
-    "md": ["doctor of medicine"],
-    "juris_doctor": [
-        "doctor of jurisprudence",
-    ],
-    "dds": [
-        "doctor of dental surgery",
-        "doctor of medical dentistry",
-    ],
-    "pharmd": ["doctor of pharmacy"],
-    "dvm": ["doctor of veterinary medicine"],
-    "od": ["doctor of optometry"],
-    "do": ["doctor of osteophathy"],
-}
-
-
-def _normalize_domain(raw: str) -> str:
-    return (
-        raw.lower()
-        .replace("https://", "")
-        .replace("http://", "")
-        .replace("www.", "")
-        .rstrip("/")
-    )
-
-
 def _add_multi_term(
     clauses: list[dict],
     field: str,
-    values: list[str],
+    values: Optional[list[str]],
     lowercase: bool = True,
 ) -> None:
     if not values:
@@ -230,175 +30,168 @@ def _add_multi_term(
         clauses.append({"terms": {field: processed}})
 
 
-def _add_multi_match(clauses: list[dict], field: str, values: list[str]) -> None:
+def _add_location_match(clauses: list[dict], field: str, values: Optional[list[str]]) -> None:
+    """Match any of the provided canonical location strings against a PDL *location_name* field.
+
+    Uses match_phrase so that picking "san francisco, california, united states" doesn't also
+    match every other location containing the words "san" or "francisco".
+    """
     if not values:
         return
-    if len(values) == 1:
-        clauses.append({"match": {field: values[0]}})
+    cleaned = [v.lower().strip() for v in values if v and v.strip()]
+    if not cleaned:
+        return
+    if len(cleaned) == 1:
+        clauses.append({"match_phrase": {field: cleaned[0]}})
     else:
         clauses.append({
             "bool": {
-                "should": [{"match": {field: v}} for v in values],
+                "should": [{"match_phrase": {field: v}} for v in cleaned],
                 "minimum_should_match": 1,
             }
         })
 
 
-def _build_bool_query(must: list[dict], filters: list[dict]) -> dict:
-    if not must and not filters:
+def _add_multi_match(
+    clauses: list[dict],
+    field: str,
+    values: Optional[list[str]],
+    phrase: bool = False,
+) -> None:
+    if not values:
+        return
+    query_type = "match_phrase" if phrase else "match"
+    if len(values) == 1:
+        clauses.append({query_type: {field: values[0]}})
+    else:
+        clauses.append({
+            "bool": {
+                "should": [{query_type: {field: v}} for v in values],
+                "minimum_should_match": 1,
+            }
+        })
+
+
+def _add_range(
+    clauses: list[dict],
+    field: str,
+    minv: Optional[float],
+    maxv: Optional[float],
+) -> None:
+    r: dict[str, float] = {}
+    if minv is not None:
+        r["gte"] = minv
+    if maxv is not None:
+        r["lte"] = maxv
+    if r:
+        clauses.append({"range": {field: r}})
+
+
+def _build_bool_query(
+    must: list[dict],
+    filters: list[dict],
+    should: Optional[list[dict]] = None,
+    minimum_should_match: int = 0,
+) -> dict:
+    if not must and not filters and not should:
         return {"match_all": {}}
     bool_q: dict[str, Any] = {}
     if must:
         bool_q["must"] = must
     if filters:
         bool_q["filter"] = filters
+    if should:
+        bool_q["should"] = should
+        bool_q["minimum_should_match"] = minimum_should_match or 1
     return {"bool": bool_q}
 
 
 def build_person_query(f: PersonSearchRequest) -> dict:
     must: list[dict] = []
     filters: list[dict] = []
+    should: list[dict] = []
 
     if f.name:
         must.append({"match": {"full_name": f.name.lower()}})
-    if f.linkedin_url:
-        cleaned = [_normalize_domain(u) for u in f.linkedin_url]
-        _add_multi_term(filters, "linkedin_url", cleaned)
 
-    if f.headline:
-        must.append({"match": {"headline": f.headline}})
-    if f.summary:
-        must.append({"match": {"summary": f.summary}})
-    if f.twitter_handle:
-        filters.append({"term": {"twitter_username": f.twitter_handle.lstrip("@").lower()}})
-    if f.github_url:
-        handle = f.github_url.lower().rstrip("/").split("/")[-1]
-        filters.append({"term": {"github_username": handle}})
-    for lang in (f.languages or []):
-        filters.append({"term": {"languages.name": lang.lower()}})
-    for skill in (f.skills or []):
-        filters.append({"term": {"skills": skill.lower()}})
-    for interest in (f.interests or []):
-        filters.append({"term": {"interests": interest.lower()}})
-    if f.certifications:
-        must.append({"match": {"certifications.name": f.certifications}})
-    if f.degree:
-        canonical: list[str] = []
-        for d in f.degree:
-            canonical.extend(_DEGREE_MAP.get(d.lower(), [d.lower()]))
-        _add_multi_term(filters, "education.degrees", canonical)
-    if f.school:
-        must.append({"match": {"education.school.name": f.school}})
-    if f.field_of_study:
-        filters.append({"term": {"education.majors": f.field_of_study.lower()}})
-    if f.linkedin_connections_min is not None:
-        filters.append({"range": {"linkedin_connections": {"gte": f.linkedin_connections_min}}})
+    _add_multi_match(must, "job_title", f.job_title)
+    _add_multi_term(filters, "job_title_role", f.departments)
+    _add_multi_term(filters, "job_title_levels", f.seniority)
+    _add_multi_match(must, "job_company_name", f.companies, phrase=True)
 
-    _add_multi_match(must, "job_title", f.job_title or [])
-    _add_multi_term(filters, "job_title_levels", f.seniority or [])
-    _add_multi_term(filters, "job_title_role", f.department or [])
-    exp_range: dict[str, int] = {}
-    if f.years_experience_min is not None:
-        exp_range["gte"] = f.years_experience_min
-    if f.years_experience_max is not None:
-        exp_range["lte"] = f.years_experience_max
-    if exp_range:
-        filters.append({"range": {"inferred_years_experience": exp_range}})
+    _add_location_match(must, "location_name", f.person_locations)
+    _add_location_match(must, "job_company_location_name", f.hq_locations)
 
-    _add_multi_match(must, "job_company_name", f.company_name or [])
-    if f.company_linkedin_url:
-        cleaned = [_normalize_domain(u) for u in f.company_linkedin_url]
-        _add_multi_term(filters, "job_company_linkedin_url", cleaned)
-    if f.company_domain:
-        filters.append({"term": {"job_company_website": _normalize_domain(f.company_domain)}})
-    _add_multi_term(filters, "job_company_industry", f.industry or [])
-    _add_multi_term(filters, "job_company_size", f.company_size or [], lowercase=False)
-    _add_multi_term(filters, "job_company_type", f.company_type or [])
-    _add_multi_term(filters, "job_company_inferred_revenue", f.company_revenue or [], lowercase=False)
+    contact_clauses: list[dict] = []
+    if f.require_work_email:
+        contact_clauses.append({"exists": {"field": "work_email"}})
+    if f.require_mobile:
+        contact_clauses.append({"exists": {"field": "mobile_phone"}})
 
-    _add_multi_match(must, "experience.company.name", f.past_companies or [])
-    _add_multi_match(must, "experience.title.name", f.past_titles or [])
-    _add_multi_term(filters, "experience.title.levels", f.past_seniority or [])
-    _add_multi_term(filters, "experience.title.role", f.past_department or [])
+    if contact_clauses:
+        if f.contact_logic == "or" and len(contact_clauses) > 1:
+            should.extend(contact_clauses)
+        else:
+            filters.extend(contact_clauses)
 
-    _add_multi_term(filters, "location_country", f.country or [])
-    _add_multi_term(filters, "location_region", f.state or [])
-    if f.city:
-        filters.append({"term": {"location_locality": f.city.lower()}})
+    _add_multi_term(filters, "job_company_type", f.company_type)
+    _add_multi_term(filters, "skills", f.technologies)
+    _add_multi_term(filters, "job_company_inferred_revenue", f.revenue_buckets, lowercase=False)
 
-    _add_multi_term(filters, "job_company_location_country", f.hq_country or [])
-    _add_multi_term(filters, "job_company_location_region", f.hq_state or [])
-    if f.hq_city:
-        filters.append({"term": {"job_company_location_locality": f.hq_city.lower()}})
+    _add_range(filters, "job_company_total_funding_raised", f.funding_min, f.funding_max)
+    _add_range(filters, "job_company_founded", f.founded_min, f.founded_max)
 
-    return _build_bool_query(must, filters)
+    growth_min = f.headcount_growth_min / 100 if f.headcount_growth_min is not None else None
+    growth_max = f.headcount_growth_max / 100 if f.headcount_growth_max is not None else None
+    _add_range(filters, "job_company_12mo_employee_growth_rate", growth_min, growth_max)
+
+    return _build_bool_query(must, filters, should if should else None)
 
 
 def build_company_query(f: CompanySearchRequest) -> dict:
     must: list[dict] = []
     filters: list[dict] = []
 
-    if f.company_name:
-        must.append({"match": {"name": f.company_name.lower()}})
-    if f.website_domain:
-        filters.append({"term": {"website": _normalize_domain(f.website_domain)}})
+    _add_multi_match(must, "name", f.companies, phrase=True)
 
-    _add_multi_term(filters, "industry", f.industry or [])
-    _add_multi_term(filters, "type", f.type or [])
-    if f.stock_exchange:
-        filters.append({"term": {"mic_exchange": f.stock_exchange.upper()}})
+    _add_location_match(must, "location.name", f.locations)
 
-    _add_multi_term(filters, "location.country", f.hq_country or [])
-    _add_multi_term(filters, "location.region", f.hq_state or [])
-    if f.hq_city:
-        filters.append({"term": {"location.locality": f.hq_city.lower()}})
-    if f.hq_metro:
-        filters.append({"term": {"location.metro": f.hq_metro.lower()}})
+    _add_multi_term(filters, "type", f.type)
+    _add_multi_term(filters, "industry", f.industries)
+    _add_multi_term(filters, "tags", f.technologies)
+    _add_multi_term(filters, "inferred_revenue", f.revenue_buckets, lowercase=False)
+    _add_multi_term(filters, "latest_funding_stage", f.funding_stages)
 
-    emp_conditions: list[dict] = []
-    if f.employee_count_ranges:
-        if len(f.employee_count_ranges) == 1:
-            emp_conditions.append({"term": {"size": f.employee_count_ranges[0]}})
-        else:
-            emp_conditions.append({"terms": {"size": f.employee_count_ranges}})
-    emp_range: dict[str, int] = {}
-    if f.employee_count_min is not None:
-        emp_range["gte"] = f.employee_count_min
-    if f.employee_count_max is not None:
-        emp_range["lte"] = f.employee_count_max
-    if emp_range:
-        emp_conditions.append({"range": {"employee_count": emp_range}})
-    if len(emp_conditions) == 1:
-        filters.append(emp_conditions[0])
-    elif len(emp_conditions) > 1:
-        filters.append({"bool": {"should": emp_conditions, "minimum_should_match": 1}})
+    _add_range(filters, "employee_count", f.employee_count_min, f.employee_count_max)
+    _add_range(filters, "total_funding_raised", f.funding_min, f.funding_max)
+    _add_range(filters, "founded", f.founded_min, f.founded_max)
 
-    _add_multi_term(filters, "inferred_revenue", f.annual_revenue or [], lowercase=False)
-    if f.employee_growth_min is not None:
-        filters.append({"range": {"employee_growth_rate.12_month": {"gte": f.employee_growth_min / 100}}})
+    co_growth_min = f.headcount_growth_min / 100 if f.headcount_growth_min is not None else None
+    co_growth_max = f.headcount_growth_max / 100 if f.headcount_growth_max is not None else None
+    _add_range(
+        filters,
+        f"employee_growth_rate.{f.headcount_growth_timeframe}",
+        co_growth_min,
+        co_growth_max,
+    )
 
-    founded_range: dict[str, int] = {}
-    if f.year_founded_min is not None:
-        founded_range["gte"] = f.year_founded_min
-    if f.year_founded_max is not None:
-        founded_range["lte"] = f.year_founded_max
-    if founded_range:
-        filters.append({"range": {"founded": founded_range}})
+    if f.headcount_by_location_country:
+        country = f.headcount_by_location_country.lower().strip()
+        _add_range(
+            filters,
+            f"employee_count_by_country.{country}",
+            f.headcount_by_location_min,
+            f.headcount_by_location_max,
+        )
 
-    _add_multi_term(filters, "latest_funding_stage", f.last_funding_round or [])
-    if f.total_funding_min is not None:
-        filters.append({"range": {"total_funding_raised": {"gte": f.total_funding_min}}})
-    if f.most_recent_funding_after:
-        filters.append({"range": {"last_funding_date": {"gte": f.most_recent_funding_after}}})
-
-    for rule in (f.role_composition_rules or []):
-        if not rule.role:
-            continue
-        role = rule.role.lower()
-        if rule.min_count is not None:
-            filters.append({"range": {f"employee_count_by_role.{role}": {"gte": rule.min_count}}})
-        if rule.min_growth is not None:
-            filters.append({"range": {f"employee_growth_rate_12_month_by_role.{role}": {"gte": rule.min_growth}}})
+    if f.headcount_by_department:
+        role = f.headcount_by_department.lower().strip()
+        _add_range(
+            filters,
+            f"employee_count_by_role.{role}",
+            f.headcount_by_department_min,
+            f.headcount_by_department_max,
+        )
 
     return _build_bool_query(must, filters)
 
@@ -425,8 +218,6 @@ async def autocomplete(field: str, text: str, size: int = 10) -> list[dict]:
             )
         if resp.status_code == 200:
             return resp.json().get("data", [])
-        if resp.status_code == 404:
-            return []
         return []
     except (httpx.TimeoutException, httpx.RequestError, Exception):
         return []
@@ -476,11 +267,80 @@ def _raise_pdl_error(pdl_status: int, body: dict) -> NoReturn:
     raise HTTPException(status_code=pdl_status, detail=msg)
 
 
+def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
+    """Only prefetch when the user has actually narrowed the company set.
+
+    Setting just a country/department without a min or max would translate into a match_all
+    company query — burning API credits to fetch arbitrary companies that aren't really filtered.
+    """
+    dept_active = bool(req.headcount_by_department) and (
+        req.headcount_by_department_min is not None
+        or req.headcount_by_department_max is not None
+    )
+    loc_active = bool(req.headcount_by_location_country) and (
+        req.headcount_by_location_min is not None
+        or req.headcount_by_location_max is not None
+    )
+    return dept_active or loc_active
+
+
+async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int = 500) -> list[str]:
+    """Run a Company Search using just the headcount-derived filters and return matching company IDs.
+
+    Used because PDL's person dataset does not carry per-role or per-country headcount breakdowns —
+    so we look up matching companies first and then constrain the person query to those job_company_id values.
+    """
+    co_req = CompanySearchRequest(
+        headcount_by_department=req.headcount_by_department,
+        headcount_by_department_min=req.headcount_by_department_min,
+        headcount_by_department_max=req.headcount_by_department_max,
+        headcount_by_location_country=req.headcount_by_location_country,
+        headcount_by_location_min=req.headcount_by_location_min,
+        headcount_by_location_max=req.headcount_by_location_max,
+    )
+
+    payload = _make_search_payload(build_company_query(co_req), None)
+    payload["size"] = limit
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(
+            f"{settings.PDL_BASE_URL}/company/search",
+            headers=_pdl_headers(),
+            json=payload,
+        )
+
+    if resp.status_code == 200:
+        body = resp.json()
+        return [c["id"] for c in body.get("data", []) if c.get("id")]
+    if resp.status_code == 404:
+        return []
+    _raise_pdl_error(resp.status_code, resp.json())
+
+
 async def search_persons(req: PersonSearchRequest) -> SearchResponse:
     if not settings.PDL_API_KEY:
         raise HTTPException(status_code=500, detail="PDL_API_KEY is not configured")
 
-    payload = _make_search_payload(build_person_query(req), req.scroll_token)
+    company_id_constraint: Optional[list[str]] = None
+    if _person_needs_company_prefetch(req):
+        try:
+            company_id_constraint = await _prefetch_company_ids_for_person(req)
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
+        except httpx.RequestError:
+            raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
+        if not company_id_constraint:
+            return SearchResponse(data=[], meta=SearchMeta(total=0))
+
+    query = build_person_query(req)
+    if company_id_constraint:
+        terms_clause = {"terms": {"job_company_id": company_id_constraint}}
+        if "bool" in query:
+            query["bool"].setdefault("filter", []).append(terms_clause)
+        else:
+            query = {"bool": {"filter": [terms_clause]}}
+
+    payload = _make_search_payload(query, req.scroll_token)
     payload["dataset"] = "all"
 
     try:
@@ -507,46 +367,26 @@ async def search_companies(req: CompanySearchRequest) -> SearchResponse:
     if not settings.PDL_API_KEY:
         raise HTTPException(status_code=500, detail="PDL_API_KEY is not configured")
 
-    url = f"{settings.PDL_BASE_URL}/company/search"
-    headers = _pdl_headers()
+    payload = _make_search_payload(build_company_query(req), req.scroll_token)
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
-                url,
-                headers=headers,
-                json=_make_search_payload(build_company_query(req), req.scroll_token),
+                f"{settings.PDL_BASE_URL}/company/search",
+                headers=_pdl_headers(),
+                json=payload,
             )
-
-            if resp.status_code == 200:
-                body = resp.json()
-                return SearchResponse(data=body.get("data", []), meta=_make_meta(body))
-            if resp.status_code == 404:
-                return SearchResponse(data=[], meta=SearchMeta(total=0))
-
-            if resp.status_code == 400:
-                pdl_msg = _extract_pdl_error(resp.json())
-                if "do not have access to query the field" in pdl_msg and req.role_composition_rules:
-                    fallback_req = req.model_copy(update={"role_composition_rules": []})
-                    resp2 = await client.post(
-                        url,
-                        headers=headers,
-                        json=_make_search_payload(build_company_query(fallback_req), req.scroll_token),
-                    )
-                    if resp2.status_code == 200:
-                        body2 = resp2.json()
-                        return SearchResponse(data=body2.get("data", []), meta=_make_meta(body2))
-                    if resp2.status_code == 404:
-                        return SearchResponse(data=[], meta=SearchMeta(total=0))
-                    _raise_pdl_error(resp2.status_code, resp2.json())
-                _raise_pdl_error(400, resp.json())
-
-            _raise_pdl_error(resp.status_code, resp.json())
-
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
     except httpx.RequestError:
         raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
+
+    if resp.status_code == 200:
+        body = resp.json()
+        return SearchResponse(data=body.get("data", []), meta=_make_meta(body))
+    if resp.status_code == 404:
+        return SearchResponse(data=[], meta=SearchMeta(total=0))
+    _raise_pdl_error(resp.status_code, resp.json())
 
 
 async def enrich_person(req: PersonRevealRequest) -> PersonRevealResponse:

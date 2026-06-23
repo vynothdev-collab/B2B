@@ -32,7 +32,7 @@ export async function fetchAutocomplete(
 }
 
 function cleanStr(v: string): string | undefined {
-  return v.trim() || undefined; 
+  return v.trim() || undefined;
 }
 function cleanNum(v: string): number | undefined {
   const n = parseInt(v, 10);
@@ -42,6 +42,9 @@ function cleanFloat(v: string): number | undefined {
   const n = parseFloat(v);
   return isNaN(n) ? undefined : n;
 }
+function listOrUndef<T>(arr: T[]): T[] | undefined {
+  return arr.length ? arr : undefined;
+}
 
 export async function searchPersons(
   filters: PersonFilters,
@@ -49,31 +52,38 @@ export async function searchPersons(
 ): Promise<SearchResponse> {
   const body = {
     name: cleanStr(filters.name),
-    linkedin_url: filters.linkedinUrls.length ? filters.linkedinUrls : undefined,
-    languages: filters.languages.length ? filters.languages : undefined,
-    skills: filters.skills.length ? filters.skills : undefined,
-    certifications: cleanStr(filters.certifications),
-    degree: filters.degree.length ? filters.degree : undefined,
-    school: cleanStr(filters.school),
-    field_of_study: cleanStr(filters.fieldOfStudy),
-    job_title: filters.jobTitle.length ? filters.jobTitle : undefined,
-    seniority: filters.seniority.length ? filters.seniority : undefined,
-    department: filters.department.length ? filters.department : undefined,
-    years_experience_min: cleanNum(filters.yearsExperienceMin),
-    years_experience_max: cleanNum(filters.yearsExperienceMax),
-    company_name: filters.companyName.length ? filters.companyName : undefined,
-    company_linkedin_url: filters.companyLinkedinUrls.length ? filters.companyLinkedinUrls : undefined,
-    company_domain: cleanStr(filters.companyDomain),
-    industry: filters.industry.length ? filters.industry : undefined,
-    company_size: filters.companySize.length ? filters.companySize : undefined,
-    company_type: filters.companyType.length ? filters.companyType : undefined,
-    company_revenue: filters.companyRevenue.length ? filters.companyRevenue : undefined,
-    country: filters.country.length ? filters.country : undefined,
-    state: filters.state.length ? filters.state : undefined,
-    city: cleanStr(filters.city),
-    hq_country: filters.hqCountry.length ? filters.hqCountry : undefined,
-    hq_state: filters.hqState.length ? filters.hqState : undefined,
-    hq_city: cleanStr(filters.hqCity),
+    job_title: listOrUndef(filters.jobTitle),
+    departments: listOrUndef(filters.departments),
+    seniority: listOrUndef(filters.seniority),
+    companies: listOrUndef(filters.companies),
+
+    person_locations: listOrUndef(filters.personLocations),
+    hq_locations: listOrUndef(filters.companyHQLocations),
+
+    require_work_email: filters.requireWorkEmail || undefined,
+    require_mobile: filters.requireMobile || undefined,
+    contact_logic: filters.requireWorkEmail || filters.requireMobile ? filters.contactLogic : undefined,
+
+    company_type: listOrUndef(filters.companyType),
+    technologies: listOrUndef(filters.technologies),
+    revenue_buckets: listOrUndef(filters.revenueBuckets),
+
+    funding_min: cleanFloat(filters.fundingMin),
+    funding_max: cleanFloat(filters.fundingMax),
+    headcount_growth_min: cleanFloat(filters.headcountGrowthMin),
+    headcount_growth_max: cleanFloat(filters.headcountGrowthMax),
+
+    headcount_by_department: cleanStr(filters.headcountByDepartment),
+    headcount_by_department_min: cleanNum(filters.headcountByDepartmentMin),
+    headcount_by_department_max: cleanNum(filters.headcountByDepartmentMax),
+
+    headcount_by_location_country: cleanStr(filters.headcountByLocationCountry),
+    headcount_by_location_min: cleanNum(filters.headcountByLocationMin),
+    headcount_by_location_max: cleanNum(filters.headcountByLocationMax),
+
+    founded_min: cleanNum(filters.foundedMin),
+    founded_max: cleanNum(filters.foundedMax),
+
     scroll_token: scrollToken,
   };
 
@@ -86,32 +96,37 @@ export async function searchCompanies(
   scrollToken?: string
 ): Promise<SearchResponse> {
   const body = {
-    company_name: cleanStr(filters.companyName),
-    website_domain: cleanStr(filters.websiteDomain),
-    industry: filters.industry.length ? filters.industry : undefined,
-    type: filters.type.length ? filters.type : undefined,
-    stock_exchange: cleanStr(filters.stockExchange),
-    hq_country: filters.hqCountry.length ? filters.hqCountry : undefined,
-    hq_state: filters.hqState.length ? filters.hqState : undefined,
-    hq_city: cleanStr(filters.hqCity),
-    hq_metro: cleanStr(filters.hqMetro),
-    employee_count_ranges: filters.employeeCountRanges.length ? filters.employeeCountRanges : undefined,
+    companies: listOrUndef(filters.companies),
+    locations: listOrUndef(filters.locations),
+
+    type: listOrUndef(filters.type),
+
     employee_count_min: cleanNum(filters.employeeCountMin),
     employee_count_max: cleanNum(filters.employeeCountMax),
-    annual_revenue: filters.annualRevenue.length ? filters.annualRevenue : undefined,
-    employee_growth_min: cleanFloat(filters.employeeGrowthMin),
-    year_founded_min: cleanNum(filters.yearFoundedMin),
-    year_founded_max: cleanNum(filters.yearFoundedMax),
-    last_funding_round: filters.lastFundingRound.length ? filters.lastFundingRound : undefined,
-    total_funding_min: cleanFloat(filters.totalFundingMin),
-    most_recent_funding_after: cleanStr(filters.mostRecentFundingAfter),
-    role_composition_rules: filters.roleCompositionRules
-      .filter((r) => r.role && (r.minCount || r.minGrowth))
-      .map((r) => ({
-        role: r.role,
-        min_count: r.minCount ? parseInt(r.minCount, 10) : undefined,
-        min_growth: r.minGrowth ? parseFloat(r.minGrowth) / 100 : undefined,
-      })),
+
+    industries: listOrUndef(filters.industries),
+    technologies: listOrUndef(filters.technologies),
+    revenue_buckets: listOrUndef(filters.revenueBuckets),
+
+    funding_min: cleanFloat(filters.fundingMin),
+    funding_max: cleanFloat(filters.fundingMax),
+    funding_stages: listOrUndef(filters.fundingStages),
+
+    headcount_growth_timeframe: filters.headcountGrowthTimeframe,
+    headcount_growth_min: cleanFloat(filters.headcountGrowthMin),
+    headcount_growth_max: cleanFloat(filters.headcountGrowthMax),
+
+    headcount_by_location_country: cleanStr(filters.headcountByLocationCountry),
+    headcount_by_location_min: cleanNum(filters.headcountByLocationMin),
+    headcount_by_location_max: cleanNum(filters.headcountByLocationMax),
+
+    headcount_by_department: cleanStr(filters.headcountByDepartment),
+    headcount_by_department_min: cleanNum(filters.headcountByDepartmentMin),
+    headcount_by_department_max: cleanNum(filters.headcountByDepartmentMax),
+
+    founded_min: cleanNum(filters.foundedMin),
+    founded_max: cleanNum(filters.foundedMax),
+
     scroll_token: scrollToken,
   };
 

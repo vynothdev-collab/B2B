@@ -1,81 +1,85 @@
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from pydantic import BaseModel
 
-
-class RoleCompositionRule(BaseModel):
-    role: str
-    min_count: Optional[float] = None
-    min_growth: Optional[float] = None
 
 PAGE_SIZE = 10
 
 
 class PersonSearchRequest(BaseModel):
     name: Optional[str] = None
-    linkedin_url: Optional[list[str]] = None
-    headline: Optional[str] = None
-    summary: Optional[str] = None
-    twitter_handle: Optional[str] = None
-    github_url: Optional[str] = None
-    languages: Optional[list[str]] = None
-    skills: Optional[list[str]] = None
-    interests: Optional[list[str]] = None
-    certifications: Optional[str] = None
-    degree: Optional[list[str]] = None
-    school: Optional[str] = None
-    field_of_study: Optional[str] = None
-    linkedin_connections_min: Optional[int] = None
     job_title: Optional[list[str]] = None
+    departments: Optional[list[str]] = None
     seniority: Optional[list[str]] = None
-    department: Optional[list[str]] = None
-    years_experience_min: Optional[int] = None
-    years_experience_max: Optional[int] = None
-    company_name: Optional[list[str]] = None
-    company_linkedin_url: Optional[list[str]] = None
-    company_domain: Optional[str] = None
-    industry: Optional[list[str]] = None
-    company_size: Optional[list[str]] = None
+    companies: Optional[list[str]] = None
+
+    person_locations: Optional[list[str]] = None
+    hq_locations: Optional[list[str]] = None
+
+    require_work_email: bool = False
+    require_mobile: bool = False
+    contact_logic: Literal["and", "or"] = "and"
+
     company_type: Optional[list[str]] = None
-    company_revenue: Optional[list[str]] = None
-    past_companies: Optional[list[str]] = None
-    past_titles: Optional[list[str]] = None
-    past_seniority: Optional[list[str]] = None
-    past_department: Optional[list[str]] = None
-    country: Optional[list[str]] = None
-    state: Optional[list[str]] = None
-    city: Optional[str] = None
-    hq_country: Optional[list[str]] = None
-    hq_state: Optional[list[str]] = None
-    hq_city: Optional[str] = None
+    technologies: Optional[list[str]] = None
+    revenue_buckets: Optional[list[str]] = None
+
+    funding_min: Optional[float] = None
+    funding_max: Optional[float] = None
+    headcount_growth_min: Optional[float] = None
+    headcount_growth_max: Optional[float] = None
+
+    headcount_by_department: Optional[str] = None
+    headcount_by_department_min: Optional[int] = None
+    headcount_by_department_max: Optional[int] = None
+
+    headcount_by_location_country: Optional[str] = None
+    headcount_by_location_min: Optional[int] = None
+    headcount_by_location_max: Optional[int] = None
+
+    founded_min: Optional[int] = None
+    founded_max: Optional[int] = None
+
     scroll_token: Optional[str] = None
 
 
 class CompanySearchRequest(BaseModel):
-    company_name: Optional[str] = None
-    website_domain: Optional[str] = None
-    industry: Optional[list[str]] = None
+    companies: Optional[list[str]] = None
+    locations: Optional[list[str]] = None
+
     type: Optional[list[str]] = None
-    stock_exchange: Optional[str] = None
-    hq_country: Optional[list[str]] = None
-    hq_state: Optional[list[str]] = None
-    hq_city: Optional[str] = None
-    hq_metro: Optional[str] = None
-    employee_count_ranges: Optional[list[str]] = None
+
     employee_count_min: Optional[int] = None
     employee_count_max: Optional[int] = None
-    annual_revenue: Optional[list[str]] = None
-    employee_growth_min: Optional[float] = None
-    year_founded_min: Optional[int] = None
-    year_founded_max: Optional[int] = None
-    last_funding_round: Optional[list[str]] = None
-    total_funding_min: Optional[float] = None
-    most_recent_funding_after: Optional[str] = None
-    role_composition_rules: Optional[list[RoleCompositionRule]] = None
+
+    industries: Optional[list[str]] = None
+    technologies: Optional[list[str]] = None
+    revenue_buckets: Optional[list[str]] = None
+
+    funding_min: Optional[float] = None
+    funding_max: Optional[float] = None
+    funding_stages: Optional[list[str]] = None
+
+    headcount_growth_timeframe: Literal["3_month", "6_month", "12_month", "24_month"] = "12_month"
+    headcount_growth_min: Optional[float] = None
+    headcount_growth_max: Optional[float] = None
+
+    headcount_by_location_country: Optional[str] = None
+    headcount_by_location_min: Optional[int] = None
+    headcount_by_location_max: Optional[int] = None
+
+    headcount_by_department: Optional[str] = None
+    headcount_by_department_min: Optional[int] = None
+    headcount_by_department_max: Optional[int] = None
+
+    founded_min: Optional[int] = None
+    founded_max: Optional[int] = None
+
     scroll_token: Optional[str] = None
 
 
 class PersonRevealRequest(BaseModel):
     pdl_id: str
+
 
 class PersonRevealResponse(BaseModel):
     work_email: Optional[str] = None

@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
 
   if (isPublic && token) {
     const url = request.nextUrl.clone();
-    url.pathname = "/search";
+    url.pathname = "/search/people";
     return NextResponse.redirect(url);
   }
 
