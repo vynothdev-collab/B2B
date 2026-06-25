@@ -2,13 +2,14 @@
 import { useState } from "react";
 import {
   Sparkles, Building2, MapPin, Tag, Type,
-  Users, BarChart3, TrendingUp, Cpu, DollarSign, Banknote, Calendar,
+  Users, BarChart3, TrendingUp, Cpu, DollarSign, Banknote, Calendar, Activity,
 } from "lucide-react";
 import FilterSection from "../FilterSection";
 import MultiChipSelect from "../MultiChipSelect";
 import MultiChipAutocomplete from "../MultiChipAutocomplete";
 import BulkCompanyInput from "./BulkCompanyInput";
 import LocationAutocomplete from "./LocationAutocomplete";
+import CountrySelect from "./CountrySelect";
 import RangeDropdown from "./RangeDropdown";
 import StaticPlaceholder from "./StaticPlaceholder";
 import type { CompanyFilters } from "@/types/search";
@@ -21,6 +22,9 @@ import {
   FUNDING_PRESETS,
   FOUNDED_YEAR_PRESETS,
   HEADCOUNT_RANGE_PRESETS,
+  DEPARTMENT_OPTIONS,
+  GROWTH_PRESETS,
+  GROWTH_TIMEFRAME_OPTIONS,
 } from "@/types/search";
 
 function fmtUsd(n: number): string {
@@ -41,7 +45,7 @@ const labelCls = "block text-xs text-gray-500 mb-1";
 const SECTIONS = [
   "lookalikes", "company", "location", "type", "keywords",
   "headcount", "industry", "intent", "technologies",
-  "revenue", "funding", "founded",
+  "revenue", "funding", "headcountGrowth", "headcountByDept", "headcountByLocation", "founded",
 ] as const;
 type Section = typeof SECTIONS[number];
 
@@ -68,7 +72,7 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
 
       <FilterSection title="Location" icon={<MapPin className="h-4 w-4" />} isOpen={open === "location"} onToggle={() => toggle("location")}>
         <LocationAutocomplete
-          placeholder="Enter location"
+          placeholder="City, state or country…"
           values={filters.locations}
           onChange={(v) => onChange({ locations: v })}
         />
@@ -163,6 +167,75 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
           options={FUNDING_STAGE_OPTIONS}
           values={filters.fundingStages}
           onChange={(v) => onChange({ fundingStages: v })}
+        />
+      </FilterSection>
+
+      <FilterSection title="Headcount Growth" icon={<Activity className="h-4 w-4" />} info="Filter by employee growth rate" isOpen={open === "headcountGrowth"} onToggle={() => toggle("headcountGrowth")}>
+        <div>
+          <span className={labelCls}>Timeframe</span>
+          <div className="flex flex-wrap gap-1.5">
+            {GROWTH_TIMEFRAME_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onChange({ headcountGrowthTimeframe: opt.value as CompanyFilters["headcountGrowthTimeframe"] })}
+                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition-colors ${
+                  filters.headcountGrowthTimeframe === opt.value
+                    ? "border-purple-600 bg-purple-600 text-white"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-purple-400 hover:text-purple-600"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <RangeDropdown
+          label="Growth rate"
+          placeholder="Any growth"
+          minValue={filters.headcountGrowthMin}
+          maxValue={filters.headcountGrowthMax}
+          onMinChange={(v) => onChange({ headcountGrowthMin: v })}
+          onMaxChange={(v) => onChange({ headcountGrowthMax: v })}
+          presets={GROWTH_PRESETS}
+          unitSuffix="%"
+        />
+      </FilterSection>
+
+      <FilterSection title="Headcount by Department" icon={<Activity className="h-4 w-4" />} info="Filter by headcount in a department" isOpen={open === "headcountByDept"} onToggle={() => toggle("headcountByDept")}>
+        <MultiChipSelect
+          label="Department"
+          placeholder="Select department"
+          options={DEPARTMENT_OPTIONS}
+          values={filters.headcountByDepartment ? [filters.headcountByDepartment] : []}
+          onChange={(v) => onChange({ headcountByDepartment: v[v.length - 1] ?? "" })}
+        />
+        <RangeDropdown
+          label="Employees in department"
+          placeholder="Any size"
+          minValue={filters.headcountByDepartmentMin}
+          maxValue={filters.headcountByDepartmentMax}
+          onMinChange={(v) => onChange({ headcountByDepartmentMin: v })}
+          onMaxChange={(v) => onChange({ headcountByDepartmentMax: v })}
+          presets={HEADCOUNT_RANGE_PRESETS}
+        />
+      </FilterSection>
+
+      <FilterSection title="Headcount by Location" icon={<MapPin className="h-4 w-4" />} info="Filter by headcount in a country" isOpen={open === "headcountByLocation"} onToggle={() => toggle("headcountByLocation")}>
+        <CountrySelect
+          label="Country"
+          placeholder="Search country…"
+          value={filters.headcountByLocationCountry}
+          onChange={(v) => onChange({ headcountByLocationCountry: v })}
+        />
+        <RangeDropdown
+          label="Employees in country"
+          placeholder="Any size"
+          minValue={filters.headcountByLocationMin}
+          maxValue={filters.headcountByLocationMax}
+          onMinChange={(v) => onChange({ headcountByLocationMin: v })}
+          onMaxChange={(v) => onChange({ headcountByLocationMax: v })}
+          presets={HEADCOUNT_RANGE_PRESETS}
         />
       </FilterSection>
 

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, MapPin } from "lucide-react";
-import { Country, State } from "country-state-city";
+import { Country, State, City } from "country-state-city";
 
 interface Props {
   placeholder?: string;
@@ -13,31 +13,54 @@ interface Props {
 interface LocOption {
   display: string;
   stored: string;
-  kind: "country" | "state";
+  kind: "country" | "state" | "city";
 }
 
 const inputCls =
   "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors";
-const DROPDOWN_MAX_H = 240;
+const DROPDOWN_MAX_H = 260;
+
+const KIND_ORDER: Record<LocOption["kind"], number> = { country: 0, state: 1, city: 2 };
+
+const KIND_LABEL: Record<LocOption["kind"], string> = {
+  country: "Country",
+  state: "State",
+  city: "City",
+};
 
 function buildIndex(): LocOption[] {
   const out: LocOption[] = [];
+
+  const countryNameMap = new Map<string, string>(); // isoCode → display name
   for (const c of Country.getAllCountries()) {
-    const countryNameLc = c.name.toLowerCase();
-    out.push({
-      display: c.name,
-      stored: countryNameLc,
-      kind: "country",
-    });
+    countryNameMap.set(c.isoCode, c.name);
+    out.push({ display: c.name, stored: c.name.toLowerCase(), kind: "country" });
+  }
+
+  const stateNameMap = new Map<string, string>(); // `${cISO}-${sISO}` → display name
+  for (const c of Country.getAllCountries()) {
+    const countryName = countryNameMap.get(c.isoCode) ?? c.name;
+    const countryNameLc = countryName.toLowerCase();
     for (const s of State.getStatesOfCountry(c.isoCode)) {
-      const stateNameLc = s.name.toLowerCase();
+      stateNameMap.set(`${c.isoCode}-${s.isoCode}`, s.name);
       out.push({
-        display: `${s.name}, ${c.name}`,
-        stored: `${stateNameLc}, ${countryNameLc}`,
+        display: `${s.name}, ${countryName}`,
+        stored: `${s.name.toLowerCase()}, ${countryNameLc}`,
         kind: "state",
       });
     }
   }
+
+  for (const city of City.getAllCities()) {
+    const countryName = countryNameMap.get(city.countryCode) ?? city.countryCode;
+    const stateName = stateNameMap.get(`${city.countryCode}-${city.stateCode}`) ?? city.stateCode;
+    out.push({
+      display: `${city.name}, ${stateName}, ${countryName}`,
+      stored: `${city.name.toLowerCase()}, ${stateName.toLowerCase()}, ${countryName.toLowerCase()}`,
+      kind: "city",
+    });
+  }
+
   return out;
 }
 
@@ -80,28 +103,29 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
 
   const suggestions = useMemo<LocOption[]>(() => {
     const q = text.trim().toLowerCase();
-    if (!q) return [];
+    if (q.length < 2) return [];
     const index = getIndex();
     const out: LocOption[] = [];
     for (const item of index) {
       if (values.includes(item.stored)) continue;
-      if (item.display.toLowerCase().includes(q)) {
+      if (item.stored.includes(q)) {
         out.push(item);
-        if (out.length >= 30) break;
+        if (out.length >= 60) break;
       }
     }
     out.sort((a, b) => {
-      const aStarts = a.display.toLowerCase().startsWith(q) ? 0 : 1;
-      const bStarts = b.display.toLowerCase().startsWith(q) ? 0 : 1;
+      const aStarts = a.stored.startsWith(q) ? 0 : 1;
+      const bStarts = b.stored.startsWith(q) ? 0 : 1;
       if (aStarts !== bStarts) return aStarts - bStarts;
-      if (a.kind !== b.kind) return a.kind === "country" ? -1 : 1;
+      if (a.kind !== b.kind) return KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
       return a.display.localeCompare(b.display);
     });
     return out.slice(0, 20);
   }, [text, values]);
 
   useEffect(() => {
-    if (suggestions.length > 0 && text.trim()) {
+    const q = text.trim();
+    if (q.length >= 2 && suggestions.length > 0) {
       reposition();
       setOpen(true);
     } else {
@@ -112,6 +136,18 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
   const add = (item: LocOption) => {
     if (values.includes(item.stored)) return;
     onChange([...values, item.stored]);
+    setText("");
+    setOpen(false);
+    setActiveIdx(-1);
+    inputRef.current?.focus();
+  };
+
+  const addText = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    const stored = trimmed.toLowerCase();
+    if (values.includes(stored)) return;
+    onChange([...values, stored]);
     setText("");
     setOpen(false);
     setActiveIdx(-1);
@@ -129,9 +165,13 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
       setActiveIdx((i) => Math.max(i - 1, 0));
       return;
     }
-    if (e.key === "Enter" && open && activeIdx >= 0) {
+    if (e.key === "Enter") {
       e.preventDefault();
-      add(suggestions[activeIdx]);
+      if (open && activeIdx >= 0) {
+        add(suggestions[activeIdx]);
+      } else if (text.trim()) {
+        addText(text);
+      }
       return;
     }
     if (e.key === "Escape") { setOpen(false); return; }
@@ -143,7 +183,7 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1.5">
           {values.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-purple-100 text-purple-700">
+            <span key={v} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-purple-100 text-purple-700 capitalize">
               {v}
               <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
                 <X className="h-2.5 w-2.5" />
@@ -157,7 +197,7 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
         <input
           ref={inputRef}
           type="text"
-          placeholder={placeholder ?? "Enter location"}
+          placeholder={placeholder ?? "Type a city, state or country and press Enter…"}
           value={text}
           onChange={(e) => { setText(e.target.value); setActiveIdx(-1); }}
           onKeyDown={handleKey}
@@ -188,8 +228,10 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
                     }`}
                   >
                     <MapPin className="h-3 w-3 shrink-0 text-gray-400" />
-                    <span className="truncate">{s.display}</span>
-                    <span className="ml-auto shrink-0 text-[10px] uppercase text-gray-400">{s.kind}</span>
+                    <span className="truncate flex-1">{s.display}</span>
+                    <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-gray-500">
+                      {KIND_LABEL[s.kind]}
+                    </span>
                   </button>
                 ))
               )}
