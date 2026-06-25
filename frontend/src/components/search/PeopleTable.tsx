@@ -45,7 +45,7 @@ function SizeBadge({ size }: { size?: string }) {
   );
 }
 
-function ActionMenu({ id }: { id: string }) {
+function ActionMenu({ onAddToList }: { id: string; onAddToList: () => void }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -58,11 +58,11 @@ function ActionMenu({ id }: { id: string }) {
     setOpen((v) => !v);
   };
 
-  const items = [
-    { icon: <UserRound className="h-3.5 w-3.5" />, label: "View profile" },
-    { icon: <Building2 className="h-3.5 w-3.5" />, label: "Push to CRM" },
-    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list" },
-    { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email" },
+  const menuItems = [
+    { icon: <UserRound className="h-3.5 w-3.5" />, label: "View profile", action: () => {} },
+    { icon: <Building2 className="h-3.5 w-3.5" />, label: "Push to CRM", action: () => {} },
+    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list", action: onAddToList },
+    { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email", action: () => {} },
   ];
   return (
     <div>
@@ -81,11 +81,11 @@ function ActionMenu({ id }: { id: string }) {
             className="fixed z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
             style={{ top: pos.top, right: pos.right }}
           >
-            {items.map((item) => (
+            {menuItems.map((item) => (
               <button
                 key={item.label}
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); item.action(); }}
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
               >
                 <span className="text-gray-400">{item.icon}</span>
@@ -104,9 +104,10 @@ interface Props {
   selected: Set<string>;
   onSelect: (id: string) => void;
   onSelectAll: (all: boolean) => void;
+  onAddToList: (person: PersonResult) => void;
 }
 
-export default function PeopleTable({ data, selected, onSelect, onSelectAll }: Props) {
+export default function PeopleTable({ data, selected, onSelect, onSelectAll, onAddToList }: Props) {
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
   const [revealed, setRevealed] = useState<Record<string, PersonRevealData>>({});
   const [revealing, setRevealing] = useState<Set<string>>(new Set());
@@ -299,7 +300,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                 </td>
 
                 <td className="px-3 py-3">
-                  <ActionMenu id={person.id} />
+                  <ActionMenu id={person.id} onAddToList={() => onAddToList(person)} />
                 </td>
               </tr>
             );

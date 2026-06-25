@@ -8,9 +8,11 @@ import PeopleTable from "./PeopleTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import ActiveFilterChips from "./ActiveFilterChips";
+import AddToListModal from "./AddToListModal";
 import { searchPersons } from "@/lib/searchApi";
 import { buildPersonChips } from "@/lib/filterChips";
 import { toast } from "@/lib/toast";
+import type { ListItemPayload } from "@/lib/listsApi";
 import {
   DEFAULT_PERSON_FILTERS,
   type PersonFilters,
@@ -31,6 +33,7 @@ export default function PeopleSearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [tokenHistory, setTokenHistory] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
 
   const runSearch = useCallback(async (page: number, scrollToken?: string) => {
@@ -97,6 +100,12 @@ export default function PeopleSearchPage() {
     setSelected(all ? new Set(results.data.map((r) => r.id)) : new Set());
   };
 
+  const openListModal = (people: PersonResult[]) => {
+    setListModalItems(
+      people.map((p) => ({ pdl_id: p.id, item_type: "person" as const, data: p as unknown as Record<string, unknown> }))
+    );
+  };
+
   const totalCount = meta?.total ?? 0;
   const totalLabel = hasSearched ? totalCount.toLocaleString() : "0";
   const showTable = hasSearched && !loading && results && results.data.length > 0;
@@ -129,6 +138,10 @@ export default function PeopleSearchPage() {
     [filters, removeFilter]
   );
 
+  const selectedPeople = results
+    ? (results.data as PersonResult[]).filter((r) => selected.has(r.id))
+    : [];
+
   return (
     <>
       <AppHeader title="People search" />
@@ -160,7 +173,14 @@ export default function PeopleSearchPage() {
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   Filters
                 </button>
-                <button type="button" className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedPeople.length > 0) openListModal(selectedPeople);
+                    else if (results) openListModal(results.data as PersonResult[]);
+                  }}
+                  className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors"
+                >
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
                 </button>
@@ -187,6 +207,7 @@ export default function PeopleSearchPage() {
                     selected={selected}
                     onSelect={toggleSelect}
                     onSelectAll={toggleSelectAll}
+                    onAddToList={(person) => openListModal([person])}
                   />
                 </div>
                 {meta && (
@@ -216,6 +237,14 @@ export default function PeopleSearchPage() {
                       <Eye className="h-3 w-3" />
                       Reveal contacts
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => openListModal(selectedPeople)}
+                      className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700"
+                    >
+                      <ListPlus className="h-3 w-3" />
+                      Add to list
+                    </button>
                     <button type="button" onClick={() => setSelected(new Set())} className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white">
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -226,6 +255,13 @@ export default function PeopleSearchPage() {
           </div>
         </main>
       </div>
+
+      <AddToListModal
+        open={listModalItems.length > 0}
+        onClose={() => setListModalItems([])}
+        items={listModalItems}
+        itemType="person"
+      />
     </>
   );
 }

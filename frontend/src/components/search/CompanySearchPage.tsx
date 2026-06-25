@@ -8,9 +8,11 @@ import CompanyTable from "./CompanyTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import ActiveFilterChips from "./ActiveFilterChips";
+import AddToListModal from "./AddToListModal";
 import { searchCompanies } from "@/lib/searchApi";
 import { buildCompanyChips } from "@/lib/filterChips";
 import { toast } from "@/lib/toast";
+import type { ListItemPayload } from "@/lib/listsApi";
 import {
   DEFAULT_COMPANY_FILTERS,
   type CompanyFilters,
@@ -31,6 +33,7 @@ export default function CompanySearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [tokenHistory, setTokenHistory] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
 
   const runSearch = useCallback(async (page: number, scrollToken?: string) => {
@@ -97,6 +100,12 @@ export default function CompanySearchPage() {
     setSelected(all ? new Set(results.data.map((r) => r.id)) : new Set());
   };
 
+  const openListModal = (companies: CompanyResult[]) => {
+    setListModalItems(
+      companies.map((c) => ({ pdl_id: c.id, item_type: "company" as const, data: c as unknown as Record<string, unknown> }))
+    );
+  };
+
   const totalCount = meta?.total ?? 0;
   const totalLabel = hasSearched ? totalCount.toLocaleString() : "0";
   const showTable = hasSearched && !loading && results && results.data.length > 0;
@@ -129,6 +138,10 @@ export default function CompanySearchPage() {
     [filters, removeFilter]
   );
 
+  const selectedCompanies = results
+    ? (results.data as CompanyResult[]).filter((r) => selected.has(r.id))
+    : [];
+
   return (
     <>
       <AppHeader title="Company search" />
@@ -160,7 +173,14 @@ export default function CompanySearchPage() {
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   Filters
                 </button>
-                <button type="button" className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedCompanies.length > 0) openListModal(selectedCompanies);
+                    else if (results) openListModal(results.data as CompanyResult[]);
+                  }}
+                  className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors"
+                >
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
                 </button>
@@ -187,6 +207,7 @@ export default function CompanySearchPage() {
                     selected={selected}
                     onSelect={toggleSelect}
                     onSelectAll={toggleSelectAll}
+                    onAddToList={(company) => openListModal([company])}
                   />
                 </div>
                 {meta && (
@@ -211,6 +232,15 @@ export default function CompanySearchPage() {
                     <span className="whitespace-nowrap text-xs font-semibold text-white">
                       {selected.size} selected
                     </span>
+                    <div className="mx-1 h-4 w-px bg-gray-600" />
+                    <button
+                      type="button"
+                      onClick={() => openListModal(selectedCompanies)}
+                      className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700"
+                    >
+                      <ListPlus className="h-3 w-3" />
+                      Add to list
+                    </button>
                     <button type="button" onClick={() => setSelected(new Set())} className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white">
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -221,6 +251,13 @@ export default function CompanySearchPage() {
           </div>
         </main>
       </div>
+
+      <AddToListModal
+        open={listModalItems.length > 0}
+        onClose={() => setListModalItems([])}
+        items={listModalItems}
+        itemType="company"
+      />
     </>
   );
 }

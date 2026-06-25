@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.api.routes import auth, health, search, users
+from app.api.routes import auth, health, lists, search, users
 from app.core.security import get_current_user
 
 api_router = APIRouter()
@@ -12,5 +12,9 @@ api_router.include_router(
     search.router,
     prefix="/search",
     tags=["search"],
+    dependencies=[Depends(get_current_user)],
+)
+api_router.include_router(
+    lists.router,
     dependencies=[Depends(get_current_user)],
 )

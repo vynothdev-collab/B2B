@@ -38,7 +38,7 @@ const TYPE_COLORS: Record<string, string> = {
   "self employed": "bg-orange-50 text-orange-600",
 };
 
-function ActionMenu() {
+function ActionMenu({ onAddToList }: { onAddToList: () => void }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -62,11 +62,11 @@ function ActionMenu() {
     setOpen((v) => !v);
   };
 
-  const items = [
-    { icon: <Building2 className="h-3.5 w-3.5" />, label: "View company" },
-    { icon: <ExternalLink className="h-3.5 w-3.5" />, label: "Push to CRM" },
-    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list" },
-    { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email" },
+  const menuItems = [
+    { icon: <Building2 className="h-3.5 w-3.5" />, label: "View company", action: () => {} },
+    { icon: <ExternalLink className="h-3.5 w-3.5" />, label: "Push to CRM", action: () => {} },
+    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list", action: onAddToList },
+    { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email", action: () => {} },
   ];
 
   return (
@@ -86,11 +86,11 @@ function ActionMenu() {
             className="fixed z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
             style={{ top: pos.top, right: pos.right }}
           >
-            {items.map((item) => (
+            {menuItems.map((item) => (
               <button
                 key={item.label}
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); item.action(); }}
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
               >
                 <span className="text-gray-400">{item.icon}</span>
@@ -109,9 +109,10 @@ interface Props {
   selected: Set<string>;
   onSelect: (id: string) => void;
   onSelectAll: (all: boolean) => void;
+  onAddToList: (company: CompanyResult) => void;
 }
 
-export default function CompanyTable({ data, selected, onSelect, onSelectAll }: Props) {
+export default function CompanyTable({ data, selected, onSelect, onSelectAll, onAddToList }: Props) {
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
 
   return (
@@ -223,7 +224,7 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                 </td>
 
                 <td className="px-3 py-3">
-                  <ActionMenu />
+                  <ActionMenu onAddToList={() => onAddToList(company)} />
                 </td>
               </tr>
             );
