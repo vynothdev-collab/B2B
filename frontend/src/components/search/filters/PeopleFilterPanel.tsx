@@ -51,8 +51,8 @@ const SECTIONS = [
 type Section = typeof SECTIONS[number];
 
 export default function PeopleFilterPanel({ filters, onChange }: Props) {
-  const [open, setOpen] = useState<Section>("people");
-  const toggle = (s: Section) => setOpen((p) => (p === s ? ("" as Section) : s));
+  const [open, setOpen] = useState<Section | "">( "people");
+  const toggle = (s: Section) => setOpen((p) => (p === s ? "" : s));
 
   return (
     <>

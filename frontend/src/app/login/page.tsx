@@ -19,8 +19,16 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(detail ?? "Invalid email or password");
+      const axiosErr = err as { response?: { status?: number; data?: { detail?: string } } };
+      const status = axiosErr?.response?.status;
+      const detail = axiosErr?.response?.data?.detail;
+      if (!status) {
+        setError("Unable to reach the server. Please check your connection.");
+      } else if (status === 404 || status === 502 || status === 503) {
+        setError("Server is unavailable. Please try again later.");
+      } else {
+        setError(detail ?? "Invalid email or password");
+      }
     } finally {
       setLoading(false);
     }
