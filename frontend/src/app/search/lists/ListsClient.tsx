@@ -79,7 +79,7 @@ export default function ListsPage() {
       <div className="flex flex-1 flex-col overflow-hidden px-3 py-2">
         <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-4 py-3">
-            <List className="h-4 w-4 text-purple-600" />
+            <List className="h-4 w-4 text-red-600" />
             <span className="text-sm font-semibold text-gray-900">Your lists</span>
             {!loading && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
@@ -90,7 +90,7 @@ export default function ListsPage() {
 
           {loading && (
             <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+              <Loader2 className="h-6 w-6 animate-spin text-red-500" />
             </div>
           )}
 
@@ -134,7 +134,7 @@ export default function ListsPage() {
                                 if (e.key === "Enter") saveEdit(e);
                                 if (e.key === "Escape") { e.stopPropagation(); setEditingId(null); }
                               }}
-                              className="rounded border border-purple-300 px-2 py-0.5 text-sm font-medium text-gray-900 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-200"
+                              className="rounded border border-red-300 px-2 py-0.5 text-sm font-medium text-gray-900 outline-none focus:border-red-500 focus:ring-1 focus:ring-red-200"
                             />
                           ) : (
                             <span className="font-medium text-gray-900">{list.name}</span>

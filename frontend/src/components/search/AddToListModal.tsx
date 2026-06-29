@@ -92,7 +92,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
         </div>
 
         <div className="p-3">
-          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 focus-within:border-purple-400 focus-within:bg-white transition-colors">
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 focus-within:border-red-400 focus-within:bg-white transition-colors">
             <Search className="h-3.5 w-3.5 shrink-0 text-gray-400" />
             <input
               ref={inputRef}
@@ -111,7 +111,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
         <div className="max-h-56 overflow-y-auto px-2 pb-3">
           {loading && (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+              <Loader2 className="h-4 w-4 animate-spin text-red-500" />
             </div>
           )}
 
@@ -120,7 +120,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
               type="button"
               onClick={() => handleAdd(undefined, query.trim())}
               disabled={adding !== null}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-purple-700 hover:bg-purple-50 transition-colors disabled:opacity-60"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors disabled:opacity-60"
             >
               {adding === "__new__" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -140,7 +140,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60"
             >
               {adding === list.id ? (
-                <Loader2 className="h-4 w-4 animate-spin text-purple-500" />
+                <Loader2 className="h-4 w-4 animate-spin text-red-500" />
               ) : itemType === "person" ? (
                 <Users className="h-4 w-4 text-gray-400" />
               ) : (

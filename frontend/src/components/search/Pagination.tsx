@@ -74,7 +74,7 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
               className={[
                 "hidden sm:inline-flex min-w-[30px] rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
                 p === page
-                  ? "bg-purple-600 text-white shadow-sm"
+                  ? "bg-red-600 text-white shadow-sm"
                   : (p as number) <= maxReachable || (p as number) === 1
                     ? "text-gray-600 hover:bg-gray-100"
                     : "text-gray-300 cursor-not-allowed",

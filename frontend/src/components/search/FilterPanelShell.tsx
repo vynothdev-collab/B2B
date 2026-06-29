@@ -28,14 +28,14 @@ export default function FilterPanelShell({ children, onReset, onApply, open, onC
       >
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-3.5">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-purple-600" />
+            <SlidersHorizontal className="h-4 w-4 text-red-600" />
             <span className="text-base font-semibold text-gray-800">Filters</span>
           </div>
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onReset}
-              className="text-sm font-medium text-gray-400 transition-colors hover:text-purple-600"
+              className="text-sm font-medium text-gray-400 transition-colors hover:text-red-600"
             >
               Clear all
             </button>
@@ -64,7 +64,7 @@ export default function FilterPanelShell({ children, onReset, onApply, open, onC
           <button
             type="button"
             onClick={() => { onApply(); onClose?.(); }}
-            className="flex-1 rounded-lg bg-purple-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-purple-700"
+            className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-500"
           >
             Apply filters
           </button>

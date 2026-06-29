@@ -37,7 +37,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
 
-      <div className="hidden lg:flex lg:w-[52%] flex-col justify-between bg-gradient-to-br from-purple-700 via-purple-600 to-indigo-700 p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[52%] flex-col justify-between bg-gradient-to-br from-red-700 via-red-600 to-indigo-700 p-12 relative overflow-hidden">
 
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-white/5" />
@@ -57,7 +57,7 @@ export default function LoginPage() {
             <h2 className="text-4xl font-bold text-white leading-tight">
               Find the right people.<br />Close more deals.
             </h2>
-            <p className="mt-4 text-purple-200 text-base leading-relaxed max-w-sm">
+            <p className="mt-4 text-red-200 text-base leading-relaxed max-w-sm">
               Search 800M+ professional profiles and 35M+ companies with precision filters and real-time data enrichment.
             </p>
           </div>
@@ -73,7 +73,7 @@ export default function LoginPage() {
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
                   {f.icon}
                 </div>
-                <span className="text-sm text-purple-100">{f.text}</span>
+                <span className="text-sm text-red-100">{f.text}</span>
               </div>
             ))}
           </div>
@@ -86,23 +86,23 @@ export default function LoginPage() {
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-2xl font-bold text-white">{s.value}</p>
-                <p className="text-xs text-purple-300 mt-0.5">{s.label}</p>
+                <p className="text-xs text-red-300 mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>
         </div>
 
         <div className="relative rounded-2xl bg-white/10 backdrop-blur-sm p-5 border border-white/10">
-          <p className="text-sm text-purple-100 leading-relaxed">
+          <p className="text-sm text-red-100 leading-relaxed">
             &ldquo;leadsbuddy.ai cut our prospecting time in half. The data quality is outstanding and the filters are incredibly precise.&rdquo;
           </p>
           <div className="mt-3 flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-full bg-purple-400 flex items-center justify-center text-white text-xs font-bold">
+            <div className="h-8 w-8 rounded-full bg-red-400 flex items-center justify-center text-white text-xs font-bold">
               SM
             </div>
             <div>
               <p className="text-xs font-semibold text-white">Sarah Mitchell</p>
-              <p className="text-[11px] text-purple-300">Head of Sales, TechCorp</p>
+              <p className="text-[11px] text-red-300">Head of Sales, TechCorp</p>
             </div>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function LoginPage() {
         <div className="w-full max-w-[380px]">
 
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-xs">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white font-bold text-xs">
               LB
             </div>
             <span className="font-bold text-gray-900">leadsbuddy.ai</span>
@@ -144,14 +144,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
               />
             </div>
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className="text-xs font-semibold text-gray-700">Password</label>
-                <span className="text-xs text-purple-600 hover:text-purple-700 cursor-pointer font-medium">
+                <span className="text-xs text-red-600 hover:text-red-700 cursor-pointer font-medium">
                   Forgot password?
                 </span>
               </div>
@@ -163,7 +163,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 />
                 <button
                   type="button"
@@ -179,7 +179,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-purple-200 hover:bg-purple-700 active:scale-[0.98] disabled:opacity-60 transition-all"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-red-200 hover:bg-red-500 active:scale-[0.98] disabled:opacity-60 transition-all"
             >
               {loading
                 ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in…</>
@@ -195,7 +195,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-semibold text-purple-600 hover:text-purple-700 transition-colors">
+            <Link href="/register" className="font-semibold text-red-600 hover:text-red-700 transition-colors">
               Create a free account
             </Link>
           </p>

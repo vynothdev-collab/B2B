@@ -140,7 +140,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
                 type="checkbox"
                 checked={allSelected}
                 onChange={(e) => onSelectAll(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
+                className="h-3.5 w-3.5 rounded border-gray-300 accent-red-600 text-red-600 focus:ring-red-400"
               />
             </th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[180px]">Name ↓</th>
@@ -162,14 +162,14 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
             return (
               <tr
                 key={person.id}
-                className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${checked ? "bg-purple-50/40" : ""}`}
+                className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${checked ? "bg-red-50/40" : ""}`}
               >
                 <td className="px-3 py-3">
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => onSelect(person.id)}
-                    className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
+                    className="h-3.5 w-3.5 rounded border-gray-300 accent-red-600 text-red-600 focus:ring-red-400"
                   />
                 </td>
 
@@ -222,7 +222,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
                       <span className="text-xs text-gray-400">—</span>
                     )}
                     {person.job_title_role && (
-                      <span className="inline-block rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-600 capitalize mt-0.5">
+                      <span className="inline-block rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600 capitalize mt-0.5">
                         {person.job_title_role}
                       </span>
                     )}
@@ -243,7 +243,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
                       type="button"
                       onClick={() => handleReveal(person.id)}
                       disabled={revealing.has(person.id)}
-                      className="flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors disabled:opacity-60"
+                      className="flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors disabled:opacity-60"
                     >
                       {revealing.has(person.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
                       Reveal

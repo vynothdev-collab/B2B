@@ -41,7 +41,7 @@ export default function SearchableSelect({ label, placeholder, value, onChange, 
         ref={btnRef}
         type="button"
         onClick={handleOpen}
-        className="w-full flex items-center justify-between rounded-lg bg-gray-100 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400/50 transition-colors hover:bg-gray-200"
+        className="w-full flex items-center justify-between rounded-lg bg-gray-100 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400/50 transition-colors hover:bg-gray-200"
       >
         <span className={`truncate ${selected ? "text-gray-800" : "text-gray-400"}`}>
           {selected ? selected.label : placeholder}
@@ -85,7 +85,7 @@ export default function SearchableSelect({ label, placeholder, value, onChange, 
                   key={o.value}
                   type="button"
                   onClick={() => { onChange(o.value); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-purple-50 ${value === o.value ? "bg-purple-50 text-purple-700 font-semibold" : "text-gray-700"}`}
+                  className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-red-50 ${value === o.value ? "bg-red-50 text-red-700 font-semibold" : "text-gray-700"}`}
                 >
                   {o.label}
                 </button>

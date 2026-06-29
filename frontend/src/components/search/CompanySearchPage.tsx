@@ -159,7 +159,7 @@ export default function CompanySearchPage() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-gray-900">All companies</span>
                 {hasSearched && totalCount > 0 ? (
-                  <span className="text-sm font-semibold text-purple-600">{totalLabel}</span>
+                  <span className="text-sm font-semibold text-red-600">{totalLabel}</span>
                 ) : (
                   <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">{totalLabel}</span>
                 )}
@@ -179,7 +179,7 @@ export default function CompanySearchPage() {
                     if (selectedCompanies.length > 0) openListModal(selectedCompanies);
                     else if (results) openListModal(results.data as CompanyResult[]);
                   }}
-                  className="flex items-center gap-1 rounded-md bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-purple-700 transition-colors"
+                  className="flex items-center gap-1 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-500 transition-colors"
                 >
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
@@ -191,7 +191,7 @@ export default function CompanySearchPage() {
             {loading && (
               <div className="flex flex-1 items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-purple-100 border-t-purple-600" />
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-100 border-t-red-600" />
                   <p className="text-xs text-gray-400">Searching…</p>
                 </div>
               </div>

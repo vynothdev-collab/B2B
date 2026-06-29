@@ -40,7 +40,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors";
+  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors";
 const labelCls = "block text-xs text-gray-500 mb-1";
 
 const SECTIONS = [
@@ -57,9 +57,9 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
   return (
     <>
       <FilterSection title="AI Lookalikes" icon={<Sparkles className="h-4 w-4" />} info="Find similar profiles" isOpen={open === "lookalikes"} onToggle={() => toggle("lookalikes")}>
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-purple-200 bg-purple-50 px-2.5 py-2">
-          <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-          <p className="text-[11px] text-purple-700">Find similar profiles — coming soon.</p>
+        <div className="flex items-center gap-2 rounded-lg border border-dashed border-red-200 bg-red-50 px-2.5 py-2">
+          <Sparkles className="h-3.5 w-3.5 text-red-500" />
+          <p className="text-[11px] text-red-700">Find similar profiles — coming soon.</p>
         </div>
       </FilterSection>
 

@@ -12,7 +12,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400/50 transition-colors";
+  "w-full rounded-lg bg-gray-100 px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400/50 transition-colors";
 const labelCls = "block text-xs text-gray-500 mb-1";
 
 export default function RangeInput({

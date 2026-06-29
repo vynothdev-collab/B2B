@@ -44,7 +44,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen">
 
-      <div className="hidden lg:flex lg:w-[44%] flex-col justify-between bg-gradient-to-br from-purple-700 via-purple-600 to-indigo-700 p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[44%] flex-col justify-between bg-gradient-to-br from-red-700 via-red-600 to-indigo-700 p-12 relative overflow-hidden">
 
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-white/5" />
@@ -63,7 +63,7 @@ export default function RegisterPage() {
             <h2 className="text-4xl font-bold text-white leading-tight">
               Start closing<br />more deals today.
             </h2>
-            <p className="mt-4 text-purple-200 text-base leading-relaxed">
+            <p className="mt-4 text-red-200 text-base leading-relaxed">
               Join thousands of sales teams who use leadsbuddy.ai to find and connect with their ideal customers.
             </p>
           </div>
@@ -72,7 +72,7 @@ export default function RegisterPage() {
             {PERKS.map((p) => (
               <li key={p} className="flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
-                <span className="text-sm text-purple-100">{p}</span>
+                <span className="text-sm text-red-100">{p}</span>
               </li>
             ))}
           </ul>
@@ -85,7 +85,7 @@ export default function RegisterPage() {
                 </svg>
               ))}
             </div>
-            <p className="text-sm text-purple-100 leading-relaxed">
+            <p className="text-sm text-red-100 leading-relaxed">
               &ldquo;We onboarded on Monday and booked 12 demos by Friday. The data quality is unmatched.&rdquo;
             </p>
             <div className="mt-3 flex items-center gap-2.5">
@@ -94,7 +94,7 @@ export default function RegisterPage() {
               </div>
               <div>
                 <p className="text-xs font-semibold text-white">James Reynolds</p>
-                <p className="text-[11px] text-purple-300">VP of Sales, Growthly</p>
+                <p className="text-[11px] text-red-300">VP of Sales, Growthly</p>
               </div>
             </div>
           </div>
@@ -112,7 +112,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-[400px]">
 
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-600 text-white font-bold text-xs">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white font-bold text-xs">
               LB
             </div>
             <span className="font-bold text-gray-900">leadsbuddy.ai</span>
@@ -142,7 +142,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Jane Smith"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
               />
             </div>
 
@@ -155,7 +155,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
               />
             </div>
 
@@ -169,7 +169,7 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min. 8 characters"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
                 />
                 <button
                   type="button"
@@ -213,7 +213,7 @@ export default function RegisterPage() {
                 className={`w-full rounded-xl border bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
                   confirmPassword && confirmPassword !== password
                     ? "border-red-300 focus:border-red-400 focus:ring-red-400/20"
-                    : "border-gray-200 focus:border-purple-500 focus:ring-purple-500/20"
+                    : "border-gray-200 focus:border-red-500 focus:ring-red-500/20"
                 }`}
               />
               {confirmPassword && confirmPassword !== password && (
@@ -224,7 +224,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-purple-200 hover:bg-purple-700 active:scale-[0.98] disabled:opacity-60 transition-all"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-red-200 hover:bg-red-500 active:scale-[0.98] disabled:opacity-60 transition-all"
             >
               {loading
                 ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating account…</>
@@ -234,7 +234,7 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-purple-600 hover:text-purple-700 transition-colors">
+            <Link href="/login" className="font-semibold text-red-600 hover:text-red-700 transition-colors">
               Sign in
             </Link>
           </p>

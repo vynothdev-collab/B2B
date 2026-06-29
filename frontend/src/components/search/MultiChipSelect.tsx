@@ -13,7 +13,7 @@ interface Props {
 
 const labelCls = "block text-xs text-gray-500 mb-1";
 
-const CHIP_CLS = "bg-purple-100 text-purple-700";
+const CHIP_CLS = "bg-red-100 text-red-700";
 
 const DROPDOWN_MAX_H = 220;
 
@@ -91,7 +91,7 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
 
       <div
         ref={containerRef}
-        className="w-full rounded-lg border-2 border-gray-200 bg-white px-2 py-1 focus-within:border-purple-500 transition-colors cursor-text"
+        className="w-full rounded-lg border-2 border-gray-200 bg-white px-2 py-1 focus-within:border-red-500 transition-colors cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         <input
@@ -126,12 +126,12 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
                       type="button"
                       onMouseDown={(e) => { e.preventDefault(); toggleValue(o.value); }}
                       className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${
-                        selected ? "bg-purple-50 text-purple-700" : "text-gray-700 hover:bg-gray-50"
+                        selected ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       <span className="truncate">{o.label}</span>
                       {selected && (
-                        <svg className="ml-2 h-3.5 w-3.5 shrink-0 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                        <svg className="ml-2 h-3.5 w-3.5 shrink-0 text-red-600" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       )}
