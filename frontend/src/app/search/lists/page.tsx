@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users, Building2, Trash2, Loader2, List, Pencil, Check, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
+
+export const metadata = { title: "leadsbuddy.ai: Lists" };
 import { getLists, deleteList, renameList, type ListRecord } from "@/lib/listsApi";
 import { toast } from "@/lib/toast";
 
