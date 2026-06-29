@@ -115,9 +115,6 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
           values={filters.industries}
           onChange={(v) => onChange({ industries: v })}
         />
-        <p className="px-1 pt-1 text-[10px] text-gray-400">
-          Type to search PDL canonical industries.
-        </p>
       </FilterSection>
 
       <FilterSection title="Buying Intent" icon={<TrendingUp className="h-4 w-4" />} isOpen={open === "intent"} onToggle={() => toggle("intent")}>

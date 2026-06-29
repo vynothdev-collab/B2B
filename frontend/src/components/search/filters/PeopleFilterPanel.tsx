@@ -197,9 +197,6 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           presets={GROWTH_PRESETS}
           unitSuffix="%"
         />
-        <p className="px-1 pt-1 text-[10px] text-gray-400">
-          PDL only exposes the 12-month growth rate at the person level.
-        </p>
       </FilterSection>
 
       <FilterSection title="Headcount by Department" icon={<Activity className="h-4 w-4" />} info="Filters by company headcount in a role" isOpen={open === "headcountByDept"} onToggle={() => toggle("headcountByDept")}>

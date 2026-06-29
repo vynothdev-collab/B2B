@@ -247,7 +247,7 @@ def _make_meta(body: dict) -> SearchMeta:
 
 
 def _extract_pdl_error(body: dict) -> str:
-    return body.get("error", {}).get("message", "") or "PDL API error"
+    return body.get("error", {}).get("message", "") or "API error"
 
 
 def _raise_pdl_error(pdl_status: int, body: dict) -> NoReturn:
@@ -255,15 +255,15 @@ def _raise_pdl_error(pdl_status: int, body: dict) -> NoReturn:
     if pdl_status == 400:
         raise HTTPException(status_code=400, detail=f"Invalid search parameters: {msg}")
     if pdl_status == 401:
-        raise HTTPException(status_code=503, detail="PDL API key is invalid or not configured")
+        raise HTTPException(status_code=503, detail="API key is invalid or not configured")
     if pdl_status == 402:
-        raise HTTPException(status_code=402, detail="PDL credit balance exhausted. Please upgrade your plan.")
+        raise HTTPException(status_code=402, detail="API credit balance exhausted. Please upgrade your plan.")
     if pdl_status == 405:
-        raise HTTPException(status_code=500, detail="Internal error: unsupported PDL request method")
+        raise HTTPException(status_code=500, detail="Internal error: unsupported API request method")
     if pdl_status == 429:
-        raise HTTPException(status_code=429, detail="PDL rate limit reached. Please wait a moment and try again.")
+        raise HTTPException(status_code=429, detail="API rate limit reached. Please wait a moment and try again.")
     if pdl_status >= 500:
-        raise HTTPException(status_code=502, detail="PDL API is temporarily unavailable. Please try again later.")
+        raise HTTPException(status_code=502, detail="API is temporarily unavailable. Please try again later.")
     raise HTTPException(status_code=pdl_status, detail=msg)
 
 
@@ -326,9 +326,9 @@ async def search_persons(req: PersonSearchRequest) -> SearchResponse:
         try:
             company_id_constraint = await _prefetch_company_ids_for_person(req)
         except httpx.TimeoutException:
-            raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
+            raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
         except httpx.RequestError:
-            raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
+            raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
         if not company_id_constraint:
             return SearchResponse(data=[], meta=SearchMeta(total=0))
 
@@ -351,9 +351,9 @@ async def search_persons(req: PersonSearchRequest) -> SearchResponse:
                 json=payload,
             )
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
+        raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
     except httpx.RequestError:
-        raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
+        raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
     if resp.status_code == 200:
         body = resp.json()
@@ -377,9 +377,9 @@ async def search_companies(req: CompanySearchRequest) -> SearchResponse:
                 json=payload,
             )
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
+        raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
     except httpx.RequestError:
-        raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
+        raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
     if resp.status_code == 200:
         body = resp.json()
@@ -405,9 +405,9 @@ async def enrich_person(req: PersonRevealRequest) -> PersonRevealResponse:
                 },
             )
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="PDL API request timed out. Please try again.")
+        raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
     except httpx.RequestError:
-        raise HTTPException(status_code=502, detail="Could not reach PDL API. Please try again later.")
+        raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
     if resp.status_code == 200:
         body = resp.json()
