@@ -17,7 +17,7 @@ interface LocOption {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
 const DROPDOWN_MAX_H = 260;
 
 const KIND_ORDER: Record<LocOption["kind"], number> = { country: 0, state: 1, city: 2 };
@@ -183,10 +183,10 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1.5">
           {values.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-100 text-red-700 capitalize">
+            <span key={v} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[10px] font-medium capitalize text-red-700 sm:px-2 sm:text-[11px]">
               {v}
               <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
-                <X className="h-2.5 w-2.5" />
+                <X className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
               </button>
             </span>
           ))}
@@ -223,7 +223,7 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
                     key={s.stored}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); add(s); }}
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
+                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors sm:px-3 sm:py-2 sm:text-xs ${
                       i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >

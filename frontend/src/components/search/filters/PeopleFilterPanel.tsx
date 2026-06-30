@@ -40,8 +40,8 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors";
-const labelCls = "block text-xs text-gray-500 mb-1";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
+const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
 
 const SECTIONS = [
   "lookalikes", "people", "title", "company", "location",

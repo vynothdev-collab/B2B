@@ -36,7 +36,7 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
   const pages = getWindowed(page, Math.min(totalPages, Math.max(maxReachable + 1, page + 2)));
 
   return (
-    <div className="flex items-center justify-between px-4 py-3">
+    <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
       <p className="hidden sm:block text-xs text-gray-500">
         <span className="font-medium text-gray-700">{((page - 1) * pageSize + 1).toLocaleString()}</span>
         {"–"}
@@ -50,13 +50,13 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
           type="button"
           onClick={() => onPage(page - 1)}
           disabled={page === 1}
-          className="flex items-center gap-0.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors mr-1"
+          className="mr-1 flex items-center gap-0.5 rounded-md px-1.5 py-1 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 sm:px-2 sm:py-1.5 sm:text-xs"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           <span>Previous</span>
         </button>
 
-        <span className="sm:hidden px-3 py-1.5 text-xs font-medium text-gray-600">
+        <span className="px-2 py-1 text-[11px] font-medium text-gray-600 sm:hidden">
           Page {page}
         </span>
 
@@ -89,7 +89,7 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
           type="button"
           onClick={() => onPage(page + 1)}
           disabled={!hasNext}
-          className="flex items-center gap-0.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ml-1"
+          className="ml-1 flex items-center gap-0.5 rounded-md px-1.5 py-1 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 sm:px-2 sm:py-1.5 sm:text-xs"
         >
           <span>Next</span>
           <ChevronRight className="h-3.5 w-3.5" />

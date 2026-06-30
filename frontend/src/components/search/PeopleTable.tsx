@@ -131,8 +131,8 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[700px] text-sm">
+    <div className="max-w-full overflow-x-auto">
+      <table className="w-full min-w-[640px] text-xs sm:min-w-[700px] sm:text-sm [&_td]:px-2 [&_td]:py-2 [&_th]:px-2 [&_th]:py-2 [&_th]:text-[11px] sm:[&_td]:px-3 sm:[&_td]:py-3 sm:[&_th]:px-3 sm:[&_th]:py-2.5 sm:[&_th]:text-xs">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
             <th className="w-8 px-3 py-2.5">
@@ -175,11 +175,11 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
 
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2.5">
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold ${color}`}>
+                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white sm:h-8 sm:w-8 sm:text-xs ${color}`}>
                       {initials(name)}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-gray-900 text-sm">{name}</p>
+                      <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">{name}</p>
                       {person.linkedin_url && (
                         <a
                           href={`https://${person.linkedin_url.replace(/^https?:\/\//, "")}`}
@@ -198,11 +198,11 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
                 <td className="px-3 py-3">
                   {person.job_company_name ? (
                     <div className="flex items-center gap-2">
-                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-white text-xs font-bold ${avatarColor(person.job_company_name)}`}>
+                      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-bold text-white sm:h-7 sm:w-7 sm:text-xs ${avatarColor(person.job_company_name)}`}>
                         {person.job_company_name[0]?.toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-gray-800">{person.job_company_name}</p>
+                        <p className="truncate text-[11px] font-semibold text-gray-800 sm:text-xs">{person.job_company_name}</p>
                         {person.job_company_id && (
                           <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400">
                             {person.job_company_id.slice(0, 2).toUpperCase()}-{person.job_company_id.slice(2, 7)}{" "}
@@ -217,7 +217,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
                 <td className="px-3 py-3">
                   <div className="min-w-0">
                     {person.job_title ? (
-                      <p className="truncate text-xs text-gray-700">{person.job_title}</p>
+                      <p className="truncate text-[11px] text-gray-700 sm:text-xs">{person.job_title}</p>
                     ) : (
                       <span className="text-xs text-gray-400">—</span>
                     )}

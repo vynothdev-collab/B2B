@@ -12,8 +12,8 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors";
-const labelCls = "block text-xs text-gray-500 mb-1";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
+const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
 const DROPDOWN_MAX_H = 220;
 
 function formatCount(n: number): string {
@@ -143,10 +143,10 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1">
           {values.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-100 text-red-700">
+            <span key={v} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 sm:px-2 sm:text-[11px]">
               {v}
               <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
-                <X className="h-2.5 w-2.5" />
+                <X className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
               </button>
             </span>
           ))}
@@ -176,7 +176,7 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
           type="button"
           onClick={() => setBulkOpen((o) => !o)}
           title="Bulk add"
-          className="flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-[11px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+          className="flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 text-[10px] font-semibold text-gray-600 transition-colors hover:bg-gray-50 sm:px-2.5 sm:text-[11px]"
         >
           <Upload className="h-3 w-3" />
           Bulk
@@ -197,7 +197,7 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
                   key={getAutocompleteSuggestionKey(s, i)}
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); add(s.name); }}
-                  className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${
+                  className={`flex w-full items-center justify-between px-2.5 py-1.5 text-[11px] transition-colors sm:px-3 sm:py-2 sm:text-xs ${
                     i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
@@ -217,7 +217,7 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             placeholder="Paste companies — one per line or comma-separated"
-            className="block w-full min-h-[90px] resize-y rounded-md bg-gray-50 px-2 py-1.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400/50"
+            className="block min-h-[76px] w-full resize-y rounded-md bg-gray-50 px-2 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400/50 sm:min-h-[90px] sm:text-xs"
           />
           <div className="mt-2 flex justify-end gap-1.5">
             <button

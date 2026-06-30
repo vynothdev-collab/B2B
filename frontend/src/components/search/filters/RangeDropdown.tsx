@@ -21,7 +21,7 @@ interface Props {
   unitSuffix?: string;
 }
 
-const labelCls = "block text-xs text-gray-500 mb-1";
+const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
 
 function defaultFormat(n: number): string {
   return n.toLocaleString();
@@ -104,11 +104,11 @@ export default function RangeDropdown({
         ref={btnRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 focus:outline-none focus:border-red-500 transition-colors"
+        className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 transition-colors focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs"
       >
         <span className={minValue || maxValue ? "" : "text-gray-400"}>{buttonLabel}</span>
         <ChevronDown
-          className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-3 w-3 text-gray-400 transition-transform sm:h-3.5 sm:w-3.5 ${open ? "rotate-180" : ""}`}
         />
       </button>
 
@@ -131,14 +131,14 @@ export default function RangeDropdown({
                 placeholder="Min"
                 value={minValue}
                 onChange={(e) => onMinChange(e.target.value)}
-                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] text-gray-900 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:text-[11px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <input
                 type="number"
                 placeholder="Max"
                 value={maxValue}
                 onChange={(e) => onMaxChange(e.target.value)}
-                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[10px] text-gray-900 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:text-[11px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function RangeDropdown({
                   onMaxChange(p.max != null ? String(p.max) : "");
                   setOpen(false);
                 }}
-                className="block w-full px-3 py-1.5 text-left text-xs text-gray-700 hover:bg-red-50 hover:bg-red-500"
+                className="block w-full px-2.5 py-1.5 text-left text-[11px] text-gray-700 hover:bg-red-50 hover:bg-red-500 sm:px-3 sm:text-xs"
               >
                 {p.label}
               </button>
@@ -166,7 +166,7 @@ export default function RangeDropdown({
                 onMaxChange("");
                 setOpen(false);
               }}
-              className="block w-full border-t border-gray-100 px-3 py-1.5 text-left text-xs font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+              className="block w-full border-t border-gray-100 px-2.5 py-1.5 text-left text-[11px] font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600 sm:px-3 sm:text-xs"
             >
               Clear
             </button>

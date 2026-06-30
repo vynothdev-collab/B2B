@@ -72,13 +72,13 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
-      <div className="fixed left-1/2 top-1/2 z-50 w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+      <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-1.5rem)] max-w-[360px] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-gray-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2.5 sm:px-4 sm:py-3">
           <div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-xs font-semibold text-gray-900 sm:text-sm">
               Add to {itemType === "person" ? "person" : "company"} list
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-[11px] text-gray-400 sm:text-xs">
               {items.length} lead{items.length !== 1 ? "s" : ""} selected
             </p>
           </div>
@@ -91,8 +91,8 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
           </button>
         </div>
 
-        <div className="p-3">
-          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 focus-within:border-red-400 focus-within:bg-white transition-colors">
+        <div className="p-2.5 sm:p-3">
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 transition-colors focus-within:border-red-400 focus-within:bg-white sm:px-3 sm:py-2">
             <Search className="h-3.5 w-3.5 shrink-0 text-gray-400" />
             <input
               ref={inputRef}
@@ -100,7 +100,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Create list or search lists..."
-              className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none"
+              className="min-w-0 flex-1 bg-transparent text-[11px] text-gray-700 placeholder-gray-400 outline-none sm:text-sm"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && showCreate) handleAdd(undefined, query.trim());
               }}
@@ -108,7 +108,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
           </div>
         </div>
 
-        <div className="max-h-56 overflow-y-auto px-2 pb-3">
+        <div className="max-h-52 overflow-y-auto px-2 pb-2.5 sm:max-h-56 sm:pb-3">
           {loading && (
             <div className="flex items-center justify-center py-6">
               <Loader2 className="h-4 w-4 animate-spin text-red-500" />
@@ -120,7 +120,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
               type="button"
               onClick={() => handleAdd(undefined, query.trim())}
               disabled={adding !== null}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 transition-colors disabled:opacity-60"
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-60 sm:px-3 sm:py-2.5 sm:text-sm"
             >
               {adding === "__new__" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -137,7 +137,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
               type="button"
               onClick={() => handleAdd(list.id)}
               disabled={adding !== null}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60"
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60 sm:px-3 sm:py-2.5 sm:text-sm"
             >
               {adding === list.id ? (
                 <Loader2 className="h-4 w-4 animate-spin text-red-500" />

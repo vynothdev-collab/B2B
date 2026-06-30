@@ -12,7 +12,7 @@ interface Props {
   options: Option[];
 }
 
-const labelCls = "block text-xs text-gray-500 mb-1";
+const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
 
 export default function SearchableSelect({ label, placeholder, value, onChange, options }: Props) {
   const [open, setOpen] = useState(false);
@@ -41,7 +41,7 @@ export default function SearchableSelect({ label, placeholder, value, onChange, 
         ref={btnRef}
         type="button"
         onClick={handleOpen}
-        className="w-full flex items-center justify-between rounded-lg bg-gray-100 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-400/50 transition-colors hover:bg-gray-200"
+        className="flex w-full items-center justify-between rounded-lg bg-gray-100 px-2.5 py-1.5 text-[11px] transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-red-400/50 sm:px-3 sm:py-2 sm:text-xs"
       >
         <span className={`truncate ${selected ? "text-gray-800" : "text-gray-400"}`}>
           {selected ? selected.label : placeholder}
@@ -73,7 +73,7 @@ export default function SearchableSelect({ label, placeholder, value, onChange, 
                   placeholder="Search..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="flex-1 min-w-0 bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-[11px] text-gray-800 placeholder-gray-400 focus:outline-none sm:text-xs"
                 />
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function SearchableSelect({ label, placeholder, value, onChange, 
                   key={o.value}
                   type="button"
                   onClick={() => { onChange(o.value); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-xs transition-colors hover:bg-red-50 ${value === o.value ? "bg-red-50 text-red-700 font-semibold" : "text-gray-700"}`}
+                  className={`w-full px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-red-50 sm:px-3 sm:py-2 sm:text-xs ${value === o.value ? "bg-red-50 text-red-700 font-semibold" : "text-gray-700"}`}
                 >
                   {o.label}
                 </button>

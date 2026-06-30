@@ -54,7 +54,7 @@ export default function AppSidebar() {
           "md:relative md:inset-auto md:z-auto",
           "flex shrink-0 flex-col border-r border-gray-200 bg-white transition-all duration-300",
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0",
-          collapsed ? "w-64 md:w-16" : "w-64 md:w-56",
+          collapsed ? "w-[min(16rem,calc(100vw-2rem))] md:w-16" : "w-[min(16rem,calc(100vw-2rem))] md:w-56",
         ].join(" ")}
       >
         <button

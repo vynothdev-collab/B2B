@@ -11,7 +11,7 @@ interface Props {
   options: { value: string; label: string }[];
 }
 
-const labelCls = "block text-xs text-gray-500 mb-1";
+const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
 
 const CHIP_CLS = "bg-red-100 text-red-700";
 
@@ -74,7 +74,7 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
           {values.map((val) => (
             <span
               key={val}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium ${CHIP_CLS}`}
+              className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium sm:px-2 sm:text-[11px] ${CHIP_CLS}`}
             >
               {getLabel(val)}
               <button
@@ -82,7 +82,7 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
                 onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
                 className="hover:opacity-70"
               >
-                <X className="h-2.5 w-2.5" />
+                <X className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
               </button>
             </span>
           ))}
@@ -91,7 +91,7 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
 
       <div
         ref={containerRef}
-        className="w-full rounded-lg border-2 border-gray-200 bg-white px-2 py-1 focus-within:border-red-500 transition-colors cursor-text"
+        className="w-full cursor-text rounded-lg border border-gray-200 bg-white px-2 py-1 transition-colors focus-within:border-red-500 sm:border-2"
         onClick={() => inputRef.current?.focus()}
       >
         <input
@@ -102,7 +102,7 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
           onChange={(e) => setInputText(e.target.value)}
           onFocus={openDropdown}
           onKeyDown={handleKey}
-          className="w-full bg-transparent text-xs text-gray-800 placeholder-gray-400 focus:outline-none"
+          className="w-full bg-transparent text-[11px] text-gray-800 placeholder-gray-400 focus:outline-none sm:text-xs"
         />
       </div>
 
@@ -125,7 +125,7 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
                       key={o.value}
                       type="button"
                       onMouseDown={(e) => { e.preventDefault(); toggleValue(o.value); }}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${
+                      className={`flex w-full items-center justify-between px-2.5 py-1.5 text-[11px] transition-colors sm:px-3 sm:py-2 sm:text-xs ${
                         selected ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >

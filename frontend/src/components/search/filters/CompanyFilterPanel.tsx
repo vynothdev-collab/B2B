@@ -39,7 +39,7 @@ interface Props {
   onChange: (patch: Partial<CompanyFilters>) => void;
 }
 
-const labelCls = "block text-xs text-gray-500 mb-1";
+const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
 
 
 const SECTIONS = [

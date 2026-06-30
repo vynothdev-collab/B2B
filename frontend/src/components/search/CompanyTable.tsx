@@ -116,8 +116,8 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll, on
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[620px] text-sm">
+    <div className="max-w-full overflow-x-auto">
+      <table className="w-full min-w-[580px] text-xs sm:min-w-[620px] sm:text-sm [&_td]:px-2 [&_td]:py-2 [&_th]:px-2 [&_th]:py-2 [&_th]:text-[11px] sm:[&_td]:px-3 sm:[&_td]:py-3 sm:[&_th]:px-3 sm:[&_th]:py-2.5 sm:[&_th]:text-xs">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
             <th className="w-8 px-3 py-2.5">
@@ -162,11 +162,11 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll, on
 
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-2.5">
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded text-white text-sm font-bold ${color}`}>
+                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-bold text-white sm:h-8 sm:w-8 sm:text-sm ${color}`}>
                       {name[0]?.toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate font-semibold text-gray-900 text-sm">{name}</p>
+                      <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">{name}</p>
                       {company.type && (
                         <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize mt-0.5 ${typeBadgeClass}`}>
                           {company.type}

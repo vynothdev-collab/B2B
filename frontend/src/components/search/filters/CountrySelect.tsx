@@ -12,8 +12,8 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors pr-7";
-const labelCls = "block text-xs text-gray-500 mb-1";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 pr-7 text-[11px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
+const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
 const DROPDOWN_MAX_H = 220;
 
 export default function CountrySelect({ label, placeholder, value, onChange }: Props) {
@@ -139,7 +139,7 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
                     key={name}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); select(name); }}
-                    className={`flex w-full items-center px-3 py-2 text-left text-xs transition-colors ${
+                    className={`flex w-full items-center px-2.5 py-1.5 text-left text-[11px] transition-colors sm:px-3 sm:py-2 sm:text-xs ${
                       i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >

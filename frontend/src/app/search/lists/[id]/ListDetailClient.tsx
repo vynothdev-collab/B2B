@@ -121,9 +121,9 @@ export default function ListDetailPage() {
   return (
     <>
       <AppHeader title={list?.name ?? "List"} />
-      <div className="flex flex-1 flex-col overflow-hidden px-3 py-2">
-        <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <div className="flex shrink-0 items-center gap-3 border-b border-gray-100 px-4 py-3">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-2 py-2 sm:px-3">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:rounded-xl">
+          <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 px-3 py-3 sm:px-4">
             <button
               type="button"
               onClick={() => router.push("/search/lists")}
@@ -134,7 +134,7 @@ export default function ListDetailPage() {
             <span className="text-gray-400">
               {isPeople ? <Users className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
             </span>
-            <span className="text-sm font-semibold text-gray-900">{list?.name ?? "—"}</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold text-gray-900">{list?.name ?? "—"}</span>
             {!loading && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
                 {items.length} {isPeople ? "people" : "companies"}
@@ -149,8 +149,8 @@ export default function ListDetailPage() {
           )}
 
           {!loading && (
-            <div className="flex-1 overflow-y-auto">
-              <table className="w-full min-w-[640px] text-sm">
+            <div className="flex-1 overflow-auto">
+              <table className="w-full min-w-[580px] text-xs sm:min-w-[640px] sm:text-sm [&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2 [&_th]:text-[11px] sm:[&_td]:px-4 sm:[&_td]:py-3 sm:[&_th]:px-4 sm:[&_th]:py-2.5 sm:[&_th]:text-xs">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50">
                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Name</th>
