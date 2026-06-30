@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Upload } from "lucide-react";
-import { fetchAutocomplete, type AutocompleteSuggestion } from "@/lib/searchApi";
+import { fetchAutocomplete, getAutocompleteSuggestionKey, type AutocompleteSuggestion } from "@/lib/searchApi";
 
 interface Props {
   label?: string;
@@ -12,7 +12,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors";
+  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors";
 const labelCls = "block text-xs text-gray-500 mb-1";
 const DROPDOWN_MAX_H = 220;
 
@@ -143,7 +143,7 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1">
           {values.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-purple-100 text-purple-700">
+            <span key={v} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-100 text-red-700">
               {v}
               <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
                 <X className="h-2.5 w-2.5" />
@@ -168,7 +168,7 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
           />
           {loading && (
             <span className="absolute right-2 top-1/2 -translate-y-1/2">
-              <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-purple-500 inline-block" />
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-red-500 inline-block" />
             </span>
           )}
         </div>
@@ -194,11 +194,11 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
             <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
               {suggestions.map((s, i) => (
                 <button
-                  key={s.name}
+                  key={getAutocompleteSuggestionKey(s, i)}
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); add(s.name); }}
                   className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${
-                    i === activeIdx ? "bg-purple-50 text-purple-700" : "text-gray-700 hover:bg-gray-50"
+                    i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   <span className="truncate">{s.name}</span>
@@ -217,7 +217,7 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
             value={bulkText}
             onChange={(e) => setBulkText(e.target.value)}
             placeholder="Paste companies — one per line or comma-separated"
-            className="block w-full min-h-[90px] resize-y rounded-md bg-gray-50 px-2 py-1.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400/50"
+            className="block w-full min-h-[90px] resize-y rounded-md bg-gray-50 px-2 py-1.5 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-400/50"
           />
           <div className="mt-2 flex justify-end gap-1.5">
             <button
@@ -230,7 +230,7 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
             <button
               type="button"
               onClick={applyBulk}
-              className="rounded-md bg-purple-600 px-3 py-1 text-[11px] font-semibold text-white hover:bg-purple-700"
+              className="rounded-md bg-red-600 px-3 py-1 text-[11px] font-semibold text-white hover:bg-red-500"
             >
               Add all
             </button>

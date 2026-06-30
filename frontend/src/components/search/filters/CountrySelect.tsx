@@ -12,7 +12,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors pr-7";
+  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors pr-7";
 const labelCls = "block text-xs text-gray-500 mb-1";
 const DROPDOWN_MAX_H = 220;
 
@@ -140,7 +140,7 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); select(name); }}
                     className={`flex w-full items-center px-3 py-2 text-left text-xs transition-colors ${
-                      i === activeIdx ? "bg-purple-50 text-purple-700" : "text-gray-700 hover:bg-gray-50"
+                      i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
                     {name}

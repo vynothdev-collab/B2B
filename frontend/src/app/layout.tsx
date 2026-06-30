@@ -12,6 +12,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "leadsbuddy.ai",
   description: "leadsbuddy.ai — find leads and enrich contacts",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

@@ -40,7 +40,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors";
+  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors";
 const labelCls = "block text-xs text-gray-500 mb-1";
 
 const SECTIONS = [
@@ -57,9 +57,9 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
   return (
     <>
       <FilterSection title="AI Lookalikes" icon={<Sparkles className="h-4 w-4" />} info="Find similar profiles" isOpen={open === "lookalikes"} onToggle={() => toggle("lookalikes")}>
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-purple-200 bg-purple-50 px-2.5 py-2">
-          <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-          <p className="text-[11px] text-purple-700">Find similar profiles — coming soon.</p>
+        <div className="flex items-center gap-2 rounded-lg border border-dashed border-red-200 bg-red-50 px-2.5 py-2">
+          <Sparkles className="h-3.5 w-3.5 text-red-500" />
+          <p className="text-[11px] text-red-700">Find similar profiles — coming soon.</p>
         </div>
       </FilterSection>
 
@@ -102,7 +102,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
 
       <FilterSection title="Company" icon={<Building2 className="h-4 w-4" />} isOpen={open === "company"} onToggle={() => toggle("company")}>
         <BulkCompanyInput
-          label="Company (bulk add supported)"
+          label="Company name"
           values={filters.companies}
           onChange={(v) => onChange({ companies: v })}
         />
@@ -197,9 +197,6 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           presets={GROWTH_PRESETS}
           unitSuffix="%"
         />
-        <p className="px-1 pt-1 text-[10px] text-gray-400">
-          PDL only exposes the 12-month growth rate at the person level.
-        </p>
       </FilterSection>
 
       <FilterSection title="Headcount by Department" icon={<Activity className="h-4 w-4" />} info="Filters by company headcount in a role" isOpen={open === "headcountByDept"} onToggle={() => toggle("headcountByDept")}>
@@ -219,9 +216,6 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           onMaxChange={(v) => onChange({ headcountByDepartmentMax: v })}
           presets={HEADCOUNT_RANGE_PRESETS}
         />
-        <p className="px-1 pt-1 text-[10px] text-gray-400">
-          Looks up companies first, then finds people working there.
-        </p>
       </FilterSection>
 
       <FilterSection title="Headcount by Location" icon={<MapPin className="h-4 w-4" />} info="Filters by company headcount in a country" isOpen={open === "headcountByLocation"} onToggle={() => toggle("headcountByLocation")}>
@@ -240,9 +234,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           onMaxChange={(v) => onChange({ headcountByLocationMax: v })}
           presets={HEADCOUNT_RANGE_PRESETS}
         />
-        <p className="px-1 pt-1 text-[10px] text-gray-400">
-          Looks up companies first, then finds people working there.
-        </p>
+
       </FilterSection>
 
       <FilterSection title="Founded Year" icon={<Calendar className="h-4 w-4" />} isOpen={open === "founded"} onToggle={() => toggle("founded")}>

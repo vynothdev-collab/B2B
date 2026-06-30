@@ -17,7 +17,7 @@ interface LocOption {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors";
+  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors";
 const DROPDOWN_MAX_H = 260;
 
 const KIND_ORDER: Record<LocOption["kind"], number> = { country: 0, state: 1, city: 2 };
@@ -183,7 +183,7 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1.5">
           {values.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-purple-100 text-purple-700 capitalize">
+            <span key={v} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-100 text-red-700 capitalize">
               {v}
               <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
                 <X className="h-2.5 w-2.5" />
@@ -224,7 +224,7 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); add(s); }}
                     className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors ${
-                      i === activeIdx ? "bg-purple-50 text-purple-700" : "text-gray-700 hover:bg-gray-50"
+                      i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
                     <MapPin className="h-3 w-3 shrink-0 text-gray-400" />

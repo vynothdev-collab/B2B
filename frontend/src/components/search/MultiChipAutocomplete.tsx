@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { fetchAutocomplete, type AutocompleteSuggestion } from "@/lib/searchApi";
+import { fetchAutocomplete, getAutocompleteSuggestionKey, type AutocompleteSuggestion } from "@/lib/searchApi";
 
 interface Props {
   label?: string;
@@ -116,7 +116,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1">
           {values.map((val) => (
-            <span key={val} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-purple-100 text-purple-700">
+            <span key={val} className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium bg-red-100 text-red-700">
               {val}
               <button type="button" onMouseDown={(e) => { e.preventDefault(); removeValue(val); }} className="hover:opacity-70">
                 <X className="h-2.5 w-2.5" />
@@ -128,7 +128,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
 
       <div
         ref={containerRef}
-        className="relative w-full rounded-lg border-2 border-gray-200 bg-white px-2 py-1 focus-within:border-purple-500 transition-colors"
+        className="relative w-full rounded-lg border-2 border-gray-200 bg-white px-2 py-1 focus-within:border-red-500 transition-colors"
         onClick={() => inputRef.current?.focus()}
       >
         <input
@@ -143,7 +143,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
         />
         {loading && (
           <span className="absolute right-2 top-1/2 -translate-y-1/2">
-            <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-purple-500 inline-block" />
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-red-500 inline-block" />
           </span>
         )}
       </div>
@@ -159,11 +159,11 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
             <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
               {suggestions.map((s, i) => (
                 <button
-                  key={s.name}
+                  key={getAutocompleteSuggestionKey(s, i)}
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); addValue(s.name); }}
                   className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${
-                    i === activeIdx ? "bg-purple-50 text-purple-700" : "text-gray-700 hover:bg-gray-50"
+                    i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   <span className="truncate">{s.name}</span>

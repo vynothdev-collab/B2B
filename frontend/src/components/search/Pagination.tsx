@@ -10,7 +10,7 @@ interface Props {
   onPage: (p: number) => void;
 }
 
-function getWindowed(current: number, total: number, maxReachable: number): (number | "...")[] {
+function getWindowed(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 
   const pages: (number | "...")[] = [];
@@ -33,14 +33,15 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (totalPages <= 1 && !hasNext) return null;
 
-  const pages = getWindowed(page, Math.min(totalPages, Math.max(maxReachable + 1, page + 2)), maxReachable);
+  const pages = getWindowed(page, Math.min(totalPages, Math.max(maxReachable + 1, page + 2)));
 
   return (
     <div className="flex items-center justify-between px-4 py-3">
-      <p className="text-xs text-gray-500 hidden sm:block">
-        <span className="font-medium text-gray-700">{((page - 1) * pageSize + 1).toLocaleString()}</span>–
+      <p className="hidden sm:block text-xs text-gray-500">
+        <span className="font-medium text-gray-700">{((page - 1) * pageSize + 1).toLocaleString()}</span>
+        {"–"}
         <span className="font-medium text-gray-700">{Math.min(page * pageSize, total).toLocaleString()}</span>
-        {" "}of{" "}
+        {" of "}
         <span className="font-medium text-gray-700">{total.toLocaleString()}</span>
       </p>
 
@@ -52,25 +53,32 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
           className="flex items-center gap-0.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors mr-1"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
-          Previous
+          <span>Previous</span>
         </button>
+
+        <span className="sm:hidden px-3 py-1.5 text-xs font-medium text-gray-600">
+          Page {page}
+        </span>
 
         {pages.map((p, i) =>
           p === "..." ? (
-            <span key={`e-${i}`} className="px-1.5 py-1.5 text-xs text-gray-400 select-none">…</span>
+            <span key={`e-${i}`} className="hidden sm:inline px-1.5 py-1.5 text-xs text-gray-400 select-none">
+              …
+            </span>
           ) : (
             <button
               key={p}
               type="button"
               onClick={() => onPage(p as number)}
               disabled={(p as number) > maxReachable && (p as number) !== 1}
-              className={`min-w-[30px] rounded-md px-2 py-1.5 text-xs font-medium transition-colors
-                ${p === page
-                  ? "bg-purple-600 text-white shadow-sm"
+              className={[
+                "hidden sm:inline-flex min-w-[30px] rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                p === page
+                  ? "bg-red-600 text-white shadow-sm"
                   : (p as number) <= maxReachable || (p as number) === 1
                     ? "text-gray-600 hover:bg-gray-100"
-                    : "text-gray-300 cursor-not-allowed"
-                }`}
+                    : "text-gray-300 cursor-not-allowed",
+              ].join(" ")}
             >
               {p}
             </button>
@@ -83,7 +91,7 @@ export default function Pagination({ page, total, pageSize, maxReachable, hasNex
           disabled={!hasNext}
           className="flex items-center gap-0.5 rounded-md px-2 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors ml-1"
         >
-          Next
+          <span>Next</span>
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>

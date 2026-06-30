@@ -33,12 +33,12 @@ const TYPE_COLORS: Record<string, string> = {
   "privately held": "bg-blue-50 text-blue-600",
   "public": "bg-green-50 text-green-600",
   "nonprofit": "bg-amber-50 text-amber-600",
-  "educational": "bg-purple-50 text-purple-600",
+  "educational": "bg-red-50 text-red-600",
   "government": "bg-gray-100 text-gray-600",
   "self employed": "bg-orange-50 text-orange-600",
 };
 
-function ActionMenu() {
+function ActionMenu({ onAddToList }: { onAddToList: () => void }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -62,11 +62,11 @@ function ActionMenu() {
     setOpen((v) => !v);
   };
 
-  const items = [
-    { icon: <Building2 className="h-3.5 w-3.5" />, label: "View company" },
-    { icon: <ExternalLink className="h-3.5 w-3.5" />, label: "Push to CRM" },
-    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list" },
-    { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email" },
+  const menuItems = [
+    { icon: <Building2 className="h-3.5 w-3.5" />, label: "View company", action: () => {} },
+    { icon: <ExternalLink className="h-3.5 w-3.5" />, label: "Push to CRM", action: () => {} },
+    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list", action: onAddToList },
+    { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email", action: () => {} },
   ];
 
   return (
@@ -86,11 +86,11 @@ function ActionMenu() {
             className="fixed z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
             style={{ top: pos.top, right: pos.right }}
           >
-            {items.map((item) => (
+            {menuItems.map((item) => (
               <button
                 key={item.label}
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); item.action(); }}
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
               >
                 <span className="text-gray-400">{item.icon}</span>
@@ -109,14 +109,15 @@ interface Props {
   selected: Set<string>;
   onSelect: (id: string) => void;
   onSelectAll: (all: boolean) => void;
+  onAddToList: (company: CompanyResult) => void;
 }
 
-export default function CompanyTable({ data, selected, onSelect, onSelectAll }: Props) {
+export default function CompanyTable({ data, selected, onSelect, onSelectAll, onAddToList }: Props) {
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
+      <table className="w-full min-w-[620px] text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
             <th className="w-8 px-3 py-2.5">
@@ -124,7 +125,7 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                 type="checkbox"
                 checked={allSelected}
                 onChange={(e) => onSelectAll(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
+                className="h-3.5 w-3.5 rounded border-gray-300 accent-red-600 text-red-600 focus:ring-red-400"
               />
             </th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[200px]">Company ↓</th>
@@ -148,14 +149,14 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
             return (
               <tr
                 key={company.id}
-                className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${checked ? "bg-purple-50/40" : ""}`}
+                className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${checked ? "bg-red-50/40" : ""}`}
               >
                 <td className="px-3 py-3">
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => onSelect(company.id)}
-                    className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
+                    className="h-3.5 w-3.5 rounded border-gray-300 accent-red-600 text-red-600 focus:ring-red-400"
                   />
                 </td>
 
@@ -223,7 +224,7 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll }: 
                 </td>
 
                 <td className="px-3 py-3">
-                  <ActionMenu />
+                  <ActionMenu onAddToList={() => onAddToList(company)} />
                 </td>
               </tr>
             );

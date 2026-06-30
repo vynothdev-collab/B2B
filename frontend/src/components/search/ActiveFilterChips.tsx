@@ -17,7 +17,7 @@ export default function ActiveFilterChips({ chips }: { chips: FilterChip[] }) {
       {chips.map((chip) => (
         <span
           key={chip.id}
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-[11px] font-medium text-purple-700 whitespace-nowrap"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[11px] font-medium text-red-700 whitespace-nowrap"
         >
           {chip.label}
           <button

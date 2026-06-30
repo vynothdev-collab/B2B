@@ -56,15 +56,15 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
   return (
     <>
       <FilterSection title="AI Lookalikes" icon={<Sparkles className="h-4 w-4" />} info="Find similar companies" isOpen={open === "lookalikes"} onToggle={() => toggle("lookalikes")}>
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-purple-200 bg-purple-50 px-2.5 py-2">
-          <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-          <p className="text-[11px] text-purple-700">Find similar companies — coming soon.</p>
+        <div className="flex items-center gap-2 rounded-lg border border-dashed border-red-200 bg-red-50 px-2.5 py-2">
+          <Sparkles className="h-3.5 w-3.5 text-red-500" />
+          <p className="text-[11px] text-red-700">Find similar companies — coming soon.</p>
         </div>
       </FilterSection>
 
       <FilterSection title="Company" icon={<Building2 className="h-4 w-4" />} isOpen={open === "company"} onToggle={() => toggle("company")}>
         <BulkCompanyInput
-          label="Company (bulk add supported)"
+          label="Company name"
           values={filters.companies}
           onChange={(v) => onChange({ companies: v })}
         />
@@ -115,9 +115,6 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
           values={filters.industries}
           onChange={(v) => onChange({ industries: v })}
         />
-        <p className="px-1 pt-1 text-[10px] text-gray-400">
-          Type to search PDL canonical industries.
-        </p>
       </FilterSection>
 
       <FilterSection title="Buying Intent" icon={<TrendingUp className="h-4 w-4" />} isOpen={open === "intent"} onToggle={() => toggle("intent")}>
@@ -181,8 +178,8 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
                 onClick={() => onChange({ headcountGrowthTimeframe: opt.value as CompanyFilters["headcountGrowthTimeframe"] })}
                 className={`rounded-full border px-3 py-1 text-[11px] font-medium transition-colors ${
                   filters.headcountGrowthTimeframe === opt.value
-                    ? "border-purple-600 bg-purple-600 text-white"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-purple-400 hover:text-purple-600"
+                    ? "border-red-600 bg-red-600 text-white"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-red-400 hover:text-red-600"
                 }`}
               >
                 {opt.label}

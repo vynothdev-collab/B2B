@@ -45,7 +45,7 @@ function SizeBadge({ size }: { size?: string }) {
   );
 }
 
-function ActionMenu({ id }: { id: string }) {
+function ActionMenu({ onAddToList }: { id: string; onAddToList: () => void }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -58,11 +58,11 @@ function ActionMenu({ id }: { id: string }) {
     setOpen((v) => !v);
   };
 
-  const items = [
-    { icon: <UserRound className="h-3.5 w-3.5" />, label: "View profile" },
-    { icon: <Building2 className="h-3.5 w-3.5" />, label: "Push to CRM" },
-    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list" },
-    { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email" },
+  const menuItems = [
+    { icon: <UserRound className="h-3.5 w-3.5" />, label: "View profile", action: () => {} },
+    { icon: <Building2 className="h-3.5 w-3.5" />, label: "Push to CRM", action: () => {} },
+    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list", action: onAddToList },
+    { icon: <Mail className="h-3.5 w-3.5" />, label: "Send email", action: () => {} },
   ];
   return (
     <div>
@@ -81,11 +81,11 @@ function ActionMenu({ id }: { id: string }) {
             className="fixed z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
             style={{ top: pos.top, right: pos.right }}
           >
-            {items.map((item) => (
+            {menuItems.map((item) => (
               <button
                 key={item.label}
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); item.action(); }}
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
               >
                 <span className="text-gray-400">{item.icon}</span>
@@ -104,9 +104,10 @@ interface Props {
   selected: Set<string>;
   onSelect: (id: string) => void;
   onSelectAll: (all: boolean) => void;
+  onAddToList: (person: PersonResult) => void;
 }
 
-export default function PeopleTable({ data, selected, onSelect, onSelectAll }: Props) {
+export default function PeopleTable({ data, selected, onSelect, onSelectAll, onAddToList }: Props) {
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
   const [revealed, setRevealed] = useState<Record<string, PersonRevealData>>({});
   const [revealing, setRevealing] = useState<Set<string>>(new Set());
@@ -131,7 +132,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
+      <table className="w-full min-w-[700px] text-sm">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50">
             <th className="w-8 px-3 py-2.5">
@@ -139,7 +140,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                 type="checkbox"
                 checked={allSelected}
                 onChange={(e) => onSelectAll(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
+                className="h-3.5 w-3.5 rounded border-gray-300 accent-red-600 text-red-600 focus:ring-red-400"
               />
             </th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[180px]">Name ↓</th>
@@ -161,14 +162,14 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
             return (
               <tr
                 key={person.id}
-                className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${checked ? "bg-purple-50/40" : ""}`}
+                className={`border-b border-gray-50 hover:bg-gray-50/60 transition-colors ${checked ? "bg-red-50/40" : ""}`}
               >
                 <td className="px-3 py-3">
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => onSelect(person.id)}
-                    className="h-3.5 w-3.5 rounded border-gray-300 accent-purple-600 text-purple-600 focus:ring-purple-400"
+                    className="h-3.5 w-3.5 rounded border-gray-300 accent-red-600 text-red-600 focus:ring-red-400"
                   />
                 </td>
 
@@ -221,7 +222,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                       <span className="text-xs text-gray-400">—</span>
                     )}
                     {person.job_title_role && (
-                      <span className="inline-block rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-600 capitalize mt-0.5">
+                      <span className="inline-block rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600 capitalize mt-0.5">
                         {person.job_title_role}
                       </span>
                     )}
@@ -242,7 +243,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                       type="button"
                       onClick={() => handleReveal(person.id)}
                       disabled={revealing.has(person.id)}
-                      className="flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 transition-colors disabled:opacity-60"
+                      className="flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors disabled:opacity-60"
                     >
                       {revealing.has(person.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
                       Reveal
@@ -299,7 +300,7 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll }: P
                 </td>
 
                 <td className="px-3 py-3">
-                  <ActionMenu id={person.id} />
+                  <ActionMenu id={person.id} onAddToList={() => onAddToList(person)} />
                 </td>
               </tr>
             );

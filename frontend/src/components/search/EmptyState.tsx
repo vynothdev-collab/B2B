@@ -22,17 +22,53 @@ export default function EmptyState({ onQuery }: Props) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-8 py-16">
-      <div className="mb-6 h-20 w-20 rounded-full bg-gradient-to-br from-purple-400 to-indigo-600 opacity-90 shadow-lg" />
+      <div className="flex flex-col items-center -mb-4">
+        <svg width="180" height="180" viewBox="0 0 132 132" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g filter="url(#filter0_dii_280_16168)">
+          <path d="M34 54C34 36.3269 48.3269 22 66 22C83.6731 22 98 36.3269 98 54C98 71.6731 83.6731 86 66 86C48.3269 86 34 71.6731 34 54Z" fill="url(#paint0_radial_280_16168)"/>
+          </g>
+          <defs>
+          <filter id="filter0_dii_280_16168" x="0" y="0" width="132" height="132" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+          <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+          <feOffset dy="12"/>
+          <feGaussianBlur stdDeviation="17"/>
+          <feComposite in2="hardAlpha" operator="out"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0.909804 0 0 0 0 0.25098 0 0 0 0 0.0627451 0 0 0 0.38 0"/>
+          <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_280_16168"/>
+          <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_280_16168" result="shape"/>
+          <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+          <feOffset dx="7" dy="7"/>
+          <feGaussianBlur stdDeviation="7.5"/>
+          <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0"/>
+          <feBlend mode="normal" in2="shape" result="effect2_innerShadow_280_16168"/>
+          <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+          <feOffset dx="-6" dy="-9"/>
+          <feGaussianBlur stdDeviation="9"/>
+          <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0.909804 0 0 0 0 0.25098 0 0 0 0 0.0627451 0 0 0 0.4 0"/>
+          <feBlend mode="normal" in2="effect2_innerShadow_280_16168" result="effect3_innerShadow_280_16168"/>
+          </filter>
+          <radialGradient id="paint0_radial_280_16168" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(55.76 39.92) rotate(-90) scale(62.5107)">
+          <stop stopColor="#FFDCD2"/>
+          <stop offset="0.46" stopColor="#FB734C"/>
+          <stop offset="0.82" stopColor="#F96A42"/>
+          </radialGradient>
+          </defs>
+        </svg>
+      </div>
+
 
       <h2 className="text-2xl font-bold text-gray-900">Find the right prospects</h2>
       <p className="mt-1 text-base text-gray-500">
         Describe them and{" "}
-        <span className="font-semibold text-purple-600">B2B AI</span> does the rest
+        <span className="font-semibold text-red-600">B2B AI</span> does the rest
       </p>
 
       <div className="mt-8 w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center gap-2 px-4 py-3">
-          <span className="text-purple-500 text-base">✦</span>
+          <span className="text-red-500 text-base">✦</span>
           <input
             type="text"
             placeholder='Initiate a query — e.g. "Marketing managers in the healthcare industry"'
@@ -51,7 +87,7 @@ export default function EmptyState({ onQuery }: Props) {
             <label className="flex items-center gap-1.5 text-xs text-gray-500">
               <span className="relative inline-flex h-4 w-7 cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked />
-                <span className="absolute inset-0 rounded-full bg-purple-600 peer-checked:bg-purple-600" />
+                <span className="absolute inset-0 rounded-full bg-red-600 peer-checked:bg-red-600" />
                 <span className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-white transition-transform peer-checked:translate-x-3" />
               </span>
               Verified only
@@ -59,7 +95,7 @@ export default function EmptyState({ onQuery }: Props) {
             <button
               type="button"
               onClick={submit}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-600 text-white hover:bg-purple-700"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-500"
             >
               <Send className="h-3.5 w-3.5" />
             </button>
@@ -76,7 +112,7 @@ export default function EmptyState({ onQuery }: Props) {
             key={s.label}
             type="button"
             onClick={() => { setQuery(s.label); if (onQuery) onQuery(s.label); }}
-            className="flex flex-col items-start rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm hover:border-purple-300 hover:shadow-md transition-all"
+            className="flex flex-col items-start rounded-xl border border-gray-200 bg-white p-3 text-left shadow-sm hover:border-red-300 hover:shadow-md transition-all"
           >
             <span className="text-lg mb-2">{s.icon}</span>
             <span className="text-xs font-medium text-gray-700 leading-snug">{s.label}</span>

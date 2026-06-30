@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { fetchAutocomplete, type AutocompleteSuggestion } from "@/lib/searchApi";
+import { fetchAutocomplete, getAutocompleteSuggestionKey, type AutocompleteSuggestion } from "@/lib/searchApi";
 
 interface Props {
   label?: string;
@@ -14,7 +14,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors pr-7";
+  "w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors pr-7";
 const labelCls = "block text-xs text-gray-500 mb-1";
 const DROPDOWN_MAX_H = 220;
 
@@ -136,7 +136,7 @@ export default function AutocompleteInput({ label, placeholder, value, onChange,
         )}
         {loading && !open && (
           <span className="absolute right-2 top-1/2 -translate-y-1/2">
-            <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-purple-500 inline-block" />
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-red-500 inline-block" />
           </span>
         )}
       </div>
@@ -152,11 +152,11 @@ export default function AutocompleteInput({ label, placeholder, value, onChange,
             <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
               {suggestions.map((s, i) => (
                 <button
-                  key={s.name}
+                  key={getAutocompleteSuggestionKey(s, i)}
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); select(s.name); }}
                   className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${
-                    i === activeIdx ? "bg-purple-50 text-purple-700" : "text-gray-700 hover:bg-gray-50"
+                    i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   <span className="truncate">{s.name}</span>
