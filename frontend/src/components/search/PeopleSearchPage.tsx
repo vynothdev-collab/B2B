@@ -111,27 +111,9 @@ export default function PeopleSearchPage() {
   const showTable = hasSearched && !loading && results && results.data.length > 0;
   const showEmpty = !hasSearched || (!loading && results?.data.length === 0);
 
-  const removeFilter = useCallback(async (patch: Partial<PersonFilters>) => {
-    const next = { ...filters, ...patch };
-    setFilters(next);
-    if (!hasSearched) return;
-    pageCacheRef.current = new Map();
-    setTokenHistory([]);
-    setCurrentPage(1);
-    setLoading(true);
-    setSelected(new Set());
-    try {
-      const res = await searchPersons(next);
-      setResults(res);
-      setMeta(res.meta);
-      pageCacheRef.current.set(1, res);
-      if (res.meta.scroll_token) setTokenHistory([res.meta.scroll_token]);
-    } catch (e) {
-      toast.apiError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, hasSearched]);
+  const removeFilter = useCallback((patch: Partial<PersonFilters>) => {
+    setFilters((current) => ({ ...current, ...patch }));
+  }, []);
 
   const chips = useMemo(
     () => buildPersonChips(filters, removeFilter),

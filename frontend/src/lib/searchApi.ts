@@ -19,6 +19,16 @@ export interface AutocompleteSuggestion {
   meta?: Record<string, unknown>;
 }
 
+export function getAutocompleteSuggestionKey(suggestion: AutocompleteSuggestion, index: number): string {
+  const metaKey =
+    suggestion.meta?.id ??
+    suggestion.meta?.pdl_id ??
+    suggestion.meta?.linkedin_url ??
+    suggestion.meta?.website;
+
+  return [suggestion.name, suggestion.count, metaKey ?? index].map(String).join("-");
+}
+
 export async function fetchAutocomplete(
   field: string,
   text: string,

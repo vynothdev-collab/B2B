@@ -22,40 +22,42 @@ export default function EmptyState({ onQuery }: Props) {
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-8 py-16">
-      <svg width="150" height="150" viewBox="0 0 132 132" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g filter="url(#filter0_dii_280_16168)">
-      <path d="M34 54C34 36.3269 48.3269 22 66 22C83.6731 22 98 36.3269 98 54C98 71.6731 83.6731 86 66 86C48.3269 86 34 71.6731 34 54Z" fill="url(#paint0_radial_280_16168)"/>
-      </g>
-      <defs>
-      <filter id="filter0_dii_280_16168" x="0" y="0" width="132" height="132" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
-      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-      <feOffset dy="12"/>
-      <feGaussianBlur stdDeviation="17"/>
-      <feComposite in2="hardAlpha" operator="out"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.909804 0 0 0 0 0.25098 0 0 0 0 0.0627451 0 0 0 0.38 0"/>
-      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_280_16168"/>
-      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_280_16168" result="shape"/>
-      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-      <feOffset dx="7" dy="7"/>
-      <feGaussianBlur stdDeviation="7.5"/>
-      <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0"/>
-      <feBlend mode="normal" in2="shape" result="effect2_innerShadow_280_16168"/>
-      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
-      <feOffset dx="-6" dy="-9"/>
-      <feGaussianBlur stdDeviation="9"/>
-      <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
-      <feColorMatrix type="matrix" values="0 0 0 0 0.909804 0 0 0 0 0.25098 0 0 0 0 0.0627451 0 0 0 0.4 0"/>
-      <feBlend mode="normal" in2="effect2_innerShadow_280_16168" result="effect3_innerShadow_280_16168"/>
-      </filter>
-      <radialGradient id="paint0_radial_280_16168" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(55.76 39.92) rotate(-90) scale(62.5107)">
-      <stop stop-color="#FFDCD2"/>
-      <stop offset="0.46" stop-color="#FB734C"/>
-      <stop offset="0.82" stop-color="#F96A42"/>
-      </radialGradient>
-      </defs>
-      </svg>
+      <div className="flex flex-col items-center -mb-4">
+        <svg width="180" height="180" viewBox="0 0 132 132" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g filter="url(#filter0_dii_280_16168)">
+          <path d="M34 54C34 36.3269 48.3269 22 66 22C83.6731 22 98 36.3269 98 54C98 71.6731 83.6731 86 66 86C48.3269 86 34 71.6731 34 54Z" fill="url(#paint0_radial_280_16168)"/>
+          </g>
+          <defs>
+          <filter id="filter0_dii_280_16168" x="0" y="0" width="132" height="132" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+          <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+          <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+          <feOffset dy="12"/>
+          <feGaussianBlur stdDeviation="17"/>
+          <feComposite in2="hardAlpha" operator="out"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0.909804 0 0 0 0 0.25098 0 0 0 0 0.0627451 0 0 0 0.38 0"/>
+          <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_280_16168"/>
+          <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_280_16168" result="shape"/>
+          <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+          <feOffset dx="7" dy="7"/>
+          <feGaussianBlur stdDeviation="7.5"/>
+          <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0"/>
+          <feBlend mode="normal" in2="shape" result="effect2_innerShadow_280_16168"/>
+          <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+          <feOffset dx="-6" dy="-9"/>
+          <feGaussianBlur stdDeviation="9"/>
+          <feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+          <feColorMatrix type="matrix" values="0 0 0 0 0.909804 0 0 0 0 0.25098 0 0 0 0 0.0627451 0 0 0 0.4 0"/>
+          <feBlend mode="normal" in2="effect2_innerShadow_280_16168" result="effect3_innerShadow_280_16168"/>
+          </filter>
+          <radialGradient id="paint0_radial_280_16168" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(55.76 39.92) rotate(-90) scale(62.5107)">
+          <stop stopColor="#FFDCD2"/>
+          <stop offset="0.46" stopColor="#FB734C"/>
+          <stop offset="0.82" stopColor="#F96A42"/>
+          </radialGradient>
+          </defs>
+        </svg>
+      </div>
 
 
       <h2 className="text-2xl font-bold text-gray-900">Find the right prospects</h2>

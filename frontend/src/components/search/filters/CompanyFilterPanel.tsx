@@ -64,7 +64,7 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
 
       <FilterSection title="Company" icon={<Building2 className="h-4 w-4" />} isOpen={open === "company"} onToggle={() => toggle("company")}>
         <BulkCompanyInput
-          label="Company (bulk add supported)"
+          label="Company name"
           values={filters.companies}
           onChange={(v) => onChange({ companies: v })}
         />

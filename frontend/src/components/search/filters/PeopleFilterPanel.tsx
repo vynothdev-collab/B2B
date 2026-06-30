@@ -102,7 +102,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
 
       <FilterSection title="Company" icon={<Building2 className="h-4 w-4" />} isOpen={open === "company"} onToggle={() => toggle("company")}>
         <BulkCompanyInput
-          label="Company (bulk add supported)"
+          label="Company name"
           values={filters.companies}
           onChange={(v) => onChange({ companies: v })}
         />
@@ -216,9 +216,6 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           onMaxChange={(v) => onChange({ headcountByDepartmentMax: v })}
           presets={HEADCOUNT_RANGE_PRESETS}
         />
-        <p className="px-1 pt-1 text-[10px] text-gray-400">
-          Looks up companies first, then finds people working there.
-        </p>
       </FilterSection>
 
       <FilterSection title="Headcount by Location" icon={<MapPin className="h-4 w-4" />} info="Filters by company headcount in a country" isOpen={open === "headcountByLocation"} onToggle={() => toggle("headcountByLocation")}>
@@ -237,9 +234,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           onMaxChange={(v) => onChange({ headcountByLocationMax: v })}
           presets={HEADCOUNT_RANGE_PRESETS}
         />
-        <p className="px-1 pt-1 text-[10px] text-gray-400">
-          Looks up companies first, then finds people working there.
-        </p>
+
       </FilterSection>
 
       <FilterSection title="Founded Year" icon={<Calendar className="h-4 w-4" />} isOpen={open === "founded"} onToggle={() => toggle("founded")}>

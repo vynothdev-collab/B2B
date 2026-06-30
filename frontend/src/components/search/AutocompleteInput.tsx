@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { fetchAutocomplete, type AutocompleteSuggestion } from "@/lib/searchApi";
+import { fetchAutocomplete, getAutocompleteSuggestionKey, type AutocompleteSuggestion } from "@/lib/searchApi";
 
 interface Props {
   label?: string;
@@ -152,7 +152,7 @@ export default function AutocompleteInput({ label, placeholder, value, onChange,
             <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
               {suggestions.map((s, i) => (
                 <button
-                  key={s.name}
+                  key={getAutocompleteSuggestionKey(s, i)}
                   type="button"
                   onMouseDown={(e) => { e.preventDefault(); select(s.name); }}
                   className={`flex w-full items-center justify-between px-3 py-2 text-xs transition-colors ${

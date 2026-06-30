@@ -81,9 +81,7 @@ export default function ContactDetailsFilter({
         onChange={(v) => onChange({ requireMobile: v })}
       />
 
-      <p className="px-1 pt-1 text-[10px] text-gray-400 leading-snug">
-        Only records that match the selected contact rule will appear.
-      </p>
+
     </div>
   );
 }
