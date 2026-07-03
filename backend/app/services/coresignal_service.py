@@ -197,6 +197,13 @@ def _add_revenue_bucket_filter(clauses: list[dict], buckets: Optional[list[str]]
 def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) -> None:
     if not types:
         return
+    # Coresignal stores `type` with proper case (e.g. "Nonprofit",
+    # "Government Agency", "Educational"). Map the frontend enum accordingly.
+    _TYPE_MAP = {
+        "nonprofit": "Nonprofit",
+        "government": "Government Agency",
+        "educational": "Educational",
+    }
     should: list[dict] = []
     for t in types:
         t_norm = (t or "").lower().strip()
@@ -209,9 +216,8 @@ def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) ->
                 {"term": {"is_public": True}},
                 {"exists": {"field": "parent_company_name"}},
             ]}})
-        else:
-            # nonprofit / government / educational — not documented; pass through.
-            should.append({"term": {"type": t_norm}})
+        elif t_norm in _TYPE_MAP:
+            should.append({"term": {"type": _TYPE_MAP[t_norm]}})
     if should:
         clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
 
