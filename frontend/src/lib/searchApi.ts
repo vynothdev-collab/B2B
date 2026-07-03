@@ -8,36 +8,8 @@ export interface PersonRevealData {
   phone_numbers?: string[];
 }
 
-export async function revealPerson(pdlId: string): Promise<PersonRevealData> {
-  const { data } = await apiClient.post<PersonRevealData>("/search/reveal/person", { pdl_id: pdlId });
-  return data;
-}
-
-export interface AutocompleteSuggestion {
-  name: string;
-  count: number;
-  meta?: Record<string, unknown>;
-}
-
-export function getAutocompleteSuggestionKey(suggestion: AutocompleteSuggestion, index: number): string {
-  const metaKey =
-    suggestion.meta?.id ??
-    suggestion.meta?.pdl_id ??
-    suggestion.meta?.linkedin_url ??
-    suggestion.meta?.website;
-
-  return [suggestion.name, suggestion.count, metaKey ?? index].map(String).join("-");
-}
-
-export async function fetchAutocomplete(
-  field: string,
-  text: string,
-  size = 10
-): Promise<AutocompleteSuggestion[]> {
-  if (!text.trim()) return [];
-  const { data } = await apiClient.get<AutocompleteSuggestion[]>("/search/autocomplete", {
-    params: { field, text, size },
-  });
+export async function revealPerson(recordId: string): Promise<PersonRevealData> {
+  const { data } = await apiClient.post<PersonRevealData>("/search/reveal/person", { record_id: recordId });
   return data;
 }
 
@@ -71,8 +43,6 @@ export async function searchPersons(
     hq_locations: listOrUndef(filters.companyHQLocations),
 
     require_work_email: filters.requireWorkEmail || undefined,
-    require_mobile: filters.requireMobile || undefined,
-    contact_logic: filters.requireWorkEmail || filters.requireMobile ? filters.contactLogic : undefined,
 
     company_type: listOrUndef(filters.companyType),
     technologies: listOrUndef(filters.technologies),

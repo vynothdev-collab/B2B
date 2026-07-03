@@ -43,7 +43,7 @@ class ListItem(Base):
     list_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("lists.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    pdl_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    record_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     item_type: Mapped[str] = mapped_column(String(50), nullable=False)
     data: Mapped[Any] = mapped_column(JSON, nullable=False)
     added_at: Mapped[datetime] = mapped_column(

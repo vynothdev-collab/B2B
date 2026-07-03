@@ -27,9 +27,9 @@ class Settings(BaseSettings):
 
     REDIS_URL: str = ""
 
-    PDL_API_KEY: str = ""
-    PDL_PREVIEW_KEY: str = ""
-    PDL_BASE_URL: str = ""
+    CORESIGNAL_API_KEY: str = ""
+    CORESIGNAL_BASE_URL: str = "https://api.coresignal.com/cdapi"
+    CORESIGNAL_PAGE_SIZE: int = 10
 
 
 settings = Settings()

@@ -155,37 +155,37 @@ async def add_items_to_list(
     default_list = next((d for d in defaults if d.list_type == list_type), None)
 
     existing_in_target_result = await db.execute(
-        select(ListItem.pdl_id).where(ListItem.list_id == target_list.id)
+        select(ListItem.record_id).where(ListItem.list_id == target_list.id)
     )
     existing_in_target = {row[0] for row in existing_in_target_result.fetchall()}
 
     existing_in_default: set[str] = set()
     if default_list and default_list.id != target_list.id:
         existing_in_default_result = await db.execute(
-            select(ListItem.pdl_id).where(ListItem.list_id == default_list.id)
+            select(ListItem.record_id).where(ListItem.list_id == default_list.id)
         )
         existing_in_default = {row[0] for row in existing_in_default_result.fetchall()}
 
     added_count = 0
     for item in data.items:
-        if item.pdl_id not in existing_in_target:
+        if item.record_id not in existing_in_target:
             db.add(
                 ListItem(
                     id=str(uuid.uuid4()),
                     list_id=target_list.id,
-                    pdl_id=item.pdl_id,
+                    record_id=item.record_id,
                     item_type=item.item_type,
                     data=item.data,
                 )
             )
             added_count += 1
 
-        if default_list and default_list.id != target_list.id and item.pdl_id not in existing_in_default:
+        if default_list and default_list.id != target_list.id and item.record_id not in existing_in_default:
             db.add(
                 ListItem(
                     id=str(uuid.uuid4()),
                     list_id=default_list.id,
-                    pdl_id=item.pdl_id,
+                    record_id=item.record_id,
                     item_type=item.item_type,
                     data=item.data,
                 )
@@ -283,6 +283,6 @@ async def get_list_items(
     )
     items = items_result.scalars().all()
     return [
-        ListItemOut(id=i.id, pdl_id=i.pdl_id, item_type=i.item_type, data=i.data, added_at=i.added_at)
+        ListItemOut(id=i.id, record_id=i.record_id, item_type=i.item_type, data=i.data, added_at=i.added_at)
         for i in items
     ]

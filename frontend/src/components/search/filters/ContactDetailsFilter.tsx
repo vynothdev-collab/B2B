@@ -1,11 +1,9 @@
 "use client";
-import { Mail, Phone, BadgeCheck } from "lucide-react";
+import { Mail, BadgeCheck } from "lucide-react";
 
 interface Props {
   requireWorkEmail: boolean;
-  requireMobile: boolean;
-  contactLogic: "and" | "or";
-  onChange: (patch: { requireWorkEmail?: boolean; requireMobile?: boolean; contactLogic?: "and" | "or" }) => void;
+  onChange: (patch: { requireWorkEmail?: boolean }) => void;
 }
 
 function Checkbox({
@@ -26,14 +24,7 @@ function Checkbox({
   );
 }
 
-export default function ContactDetailsFilter({
-  requireWorkEmail,
-  requireMobile,
-  contactLogic,
-  onChange,
-}: Props) {
-  const bothActive = requireWorkEmail && requireMobile;
-
+export default function ContactDetailsFilter({ requireWorkEmail, onChange }: Props) {
   return (
     <div className="space-y-1.5">
       <Checkbox
@@ -42,46 +33,6 @@ export default function ContactDetailsFilter({
         checked={requireWorkEmail}
         onChange={(v) => onChange({ requireWorkEmail: v })}
       />
-
-      <div className="flex items-center justify-center gap-1">
-        <span className="h-px flex-1 bg-gray-200" />
-        <div className="flex overflow-hidden rounded-full border border-gray-200">
-          <button
-            type="button"
-            disabled={!bothActive}
-            onClick={() => onChange({ contactLogic: "and" })}
-            className={`px-2 py-0.5 text-[9px] font-semibold transition-colors sm:px-2.5 sm:text-[10px] ${
-              contactLogic === "and"
-                ? "bg-red-500 text-white"
-                : "bg-white text-gray-500 hover:bg-gray-50"
-            } ${!bothActive ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            AND
-          </button>
-          <button
-            type="button"
-            disabled={!bothActive}
-            onClick={() => onChange({ contactLogic: "or" })}
-            className={`px-2 py-0.5 text-[9px] font-semibold transition-colors sm:px-2.5 sm:text-[10px] ${
-              contactLogic === "or"
-                ? "bg-red-500 text-white"
-                : "bg-white text-gray-500 hover:bg-gray-50"
-            } ${!bothActive ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            OR
-          </button>
-        </div>
-        <span className="h-px flex-1 bg-gray-200" />
-      </div>
-
-      <Checkbox
-        icon={<Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
-        label="Mobile phone"
-        checked={requireMobile}
-        onChange={(v) => onChange({ requireMobile: v })}
-      />
-
-
     </div>
   );
 }

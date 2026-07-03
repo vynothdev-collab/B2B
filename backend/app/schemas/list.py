@@ -27,14 +27,14 @@ class ListUpdate(BaseModel):
 
 
 class ListItemPayload(BaseModel):
-    pdl_id: str
+    record_id: str
     item_type: str
     data: dict[str, Any]
 
 
 class ListItemOut(BaseModel):
     id: str
-    pdl_id: str
+    record_id: str
     item_type: str
     data: dict[str, Any]
     added_at: datetime

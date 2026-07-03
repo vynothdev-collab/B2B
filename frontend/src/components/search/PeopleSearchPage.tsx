@@ -102,7 +102,7 @@ export default function PeopleSearchPage() {
 
   const openListModal = (people: PersonResult[]) => {
     setListModalItems(
-      people.map((p) => ({ pdl_id: p.id, item_type: "person" as const, data: p as unknown as Record<string, unknown> }))
+      people.map((p) => ({ record_id: p.id, item_type: "person" as const, data: p as unknown as Record<string, unknown> }))
     );
   };
 

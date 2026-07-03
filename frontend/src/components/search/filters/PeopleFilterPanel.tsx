@@ -120,8 +120,6 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
       <FilterSection title="Contact Details" icon={<Phone className="h-4 w-4" />} isOpen={open === "contact"} onToggle={() => toggle("contact")}>
         <ContactDetailsFilter
           requireWorkEmail={filters.requireWorkEmail}
-          requireMobile={filters.requireMobile}
-          contactLogic={filters.contactLogic}
           onChange={onChange}
         />
       </FilterSection>
@@ -145,7 +143,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
 
       <FilterSection title="Buying Intent" icon={<TrendingUp className="h-4 w-4" />} isOpen={open === "intent"} onToggle={() => toggle("intent")}>
         <StaticPlaceholder
-          description="Buying intent signals are not exposed by PDL."
+          description="Buying intent signals are not exposed by Coresignal."
           options={BUYING_INTENT_STATIC.map((k) => ({ label: k }))}
         />
       </FilterSection>

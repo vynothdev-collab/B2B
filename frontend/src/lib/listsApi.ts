@@ -12,14 +12,14 @@ export interface ListRecord {
 
 export interface ListItemRecord {
   id: string;
-  pdl_id: string;
+  record_id: string;
   item_type: "person" | "company";
   data: Record<string, unknown>;
   added_at: string;
 }
 
 export interface ListItemPayload {
-  pdl_id: string;
+  record_id: string;
   item_type: "person" | "company";
   data: Record<string, unknown>;
 }

@@ -64,9 +64,6 @@ export function buildPersonChips(
   if (filters.requireWorkEmail)
     chips.push({ id: "email", label: "Work Email", onRemove: () => onChange({ requireWorkEmail: false }) });
 
-  if (filters.requireMobile)
-    chips.push({ id: "mobile", label: "Mobile", onRemove: () => onChange({ requireMobile: false }) });
-
   filters.companyType.forEach((v) =>
     chips.push({ id: `type-${v}`, label: labelOf(COMPANY_TYPE_OPTIONS, v), onRemove: () => onChange({ companyType: filters.companyType.filter((x) => x !== v) }) })
   );

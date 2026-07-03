@@ -102,7 +102,7 @@ export default function CompanySearchPage() {
 
   const openListModal = (companies: CompanyResult[]) => {
     setListModalItems(
-      companies.map((c) => ({ pdl_id: c.id, item_type: "company" as const, data: c as unknown as Record<string, unknown> }))
+      companies.map((c) => ({ record_id: c.id, item_type: "company" as const, data: c as unknown as Record<string, unknown> }))
     );
   };
 

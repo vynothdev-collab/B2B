@@ -16,8 +16,6 @@ class PersonSearchRequest(BaseModel):
     hq_locations: Optional[list[str]] = None
 
     require_work_email: bool = False
-    require_mobile: bool = False
-    contact_logic: Literal["and", "or"] = "and"
 
     company_type: Optional[list[str]] = None
     technologies: Optional[list[str]] = None
@@ -78,7 +76,7 @@ class CompanySearchRequest(BaseModel):
 
 
 class PersonRevealRequest(BaseModel):
-    pdl_id: str
+    record_id: str
 
 
 class PersonRevealResponse(BaseModel):

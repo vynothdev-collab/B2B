@@ -119,7 +119,7 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
 
       <FilterSection title="Buying Intent" icon={<TrendingUp className="h-4 w-4" />} isOpen={open === "intent"} onToggle={() => toggle("intent")}>
         <StaticPlaceholder
-          description="Buying intent signals are not exposed by PDL."
+          description="Buying intent signals are not exposed by Coresignal."
           options={BUYING_INTENT_STATIC.map((k) => ({ label: k }))}
         />
       </FilterSection>

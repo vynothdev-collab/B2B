@@ -10,8 +10,6 @@ export interface PersonFilters {
   personLocations: string[];
   companyHQLocations: string[];
   requireWorkEmail: boolean;
-  requireMobile: boolean;
-  contactLogic: "and" | "or";
   companyType: string[];
   technologies: string[];
   revenueBuckets: string[];
@@ -38,8 +36,6 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   personLocations: [],
   companyHQLocations: [],
   requireWorkEmail: false,
-  requireMobile: false,
-  contactLogic: "and",
   companyType: [],
   technologies: [],
   revenueBuckets: [],
