@@ -75,17 +75,6 @@ class CompanySearchRequest(BaseModel):
     scroll_token: Optional[str] = None
 
 
-class PersonRevealRequest(BaseModel):
-    record_id: str
-
-
-class PersonRevealResponse(BaseModel):
-    work_email: Optional[str] = None
-    recommended_personal_email: Optional[str] = None
-    mobile_phone: Optional[str] = None
-    phone_numbers: Optional[list[str]] = None
-
-
 class SearchMeta(BaseModel):
     total: int
     scroll_token: Optional[str] = None

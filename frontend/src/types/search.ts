@@ -112,54 +112,51 @@ export const GROWTH_TIMEFRAME_OPTIONS = [
 ];
 
 
+// Raw Coresignal employee record — passed through unchanged from the backend.
+// Only the fields the UI reads are typed; the record carries many more.
 export interface PersonResult {
   id: string;
   full_name?: string;
   first_name?: string;
   last_name?: string;
   linkedin_url?: string;
-  linkedin_username?: string;
-  linkedin_connections?: number;
-  industry?: string;
-  job_title?: string;
-  job_title_role?: string;
-  job_title_sub_role?: string;
-  job_title_class?: string;
-  job_title_levels?: string[];
-  job_company_id?: string;
-  job_company_name?: string;
-  job_company_website?: string;
-  job_company_size?: string;
-  job_company_founded?: number;
-  job_company_industry?: string;
-  job_company_linkedin_url?: string;
-  job_company_location_country?: string;
-  job_company_location_region?: string;
-  job_company_location_locality?: string;
+  linkedin_canonical_shorthand_name?: string;
+  connections_count?: number;
+  active_experience_title?: string;
+  active_experience_department?: string;
+  active_experience_management_level?: string;
+  active_experience_company_id?: string | number;
+  active_experience_company_name?: string;
+  active_experience_company_website?: string;
+  active_experience_company_industry?: string;
+  active_experience_company_linkedin_url?: string;
+  active_experience_company_hq_country?: string;
+  active_experience_company_hq_city?: string;
   location_country?: string;
-  location_region?: string | boolean;
-  location_locality?: string | boolean;
-  work_email?: string | boolean;
-  mobile_phone?: string | boolean;
-  phone_numbers?: string[] | boolean;
-  emails?: string[] | boolean;
+  location_state?: string;
+  location_city?: string;
+  primary_professional_email?: string;
+  primary_professional_email_status?: string;
+  [key: string]: unknown;
 }
 
+// Raw Coresignal company record.
 export interface CompanyResult {
   id: string;
-  name?: string;
-  display_name?: string;
+  company_name?: string;
+  company_legal_name?: string;
   website?: string;
   industry?: string;
-  employee_count?: number;
-  size?: string;
-  location?: {
-    country?: string;
-    region?: string;
-    locality?: string;
-  };
-  linkedin_url?: string;
+  employees_count?: number;
+  size_range?: string;
+  hq_country?: string;
+  hq_region?: string | string[];
+  hq_city?: string;
+  hq_state?: string;
+  canonical_linkedin_url?: string;
   type?: string;
+  is_public?: boolean;
+  [key: string]: unknown;
 }
 
 export interface SearchMeta {

@@ -1,9 +1,8 @@
 """Coresignal Multi-Source search provider.
 
 Endpoints hit:
-  POST /v2/employee_multi_source/search/es_dsl/preview_  — person search (returns partial records)
-  POST /v2/company_multi_source/search/es_dsl/preview_   — company search
-  GET  /v2/employee_multi_source/collect/{id}            — reveal (returns primary_professional_email)
+  POST /v2/{employee,company}_multi_source/search/es_dsl  — returns array of record IDs
+  GET  /v2/{employee,company}_multi_source/collect/{id}   — fetches the full record
 """
 
 from __future__ import annotations
@@ -16,8 +15,6 @@ from fastapi import HTTPException
 from app.core.config import settings
 from app.schemas.search import (
     CompanySearchRequest,
-    PersonRevealRequest,
-    PersonRevealResponse,
     PersonSearchRequest,
     SearchMeta,
     SearchResponse,
@@ -422,81 +419,17 @@ async def _collect_records(
 
 
 # ---------------------------------------------------------------------------
-# Response mappers — translate Coresignal records into the shape the frontend
-# consumes (see [frontend/src/types/search.ts]).
+# Response pass-through — return the raw Coresignal record unchanged, with `id`
+# normalized to a string so the frontend can key rows by it.
 # ---------------------------------------------------------------------------
 
-def _first(*values: Any) -> Any:
-    for v in values:
-        if v is not None and v != "" and v != []:
-            return v
-    return None
-
-
-def _map_person(r: dict) -> dict:
+def _passthrough(r: dict) -> dict:
     if not isinstance(r, dict):
         return {}
-    return {
-        "id": r.get("id") or r.get("employee_id"),
-        "full_name": r.get("full_name"),
-        "first_name": r.get("first_name"),
-        "last_name": r.get("last_name"),
-        "linkedin_url": r.get("linkedin_url"),
-        "linkedin_username": r.get("linkedin_canonical_shorthand_name"),
-        "linkedin_connections": r.get("connections_count"),
-        "industry": _first(
-            r.get("active_experience_company_industry"),
-            r.get("industry"),
-        ),
-        "job_title": r.get("active_experience_title"),
-        "job_title_role": r.get("active_experience_department"),
-        "job_title_sub_role": r.get("active_experience_sub_department"),
-        "job_title_class": None,
-        "job_title_levels": (
-            [r["active_experience_management_level"]]
-            if r.get("active_experience_management_level") else []
-        ),
-        "job_company_id": r.get("active_experience_company_id"),
-        "job_company_name": r.get("active_experience_company_name"),
-        "job_company_website": r.get("active_experience_company_website"),
-        "job_company_size": r.get("active_experience_company_size_range"),
-        "job_company_founded": r.get("active_experience_company_founded_year"),
-        "job_company_industry": r.get("active_experience_company_industry"),
-        "job_company_linkedin_url": r.get("active_experience_company_linkedin_url"),
-        "job_company_location_country": r.get("active_experience_company_hq_country"),
-        "job_company_location_region": r.get("active_experience_company_hq_region"),
-        "job_company_location_locality": r.get("active_experience_company_hq_city"),
-        "location_country": r.get("location_country"),
-        "location_region": r.get("location_state"),
-        "location_locality": r.get("location_city"),
-        # Contact fields — Coresignal ships work email inline; phone data is unavailable.
-        "work_email": r.get("primary_professional_email"),
-        "mobile_phone": None,
-        "phone_numbers": None,
-        "emails": [e.get("professional_email") for e in (r.get("professional_emails_collection") or []) if e.get("professional_email")] or None,
-    }
-
-
-def _map_company(r: dict) -> dict:
-    if not isinstance(r, dict):
-        return {}
-    name = r.get("company_name") or r.get("name")
-    return {
-        "id": r.get("id") or r.get("company_id"),
-        "name": (name or "").lower() if isinstance(name, str) else name,
-        "display_name": name,
-        "website": r.get("website"),
-        "industry": r.get("industry"),
-        "employee_count": r.get("employees_count"),
-        "size": r.get("size_range"),
-        "location": {
-            "country": r.get("hq_country"),
-            "region": r.get("hq_region"),
-            "locality": r.get("hq_city"),
-        },
-        "linkedin_url": r.get("canonical_linkedin_url"),
-        "type": ("public" if r.get("is_public") else "private") if r.get("is_public") is not None else r.get("type"),
-    }
+    rid = r.get("id")
+    if rid is not None:
+        r["id"] = str(rid)
+    return r
 
 
 # ---------------------------------------------------------------------------
@@ -565,7 +498,7 @@ async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int 
 
 
 # ---------------------------------------------------------------------------
-# Public surface — search_persons / search_companies / enrich_person / autocomplete.
+# Public surface — search_persons / search_companies.
 # ---------------------------------------------------------------------------
 
 def _require_api_key() -> None:
@@ -635,7 +568,7 @@ async def search_persons(req: PersonSearchRequest) -> SearchResponse:
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
     return SearchResponse(
-        data=[_map_person(r) for r in records],
+        data=[_passthrough(r) for r in records],
         meta=SearchMeta(total=len(all_ids), scroll_token=next_token),
     )
 
@@ -655,40 +588,8 @@ async def search_companies(req: CompanySearchRequest) -> SearchResponse:
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
     return SearchResponse(
-        data=[_map_company(r) for r in records],
+        data=[_passthrough(r) for r in records],
         meta=SearchMeta(total=len(all_ids), scroll_token=next_token),
     )
 
 
-async def enrich_person(req: PersonRevealRequest) -> PersonRevealResponse:
-    """Reveal contact — Coresignal only ships work email, no phone/personal."""
-    _require_api_key()
-
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
-                _collect_url("employee_multi_source", req.record_id),
-                headers=_headers(),
-            )
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
-    except httpx.RequestError:
-        raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
-
-    if resp.status_code == 200:
-        record = resp.json()
-        if isinstance(record, dict) and "data" in record and isinstance(record["data"], dict):
-            record = record["data"]
-        return PersonRevealResponse(
-            work_email=record.get("primary_professional_email"),
-            recommended_personal_email=None,
-            mobile_phone=None,
-            phone_numbers=None,
-        )
-    if resp.status_code == 404:
-        raise HTTPException(status_code=404, detail="No contact data found for this person")
-    try:
-        err_body = resp.json()
-    except Exception:
-        err_body = {}
-    _raise_provider_error(resp.status_code, err_body)

@@ -1,18 +1,6 @@
 import { apiClient } from "@/lib/api";
 import type { CompanyFilters, PersonFilters, SearchResponse } from "@/types/search";
 
-export interface PersonRevealData {
-  work_email?: string;
-  recommended_personal_email?: string;
-  mobile_phone?: string;
-  phone_numbers?: string[];
-}
-
-export async function revealPerson(recordId: string): Promise<PersonRevealData> {
-  const { data } = await apiClient.post<PersonRevealData>("/search/reveal/person", { record_id: recordId });
-  return data;
-}
-
 function cleanStr(v: string): string | undefined {
   return v.trim() || undefined;
 }

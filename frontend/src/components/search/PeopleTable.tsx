@@ -1,9 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
-import { MoreHorizontal, Eye, UserRound, Building2, ListPlus, Mail, Globe, Users, Loader2 } from "lucide-react";
+import { MoreHorizontal, UserRound, Building2, ListPlus, Mail, Globe, Users } from "lucide-react";
 import type { PersonResult } from "@/types/search";
-import { revealPerson, type PersonRevealData } from "@/lib/searchApi";
-import { toast } from "@/lib/toast";
 
 const AVATAR_COLORS = [
   "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500",
@@ -109,26 +107,6 @@ interface Props {
 
 export default function PeopleTable({ data, selected, onSelect, onSelectAll, onAddToList }: Props) {
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
-  const [revealed, setRevealed] = useState<Record<string, PersonRevealData>>({});
-  const [revealing, setRevealing] = useState<Set<string>>(new Set());
-
-  const handleReveal = async (id: string) => {
-    if (revealed[id] || revealing.has(id)) return;
-    setRevealing((prev) => new Set(prev).add(id));
-    try {
-      const data = await revealPerson(id);
-      setRevealed((prev) => ({ ...prev, [id]: data }));
-      if (data.work_email || data.recommended_personal_email || data.mobile_phone || data.phone_numbers?.length) {
-        toast.success("Contact info revealed");
-      }
-    } catch (e: unknown) {
-      const status = (e as { response?: { status?: number } })?.response?.status;
-      if (status !== 404) toast.apiError(e);
-      setRevealed((prev) => ({ ...prev, [id]: {} }));
-    } finally {
-      setRevealing((prev) => { const s = new Set(prev); s.delete(id); return s; });
-    }
-  };
 
   return (
     <div className="max-w-full overflow-x-auto">
@@ -147,7 +125,6 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[180px]">Company</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[140px]">Title</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Email</th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Phone</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[120px]">Location</th>
             <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Actions</th>
           </tr>
@@ -158,6 +135,14 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
             const name = fullName || "—";
             const color = avatarColor(name);
             const checked = selected.has(person.id);
+            const companyName = person.active_experience_company_name;
+            const companyIdStr = person.active_experience_company_id != null
+              ? String(person.active_experience_company_id)
+              : "";
+            const jobTitle = person.active_experience_title;
+            const jobDepartment = person.active_experience_department;
+            const city = person.location_city;
+            const email = person.primary_professional_email;
 
             return (
               <tr
@@ -196,16 +181,16 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
                 </td>
 
                 <td className="px-3 py-3">
-                  {person.job_company_name ? (
+                  {companyName ? (
                     <div className="flex items-center gap-2">
-                      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-bold text-white sm:h-7 sm:w-7 sm:text-xs ${avatarColor(person.job_company_name)}`}>
-                        {person.job_company_name[0]?.toUpperCase()}
+                      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-[11px] font-bold text-white sm:h-7 sm:w-7 sm:text-xs ${avatarColor(companyName)}`}>
+                        {companyName[0]?.toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-[11px] font-semibold text-gray-800 sm:text-xs">{person.job_company_name}</p>
-                        {person.job_company_id && (
+                        <p className="truncate text-[11px] font-semibold text-gray-800 sm:text-xs">{companyName}</p>
+                        {companyIdStr && (
                           <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400">
-                            {person.job_company_id.slice(0, 2).toUpperCase()}-{person.job_company_id.slice(2, 7)}{" "}
+                            {companyIdStr.slice(0, 2).toUpperCase()}-{companyIdStr.slice(2, 7)}{" "}
                             <span className="text-gray-300">⊙</span>
                           </span>
                         )}
@@ -216,70 +201,24 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
 
                 <td className="px-3 py-3">
                   <div className="min-w-0">
-                    {person.job_title ? (
-                      <p className="truncate text-[11px] text-gray-700 sm:text-xs">{person.job_title}</p>
+                    {jobTitle ? (
+                      <p className="truncate text-[11px] text-gray-700 sm:text-xs">{jobTitle}</p>
                     ) : (
                       <span className="text-xs text-gray-400">—</span>
                     )}
-                    {person.job_title_role && (
+                    {jobDepartment && (
                       <span className="inline-block rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600 capitalize mt-0.5">
-                        {person.job_title_role}
+                        {jobDepartment}
                       </span>
                     )}
                   </div>
                 </td>
 
                 <td className="px-3 py-3">
-                  {revealed[person.id] ? (
-                    revealed[person.id].work_email || revealed[person.id].recommended_personal_email ? (
-                      <span className="block text-xs text-gray-800 font-medium truncate max-w-[160px]">
-                        {revealed[person.id].work_email ?? revealed[person.id].recommended_personal_email}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400">Not found</span>
-                    )
-                  ) : person.work_email !== false ? (
-                    <button
-                      type="button"
-                      onClick={() => handleReveal(person.id)}
-                      disabled={revealing.has(person.id)}
-                      className="flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors disabled:opacity-60"
-                    >
-                      {revealing.has(person.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
-                      Reveal
-                    </button>
+                  {email ? (
+                    <span className="block text-xs text-gray-800 font-medium truncate max-w-[160px]">{email}</span>
                   ) : (
-                    <span className="flex items-center gap-1 rounded-md border border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-300 cursor-not-allowed select-none">
-                      <Eye className="h-3 w-3" />
-                      Reveal
-                    </span>
-                  )}
-                </td>
-
-                <td className="px-3 py-3">
-                  {revealed[person.id] ? (
-                    revealed[person.id].mobile_phone || revealed[person.id].phone_numbers?.length ? (
-                      <span className="block text-xs text-gray-800 font-medium truncate max-w-[140px]">
-                        {revealed[person.id].mobile_phone ?? revealed[person.id].phone_numbers![0]}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400">Not found</span>
-                    )
-                  ) : person.mobile_phone !== false ? (
-                    <button
-                      type="button"
-                      onClick={() => handleReveal(person.id)}
-                      disabled={revealing.has(person.id)}
-                      className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
-                    >
-                      {revealing.has(person.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
-                      Reveal
-                    </button>
-                  ) : (
-                    <span className="flex items-center gap-1 rounded-md border border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-300 cursor-not-allowed select-none">
-                      <Eye className="h-3 w-3" />
-                      Reveal
-                    </span>
+                    <span className="text-xs text-gray-400">—</span>
                   )}
                 </td>
 
@@ -290,9 +229,9 @@ export default function PeopleTable({ data, selected, onSelect, onSelectAll, onA
                       <p className="truncate text-xs text-gray-700">
                         {person.location_country ?? "—"}
                       </p>
-                      {typeof person.location_locality === "string" && (
+                      {city && (
                         <p className="truncate text-[10px] text-gray-400">
-                          {person.location_locality}
+                          {city}
                         </p>
                       )}
                     </div>

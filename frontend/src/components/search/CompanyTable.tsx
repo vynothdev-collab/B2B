@@ -138,12 +138,17 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll, on
         </thead>
         <tbody>
           {data.map((company) => {
-            const name = company.display_name ?? company.name ?? "—";
+            const name = company.company_name ?? "—";
             const color = avatarColor(name);
             const checked = selected.has(company.id);
-            const country = company.location?.country ?? "";
-            const city = company.location?.locality ?? "";
-            const typeKey = (company.type ?? "").toLowerCase();
+            const country = company.hq_country ?? "";
+            const city = company.hq_city ?? "";
+            const typeLabel = company.is_public === true
+              ? "public"
+              : company.is_public === false
+                ? "private"
+                : (company.type ?? "");
+            const typeKey = typeLabel.toLowerCase();
             const typeBadgeClass = TYPE_COLORS[typeKey] ?? "bg-gray-100 text-gray-500";
 
             return (
@@ -167,9 +172,9 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll, on
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">{name}</p>
-                      {company.type && (
+                      {typeLabel && (
                         <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize mt-0.5 ${typeBadgeClass}`}>
-                          {company.type}
+                          {typeLabel}
                         </span>
                       )}
                     </div>
@@ -187,10 +192,12 @@ export default function CompanyTable({ data, selected, onSelect, onSelectAll, on
                 </td>
 
                 <td className="px-3 py-3">
-                  {company.size ? (
+                  {company.size_range || company.employees_count != null ? (
                     <div className="flex items-center gap-1 text-xs text-gray-700">
                       <Users className="h-3 w-3 text-gray-400 shrink-0" />
-                      {SIZE_LABEL[company.size] ?? company.size}
+                      {company.size_range
+                        ? (SIZE_LABEL[company.size_range] ?? company.size_range)
+                        : String(company.employees_count)}
                     </div>
                   ) : (
                     <span className="text-xs text-gray-400">—</span>

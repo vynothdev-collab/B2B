@@ -41,11 +41,11 @@ function PersonRow({ item }: { item: ListItemRecord }) {
           </div>
         </div>
       </td>
-      <td className="px-4 py-3 text-xs text-gray-700">{d.job_title || "—"}</td>
-      <td className="px-4 py-3 text-xs text-gray-700">{d.job_company_name || "—"}</td>
+      <td className="px-4 py-3 text-xs text-gray-700">{d.active_experience_title || "—"}</td>
+      <td className="px-4 py-3 text-xs text-gray-700">{d.active_experience_company_name || "—"}</td>
       <td className="px-4 py-3 text-xs text-gray-500">
-        {d.work_email ? (
-          <span className="font-medium text-gray-800">{d.work_email}</span>
+        {d.primary_professional_email ? (
+          <span className="font-medium text-gray-800">{d.primary_professional_email}</span>
         ) : (
           <span className="text-gray-300">—</span>
         )}
@@ -62,9 +62,8 @@ function PersonRow({ item }: { item: ListItemRecord }) {
 
 function CompanyRow({ item }: { item: ListItemRecord }) {
   const d = item.data as Record<string, unknown>;
-  const name = (d.name as string) || "—";
-  const loc = d.location as Record<string, string> | undefined;
-  const country = loc?.country || (d.location_country as string) || "—";
+  const name = (d.company_name as string) || "—";
+  const country = (d.hq_country as string) || "—";
   return (
     <tr className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
       <td className="px-4 py-3">
@@ -76,7 +75,7 @@ function CompanyRow({ item }: { item: ListItemRecord }) {
         </div>
       </td>
       <td className="px-4 py-3 text-xs text-gray-700 capitalize">{(d.industry as string) || "—"}</td>
-      <td className="px-4 py-3 text-xs text-gray-700">{(d.employee_count as string) || "—"}</td>
+      <td className="px-4 py-3 text-xs text-gray-700">{(d.employees_count as number)?.toString() || (d.size_range as string) || "—"}</td>
       <td className="px-4 py-3 text-xs">
         {d.website ? (
           <a href={`https://${(d.website as string).replace(/^https?:\/\//, "")}`} target="_blank" rel="noopener noreferrer"
