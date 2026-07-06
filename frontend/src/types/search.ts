@@ -10,7 +10,18 @@ export interface PersonFilters {
   personLocations: string[];
   companyHQLocations: string[];
   requireWorkEmail: boolean;
+  companyStatus: string[];
   companyType: string[];
+  companyHowTheySell: string[];
+  companyMoreFlags: string[];
+  companyRevenueModel: string[];
+  employeeHeadcountMode: "predefined" | "custom";
+  employeeHeadcountRanges: string[];
+  employeeCountMin: string;
+  employeeCountMax: string;
+  companyNewsKeywords: string[];
+  companyNewsCategories: string[];
+  companyNewsTimeframe: string;
   technologies: string[];
   revenueBuckets: string[];
   fundingMin: string;
@@ -23,6 +34,36 @@ export interface PersonFilters {
   headcountByLocationCountry: string;
   headcountByLocationMin: string;
   headcountByLocationMax: string;
+  websiteVisitsMin: string;
+  websiteVisitsMax: string;
+  visitChangeTimeframe: "monthly" | "quarterly" | "yearly";
+  visitChangeMin: string;
+  visitChangeMax: string;
+  trafficCountry: string;
+  trafficCountryMin: string;
+  trafficCountryMax: string;
+  emailProviders: string[];
+  industries: string[];
+  timeInRoleMinYears: string;
+  timeInRoleMinMonths: string;
+  timeInRoleMaxYears: string;
+  timeInRoleMaxMonths: string;
+  timeInCompanyMinYears: string;
+  timeInCompanyMinMonths: string;
+  timeInCompanyMaxYears: string;
+  timeInCompanyMaxMonths: string;
+  experienceYearsMin: string;
+  experienceYearsMax: string;
+  jobChangeTimeframe: string;
+  jobPostingKeywords: string[];
+  hideAllSavedPeople: boolean;
+  hideSavedPeopleListIds: string[];
+  hideAllSavedCompanies: boolean;
+  hideSavedCompanyListIds: string[];
+  exclusionCompanyNames: string[];
+  awards: string[];
+  certifications: string[];
+  otherCompliance: string[];
   foundedMin: string;
   foundedMax: string;
 }
@@ -36,7 +77,18 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   personLocations: [],
   companyHQLocations: [],
   requireWorkEmail: false,
+  companyStatus: [],
   companyType: [],
+  companyHowTheySell: [],
+  companyMoreFlags: [],
+  companyRevenueModel: [],
+  employeeHeadcountMode: "predefined",
+  employeeHeadcountRanges: [],
+  employeeCountMin: "",
+  employeeCountMax: "",
+  companyNewsKeywords: [],
+  companyNewsCategories: [],
+  companyNewsTimeframe: "",
   technologies: [],
   revenueBuckets: [],
   fundingMin: "",
@@ -49,6 +101,36 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   headcountByLocationCountry: "",
   headcountByLocationMin: "",
   headcountByLocationMax: "",
+  websiteVisitsMin: "",
+  websiteVisitsMax: "",
+  visitChangeTimeframe: "monthly",
+  visitChangeMin: "",
+  visitChangeMax: "",
+  trafficCountry: "",
+  trafficCountryMin: "",
+  trafficCountryMax: "",
+  emailProviders: [],
+  industries: [],
+  timeInRoleMinYears: "",
+  timeInRoleMinMonths: "",
+  timeInRoleMaxYears: "",
+  timeInRoleMaxMonths: "",
+  timeInCompanyMinYears: "",
+  timeInCompanyMinMonths: "",
+  timeInCompanyMaxYears: "",
+  timeInCompanyMaxMonths: "",
+  experienceYearsMin: "",
+  experienceYearsMax: "",
+  jobChangeTimeframe: "",
+  jobPostingKeywords: [],
+  hideAllSavedPeople: false,
+  hideSavedPeopleListIds: [],
+  hideAllSavedCompanies: false,
+  hideSavedCompanyListIds: [],
+  exclusionCompanyNames: [],
+  awards: [],
+  certifications: [],
+  otherCompliance: [],
   foundedMin: "",
   foundedMax: "",
 };
@@ -77,6 +159,26 @@ export interface CompanyFilters {
   headcountByDepartmentMax: string;
   foundedMin: string;
   foundedMax: string;
+  companyStatus: string[];
+  companyHowTheySell: string[];
+  companyMoreFlags: string[];
+  companyRevenueModel: string[];
+  jobPostingKeywords: string[];
+  emailProviders: string[];
+  awards: string[];
+  certifications: string[];
+  otherCompliance: string[];
+  websiteVisitsMin: string;
+  websiteVisitsMax: string;
+  visitChangeTimeframe: "monthly" | "quarterly" | "yearly";
+  visitChangeMin: string;
+  visitChangeMax: string;
+  trafficCountry: string;
+  trafficCountryMin: string;
+  trafficCountryMax: string;
+  companyNewsKeywords: string[];
+  companyNewsCategories: string[];
+  companyNewsTimeframe: string;
 }
 
 export const DEFAULT_COMPANY_FILTERS: CompanyFilters = {
@@ -102,6 +204,26 @@ export const DEFAULT_COMPANY_FILTERS: CompanyFilters = {
   headcountByDepartmentMax: "",
   foundedMin: "",
   foundedMax: "",
+  companyStatus: [],
+  companyHowTheySell: [],
+  companyMoreFlags: [],
+  companyRevenueModel: [],
+  jobPostingKeywords: [],
+  emailProviders: [],
+  awards: [],
+  certifications: [],
+  otherCompliance: [],
+  websiteVisitsMin: "",
+  websiteVisitsMax: "",
+  visitChangeTimeframe: "monthly",
+  visitChangeMin: "",
+  visitChangeMax: "",
+  trafficCountry: "",
+  trafficCountryMin: "",
+  trafficCountryMax: "",
+  companyNewsKeywords: [],
+  companyNewsCategories: [],
+  companyNewsTimeframe: "",
 };
 
 export const GROWTH_TIMEFRAME_OPTIONS = [
@@ -170,53 +292,322 @@ export interface SearchResponse {
 }
 
 
+export const EMPLOYEE_HEADCOUNT_RANGES = [
+  { value: "1-10",       label: "1-10",       min: 1,     max: 10,    count: "35M" },
+  { value: "11-20",      label: "11-20",      min: 11,    max: 20,    count: "15M" },
+  { value: "21-50",      label: "21-50",      min: 21,    max: 50,    count: "24M" },
+  { value: "51-100",     label: "51-100",     min: 51,    max: 100,   count: "20M" },
+  { value: "101-200",    label: "101-200",    min: 101,   max: 200,   count: "21M" },
+  { value: "201-500",    label: "201-500",    min: 201,   max: 500,   count: "29M" },
+  { value: "501-1000",   label: "501-1000",   min: 501,   max: 1000,  count: "22M" },
+  { value: "1001-2000",  label: "1001-2000",  min: 1001,  max: 2000,  count: "22M" },
+  { value: "2001-5000",  label: "2001-5000",  min: 2001,  max: 5000,  count: "28M" },
+  { value: "5001-10000", label: "5001-10000", min: 5001,  max: 10000, count: "20M" },
+  { value: "10000+",     label: "10000+",     min: 10001, max: null,  count: "64M" },
+] as const;
+
 export const SENIORITY_OPTIONS = [
-  { value: "cxo", label: "C-Suite (CXO)" },
+  { value: "owner", label: "Founder/Owner" },
+  { value: "cxo", label: "C-Suite" },
+  { value: "partner", label: "Partner" },
   { value: "vp", label: "Vice President" },
+  { value: "head", label: "Head" },
   { value: "director", label: "Director" },
   { value: "manager", label: "Manager" },
   { value: "senior", label: "Senior" },
+  { value: "intern", label: "Intern" },
   { value: "entry", label: "Entry" },
-  { value: "owner", label: "Owner" },
-  { value: "partner", label: "Partner" },
-  { value: "training", label: "Training" },
-  { value: "unpaid", label: "Unpaid" },
 ];
 
-export const DEPARTMENT_OPTIONS = [
-  { value: "advisory", label: "Advisory" },
-  { value: "analyst", label: "Analyst" },
-  { value: "creative", label: "Creative" },
-  { value: "education", label: "Education" },
-  { value: "engineering", label: "Engineering" },
-  { value: "finance", label: "Finance" },
-  { value: "fulfillment", label: "Fulfillment" },
-  { value: "health", label: "Health" },
-  { value: "hospitality", label: "Hospitality" },
-  { value: "human_resources", label: "Human Resources" },
-  { value: "legal", label: "Legal" },
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "marketing", label: "Marketing" },
-  { value: "operations", label: "Operations" },
-  { value: "partnerships", label: "Partnerships" },
-  { value: "product", label: "Product" },
-  { value: "professional_service", label: "Professional Service" },
-  { value: "public_service", label: "Public Service" },
-  { value: "research", label: "Research" },
-  { value: "sales", label: "Sales" },
-  { value: "sales_engineering", label: "Sales Engineering" },
-  { value: "support", label: "Support" },
-  { value: "trade", label: "Trade" },
-  { value: "unemployed", label: "Unemployed" },
+export interface DepartmentOption {
+  value: string;
+  label: string;
+  children?: DepartmentOption[];
+}
+
+export const DEPARTMENT_OPTIONS_HIERARCHICAL: DepartmentOption[] = [
+  {
+    value: "product", label: "Product", children: [
+      { value: "product_development", label: "Product Development" },
+      { value: "product_management", label: "Product Management" },
+      { value: "other_product", label: "Other Product" },
+    ],
+  },
+  {
+    value: "engineering", label: "Engineering & Technical", children: [
+      { value: "ai_ml", label: "Artificial Intelligence / Machine Learning" },
+      { value: "bioengineering", label: "Bioengineering" },
+      { value: "biometrics", label: "Biometrics" },
+      { value: "business_intelligence", label: "Business Intelligence" },
+      { value: "chemical_engineering", label: "Chemical Engineering" },
+      { value: "data_science", label: "Data Science & Analysis" },
+      { value: "devops", label: "DevOps" },
+      { value: "digital_transformation", label: "Digital Transformation" },
+      { value: "emerging_technology", label: "Emerging Technology / Innovation" },
+      { value: "industrial_engineering", label: "Industrial Engineering" },
+      { value: "mechanic", label: "Mechanic" },
+      { value: "mobile_development", label: "Mobile Development" },
+      { value: "project_management", label: "Project Management" },
+      { value: "research_development", label: "Research & Development" },
+      { value: "scrum_agile", label: "Scrum Master / Agile Coach" },
+      { value: "software_development", label: "Software Development" },
+      { value: "technician", label: "Technician" },
+      { value: "technology_operations", label: "Technology Operations" },
+      { value: "test_qa", label: "Test / Quality Assurance" },
+    ],
+  },
+  {
+    value: "design", label: "Design", children: [
+      { value: "graphic_design", label: "Graphic / Visual / Brand Design" },
+      { value: "other_design", label: "Other Design" },
+    ],
+  },
+  {
+    value: "education", label: "Education & Coaching", children: [
+      { value: "teacher", label: "Teacher" },
+      { value: "superintendent", label: "Superintendent" },
+      { value: "professor", label: "Professor" },
+      { value: "coach_trainer", label: "Coach / Trainer" },
+    ],
+  },
+  {
+    value: "finance", label: "Finance", children: [
+      { value: "financial_reporting", label: "Financial Reporting" },
+      { value: "financial_systems", label: "Financial Systems" },
+      { value: "accounting", label: "Accounting" },
+      { value: "finance_banking", label: "Finance & Banking" },
+      { value: "financial_planning", label: "Financial Planning, Strategy & Analysis" },
+      { value: "internal_audit", label: "Internal Audit & Control" },
+      { value: "investor_relations", label: "Investor Relations" },
+      { value: "mergers_acquisitions", label: "Mergers & Acquisitions" },
+      { value: "real_estate_finance", label: "Real Estate Finance" },
+      { value: "financial_risk", label: "Financial Risk" },
+      { value: "sourcing_procurement", label: "Sourcing / Procurement" },
+      { value: "tax", label: "Tax" },
+      { value: "treasury", label: "Treasury" },
+    ],
+  },
+  {
+    value: "human_resources", label: "Human Resources", children: [
+      { value: "compensation_benefits", label: "Compensation & Benefits" },
+      { value: "culture_diversity", label: "Culture, Diversity & Inclusion" },
+      { value: "health_safety", label: "Health & Safety" },
+      { value: "hr_business_partner", label: "HR Business Partner" },
+      { value: "learning_development", label: "Learning & Development" },
+      { value: "organizational_development", label: "Organizational Development" },
+      { value: "recruiting_talent", label: "Recruiting & Talent Acquisition" },
+      { value: "talent_management", label: "Talent Management" },
+      { value: "workforce_management", label: "Workforce Management" },
+      { value: "people_operations", label: "People Operations" },
+      { value: "other_hr", label: "Other Human Resources" },
+    ],
+  },
+  {
+    value: "information_technology", label: "Information Technology", children: [
+      { value: "cloud_engineering", label: "Cloud Engineering" },
+      { value: "data_center", label: "Data Center" },
+      { value: "data_warehouse", label: "Data Warehouse" },
+      { value: "database_admin", label: "Database Administration" },
+      { value: "ecommerce_development", label: "eCommerce Development" },
+      { value: "help_desk", label: "Help Desk / Desktop Services" },
+      { value: "information_security", label: "Information Security" },
+      { value: "it_asset_management", label: "IT Asset Management" },
+      { value: "it_audit", label: "IT Audit / IT Compliance" },
+      { value: "it_recruitment", label: "IT Recruitment" },
+      { value: "it_procurement", label: "IT Procurement" },
+      { value: "it_strategy", label: "IT Strategy" },
+      { value: "it_training", label: "IT Training" },
+      { value: "networking", label: "Networking" },
+      { value: "technical_lead", label: "Technical Lead" },
+      { value: "quality_assurance", label: "Quality Assurance" },
+      { value: "retail_store_systems", label: "Retail / Store Systems" },
+      { value: "servers", label: "Servers" },
+      { value: "disaster_recovery", label: "Disaster Recovery" },
+      { value: "telecommunications", label: "Telecommunications" },
+    ],
+  },
+  {
+    value: "legal", label: "Legal", children: [
+      { value: "compliance", label: "Compliance" },
+      { value: "contracts", label: "Contracts" },
+      { value: "corporate_secretary", label: "Corporate Secretary" },
+      { value: "ediscovery", label: "eDiscovery" },
+      { value: "ethics", label: "Ethics" },
+      { value: "governance", label: "Governance" },
+      { value: "governmental_affairs", label: "Governmental Affairs & Regulatory Law" },
+      { value: "intellectual_property", label: "Intellectual Property & Patent" },
+      { value: "labor_employment", label: "Labor & Employment" },
+      { value: "lawyer_attorney", label: "Lawyer / Attorney" },
+      { value: "legal_counsel", label: "Legal Counsel" },
+      { value: "legal_operations", label: "Legal Operations" },
+      { value: "litigation", label: "Litigation" },
+      { value: "privacy", label: "Privacy" },
+      { value: "other_legal", label: "Other Legal" },
+    ],
+  },
+  {
+    value: "marketing", label: "Marketing", children: [
+      { value: "advertising", label: "Advertising" },
+      { value: "brand_management", label: "Brand Management" },
+      { value: "content_marketing", label: "Content Marketing" },
+      { value: "customer_experience", label: "Customer Experience" },
+      { value: "customer_marketing", label: "Customer Marketing" },
+      { value: "growth_demand_generation", label: "Growth & Demand Generation" },
+      { value: "digital_marketing", label: "Digital Marketing" },
+      { value: "ecommerce_marketing", label: "eCommerce Marketing" },
+      { value: "event_field_marketing", label: "Event & Field Marketing" },
+      { value: "lead_generation", label: "Lead Generation" },
+      { value: "marketing_operations", label: "Marketing Operations" },
+      { value: "product_marketing", label: "Product Marketing" },
+      { value: "public_relations", label: "Public Relations" },
+      { value: "seo", label: "SEO" },
+      { value: "social_media", label: "Social Media Marketing" },
+      { value: "technical_marketing", label: "Technical Marketing" },
+    ],
+  },
+  {
+    value: "medical_health", label: "Medical & Health", children: [
+      { value: "anesthesiology", label: "Anesthesiology" },
+      { value: "chiropractics", label: "Chiropractics" },
+      { value: "clinical_systems", label: "Clinical Systems" },
+      { value: "dentistry", label: "Dentistry" },
+      { value: "dermatology", label: "Dermatology" },
+      { value: "doctors_physicians", label: "Doctors / Physicians" },
+      { value: "epidemiology", label: "Epidemiology" },
+      { value: "fire_responder", label: "Fire Responder" },
+      { value: "infectious_disease", label: "Infectious Disease" },
+      { value: "medical_administration", label: "Medical Administration" },
+      { value: "medical_education", label: "Medical Education & Training" },
+      { value: "clinical_research", label: "Clinical Research" },
+      { value: "neurology", label: "Neurology" },
+      { value: "nursing", label: "Nursing" },
+      { value: "nutrition_dietetics", label: "Nutrition & Dietetics" },
+      { value: "obstetrics_gynecology", label: "Obstetrics / Gynecology" },
+      { value: "oncology", label: "Oncology" },
+      { value: "ophthalmology", label: "Ophthalmology" },
+      { value: "optometry", label: "Optometry" },
+      { value: "orthopedics", label: "Orthopedics" },
+      { value: "radiology", label: "Radiology" },
+      { value: "public_health", label: "Public Health" },
+      { value: "psychology", label: "Psychology" },
+      { value: "psychiatry", label: "Psychiatry" },
+      { value: "physical_therapy", label: "Physical Therapy" },
+      { value: "pharmacy", label: "Pharmacy" },
+      { value: "pediatrics", label: "Pediatrics" },
+      { value: "pathology", label: "Pathology" },
+    ],
+  },
+  {
+    value: "consulting", label: "Consulting", children: [
+      { value: "consultant", label: "Consultant" },
+    ],
+  },
+  {
+    value: "sales", label: "Sales", children: [
+      { value: "sales_training", label: "Sales Training" },
+      { value: "sales_operations", label: "Sales Operations" },
+      { value: "sales_engineering", label: "Sales Engineering" },
+      { value: "sales_enablement", label: "Sales Enablement" },
+      { value: "revenue_operations", label: "Revenue Operations" },
+      { value: "partnerships", label: "Partnerships" },
+      { value: "sales_development", label: "Sales Development" },
+      { value: "account_executive", label: "Account Executive" },
+      { value: "field_sales", label: "Field / Outside Sales" },
+      { value: "customer_success", label: "Customer Success" },
+      { value: "customer_retention", label: "Customer Retention & Development" },
+      { value: "channel_sales", label: "Channel Sales" },
+      { value: "account_management", label: "Account Management" },
+      { value: "other_sales", label: "Other Sales" },
+    ],
+  },
+  {
+    value: "operations", label: "Operations", children: [
+      { value: "supply_chain", label: "Supply Chain" },
+      { value: "store_operations", label: "Store Operations" },
+      { value: "safety", label: "Safety" },
+      { value: "real_estate", label: "Real Estate" },
+      { value: "quality_management", label: "Quality Management" },
+      { value: "physical_security", label: "Physical Security" },
+      { value: "office_operations", label: "Office Operations" },
+      { value: "logistics", label: "Logistics" },
+      { value: "leasing", label: "Leasing" },
+      { value: "facilities_management", label: "Facilities Management" },
+      { value: "customer_service", label: "Customer Service / Support" },
+      { value: "corporate_strategy", label: "Corporate Strategy" },
+      { value: "construction", label: "Construction" },
+      { value: "call_center", label: "Call Center" },
+    ],
+  },
+];
+
+function flattenDepts(opts: DepartmentOption[]): { value: string; label: string }[] {
+  return opts.flatMap((o) => [{ value: o.value, label: o.label }, ...(o.children ? flattenDepts(o.children) : [])]);
+}
+
+export const DEPARTMENT_OPTIONS = flattenDepts(DEPARTMENT_OPTIONS_HIERARCHICAL);
+
+export const COMPANY_STATUS_OPTIONS = [
+  { value: "private", label: "Private", count: "177M" },
+  { value: "public", label: "Public", count: "76M" },
+  { value: "nonprofit", label: "Non-profit", count: "17M" },
+  { value: "other", label: "Other", count: "35M" },
 ];
 
 export const COMPANY_TYPE_OPTIONS = [
-  { value: "private", label: "Private" },
-  { value: "public", label: "Public" },
-  { value: "public_subsidiary", label: "Public Subsidiary" },
-  { value: "nonprofit", label: "Non-profit" },
-  { value: "government", label: "Government" },
-  { value: "educational", label: "Educational" },
+  { value: "saas", label: "SaaS", count: "6M" },
+  { value: "marketplace", label: "Marketplace", count: "687K" },
+  { value: "ecommerce", label: "E-commerce", count: "4M" },
+  { value: "agency", label: "Agency", count: "6M" },
+  { value: "consulting", label: "Consulting", count: "9M" },
+  { value: "manufacturing", label: "Manufacturing", count: "16M" },
+  { value: "media_publisher", label: "Media/Publisher", count: "2M" },
+  { value: "education", label: "Education", count: "8M" },
+  { value: "non_profit", label: "Non-Profit", count: "3M" },
+  { value: "government", label: "Government", count: "3M" },
+  { value: "fintech", label: "FinTech", count: "3M" },
+  { value: "healthtech", label: "HealthTech", count: "1M" },
+  { value: "ai_ml", label: "AI/ML" },
+  { value: "hardware", label: "Hardware" },
+  { value: "professional_services", label: "Professional Services" },
+  { value: "platform", label: "Platform" },
+  { value: "data_analytics", label: "Data/Analytics" },
+  { value: "franchise", label: "Franchise" },
+  { value: "logistics", label: "Logistics" },
+  { value: "real_estate", label: "Real Estate" },
+  { value: "legal", label: "Legal" },
+  { value: "insurance", label: "Insurance" },
+  { value: "retail", label: "Retail" },
+  { value: "hospitality", label: "Hospitality" },
+  { value: "food_beverage", label: "Food & Beverage" },
+  { value: "construction", label: "Construction", count: "2M" },
+  { value: "telecommunications", label: "Telecommunications", count: "770K" },
+];
+
+export const COMPANY_HOW_THEY_SELL_OPTIONS = [
+  { value: "b2b", label: "B2B", count: "58M" },
+  { value: "b2c", label: "B2C", count: "25M" },
+  { value: "b2b2c", label: "B2B2C", count: "1M" },
+  { value: "d2c", label: "D2C", count: "20K" },
+  { value: "franchise", label: "Franchise", count: "257K" },
+  { value: "government", label: "Government", count: "7M" },
+];
+
+export const COMPANY_MORE_FLAGS_OPTIONS = [
+  { value: "is_retail", label: "Is retail", count: "12M" },
+  { value: "is_marketplace", label: "Is marketplace", count: "1M" },
+  { value: "is_mainly_ai", label: "Is mainly AI", count: "1M" },
+  { value: "is_mainly_crypto", label: "Is mainly crypto", count: "160K" },
+  { value: "multi_product", label: "Multi-product", count: "48M" },
+];
+
+export const COMPANY_REVENUE_MODEL_OPTIONS = [
+  { value: "free_tier", label: "Has free tier / trial", count: "825K" },
+  { value: "self_serve", label: "Self-serve", count: "4M" },
+  { value: "sales_led", label: "Sales-led", count: "66M" },
+  { value: "usage_based", label: "Usage-based pricing", count: "885K" },
+  { value: "subscription", label: "Subscription", count: "2M" },
+  { value: "enterprise_plan", label: "Enterprise plan", count: "355K" },
+  { value: "public_pricing", label: "Public pricing page", count: "10M" },
 ];
 
 export const REVENUE_OPTIONS = [
@@ -299,63 +690,109 @@ export const FUNDING_STAGE_OPTIONS = [
 ];
 
 export const INDUSTRY_OPTIONS: { value: string; label: string }[] = [
-  { value: "computer software", label: "Computer Software" },
-  { value: "information technology and services", label: "Information Technology & Services" },
-  { value: "internet", label: "Internet" },
-  { value: "computer hardware", label: "Computer Hardware" },
-  { value: "computer networking", label: "Computer Networking" },
-  { value: "computer & network security", label: "Computer & Network Security" },
-  { value: "computer games", label: "Computer Games" },
-  { value: "semiconductors", label: "Semiconductors" },
-  { value: "telecommunications", label: "Telecommunications" },
-  { value: "wireless", label: "Wireless" },
-  { value: "nanotechnology", label: "Nanotechnology" },
-  { value: "financial services", label: "Financial Services" },
-  { value: "banking", label: "Banking" },
-  { value: "investment banking", label: "Investment Banking" },
-  { value: "investment management", label: "Investment Management" },
-  { value: "venture capital & private equity", label: "Venture Capital & Private Equity" },
-  { value: "capital markets", label: "Capital Markets" },
-  { value: "insurance", label: "Insurance" },
-  { value: "accounting", label: "Accounting" },
-  { value: "hospital & health care", label: "Hospital & Health Care" },
-  { value: "pharmaceuticals", label: "Pharmaceuticals" },
-  { value: "medical devices", label: "Medical Devices" },
-  { value: "medical practice", label: "Medical Practice" },
-  { value: "biotechnology", label: "Biotechnology" },
-  { value: "health, wellness and fitness", label: "Health, Wellness & Fitness" },
-  { value: "higher education", label: "Higher Education" },
-  { value: "education management", label: "Education Management" },
-  { value: "e-learning", label: "E-Learning" },
-  { value: "research", label: "Research" },
-  { value: "management consulting", label: "Management Consulting" },
-  { value: "staffing and recruiting", label: "Staffing & Recruiting" },
-  { value: "human resources", label: "Human Resources" },
-  { value: "legal services", label: "Legal Services" },
-  { value: "marketing and advertising", label: "Marketing & Advertising" },
-  { value: "public relations and communications", label: "Public Relations & Communications" },
-  { value: "outsourcing/offshoring", label: "Outsourcing / Offshoring" },
-  { value: "entertainment", label: "Entertainment" },
-  { value: "media production", label: "Media Production" },
-  { value: "publishing", label: "Publishing" },
-  { value: "online media", label: "Online Media" },
-  { value: "real estate", label: "Real Estate" },
-  { value: "construction", label: "Construction" },
-  { value: "retail", label: "Retail" },
-  { value: "consumer goods", label: "Consumer Goods" },
-  { value: "food & beverages", label: "Food & Beverages" },
-  { value: "apparel & fashion", label: "Apparel & Fashion" },
-  { value: "automotive", label: "Automotive" },
-  { value: "chemicals", label: "Chemicals" },
-  { value: "machinery", label: "Machinery" },
-  { value: "oil & energy", label: "Oil & Energy" },
-  { value: "logistics and supply chain", label: "Logistics & Supply Chain" },
-  { value: "transportation/trucking/railroad", label: "Transportation / Trucking / Railroad" },
-  { value: "government administration", label: "Government Administration" },
-  { value: "non-profit organization management", label: "Non-Profit Organization Management" },
-  { value: "hospitality", label: "Hospitality" },
-  { value: "restaurants", label: "Restaurants" },
-  { value: "leisure, travel & tourism", label: "Leisure, Travel & Tourism" },
+  { value: "IT Services and IT Consulting", label: "IT Services and IT Consulting" },
+  { value: "Software Development", label: "Software Development" },
+  { value: "Technology, Information and Internet", label: "Technology, Information and Internet" },
+  { value: "Computer and Network Security", label: "Computer and Network Security" },
+  { value: "Computer Hardware Manufacturing", label: "Computer Hardware Manufacturing" },
+  { value: "Computer Networking Products", label: "Computer Networking Products" },
+  { value: "Data Infrastructure and Analytics", label: "Data Infrastructure and Analytics" },
+  { value: "Information Services", label: "Information Services" },
+  { value: "Internet Publishing", label: "Internet Publishing" },
+  { value: "Telecommunications", label: "Telecommunications" },
+  { value: "Semiconductor Manufacturing", label: "Semiconductor Manufacturing" },
+  { value: "Robotics Engineering", label: "Robotics Engineering" },
+  { value: "Artificial Intelligence", label: "Artificial Intelligence" },
+  { value: "Blockchain Services", label: "Blockchain Services" },
+  { value: "Cloud Computing", label: "Cloud Computing" },
+  { value: "Cybersecurity", label: "Cybersecurity" },
+  { value: "Business Consulting and Services", label: "Business Consulting and Services" },
+  { value: "Management Consulting", label: "Management Consulting" },
+  { value: "Strategic Management Services", label: "Strategic Management Services" },
+  { value: "Human Resources Services", label: "Human Resources Services" },
+  { value: "Staffing and Recruiting", label: "Staffing and Recruiting" },
+  { value: "Outsourcing and Offshoring Consulting", label: "Outsourcing and Offshoring Consulting" },
+  { value: "Professional Services", label: "Professional Services" },
+  { value: "Research Services", label: "Research Services" },
+  { value: "Advertising Services", label: "Advertising Services" },
+  { value: "Marketing Services", label: "Marketing Services" },
+  { value: "Public Relations and Communications Services", label: "Public Relations and Communications Services" },
+  { value: "Market Research", label: "Market Research" },
+  { value: "Design Services", label: "Design Services" },
+  { value: "Graphic Design", label: "Graphic Design" },
+  { value: "Financial Services", label: "Financial Services" },
+  { value: "Banking", label: "Banking" },
+  { value: "Investment Banking", label: "Investment Banking" },
+  { value: "Investment Management", label: "Investment Management" },
+  { value: "Insurance", label: "Insurance" },
+  { value: "Accounting", label: "Accounting" },
+  { value: "Venture Capital and Private Equity", label: "Venture Capital and Private Equity" },
+  { value: "Capital Markets", label: "Capital Markets" },
+  { value: "Real Estate", label: "Real Estate" },
+  { value: "Commercial Real Estate", label: "Commercial Real Estate" },
+  { value: "Hospitals and Health Care", label: "Hospitals and Health Care" },
+  { value: "Medical Practices", label: "Medical Practices" },
+  { value: "Mental Health Care", label: "Mental Health Care" },
+  { value: "Pharmaceutical Manufacturing", label: "Pharmaceutical Manufacturing" },
+  { value: "Biotechnology Research", label: "Biotechnology Research" },
+  { value: "Medical Equipment Manufacturing", label: "Medical Equipment Manufacturing" },
+  { value: "Wellness and Fitness Services", label: "Wellness and Fitness Services" },
+  { value: "Higher Education", label: "Higher Education" },
+  { value: "Primary and Secondary Education", label: "Primary and Secondary Education" },
+  { value: "Education Administration Programs", label: "Education Administration Programs" },
+  { value: "E-Learning Providers", label: "E-Learning Providers" },
+  { value: "Retail", label: "Retail" },
+  { value: "General Retail", label: "General Retail" },
+  { value: "Retail Apparel and Fashion", label: "Retail Apparel and Fashion" },
+  { value: "Retail Luxury Goods and Jewelry", label: "Retail Luxury Goods and Jewelry" },
+  { value: "Retail Groceries", label: "Retail Groceries" },
+  { value: "Wholesale", label: "Wholesale" },
+  { value: "Consumer Goods", label: "Consumer Goods" },
+  { value: "Food and Beverage Services", label: "Food and Beverage Services" },
+  { value: "Food and Beverage Manufacturing", label: "Food and Beverage Manufacturing" },
+  { value: "Restaurants", label: "Restaurants" },
+  { value: "Hospitality", label: "Hospitality" },
+  { value: "Travel Arrangements", label: "Travel Arrangements" },
+  { value: "Airlines and Aviation", label: "Airlines and Aviation" },
+  { value: "Automotive", label: "Automotive" },
+  { value: "Motor Vehicle Manufacturing", label: "Motor Vehicle Manufacturing" },
+  { value: "Transportation, Logistics and Supply Chain", label: "Transportation, Logistics and Supply Chain" },
+  { value: "Truck Transportation", label: "Truck Transportation" },
+  { value: "Warehousing and Storage", label: "Warehousing and Storage" },
+  { value: "Construction", label: "Construction" },
+  { value: "Architecture and Planning", label: "Architecture and Planning" },
+  { value: "Civil Engineering", label: "Civil Engineering" },
+  { value: "Industrial Machinery Manufacturing", label: "Industrial Machinery Manufacturing" },
+  { value: "Automation Machinery Manufacturing", label: "Automation Machinery Manufacturing" },
+  { value: "Electrical Equipment Manufacturing", label: "Electrical Equipment Manufacturing" },
+  { value: "Chemical Manufacturing", label: "Chemical Manufacturing" },
+  { value: "Textile Manufacturing", label: "Textile Manufacturing" },
+  { value: "Packaging and Containers Manufacturing", label: "Packaging and Containers Manufacturing" },
+  { value: "Oil and Gas", label: "Oil and Gas" },
+  { value: "Renewable Energy", label: "Renewable Energy" },
+  { value: "Utilities", label: "Utilities" },
+  { value: "Environmental Services", label: "Environmental Services" },
+  { value: "Mining", label: "Mining" },
+  { value: "Agriculture", label: "Agriculture" },
+  { value: "Farming", label: "Farming" },
+  { value: "Legal Services", label: "Legal Services" },
+  { value: "Law Practice", label: "Law Practice" },
+  { value: "Government Administration", label: "Government Administration" },
+  { value: "Public Policy", label: "Public Policy" },
+  { value: "Non-profit Organizations", label: "Non-profit Organizations" },
+  { value: "Civic and Social Organizations", label: "Civic and Social Organizations" },
+  { value: "Media Production", label: "Media Production" },
+  { value: "Entertainment Providers", label: "Entertainment Providers" },
+  { value: "Broadcast Media Production", label: "Broadcast Media Production" },
+  { value: "Newspaper Publishing", label: "Newspaper Publishing" },
+  { value: "Book Publishing", label: "Book Publishing" },
+  { value: "Online Media", label: "Online Media" },
+  { value: "Gaming", label: "Gaming" },
+  { value: "Sports", label: "Sports" },
+  { value: "Events Services", label: "Events Services" },
+  { value: "Security and Investigations", label: "Security and Investigations" },
+  { value: "Facilities Services", label: "Facilities Services" },
+  { value: "Consumer Services", label: "Consumer Services" },
 ];
 
 export const KEYWORDS_STATIC = [
@@ -369,6 +806,57 @@ export const KEYWORDS_STATIC = [
   "Healthtech",
   "DevTools",
   "Open Source",
+];
+
+export const COMPANY_NEWS_CATEGORIES = [
+  { value: "funding_investment",     label: "Funding & Investment" },
+  { value: "mergers_acquisitions",   label: "Mergers & Acquisitions" },
+  { value: "product_launch",         label: "Product Launch" },
+  { value: "partnership",            label: "Partnership" },
+  { value: "expansion",              label: "Expansion" },
+  { value: "layoffs_restructuring",  label: "Layoffs & Restructuring" },
+  { value: "ipo",                    label: "IPO" },
+  { value: "leadership_change",      label: "Leadership Change" },
+  { value: "legal_regulatory",       label: "Legal & Regulatory" },
+  { value: "awards_recognition",     label: "Awards & Recognition" },
+];
+
+export const COMPANY_NEWS_TIMEFRAMES = [
+  { value: "60d",  label: "Last 60 days" },
+  { value: "90d",  label: "Last 90 days" },
+  { value: "6m",   label: "Last 6 months" },
+  { value: "12m",  label: "Last 12 months" },
+];
+
+export const EMAIL_PROVIDER_OPTIONS = [
+  { value: "microsoft",  label: "Microsoft" },
+  { value: "google",     label: "Google" },
+  { value: "proofpoint", label: "Proofpoint" },
+  { value: "mimecast",   label: "Mimecast" },
+  { value: "other",      label: "Other" },
+];
+
+export const CERTIFICATION_OPTIONS = [
+  { value: "soc2",      label: "SOC 2" },
+  { value: "gdpr",      label: "GDPR" },
+  { value: "ccpa",      label: "CCPA" },
+  { value: "iso_27001", label: "ISO 27001" },
+  { value: "hipaa",     label: "HIPAA" },
+  { value: "pci_dss",   label: "PCI-DSS" },
+];
+
+export const JOB_CHANGE_TIMEFRAMES = [
+  { value: "1",  label: "Last 1 month" },
+  { value: "3",  label: "Last 3 months" },
+  { value: "6",  label: "Last 6 months" },
+  { value: "12", label: "Last 12 months" },
+  { value: "24", label: "Last 24 months" },
+];
+
+export const WEBSITE_TRAFFIC_TIMEFRAMES = [
+  { value: "monthly",   label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "yearly",    label: "Yearly" },
 ];
 
 export const BUYING_INTENT_STATIC = [

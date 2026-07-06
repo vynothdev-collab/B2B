@@ -7,6 +7,7 @@ Endpoints hit:
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, NoReturn, Optional
 
 import httpx
@@ -128,13 +129,37 @@ def _add_nested_range(
     })
 
 
+def _months_ago_str(months: int) -> str:
+    """Return YYYY-MM-DD string for `months` months before today (1st of that month)."""
+    today = date.today()
+    total = today.year * 12 + (today.month - 1) - months
+    y, m = divmod(total, 12)
+    return f"{y}-{m + 1:02d}-01"
+
+
+def _add_date_range(
+    clauses: list[dict],
+    field: str,
+    min_months: Optional[int],   # person has been in role AT LEAST this many months → start_date <= N months ago
+    max_months: Optional[int],   # person has been in role AT MOST this many months  → start_date >= N months ago
+) -> None:
+    r: dict[str, str] = {}
+    if max_months is not None:
+        r["gte"] = _months_ago_str(max_months)
+    if min_months is not None:
+        r["lte"] = _months_ago_str(min_months)
+    if r:
+        clauses.append({"range": {field: r}})
+
+
 def _build_bool_query(
     must: list[dict],
     filters: list[dict],
     should: Optional[list[dict]] = None,
     minimum_should_match: int = 0,
+    must_not: Optional[list[dict]] = None,
 ) -> dict:
-    if not must and not filters and not should:
+    if not must and not filters and not should and not must_not:
         return {"match_all": {}}
     bool_q: dict[str, Any] = {}
     if must:
@@ -144,6 +169,8 @@ def _build_bool_query(
     if should:
         bool_q["should"] = should
         bool_q["minimum_should_match"] = minimum_should_match or 1
+    if must_not:
+        bool_q["must_not"] = must_not
     return {"bool": bool_q}
 
 
@@ -194,16 +221,35 @@ def _add_revenue_bucket_filter(clauses: list[dict], buckets: Optional[list[str]]
 
 
 # Company type — map frontend enum values to Coresignal fields.
+_COMPANY_TYPE_TERMS: dict[str, list[str]] = {
+    "saas":           ["SaaS", "software as a service"],
+    "marketplace":    ["marketplace"],
+    "ecommerce":      ["e-commerce", "ecommerce", "online store"],
+    "agency":         ["agency", "digital agency", "marketing agency"],
+    "consulting":     ["consulting", "consultancy"],
+    "manufacturing":  ["manufacturing", "manufacturer"],
+    "media_publisher":["media", "publisher", "publishing"],
+    "education":      ["education", "edtech", "e-learning"],
+    "non_profit":     ["nonprofit", "non-profit"],
+    "government":     ["government", "public sector"],
+    "fintech":        ["fintech", "financial technology"],
+    "healthtech":     ["healthtech", "health technology", "medtech"],
+    "proptech":       ["proptech", "property technology"],
+    "logistics":      ["logistics", "supply chain"],
+    "hardware":       ["hardware", "device manufacturer"],
+    "biotech":        ["biotech", "biotechnology"],
+}
+
+_TYPE_MAP_DIRECT = {
+    "nonprofit": "Nonprofit",
+    "government": "Government Agency",
+    "educational": "Educational",
+}
+
+
 def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) -> None:
     if not types:
         return
-    # Coresignal stores `type` with proper case (e.g. "Nonprofit",
-    # "Government Agency", "Educational"). Map the frontend enum accordingly.
-    _TYPE_MAP = {
-        "nonprofit": "Nonprofit",
-        "government": "Government Agency",
-        "educational": "Educational",
-    }
     should: list[dict] = []
     for t in types:
         t_norm = (t or "").lower().strip()
@@ -216,10 +262,32 @@ def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) ->
                 {"term": {"is_public": True}},
                 {"exists": {"field": "parent_company_name"}},
             ]}})
-        elif t_norm in _TYPE_MAP:
-            should.append({"term": {"type": _TYPE_MAP[t_norm]}})
+        elif t_norm in _TYPE_MAP_DIRECT:
+            should.append({"term": {"type": _TYPE_MAP_DIRECT[t_norm]}})
+        elif t_norm in _COMPANY_TYPE_TERMS:
+            for phrase in _COMPANY_TYPE_TERMS[t_norm]:
+                for field in _DESCRIPTION_FIELDS:
+                    should.append({"match_phrase": {field: phrase}})
     if should:
         clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+# Department name -> flat field inside employees_count_breakdown_by_department.
+# CoreSignal exposes this as a flat object (not a nested array).
+_DEPT_TO_FIELD: dict[str, str] = {
+    "sales":          "employees_count_breakdown_by_department.employees_count_sales",
+    "engineering":    "employees_count_breakdown_by_department.employees_count_engineering",
+    "marketing":      "employees_count_breakdown_by_department.employees_count_marketing",
+    "operations":     "employees_count_breakdown_by_department.employees_count_operations",
+    "finance":        "employees_count_breakdown_by_department.employees_count_finance",
+    "human_resources":"employees_count_breakdown_by_department.employees_count_human_resources",
+    "it":             "employees_count_breakdown_by_department.employees_count_it",
+    "legal":          "employees_count_breakdown_by_department.employees_count_legal",
+    "product":        "employees_count_breakdown_by_department.employees_count_product_management",
+    "customer_success":"employees_count_breakdown_by_department.employees_count_customer_success",
+    "design":         "employees_count_breakdown_by_department.employees_count_design",
+    "data":           "employees_count_breakdown_by_department.employees_count_data_science",
+}
 
 
 # Growth timeframe -> Coresignal percentage field.
@@ -232,6 +300,175 @@ _GROWTH_TIMEFRAME_TO_FIELD: dict[str, str] = {
     "24_month": "employees_count_change.change_yearly_percentage",
 }
 
+# Email provider → technology aliases stored in technologies_used.technology (lowercase).
+_EMAIL_PROVIDER_TECH_ALIASES: dict[str, list[str]] = {
+    "microsoft": [
+        "microsoft 365", "office 365", "microsoft exchange",
+        "exchange online", "microsoft outlook", "outlook",
+    ],
+    "google": [
+        "google workspace", "g suite", "gmail", "google apps",
+    ],
+    "proofpoint": ["proofpoint"],
+    "mimecast":   ["mimecast"],
+}
+
+_KNOWN_EMAIL_PROVIDER_TECHS: list[str] = [
+    alias for aliases in _EMAIL_PROVIDER_TECH_ALIASES.values() for alias in aliases
+]
+
+
+def _add_email_provider_filter(clauses: list[dict], providers: Optional[list[str]]) -> None:
+    if not providers:
+        return
+    known = [p.lower() for p in providers if p.lower() in _EMAIL_PROVIDER_TECH_ALIASES]
+    include_other = any(p.lower() == "other" for p in providers)
+
+    should: list[dict] = []
+
+    for provider in known:
+        for alias in _EMAIL_PROVIDER_TECH_ALIASES[provider]:
+            should.append({
+                "nested": {
+                    "path": "technologies_used",
+                    "query": {"term": {"technologies_used.technology": alias}},
+                }
+            })
+
+    if include_other:
+        # "Other" = no technologies_used entry matching any known provider.
+        must_not_clauses: list[dict] = []
+        for alias in _KNOWN_EMAIL_PROVIDER_TECHS:
+            must_not_clauses.append({
+                "nested": {
+                    "path": "technologies_used",
+                    "query": {"term": {"technologies_used.technology": alias}},
+                }
+            })
+        should.append({"bool": {"must_not": must_not_clauses}})
+
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+# Certification keyword aliases — each value is tried as match_phrase on short_description.
+_CERT_SEARCH_TERMS: dict[str, list[str]] = {
+    "soc2":      ["SOC 2", "SOC2"],
+    "gdpr":      ["GDPR"],
+    "ccpa":      ["CCPA"],
+    "iso_27001": ["ISO 27001"],
+    "hipaa":     ["HIPAA"],
+    "pci_dss":   ["PCI-DSS", "PCI DSS"],
+}
+
+_DESCRIPTION_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
+
+
+def _add_text_search_filter(clauses: list[dict], terms: Optional[list[str]]) -> None:
+    """OR-match each term as a phrase across company description/tag fields."""
+    if not terms:
+        return
+    should: list[dict] = []
+    for term in terms:
+        for field in _DESCRIPTION_FIELDS:
+            should.append({"match_phrase": {field: term}})
+    clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+def _add_certifications_filter(clauses: list[dict], certs: Optional[list[str]]) -> None:
+    """Each selected cert generates an OR-group of phrase matches; all selected certs must match (AND)."""
+    if not certs:
+        return
+    for cert in certs:
+        aliases = _CERT_SEARCH_TERMS.get(cert.lower(), [cert])
+        cert_should: list[dict] = []
+        for alias in aliases:
+            for field in _DESCRIPTION_FIELDS:
+                cert_should.append({"match_phrase": {field: alias}})
+        clauses.append({"bool": {"should": cert_should, "minimum_should_match": 1}})
+
+
+_VISIT_CHANGE_TIMEFRAME_TO_FIELD: dict[str, str] = {
+    "monthly":   "total_website_visits_change.change_monthly_percentage",
+    "quarterly": "total_website_visits_change.change_quarterly_percentage",
+    "yearly":    "total_website_visits_change.change_yearly_percentage",
+}
+
+
+def _add_company_status_filter(clauses: list[dict], statuses: Optional[list[str]]) -> None:
+    if not statuses:
+        return
+    should: list[dict] = []
+    for s in statuses:
+        s_norm = (s or "").lower().strip()
+        if s_norm == "public":
+            should.append({"term": {"is_public": True}})
+        elif s_norm == "private":
+            should.append({"term": {"is_public": False}})
+        elif s_norm == "nonprofit":
+            should.append({"term": {"type": "Nonprofit"}})
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+_HOW_THEY_SELL_TERMS: dict[str, list[str]] = {
+    "b2b": ["B2B", "business to business"],
+    "b2c": ["B2C", "business to consumer"],
+    "b2b2c": ["B2B2C"],
+    "d2c": ["D2C", "direct to consumer", "direct-to-consumer"],
+    "franchise": ["franchise"],
+    "government": ["government contracts", "government sales"],
+}
+
+_MORE_FLAGS_TERMS: dict[str, list[str]] = {
+    "is_retail": ["retail"],
+    "is_marketplace": ["marketplace"],
+    "is_mainly_ai": ["artificial intelligence", "AI company", "AI-powered"],
+    "is_mainly_crypto": ["crypto", "blockchain", "web3"],
+    "multi_product": ["multi-product", "product suite", "platform"],
+}
+
+_REVENUE_MODEL_TERMS: dict[str, list[str]] = {
+    "free_tier": ["free tier", "free trial", "freemium"],
+    "self_serve": ["self-serve", "self service"],
+    "sales_led": ["sales-led", "enterprise sales"],
+    "usage_based": ["usage-based", "pay per use", "consumption-based"],
+    "subscription": ["subscription", "recurring revenue"],
+    "enterprise_plan": ["enterprise plan", "enterprise pricing"],
+    "public_pricing": ["pricing page", "public pricing"],
+}
+
+_NEWS_CATEGORY_TERMS: dict[str, list[str]] = {
+    "funding_investment": ["funding", "investment", "raised", "series"],
+    "mergers_acquisitions": ["acquisition", "merger", "acquired"],
+    "product_launch": ["product launch", "new product", "launch"],
+    "partnership": ["partnership", "partner", "collaboration"],
+    "expansion": ["expansion", "expanding", "new market"],
+    "layoffs_restructuring": ["layoffs", "restructuring", "downsizing"],
+    "ipo": ["IPO", "initial public offering", "went public"],
+    "leadership_change": ["CEO", "leadership change", "appointed", "new chief"],
+    "legal_regulatory": ["lawsuit", "regulatory", "compliance", "fine"],
+    "awards_recognition": ["award", "recognition", "ranked", "best place"],
+}
+
+
+def _add_enum_text_filter(
+    clauses: list[dict],
+    values: Optional[list[str]],
+    term_map: dict[str, list[str]],
+) -> None:
+    """For each selected value, OR-match its aliases across description fields."""
+    if not values:
+        return
+    should: list[dict] = []
+    for val in values:
+        aliases = term_map.get(val.lower(), [val])
+        for alias in aliases:
+            for field in _DESCRIPTION_FIELDS:
+                should.append({"match_phrase": {field: alias}})
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
 
 # ---------------------------------------------------------------------------
 # Query builders — Person (employee_multi_source).
@@ -240,6 +477,7 @@ _GROWTH_TIMEFRAME_TO_FIELD: dict[str, str] = {
 def build_person_query(f: PersonSearchRequest) -> dict:
     must: list[dict] = []
     filters: list[dict] = []
+    must_not: list[dict] = []
 
     if f.name:
         must.append({"match": {"full_name": f.name.lower()}})
@@ -269,9 +507,34 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     if f.require_work_email:
         filters.append({"exists": {"field": "primary_professional_email"}})
 
+    _add_multi_match(must, "active_experience_company_industry", f.industries, phrase=True)
     _add_multi_term(filters, "inferred_skills", f.technologies)
 
-    return _build_bool_query(must, filters)
+    if f.exclude_person_ids:
+        must_not.append({"terms": {"id": f.exclude_person_ids}})
+    if f.exclude_company_ids:
+        must_not.append({"terms": {"active_experience_company_id": f.exclude_company_ids}})
+    if f.exclude_company_names:
+        for name in f.exclude_company_names:
+            must_not.append({"match_phrase": {"active_experience_company_name": name}})
+
+    # Time in role + time in company both map to active_experience_start_date.
+    # Merge into one range clause to avoid conflicting gte/lte clauses.
+    role_min = f.time_in_role_min_months
+    role_max = f.time_in_role_max_months
+    co_min = f.time_in_company_min_months
+    co_max = f.time_in_company_max_months
+    merged_min: Optional[int] = max(v for v in (role_min, co_min) if v is not None) if any(v is not None for v in (role_min, co_min)) else None
+    merged_max: Optional[int] = min(v for v in (role_max, co_max) if v is not None) if any(v is not None for v in (role_max, co_max)) else None
+    _add_date_range(filters, "active_experience_start_date", min_months=merged_min, max_months=merged_max)
+
+    # Total years of experience → convert to months range
+    if f.experience_years_min is not None or f.experience_years_max is not None:
+        months_min = int(f.experience_years_min * 12) if f.experience_years_min is not None else None
+        months_max = int(f.experience_years_max * 12) if f.experience_years_max is not None else None
+        _add_range(filters, "total_experience_duration_months", months_min, months_max)
+
+    return _build_bool_query(must, filters, must_not=must_not or None)
 
 
 # ---------------------------------------------------------------------------
@@ -291,6 +554,12 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     )
 
     _add_company_type_filter(filters, f.type)
+    _add_company_status_filter(filters, f.company_status)
+    _add_enum_text_filter(filters, f.company_how_they_sell, _HOW_THEY_SELL_TERMS)
+    _add_enum_text_filter(filters, f.company_more_flags, _MORE_FLAGS_TERMS)
+    _add_enum_text_filter(filters, f.company_revenue_model, _REVENUE_MODEL_TERMS)
+    _add_text_search_filter(filters, f.company_news_keywords)
+    _add_enum_text_filter(filters, f.company_news_categories, _NEWS_CATEGORY_TERMS)
     _add_multi_term(filters, "industry.exact", f.industries, lowercase=False)
 
     # Technologies — nested field.
@@ -331,15 +600,47 @@ def build_company_query(f: CompanySearchRequest) -> dict:
         )
 
     if f.headcount_by_department:
+        dept_field = _DEPT_TO_FIELD.get(f.headcount_by_department.lower())
+        if dept_field:
+            _add_range(filters, dept_field, f.headcount_by_department_min, f.headcount_by_department_max)
+
+    _add_range(filters, "total_website_visits_monthly", f.website_visits_min, f.website_visits_max)
+
+    visit_change_field = _VISIT_CHANGE_TIMEFRAME_TO_FIELD.get(
+        f.visit_change_timeframe,
+        "total_website_visits_change.change_monthly_percentage",
+    )
+    _add_range(filters, visit_change_field, f.visit_change_min, f.visit_change_max)
+
+    if f.traffic_country:
         _add_nested_range(
             filters,
-            path="employees_count_breakdown_by_department",
-            key_field="department",
-            key_value=f.headcount_by_department,
-            value_field="employee_count",
-            minv=f.headcount_by_department_min,
-            maxv=f.headcount_by_department_max,
+            path="visits_breakdown_by_country",
+            key_field="country",
+            key_value=f.traffic_country,
+            value_field="percentage",
+            minv=f.traffic_country_min,
+            maxv=f.traffic_country_max,
         )
+
+    _add_email_provider_filter(filters, f.email_providers)
+    _add_certifications_filter(filters, f.certifications)
+    _add_text_search_filter(filters, f.awards)
+    _add_text_search_filter(filters, f.other_compliance)
+
+    # Job posting keywords — match against company description fields
+    if f.job_posting_keywords:
+        for kw in f.job_posting_keywords:
+            filters.append({
+                "bool": {
+                    "should": [
+                        {"match": {"description": kw}},
+                        {"match": {"description_enriched": kw}},
+                        {"match": {"categories_and_keywords": kw}},
+                    ],
+                    "minimum_should_match": 1,
+                }
+            })
 
     return _build_bool_query(must, filters)
 
@@ -453,6 +754,25 @@ def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
         req.founded_max is not None,
         req.headcount_growth_min is not None,
         req.headcount_growth_max is not None,
+        req.employee_count_min is not None,
+        req.employee_count_max is not None,
+        req.website_visits_min is not None,
+        req.website_visits_max is not None,
+        req.visit_change_min is not None,
+        req.visit_change_max is not None,
+        bool(req.traffic_country),
+        bool(req.email_providers),
+        bool(req.job_posting_keywords),
+        bool(req.awards),
+        bool(req.certifications),
+        bool(req.other_compliance),
+        bool(req.company_status),
+        bool(req.company_how_they_sell),
+        bool(req.company_more_flags),
+        bool(req.company_revenue_model),
+        bool(req.company_news_keywords),
+        bool(req.company_news_categories),
+        bool(req.company_news_timeframe),
     ])
     dept_active = bool(req.headcount_by_department) and (
         req.headcount_by_department_min is not None
@@ -481,6 +801,28 @@ async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int 
         headcount_by_location_country=req.headcount_by_location_country,
         headcount_by_location_min=req.headcount_by_location_min,
         headcount_by_location_max=req.headcount_by_location_max,
+        employee_count_min=req.employee_count_min,
+        employee_count_max=req.employee_count_max,
+        website_visits_min=req.website_visits_min,
+        website_visits_max=req.website_visits_max,
+        visit_change_timeframe=req.visit_change_timeframe,
+        visit_change_min=req.visit_change_min,
+        visit_change_max=req.visit_change_max,
+        traffic_country=req.traffic_country,
+        traffic_country_min=req.traffic_country_min,
+        traffic_country_max=req.traffic_country_max,
+        email_providers=req.email_providers,
+        job_posting_keywords=req.job_posting_keywords,
+        awards=req.awards,
+        certifications=req.certifications,
+        other_compliance=req.other_compliance,
+        company_status=req.company_status,
+        company_how_they_sell=req.company_how_they_sell,
+        company_more_flags=req.company_more_flags,
+        company_revenue_model=req.company_revenue_model,
+        company_news_keywords=req.company_news_keywords,
+        company_news_categories=req.company_news_categories,
+        company_news_timeframe=req.company_news_timeframe,
     )
     body = _make_search_body(build_company_query(co_req))
 

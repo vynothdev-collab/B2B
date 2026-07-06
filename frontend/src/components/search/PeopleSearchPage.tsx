@@ -10,8 +10,10 @@ import EmptyState from "./EmptyState";
 import ActiveFilterChips from "./ActiveFilterChips";
 import AddToListModal from "./AddToListModal";
 import { searchPersons } from "@/lib/searchApi";
+import type { PersonExclusions } from "@/lib/searchApi";
 import { buildPersonChips } from "@/lib/filterChips";
 import { toast } from "@/lib/toast";
+import { getLists, getListItems } from "@/lib/listsApi";
 import type { ListItemPayload } from "@/lib/listsApi";
 import {
   DEFAULT_PERSON_FILTERS,
@@ -36,6 +38,48 @@ export default function PeopleSearchPage() {
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
 
+  const resolveExclusions = useCallback(async (): Promise<PersonExclusions> => {
+    const { hideAllSavedPeople, hideSavedPeopleListIds, hideAllSavedCompanies, hideSavedCompanyListIds } = filters;
+    if (!hideAllSavedPeople && !hideAllSavedCompanies) return {};
+
+    const excludePersonIds: string[] = [];
+    const excludeCompanyIds: string[] = [];
+
+    if (hideAllSavedPeople || hideAllSavedCompanies) {
+      const allLists = await getLists();
+      const peopleLists = allLists.filter((l) => l.list_type === "people");
+
+      // Determine which people lists to use
+      const targetPeopleLists = hideSavedPeopleListIds.length
+        ? peopleLists.filter((l) => hideSavedPeopleListIds.includes(l.id))
+        : peopleLists;
+
+      for (const lst of targetPeopleLists) {
+        const items = await getListItems(lst.id);
+        for (const item of items) {
+          if (hideAllSavedPeople) excludePersonIds.push(item.record_id);
+          if (hideAllSavedCompanies) {
+            const companyId = (item.data as Record<string, unknown>)?.active_experience_company_id;
+            if (companyId) excludeCompanyIds.push(String(companyId));
+          }
+        }
+      }
+
+      if (hideAllSavedCompanies && hideSavedCompanyListIds.length) {
+        const companyLists = allLists.filter((l) => l.list_type === "companies" && hideSavedCompanyListIds.includes(l.id));
+        for (const lst of companyLists) {
+          const items = await getListItems(lst.id);
+          for (const item of items) excludeCompanyIds.push(item.record_id);
+        }
+      }
+    }
+
+    return {
+      excludePersonIds: [...new Set(excludePersonIds)],
+      excludeCompanyIds: [...new Set(excludeCompanyIds)],
+    };
+  }, [filters]);
+
   const runSearch = useCallback(async (page: number, scrollToken?: string) => {
     const cached = pageCacheRef.current.get(page);
     if (cached) {
@@ -48,7 +92,8 @@ export default function PeopleSearchPage() {
     setLoading(true);
     setSelected(new Set());
     try {
-      const res = await searchPersons(filters, scrollToken);
+      const exclusions = await resolveExclusions();
+      const res = await searchPersons(filters, scrollToken, exclusions);
       setResults(res);
       setMeta(res.meta);
       setHasSearched(true);
@@ -64,7 +109,7 @@ export default function PeopleSearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, resolveExclusions]);
 
   const clearState = () => {
     pageCacheRef.current = new Map();

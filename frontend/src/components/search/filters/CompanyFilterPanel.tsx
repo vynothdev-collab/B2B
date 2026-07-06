@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   Sparkles, Building2, MapPin, Tag, Type,
   Users, BarChart3, TrendingUp, Cpu, DollarSign, Banknote, Calendar, Activity,
+  Briefcase, Mail, Award, Globe, Newspaper,
 } from "lucide-react";
 import FilterSection from "../FilterSection";
 import MultiChipSelect from "../MultiChipSelect";
@@ -12,9 +13,14 @@ import LocationAutocomplete from "./LocationAutocomplete";
 import CountrySelect from "./CountrySelect";
 import RangeDropdown from "./RangeDropdown";
 import StaticPlaceholder from "./StaticPlaceholder";
+import CompanyTypeBusinessFilter from "./CompanyTypeBusinessFilter";
+import CompanyJobPostingFilter from "./CompanyJobPostingFilter";
+import CompanyEmailProviderFilter from "./CompanyEmailProviderFilter";
+import CompanyAwardsCertsFilter from "./CompanyAwardsCertsFilter";
+import CompanyWebsiteTrafficFilter from "./CompanyWebsiteTrafficFilter";
+import CompanyNewsFilter from "./CompanyNewsFilter";
 import type { CompanyFilters } from "@/types/search";
 import {
-  COMPANY_TYPE_OPTIONS,
   REVENUE_OPTIONS,
   FUNDING_STAGE_OPTIONS,
   KEYWORDS_STATIC,
@@ -46,6 +52,7 @@ const SECTIONS = [
   "lookalikes", "company", "location", "type", "keywords",
   "headcount", "industry", "intent", "technologies",
   "revenue", "funding", "headcountGrowth", "headcountByDept", "headcountByLocation", "founded",
+  "jobPosting", "emailProvider", "awardsCerts", "websiteTraffic", "companyNews",
 ] as const;
 type Section = typeof SECTIONS[number];
 
@@ -79,13 +86,7 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
       </FilterSection>
 
       <FilterSection title="Type & Business Model" icon={<Tag className="h-4 w-4" />} isOpen={open === "type"} onToggle={() => toggle("type")}>
-        <MultiChipSelect
-          label="Company Type"
-          placeholder="Select type"
-          options={COMPANY_TYPE_OPTIONS}
-          values={filters.type}
-          onChange={(v) => onChange({ type: v })}
-        />
+        <CompanyTypeBusinessFilter filters={filters} onChange={onChange} />
       </FilterSection>
 
       <FilterSection title="Keywords" icon={<Type className="h-4 w-4" />} isOpen={open === "keywords"} onToggle={() => toggle("keywords")}>
@@ -246,6 +247,26 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
           onMaxChange={(v) => onChange({ foundedMax: v })}
           presets={FOUNDED_YEAR_PRESETS}
         />
+      </FilterSection>
+
+      <FilterSection title="Job Posting" icon={<Briefcase className="h-4 w-4" />} isOpen={open === "jobPosting"} onToggle={() => toggle("jobPosting")}>
+        <CompanyJobPostingFilter filters={filters} onChange={onChange} />
+      </FilterSection>
+
+      <FilterSection title="Company Email Provider" icon={<Mail className="h-4 w-4" />} isOpen={open === "emailProvider"} onToggle={() => toggle("emailProvider")}>
+        <CompanyEmailProviderFilter filters={filters} onChange={onChange} />
+      </FilterSection>
+
+      <FilterSection title="Company Awards & Certs" icon={<Award className="h-4 w-4" />} isOpen={open === "awardsCerts"} onToggle={() => toggle("awardsCerts")}>
+        <CompanyAwardsCertsFilter filters={filters} onChange={onChange} />
+      </FilterSection>
+
+      <FilterSection title="Website Traffic" icon={<Globe className="h-4 w-4" />} isOpen={open === "websiteTraffic"} onToggle={() => toggle("websiteTraffic")}>
+        <CompanyWebsiteTrafficFilter filters={filters} onChange={onChange} />
+      </FilterSection>
+
+      <FilterSection title="Company News" icon={<Newspaper className="h-4 w-4" />} isOpen={open === "companyNews"} onToggle={() => toggle("companyNews")}>
+        <CompanyNewsFilter filters={filters} onChange={onChange} />
       </FilterSection>
     </>
   );
