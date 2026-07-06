@@ -80,13 +80,18 @@ export default function DuplicateControlFilter({ filters, onChange }: Props) {
   const [companyLists, setCompanyLists] = useState<ListRecord[]>([]);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const fetchedRef = useRef(false);
 
+  // Fetch lists lazily — only when the user first enables a hide-toggle
   useEffect(() => {
+    if (!filters.hideAllSavedPeople && !filters.hideAllSavedCompanies) return;
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
     getLists().then((lists) => {
       setPeopleLists(lists.filter((l) => l.list_type === "people"));
       setCompanyLists(lists.filter((l) => l.list_type === "companies"));
     }).catch(() => {});
-  }, []);
+  }, [filters.hideAllSavedPeople, filters.hideAllSavedCompanies]);
 
   const addExclusion = () => {
     const v = draft.trim();

@@ -97,6 +97,62 @@ function ActionMenu({ onAddToList }: { id: string; onAddToList: () => void }) {
   );
 }
 
+export function PeopleTableSkeleton({ rows = 8 }: { rows?: number }) {
+  return (
+    <div className="max-w-full overflow-x-auto">
+      <table className="w-full min-w-[640px] text-xs sm:min-w-[700px] [&_td]:px-3 [&_td]:py-3 [&_th]:px-3 [&_th]:py-2.5">
+        <thead>
+          <tr className="border-b border-gray-100 bg-gray-50">
+            <th className="w-8" />
+            <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[180px]">Name ↓</th>
+            <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[180px]">Company</th>
+            <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[140px]">Title</th>
+            <th className="text-left text-[11px] font-semibold text-gray-500">Email</th>
+            <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[120px]">Location</th>
+            <th className="text-left text-[11px] font-semibold text-gray-500">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: rows }).map((_, i) => (
+            <tr key={i} className="border-b border-gray-50 animate-pulse">
+              <td><div className="h-3.5 w-3.5 rounded bg-gray-200 mx-auto" /></td>
+              <td>
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200" />
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    <div className="h-3 w-28 rounded bg-gray-200" />
+                    <div className="h-2.5 w-16 rounded bg-gray-100" />
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div className="space-y-1.5">
+                  <div className="h-3 w-24 rounded bg-gray-200" />
+                  <div className="h-2.5 w-16 rounded bg-gray-100" />
+                </div>
+              </td>
+              <td>
+                <div className="space-y-1.5">
+                  <div className="h-3 w-28 rounded bg-gray-200" />
+                  <div className="h-2.5 w-16 rounded bg-gray-100" />
+                </div>
+              </td>
+              <td><div className="h-3 w-32 rounded bg-gray-200" /></td>
+              <td>
+                <div className="space-y-1.5">
+                  <div className="h-3 w-20 rounded bg-gray-200" />
+                  <div className="h-2.5 w-12 rounded bg-gray-100" />
+                </div>
+              </td>
+              <td><div className="h-6 w-6 rounded bg-gray-200 mx-auto" /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 interface Props {
   data: PersonResult[];
   selected: Set<string>;

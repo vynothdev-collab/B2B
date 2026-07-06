@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.schemas.search import (
+    AgenticSearchRequest,
     CompanySearchRequest,
     PersonSearchRequest,
     SearchResponse,
@@ -18,3 +19,8 @@ async def person_search(body: PersonSearchRequest) -> SearchResponse:
 @router.post("/companies", response_model=SearchResponse, summary="Search companies")
 async def company_search(body: CompanySearchRequest) -> SearchResponse:
     return await coresignal_service.search_companies(body)
+
+
+@router.post("/agentic", response_model=SearchResponse, summary="Natural-language AI search")
+async def agentic_search(body: AgenticSearchRequest) -> SearchResponse:
+    return await coresignal_service.agentic_search(body)

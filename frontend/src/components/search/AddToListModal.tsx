@@ -76,7 +76,7 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
         <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2.5 sm:px-4 sm:py-3">
           <div>
             <p className="text-xs font-semibold text-gray-900 sm:text-sm">
-              Add to {itemType === "person" ? "person" : "company"} list
+              Add to {itemType === "person" ? "people" : "company"} list
             </p>
             <p className="text-[11px] text-gray-400 sm:text-xs">
               {items.length} lead{items.length !== 1 ? "s" : ""} selected

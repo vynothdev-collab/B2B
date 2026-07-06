@@ -162,3 +162,9 @@ class SearchMeta(BaseModel):
 class SearchResponse(BaseModel):
     data: list[Any]
     meta: SearchMeta
+
+
+class AgenticSearchRequest(BaseModel):
+    prompt: str
+    entity: Literal["employee", "company"] = "employee"
+    limit: int = 20

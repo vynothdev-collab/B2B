@@ -62,14 +62,14 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
       return (
         <div key={opt.value}>
           <div
-            className="flex items-center gap-1 py-1.5 rounded hover:bg-gray-50"
+            className="flex min-h-0 items-center gap-1 py-[3px] rounded hover:bg-gray-50"
             style={{ paddingLeft: `${depth * 12 + 4}px` }}
           >
             {/* Checkbox — only this toggles selection */}
             <button
               type="button"
               onClick={() => toggleParent(opt)}
-              className="shrink-0 flex h-4 w-4 items-center justify-center rounded border transition-colors focus:outline-none"
+              className="shrink-0 flex h-3.5 w-3.5 items-center justify-center rounded border transition-colors focus:outline-none"
               style={{
                 borderColor: allSelected ? "#ef4444" : someSelected ? "#f87171" : "#d1d5db",
                 backgroundColor: allSelected ? "#ef4444" : someSelected ? "#fee2e2" : "#ffffff",
@@ -89,7 +89,7 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
               onClick={() => { if (!q) toggleExpand(opt.value); }}
               className="flex flex-1 items-center justify-between min-w-0 pl-1.5 text-left"
             >
-              <span className={`text-[12px] truncate ${allSelected || someSelected ? "text-red-700 font-medium" : "text-gray-700"}`}>
+              <span className={`text-[12px] leading-none truncate ${allSelected || someSelected ? "text-red-700 font-medium" : "text-gray-700"}`}>
                 {opt.label}
               </span>
               {!q && (
@@ -110,21 +110,21 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
         key={opt.value}
         type="button"
         onClick={() => toggleLeaf(opt.value)}
-        className="flex w-full items-center gap-2 py-1.5 rounded hover:bg-gray-50 text-left"
+        className="flex w-full min-h-0 items-center gap-2 py-[3px] rounded hover:bg-gray-50 text-left"
         style={{ paddingLeft: `${depth * 12 + 4 + 20}px` }}
       >
         <span
-          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+          className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
             selected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
           }`}
         >
           {selected && (
-            <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           )}
         </span>
-        <span className={`text-[12px] truncate ${selected ? "text-red-700 font-medium" : "text-gray-600"}`}>
+        <span className={`text-[12px] leading-none truncate ${selected ? "text-red-700 font-medium" : "text-gray-600"}`}>
           {opt.label}
         </span>
       </button>

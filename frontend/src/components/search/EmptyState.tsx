@@ -11,13 +11,14 @@ const SUGGESTIONS = [
 
 interface Props {
   onQuery?: (q: string) => void;
+  loading?: boolean;
 }
 
-export default function EmptyState({ onQuery }: Props) {
+export default function EmptyState({ onQuery, loading }: Props) {
   const [query, setQuery] = useState("");
 
   const submit = () => {
-    if (query.trim() && onQuery) onQuery(query.trim());
+    if (query.trim() && onQuery && !loading) onQuery(query.trim());
   };
 
   return (
@@ -95,9 +96,14 @@ export default function EmptyState({ onQuery }: Props) {
             <button
               type="button"
               onClick={submit}
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-500 sm:h-7 sm:w-7"
+              disabled={loading}
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white hover:bg-red-500 disabled:opacity-60 sm:h-7 sm:w-7"
             >
-              <Send className="h-3.5 w-3.5" />
+              {loading ? (
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              ) : (
+                <Send className="h-3.5 w-3.5" />
+              )}
             </button>
           </div>
         </div>
@@ -111,8 +117,9 @@ export default function EmptyState({ onQuery }: Props) {
           <button
             key={s.label}
             type="button"
-            onClick={() => { setQuery(s.label); if (onQuery) onQuery(s.label); }}
-            className="flex flex-col items-start rounded-lg border border-gray-200 bg-white p-2.5 text-left shadow-sm transition-all hover:border-red-300 hover:shadow-md sm:rounded-xl sm:p-3"
+            disabled={loading}
+            onClick={() => { setQuery(s.label); if (onQuery && !loading) onQuery(s.label); }}
+            className="flex flex-col items-start rounded-lg border border-gray-200 bg-white p-2.5 text-left shadow-sm transition-all hover:border-red-300 hover:shadow-md disabled:opacity-50 sm:rounded-xl sm:p-3"
           >
             <span className="mb-1.5 text-base sm:mb-2 sm:text-lg">{s.icon}</span>
             <span className="text-[11px] font-medium leading-snug text-gray-700 sm:text-xs">{s.label}</span>

@@ -65,7 +65,7 @@ export default function FilterSection({ title, icon, info, children, isOpen, onT
         }`}
       >
         <div className="overflow-hidden">
-          <div className="space-y-2.5 px-3 pb-3 pt-1 sm:space-y-3 sm:px-4 sm:pb-4">{children}</div>
+          <div className="space-y-1.5 px-3 pb-3 pt-1 sm:space-y-2 sm:px-4 sm:pb-4">{children}</div>
         </div>
       </div>
     </div>

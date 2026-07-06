@@ -1,10 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, Users, Building2, Globe, MapPin } from "lucide-react";
+import { ArrowLeft, Users, Building2, Globe, MapPin, Trash2, Loader2 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
-
-import { getListItems, getLists, type ListItemRecord, type ListRecord } from "@/lib/listsApi";
+import { getListItems, getLists, removeListItem, type ListItemRecord, type ListRecord } from "@/lib/listsApi";
 import { toast } from "@/lib/toast";
 
 const AVATAR_COLORS = [
@@ -20,11 +19,11 @@ function initials(name = "") {
   return name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 }
 
-function PersonRow({ item }: { item: ListItemRecord }) {
+function PersonRow({ item, onRemove, removing }: { item: ListItemRecord; onRemove: () => void; removing: boolean }) {
   const d = item.data as Record<string, string>;
   const name = d.full_name || `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim() || "—";
   return (
-    <tr className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+    <tr className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors group">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold ${avatarColor(name)}`}>
@@ -56,16 +55,27 @@ function PersonRow({ item }: { item: ListItemRecord }) {
           {d.location_country || "—"}
         </div>
       </td>
+      <td className="px-4 py-3">
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={removing}
+          className="rounded p-1.5 text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all disabled:opacity-50"
+          title="Remove from list"
+        >
+          {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+        </button>
+      </td>
     </tr>
   );
 }
 
-function CompanyRow({ item }: { item: ListItemRecord }) {
+function CompanyRow({ item, onRemove, removing }: { item: ListItemRecord; onRemove: () => void; removing: boolean }) {
   const d = item.data as Record<string, unknown>;
   const name = (d.company_name as string) || "—";
   const country = (d.hq_country as string) || "—";
   return (
-    <tr className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+    <tr className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors group">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded text-white text-xs font-bold ${avatarColor(name)}`}>
@@ -90,6 +100,17 @@ function CompanyRow({ item }: { item: ListItemRecord }) {
           {country}
         </div>
       </td>
+      <td className="px-4 py-3">
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={removing}
+          className="rounded p-1.5 text-gray-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all disabled:opacity-50"
+          title="Remove from list"
+        >
+          {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+        </button>
+      </td>
     </tr>
   );
 }
@@ -100,6 +121,7 @@ export default function ListDetailPage() {
   const [list, setList] = useState<ListRecord | null>(null);
   const [items, setItems] = useState<ListItemRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [removing, setRemoving] = useState<string | null>(null);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -107,13 +129,25 @@ export default function ListDetailPage() {
     hasFetched.current = true;
     Promise.all([getLists(), getListItems(id)])
       .then(([allLists, listItems]) => {
-        const found = allLists.find((l) => l.id === id) ?? null;
-        setList(found);
+        setList(allLists.find((l) => l.id === id) ?? null);
         setItems(listItems);
       })
       .catch(() => toast.error("Failed to load list"))
       .finally(() => setLoading(false));
   }, [id]);
+
+  async function handleRemove(itemId: string) {
+    setRemoving(itemId);
+    try {
+      await removeListItem(id, itemId);
+      setItems((prev) => prev.filter((i) => i.id !== itemId));
+      toast.success("Removed from list");
+    } catch {
+      toast.error("Failed to remove item");
+    } finally {
+      setRemoving(null);
+    }
+  }
 
   const isPeople = list?.list_type === "people";
 
@@ -142,8 +176,38 @@ export default function ListDetailPage() {
           </div>
 
           {loading && (
-            <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-red-500" />
+            <div className="flex-1 overflow-auto animate-pulse">
+              <table className="w-full min-w-[580px] [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-2.5">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    {["Name", "Job title", "Company", "Email", "Location", ""].map((h, i) => (
+                      <th key={i} className="text-left">
+                        {h && <div className="h-3 w-16 rounded bg-gray-200" />}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={i} className="border-b border-gray-50">
+                      <td>
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-full bg-gray-200 shrink-0" />
+                          <div className="space-y-1.5">
+                            <div className="h-3 w-28 rounded bg-gray-200" />
+                            <div className="h-2.5 w-14 rounded bg-gray-100" />
+                          </div>
+                        </div>
+                      </td>
+                      <td><div className="h-3 w-28 rounded bg-gray-200" /></td>
+                      <td><div className="h-3 w-24 rounded bg-gray-200" /></td>
+                      <td><div className="h-3 w-32 rounded bg-gray-200" /></td>
+                      <td><div className="h-3 w-20 rounded bg-gray-200" /></td>
+                      <td><div className="h-5 w-5 rounded bg-gray-200" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -163,19 +227,30 @@ export default function ListDetailPage() {
                       {isPeople ? "Email" : "Website"}
                     </th>
                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500">Location</th>
+                    <th className="px-4 py-2.5 w-10" />
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((item) =>
                     item.item_type === "person" ? (
-                      <PersonRow key={item.id} item={item} />
+                      <PersonRow
+                        key={item.id}
+                        item={item}
+                        onRemove={() => handleRemove(item.id)}
+                        removing={removing === item.id}
+                      />
                     ) : (
-                      <CompanyRow key={item.id} item={item} />
+                      <CompanyRow
+                        key={item.id}
+                        item={item}
+                        onRemove={() => handleRemove(item.id)}
+                        removing={removing === item.id}
+                      />
                     )
                   )}
                   {items.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-16 text-center text-sm text-gray-400">
+                      <td colSpan={6} className="px-4 py-16 text-center text-sm text-gray-400">
                         No records in this list yet.
                       </td>
                     </tr>

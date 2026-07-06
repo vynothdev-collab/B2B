@@ -201,3 +201,16 @@ export async function searchCompanies(
   const { data } = await apiClient.post<SearchResponse>("/search/companies", body);
   return data;
 }
+
+export async function agenticSearch(
+  prompt: string,
+  entity: "employee" | "company",
+  limit = 20,
+): Promise<SearchResponse> {
+  const { data } = await apiClient.post<SearchResponse>("/search/agentic", {
+    prompt,
+    entity,
+    limit,
+  });
+  return data;
+}

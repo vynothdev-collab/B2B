@@ -1,11 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Building2, Trash2, Loader2, List, Pencil, Check, X } from "lucide-react";
+import { Users, Building2, Trash2, Loader2, List, Pencil, Check, X, Plus } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
-
-
-import { getLists, deleteList, renameList, type ListRecord } from "@/lib/listsApi";
+import { getLists, createList, deleteList, renameList, type ListRecord } from "@/lib/listsApi";
 import { toast } from "@/lib/toast";
 
 function formatDate(iso: string) {
@@ -20,6 +18,7 @@ export default function ListsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [creatingList, setCreatingList] = useState(false);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -73,24 +72,82 @@ export default function ListsPage() {
     setEditingId(null);
   }
 
+  async function handleNewList(type: "people" | "companies") {
+    const name = prompt(`Name for new ${type === "people" ? "people" : "companies"} list:`);
+    if (!name?.trim()) return;
+    setCreatingList(true);
+    try {
+      const created = await createList(name.trim(), type);
+      setLists((prev) => [...prev, created]);
+      toast.success(`"${created.name}" created`);
+    } catch {
+      toast.error("Failed to create list");
+    } finally {
+      setCreatingList(false);
+    }
+  }
+
   return (
     <>
       <AppHeader title="Lists" />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-2 py-2 sm:px-3">
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:rounded-xl">
-          <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-4 py-3">
-            <List className="h-4 w-4 text-red-600" />
+          <div className="flex shrink-0 items-center gap-2 border-b border-gray-100 px-3 py-2.5 sm:px-4">
+            <List className="h-4 w-4 text-red-600 shrink-0" />
             <span className="text-sm font-semibold text-gray-900">Your lists</span>
             {!loading && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
                 {lists.length}
               </span>
             )}
+            <div className="ml-auto flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleNewList("people")}
+                disabled={creatingList}
+                className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 sm:text-xs"
+              >
+                {creatingList ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                <Users className="h-3 w-3" />
+                People list
+              </button>
+              <button
+                type="button"
+                onClick={() => handleNewList("companies")}
+                disabled={creatingList}
+                className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 sm:text-xs"
+              >
+                {creatingList ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                <Building2 className="h-3 w-3" />
+                Company list
+              </button>
+            </div>
           </div>
 
           {loading && (
-            <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-red-500" />
+            <div className="flex-1 overflow-auto">
+              <table className="w-full min-w-[560px] text-xs sm:min-w-[600px] [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-2.5 animate-pulse">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    <th className="text-left"><div className="h-3 w-20 rounded bg-gray-200" /></th>
+                    <th className="text-left"><div className="h-3 w-24 rounded bg-gray-200" /></th>
+                    <th className="text-left"><div className="h-3 w-20 rounded bg-gray-200" /></th>
+                    <th className="text-left"><div className="h-3 w-20 rounded bg-gray-200" /></th>
+                    <th className="text-left"><div className="h-3 w-12 rounded bg-gray-200" /></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="border-b border-gray-50">
+                      <td><div className="flex items-center gap-2.5"><div className="h-4 w-4 rounded bg-gray-200" /><div className="h-3 w-32 rounded bg-gray-200" /></div></td>
+                      <td><div className="h-3 w-16 rounded bg-gray-200" /></td>
+                      <td><div className="h-3 w-24 rounded bg-gray-200" /></td>
+                      <td><div className="h-3 w-24 rounded bg-gray-200" /></td>
+                      <td><div className="h-5 w-12 rounded bg-gray-200" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 

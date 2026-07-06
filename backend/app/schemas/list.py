@@ -36,8 +36,8 @@ class ListItemOut(BaseModel):
     id: str
     record_id: str
     item_type: str
-    data: dict[str, Any]
-    added_at: datetime
+    data: dict[str, Any] = {}
+    added_at: Optional[datetime] = None
 
 
 class AddToListRequest(BaseModel):

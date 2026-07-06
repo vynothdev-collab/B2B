@@ -38,7 +38,7 @@ function CheckList({
             key={opt.value}
             type="button"
             onClick={() => onToggle(opt.value)}
-            className={`flex w-full items-center gap-2.5 rounded px-1 py-1.5 text-left transition-colors hover:bg-gray-50 ${selected ? "text-red-700" : "text-gray-700"}`}
+            className={`flex w-full min-h-0 items-center gap-2 rounded px-1 py-[3px] text-left transition-colors hover:bg-gray-50 ${selected ? "text-red-700" : "text-gray-700"}`}
           >
             <span
               className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
@@ -51,7 +51,7 @@ function CheckList({
                 </svg>
               )}
             </span>
-            <span className={`flex-1 text-[12px] ${selected ? "font-medium" : ""}`}>{opt.label}</span>
+            <span className={`flex-1 text-[12px] leading-none ${selected ? "font-medium" : ""}`}>{opt.label}</span>
           </button>
         );
       })}
@@ -71,10 +71,10 @@ export default function CompanyTypeBusinessFilter({ filters, onChange }: Props) 
     : COMPANY_TYPE_OPTIONS;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2.5">
       {/* Company Status */}
       <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Company Status</p>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Company Status</p>
         <CheckList
           options={COMPANY_STATUS_OPTIONS}
           values={filters.companyStatus}
@@ -84,14 +84,14 @@ export default function CompanyTypeBusinessFilter({ filters, onChange }: Props) 
 
       {/* Company Type — What They Are */}
       <div>
-        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Company Type</p>
-        <p className="mb-1.5 text-[10px] uppercase tracking-wider text-gray-300">What they are</p>
+        <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Company Type</p>
+        <p className="mb-1 text-[10px] uppercase tracking-wider text-gray-300">What they are</p>
         <input
           type="text"
           placeholder="Search types..."
           value={typeSearch}
           onChange={(e) => setTypeSearch(e.target.value)}
-          className="mb-1.5 w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none sm:border-2 sm:text-xs"
+          className="mb-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none sm:border-2 sm:text-xs"
         />
         <CheckList
           options={filteredTypes}
@@ -102,7 +102,7 @@ export default function CompanyTypeBusinessFilter({ filters, onChange }: Props) 
 
       {/* How They Sell */}
       <div>
-        <p className="mb-1.5 text-[10px] uppercase tracking-wider text-gray-300">How they sell</p>
+        <p className="mb-0.5 text-[10px] uppercase tracking-wider text-gray-300">How they sell</p>
         <CheckList
           options={COMPANY_HOW_THEY_SELL_OPTIONS}
           values={filters.companyHowTheySell}
@@ -112,7 +112,7 @@ export default function CompanyTypeBusinessFilter({ filters, onChange }: Props) 
 
       {/* More Flags */}
       <div>
-        <p className="mb-1.5 text-[10px] uppercase tracking-wider text-gray-300">More flags</p>
+        <p className="mb-0.5 text-[10px] uppercase tracking-wider text-gray-300">More flags</p>
         <CheckList
           options={COMPANY_MORE_FLAGS_OPTIONS}
           values={filters.companyMoreFlags}
@@ -122,7 +122,7 @@ export default function CompanyTypeBusinessFilter({ filters, onChange }: Props) 
 
       {/* Revenue Model */}
       <div>
-        <p className="mb-1.5 text-[10px] uppercase tracking-wider text-gray-300">Revenue model</p>
+        <p className="mb-0.5 text-[10px] uppercase tracking-wider text-gray-300">Revenue model</p>
         <CheckList
           options={COMPANY_REVENUE_MODEL_OPTIONS}
           values={filters.companyRevenueModel}

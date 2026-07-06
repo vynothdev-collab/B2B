@@ -21,8 +21,16 @@ def _add_column_if_missing(sync_conn, table: str, column: str, definition: str) 
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # lists table migrations
         await conn.run_sync(
             _add_column_if_missing, "lists", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
+        )
+        # list_items table migrations
+        await conn.run_sync(
+            _add_column_if_missing, "list_items", "data", "JSONB NOT NULL DEFAULT '{}'"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "list_items", "added_at", "TIMESTAMPTZ NOT NULL DEFAULT NOW()"
         )
     yield
 

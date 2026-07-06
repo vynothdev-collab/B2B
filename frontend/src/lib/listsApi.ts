@@ -59,3 +59,7 @@ export async function getListItems(id: string): Promise<ListItemRecord[]> {
 export async function deleteList(id: string): Promise<void> {
   await apiClient.delete(`/lists/${id}`);
 }
+
+export async function removeListItem(listId: string, itemId: string): Promise<void> {
+  await apiClient.delete(`/lists/${listId}/items/${itemId}`);
+}

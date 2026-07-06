@@ -15,6 +15,7 @@ from fastapi import HTTPException
 
 from app.core.config import settings
 from app.schemas.search import (
+    AgenticSearchRequest,
     CompanySearchRequest,
     PersonSearchRequest,
     SearchMeta,
@@ -220,6 +221,8 @@ def _add_revenue_bucket_filter(clauses: list[dict], buckets: Optional[list[str]]
         clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
 
 
+_DESCRIPTION_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
+
 # Company type — map frontend enum values to Coresignal fields.
 _COMPANY_TYPE_TERMS: dict[str, list[str]] = {
     "saas":           ["SaaS", "software as a service"],
@@ -360,9 +363,6 @@ _CERT_SEARCH_TERMS: dict[str, list[str]] = {
     "hipaa":     ["HIPAA"],
     "pci_dss":   ["PCI-DSS", "PCI DSS"],
 }
-
-_DESCRIPTION_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
-
 
 def _add_text_search_filter(clauses: list[dict], terms: Optional[list[str]]) -> None:
     """OR-match each term as a phrase across company description/tag fields."""
@@ -941,3 +941,52 @@ async def search_companies(req: CompanySearchRequest) -> SearchResponse:
     )
 
 
+_AGENTIC_URL = "https://api.coresignal.com/cdapi/v2/agentic_search/fast"
+_ENTITY_TO_DATASET = {
+    "employee": "employee_multi_source",
+    "company": "company_multi_source",
+}
+
+
+async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
+    """Translate a natural-language prompt to an ES query via CoreSignal Agentic API, then collect full records."""
+    _require_api_key()
+
+    dataset = _ENTITY_TO_DATASET.get(req.entity, "employee_multi_source")
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            # Step 1: Translate prompt → ES DSL query
+            agentic_resp = await client.post(
+                _AGENTIC_URL,
+                headers=_headers(),
+                json={"prompt": req.prompt, "entity": req.entity, "return_data": False},
+            )
+            if agentic_resp.status_code != 200:
+                try:
+                    err_body = agentic_resp.json()
+                except Exception:
+                    err_body = {}
+                _raise_provider_error(agentic_resp.status_code, err_body)
+
+            agentic_body = agentic_resp.json()
+            es_query = agentic_body.get("query") if isinstance(agentic_body, dict) else None
+            if not es_query:
+                return SearchResponse(data=[], meta=SearchMeta(total=0))
+
+            # Step 2: Search dataset with the generated query
+            all_ids = await _search_ids(client, dataset, es_query)
+            page_ids = all_ids[: req.limit]
+
+            # Step 3: Collect full records
+            records = await _collect_records(client, dataset, page_ids)
+
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Agentic search timed out. Please try again.")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
+
+    return SearchResponse(
+        data=[_passthrough(r) for r in records],
+        meta=SearchMeta(total=len(all_ids)),
+    )

@@ -261,6 +261,36 @@ async def rename_list(
     )
 
 
+@router.delete("/{list_id}/items/{item_id}")
+async def remove_list_item(
+    list_id: str,
+    item_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(ListModel).where(
+            ListModel.id == list_id,
+            ListModel.user_id == current_user.id,
+            ListModel.deleted_at == None,
+        )
+    )
+    lst = result.scalar_one_or_none()
+    if not lst:
+        raise HTTPException(status_code=404, detail="List not found")
+
+    item_result = await db.execute(
+        select(ListItem).where(ListItem.id == item_id, ListItem.list_id == list_id)
+    )
+    item = item_result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    await db.delete(item)
+    lst.updated_at = datetime.now(timezone.utc)
+    return {"ok": True}
+
+
 @router.get("/{list_id}/items", response_model=list[ListItemOut])
 async def get_list_items(
     list_id: str,
@@ -283,6 +313,12 @@ async def get_list_items(
     )
     items = items_result.scalars().all()
     return [
-        ListItemOut(id=i.id, record_id=i.record_id, item_type=i.item_type, data=i.data, added_at=i.added_at)
+        ListItemOut(
+            id=i.id,
+            record_id=i.record_id,
+            item_type=i.item_type,
+            data=i.data if isinstance(i.data, dict) else {},
+            added_at=i.added_at,
+        )
         for i in items
     ]

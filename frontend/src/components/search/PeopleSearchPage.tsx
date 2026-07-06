@@ -4,12 +4,12 @@ import { Eye, ListPlus, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import PeopleFilterPanel from "./filters/PeopleFilterPanel";
-import PeopleTable from "./PeopleTable";
+import PeopleTable, { PeopleTableSkeleton } from "./PeopleTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import ActiveFilterChips from "./ActiveFilterChips";
 import AddToListModal from "./AddToListModal";
-import { searchPersons } from "@/lib/searchApi";
+import { searchPersons, agenticSearch } from "@/lib/searchApi";
 import type { PersonExclusions } from "@/lib/searchApi";
 import { buildPersonChips } from "@/lib/filterChips";
 import { toast } from "@/lib/toast";
@@ -128,6 +128,25 @@ export default function PeopleSearchPage() {
     runSearch(1, undefined);
   }, [runSearch, filters]);
 
+  const handleAgenticQuery = useCallback(async (prompt: string) => {
+    pageCacheRef.current = new Map();
+    setTokenHistory([]);
+    setCurrentPage(1);
+    setLoading(true);
+    setSelected(new Set());
+    try {
+      const res = await agenticSearch(prompt, "employee", 20);
+      setResults(res);
+      setMeta(res.meta);
+      setHasSearched(true);
+      pageCacheRef.current.set(1, res);
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const handleReset = () => {
     setFilters(DEFAULT_PERSON_FILTERS);
     clearState();
@@ -215,16 +234,13 @@ export default function PeopleSearchPage() {
             </div>
             <ActiveFilterChips chips={chips} />
 
-            {loading && (
-              <div className="flex flex-1 items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-100 border-t-red-600" />
-                  <p className="text-xs text-gray-400">Searching…</p>
-                </div>
+            {loading && !showEmpty && (
+              <div className="flex-1 overflow-y-auto">
+                <PeopleTableSkeleton rows={8} />
               </div>
             )}
 
-            {!loading && showEmpty && <EmptyState onQuery={startSearch} />}
+            {showEmpty && <EmptyState onQuery={handleAgenticQuery} loading={loading} />}
 
             {!loading && showTable && (
               <div className="relative flex flex-1 flex-col overflow-hidden">
