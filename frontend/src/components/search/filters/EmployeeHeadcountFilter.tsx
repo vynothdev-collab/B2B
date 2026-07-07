@@ -62,7 +62,6 @@ export default function EmployeeHeadcountFilter({
                   )}
                 </span>
                 <span className={`flex-1 text-[12px] leading-none ${selected ? "font-medium" : ""}`}>{opt.label}</span>
-                <span className="text-[10px] text-gray-400 tabular-nums">{opt.count}</span>
               </button>
             );
           })}
