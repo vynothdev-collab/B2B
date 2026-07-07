@@ -185,3 +185,9 @@ class AgenticSearchRequest(BaseModel):
     prompt: str
     entity: Literal["employee", "company"] = "employee"
     limit: int = 20
+
+
+class EmailRevealResponse(BaseModel):
+    record_id: str
+    email: Optional[str] = None
+    has_email: bool

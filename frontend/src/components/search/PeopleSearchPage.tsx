@@ -9,12 +9,14 @@ import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import ActiveFilterChips from "./ActiveFilterChips";
 import AddToListModal from "./AddToListModal";
-import { searchPersons, agenticSearch } from "@/lib/searchApi";
+import ColumnSettingsPanel from "./ColumnSettingsPanel";
+import { searchPersons, agenticSearch, revealPersonEmail } from "@/lib/searchApi";
 import type { PersonExclusions } from "@/lib/searchApi";
 import { buildPersonChips } from "@/lib/filterChips";
 import { toast } from "@/lib/toast";
 import { getLists, getListItems } from "@/lib/listsApi";
 import type { ListItemPayload } from "@/lib/listsApi";
+import { useColumnSettings, PEOPLE_COLUMNS } from "@/hooks/useColumnSettings";
 import {
   DEFAULT_PERSON_FILTERS,
   type PersonFilters,
@@ -38,6 +40,31 @@ export default function PeopleSearchPage() {
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
 
+  // Column settings
+  const { visible: visibleColumns, toggle, reset, cols } = useColumnSettings("b2b:col:people", PEOPLE_COLUMNS);
+  const [columnSettingsOpen, setColumnSettingsOpen] = useState(false);
+
+  // Email reveal state
+  const [revealedEmails, setRevealedEmails] = useState<Map<string, string | null>>(new Map());
+  const [revealingIds, setRevealingIds] = useState<Set<string>>(new Set());
+
+  const handleRevealEmail = useCallback(async (recordId: string) => {
+    if (revealedEmails.has(recordId) || revealingIds.has(recordId)) return;
+    setRevealingIds((prev) => new Set(prev).add(recordId));
+    try {
+      const result = await revealPersonEmail(recordId);
+      setRevealedEmails((prev) => new Map(prev).set(recordId, result.email ?? null));
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setRevealingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(recordId);
+        return next;
+      });
+    }
+  }, [revealedEmails, revealingIds]);
+
   const resolveExclusions = useCallback(async (): Promise<PersonExclusions> => {
     const { hideAllSavedPeople, hideSavedPeopleListIds, hideAllSavedCompanies, hideSavedCompanyListIds } = filters;
     if (!hideAllSavedPeople && !hideAllSavedCompanies) return {};
@@ -49,7 +76,6 @@ export default function PeopleSearchPage() {
       const allLists = await getLists();
       const peopleLists = allLists.filter((l) => l.list_type === "people");
 
-      // Determine which people lists to use
       const targetPeopleLists = hideSavedPeopleListIds.length
         ? peopleLists.filter((l) => hideSavedPeopleListIds.includes(l.id))
         : peopleLists;
@@ -84,7 +110,7 @@ export default function PeopleSearchPage() {
     const cached = pageCacheRef.current.get(page);
     if (cached) {
       setResults(cached);
-      setMeta(cached.meta);
+      setMeta(cached.meta ?? null);
       setCurrentPage(page);
       setSelected(new Set());
       return;
@@ -95,13 +121,13 @@ export default function PeopleSearchPage() {
       const exclusions = await resolveExclusions();
       const res = await searchPersons(filters, scrollToken, exclusions);
       setResults(res);
-      setMeta(res.meta);
+      setMeta(res.meta ?? null);
       setHasSearched(true);
       setCurrentPage(page);
       pageCacheRef.current.set(page, res);
       setTokenHistory((prev) => {
         const next = prev.slice(0, page - 1);
-        if (res.meta.scroll_token) next.push(res.meta.scroll_token);
+        if (res.meta?.scroll_token) next.push(res.meta.scroll_token);
         return next;
       });
     } catch (e: unknown) {
@@ -119,6 +145,8 @@ export default function PeopleSearchPage() {
     setSelected(new Set());
     setCurrentPage(1);
     setTokenHistory([]);
+    setRevealedEmails(new Map());
+    setRevealingIds(new Set());
   };
 
   const startSearch = useCallback(() => {
@@ -137,7 +165,7 @@ export default function PeopleSearchPage() {
     try {
       const res = await agenticSearch(prompt, "employee", 20);
       setResults(res);
-      setMeta(res.meta);
+      setMeta(res.meta ?? null);
       setHasSearched(true);
       pageCacheRef.current.set(1, res);
     } catch (e: unknown) {
@@ -161,7 +189,7 @@ export default function PeopleSearchPage() {
 
   const toggleSelectAll = (all: boolean) => {
     if (!results) return;
-    setSelected(all ? new Set(results.data.map((r) => r.id)) : new Set());
+    setSelected(all ? new Set((results.data ?? []).map((r) => r.id)) : new Set());
   };
 
   const openListModal = (people: PersonResult[]) => {
@@ -172,8 +200,8 @@ export default function PeopleSearchPage() {
 
   const totalCount = meta?.total ?? 0;
   const totalLabel = hasSearched ? totalCount.toLocaleString() : "0";
-  const showTable = hasSearched && !loading && results && results.data.length > 0;
-  const showEmpty = !hasSearched || (!loading && results?.data.length === 0);
+  const showTable = hasSearched && !loading && results && (results.data?.length ?? 0) > 0;
+  const showEmpty = !hasSearched || (!loading && (results?.data?.length ?? 0) === 0);
 
   const removeFilter = useCallback((patch: Partial<PersonFilters>) => {
     setFilters((current) => ({ ...current, ...patch }));
@@ -185,7 +213,7 @@ export default function PeopleSearchPage() {
   );
 
   const selectedPeople = results
-    ? (results.data as PersonResult[]).filter((r) => selected.has(r.id))
+    ? ((results.data ?? []) as PersonResult[]).filter((r) => selected.has(r.id))
     : [];
 
   return (
@@ -223,7 +251,7 @@ export default function PeopleSearchPage() {
                   type="button"
                   onClick={() => {
                     if (selectedPeople.length > 0) openListModal(selectedPeople);
-                    else if (results) openListModal(results.data as PersonResult[]);
+                    else if (results) openListModal((results.data ?? []) as PersonResult[]);
                   }}
                   className="flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-red-500 sm:px-3 sm:text-xs"
                 >
@@ -236,7 +264,7 @@ export default function PeopleSearchPage() {
 
             {loading && !showEmpty && (
               <div className="flex-1 overflow-y-auto">
-                <PeopleTableSkeleton rows={8} />
+                <PeopleTableSkeleton rows={8} visibleColumns={visibleColumns} />
               </div>
             )}
 
@@ -246,11 +274,16 @@ export default function PeopleSearchPage() {
               <div className="relative flex flex-1 flex-col overflow-hidden">
                 <div className="flex-1 overflow-y-auto">
                   <PeopleTable
-                    data={results!.data as PersonResult[]}
+                    data={(results!.data ?? []) as PersonResult[]}
                     selected={selected}
                     onSelect={toggleSelect}
                     onSelectAll={toggleSelectAll}
                     onAddToList={(person) => openListModal([person])}
+                    visibleColumns={visibleColumns}
+                    onOpenColumnSettings={() => setColumnSettingsOpen(true)}
+                    revealedEmails={revealedEmails}
+                    onRevealEmail={handleRevealEmail}
+                    revealingIds={revealingIds}
                   />
                 </div>
                 {meta && (
@@ -298,6 +331,15 @@ export default function PeopleSearchPage() {
           </div>
         </main>
       </div>
+
+      <ColumnSettingsPanel
+        open={columnSettingsOpen}
+        onClose={() => setColumnSettingsOpen(false)}
+        cols={cols}
+        visible={visibleColumns}
+        onToggle={toggle}
+        onReset={reset}
+      />
 
       <AddToListModal
         open={listModalItems.length > 0}

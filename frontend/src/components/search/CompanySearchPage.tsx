@@ -9,9 +9,10 @@ import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import ActiveFilterChips from "./ActiveFilterChips";
 import AddToListModal from "./AddToListModal";
+import ColumnSettingsPanel from "./ColumnSettingsPanel";
 import { searchCompanies, agenticSearch } from "@/lib/searchApi";
-
 import { buildCompanyChips } from "@/lib/filterChips";
+import { useColumnSettings, COMPANY_COLUMNS } from "@/hooks/useColumnSettings";
 import { toast } from "@/lib/toast";
 import type { ListItemPayload } from "@/lib/listsApi";
 import {
@@ -37,11 +38,14 @@ export default function CompanySearchPage() {
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
 
+  const { visible: visibleColumns, toggle, reset, cols } = useColumnSettings("b2b:col:companies", COMPANY_COLUMNS);
+  const [columnSettingsOpen, setColumnSettingsOpen] = useState(false);
+
   const runSearch = useCallback(async (page: number, scrollToken?: string) => {
     const cached = pageCacheRef.current.get(page);
     if (cached) {
       setResults(cached);
-      setMeta(cached.meta);
+      setMeta(cached.meta ?? null);
       setCurrentPage(page);
       setSelected(new Set());
       return;
@@ -51,13 +55,13 @@ export default function CompanySearchPage() {
     try {
       const res = await searchCompanies(filters, scrollToken);
       setResults(res);
-      setMeta(res.meta);
+      setMeta(res.meta ?? null);
       setHasSearched(true);
       setCurrentPage(page);
       pageCacheRef.current.set(page, res);
       setTokenHistory((prev) => {
         const next = prev.slice(0, page - 1);
-        if (res.meta.scroll_token) next.push(res.meta.scroll_token);
+        if (res.meta?.scroll_token) next.push(res.meta.scroll_token);
         return next;
       });
     } catch (e: unknown) {
@@ -93,7 +97,7 @@ export default function CompanySearchPage() {
     try {
       const res = await agenticSearch(prompt, "company", 20);
       setResults(res);
-      setMeta(res.meta);
+      setMeta(res.meta ?? null);
       setHasSearched(true);
       pageCacheRef.current.set(1, res);
     } catch (e: unknown) {
@@ -117,7 +121,7 @@ export default function CompanySearchPage() {
 
   const toggleSelectAll = (all: boolean) => {
     if (!results) return;
-    setSelected(all ? new Set(results.data.map((r) => r.id)) : new Set());
+    setSelected(all ? new Set((results.data ?? []).map((r) => r.id)) : new Set());
   };
 
   const openListModal = (companies: CompanyResult[]) => {
@@ -128,8 +132,8 @@ export default function CompanySearchPage() {
 
   const totalCount = meta?.total ?? 0;
   const totalLabel = hasSearched ? totalCount.toLocaleString() : "0";
-  const showTable = hasSearched && !loading && results && results.data.length > 0;
-  const showEmpty = !hasSearched || (!loading && results?.data.length === 0);
+  const showTable = hasSearched && !loading && results && (results.data?.length ?? 0) > 0;
+  const showEmpty = !hasSearched || (!loading && (results?.data?.length ?? 0) === 0);
 
   const removeFilter = useCallback((patch: Partial<CompanyFilters>) => {
     setFilters((current) => ({ ...current, ...patch }));
@@ -141,7 +145,7 @@ export default function CompanySearchPage() {
   );
 
   const selectedCompanies = results
-    ? (results.data as CompanyResult[]).filter((r) => selected.has(r.id))
+    ? ((results.data ?? []) as CompanyResult[]).filter((r) => selected.has(r.id))
     : [];
 
   return (
@@ -179,7 +183,7 @@ export default function CompanySearchPage() {
                   type="button"
                   onClick={() => {
                     if (selectedCompanies.length > 0) openListModal(selectedCompanies);
-                    else if (results) openListModal(results.data as CompanyResult[]);
+                    else if (results) openListModal((results.data ?? []) as CompanyResult[]);
                   }}
                   className="flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-red-500 sm:px-3 sm:text-xs"
                 >
@@ -192,7 +196,7 @@ export default function CompanySearchPage() {
 
             {loading && !showEmpty && (
               <div className="flex-1 overflow-y-auto">
-                <CompanyTableSkeleton rows={8} />
+                <CompanyTableSkeleton rows={8} visibleColumns={visibleColumns} />
               </div>
             )}
 
@@ -202,11 +206,13 @@ export default function CompanySearchPage() {
               <div className="relative flex flex-1 flex-col overflow-hidden">
                 <div className="flex-1 overflow-y-auto">
                   <CompanyTable
-                    data={results!.data as CompanyResult[]}
+                    data={(results!.data ?? []) as CompanyResult[]}
                     selected={selected}
                     onSelect={toggleSelect}
                     onSelectAll={toggleSelectAll}
                     onAddToList={(company) => openListModal([company])}
+                    visibleColumns={visibleColumns}
+                    onOpenColumnSettings={() => setColumnSettingsOpen(true)}
                   />
                 </div>
                 {meta && (
@@ -250,6 +256,15 @@ export default function CompanySearchPage() {
           </div>
         </main>
       </div>
+
+      <ColumnSettingsPanel
+        open={columnSettingsOpen}
+        onClose={() => setColumnSettingsOpen(false)}
+        cols={cols}
+        visible={visibleColumns}
+        onToggle={toggle}
+        onReset={reset}
+      />
 
       <AddToListModal
         open={listModalItems.length > 0}

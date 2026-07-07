@@ -315,9 +315,19 @@ export interface PersonResult {
   full_name?: string;
   first_name?: string;
   last_name?: string;
+  headline?: string;
+  inferred_skills?: string[];
+  active_experience_start_date?: string;
   linkedin_url?: string;
   linkedin_canonical_shorthand_name?: string;
   connections_count?: number;
+  followers_count?: number;
+  total_experience_duration_months?: number;
+  projected_base_salary_median?: number;
+  projected_base_salary_currency?: string;
+  mobile_phone?: string;
+  awards_certifications?: string | string[];
+  // Active experience / job fields
   active_experience_title?: string;
   active_experience_department?: string;
   active_experience_management_level?: string;
@@ -328,11 +338,21 @@ export interface PersonResult {
   active_experience_company_linkedin_url?: string;
   active_experience_company_hq_country?: string;
   active_experience_company_hq_city?: string;
+  active_experience_company_hq_region?: string;
+  active_experience_company_hq_location?: string;
+  active_experience_company_employees_count?: number;
+  active_experience_company_size?: string;
+  active_experience_company_type?: string;
+  active_experience_company_status?: string;
+  active_experience_company_founded?: number;
+  active_experience_company_founded_year?: number;
+  active_experience_company_categories_and_keywords?: string | string[];
+  active_experience_company_annual_revenue?: string | number;
+  // Person location
   location_country?: string;
   location_state?: string;
   location_city?: string;
-  primary_professional_email?: string;
-  primary_professional_email_status?: string;
+  has_email?: boolean;
   [key: string]: unknown;
 }
 
@@ -349,9 +369,22 @@ export interface CompanyResult {
   hq_region?: string | string[];
   hq_city?: string;
   hq_state?: string;
+  hq_location?: string;
   canonical_linkedin_url?: string;
   type?: string;
   is_public?: boolean;
+  company_status?: string;
+  founded?: number;
+  categories_and_keywords?: string | string[];
+  awards_certifications?: string | string[];
+  total_website_visits_monthly?: number;
+  total_website_visits_change?: { change_yearly_percentage?: number; change_monthly_percentage?: number };
+  employees_count_change?: { change_yearly_percentage?: number; change_quarterly_percentage?: number };
+  company_employee_reviews_aggregate_score?: number;
+  last_funding_round?: { type?: string; amount_raised?: number };
+  revenue_annual_range?: Record<string, { annual_revenue_range_from?: number; annual_revenue_range_to?: number }>;
+  active_job_postings?: unknown[];
+  technologies_used?: Array<{ technology?: string } | string>;
   [key: string]: unknown;
 }
 

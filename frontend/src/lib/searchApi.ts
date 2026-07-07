@@ -279,3 +279,16 @@ export async function agenticSearch(
   });
   return data;
 }
+
+export interface EmailRevealResult {
+  record_id: string;
+  email: string | null;
+  has_email: boolean;
+}
+
+export async function revealPersonEmail(recordId: string): Promise<EmailRevealResult> {
+  const { data } = await apiClient.get<EmailRevealResult>(
+    `/search/persons/${encodeURIComponent(recordId)}/email`,
+  );
+  return data;
+}

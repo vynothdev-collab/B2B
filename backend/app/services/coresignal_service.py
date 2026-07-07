@@ -8,10 +8,13 @@ Endpoints hit:
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, NoReturn, Optional
+from typing import TYPE_CHECKING, Any, NoReturn, Optional
 
 import httpx
 from fastapi import HTTPException
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.schemas.search import (
@@ -893,7 +896,45 @@ def _passthrough(r: dict) -> dict:
     rid = r.get("id")
     if rid is not None:
         r["id"] = str(rid)
+    email = r.pop("primary_professional_email", None)
+    r.pop("primary_professional_email_status", None)
+    r["has_email"] = bool(email)
     return r
+
+
+async def _store_person_records(db: "AsyncSession", records: list[dict]) -> None:
+    import uuid as _uuid
+    import datetime as _dt
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+    from app.models.search_record import PersonSearchRecord
+
+    if not records:
+        return
+    now = _dt.datetime.now(_dt.timezone.utc)
+    rows = [
+        {
+            "id": str(_uuid.uuid4()),
+            "coresignal_id": str(r.get("id", "")),
+            "email": r.get("primary_professional_email") or None,
+            "raw_data": r,
+            "created_at": now,
+            "updated_at": now,
+        }
+        for r in records
+        if r.get("id")
+    ]
+    if not rows:
+        return
+    stmt = pg_insert(PersonSearchRecord).values(rows)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["coresignal_id"],
+        set_={
+            "email": stmt.excluded.email,
+            "raw_data": stmt.excluded.raw_data,
+            "updated_at": stmt.excluded.updated_at,
+        },
+    )
+    await db.execute(stmt)
 
 
 # ---------------------------------------------------------------------------
@@ -1050,7 +1091,7 @@ async def _search_ids(client: httpx.AsyncClient, dataset: str, query: dict) -> l
     _raise_provider_error(resp.status_code, err_body)
 
 
-async def search_persons(req: PersonSearchRequest) -> SearchResponse:
+async def search_persons(req: PersonSearchRequest, db: Optional["AsyncSession"] = None) -> SearchResponse:
     _require_api_key()
 
     company_id_constraint: Optional[list[str]] = None
@@ -1081,6 +1122,12 @@ async def search_persons(req: PersonSearchRequest) -> SearchResponse:
         raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
     except httpx.RequestError:
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
+
+    if db is not None:
+        try:
+            await _store_person_records(db, records)
+        except Exception:
+            pass  # storage failure must never block search results
 
     return SearchResponse(
         data=[_passthrough(r) for r in records],
