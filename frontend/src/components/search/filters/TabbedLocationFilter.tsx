@@ -26,11 +26,11 @@ export default function TabbedLocationFilter({
         <button
           type="button"
           onClick={() => setTab("people")}
-          className={`relative flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold transition-colors sm:px-3 sm:py-1.5 sm:text-xs ${
+          className={`relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold transition-colors ${
             tab === "people" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
           }`}
         >
-          <User className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+          <User className="h-3.5 w-3.5" />
           People
           {tab === "people" && (
             <span className="absolute inset-x-0 -bottom-px h-0.5 bg-gray-900" />
@@ -39,11 +39,11 @@ export default function TabbedLocationFilter({
         <button
           type="button"
           onClick={() => setTab("hq")}
-          className={`relative flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold transition-colors sm:px-3 sm:py-1.5 sm:text-xs ${
+          className={`relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold transition-colors ${
             tab === "hq" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
           }`}
         >
-          <Building2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+          <Building2 className="h-3.5 w-3.5" />
           Companies HQ
           {tab === "hq" && (
             <span className="absolute inset-x-0 -bottom-px h-0.5 bg-gray-900" />
@@ -51,7 +51,7 @@ export default function TabbedLocationFilter({
         </button>
       </div>
 
-      <div className="pt-2.5 sm:pt-3">
+      <div className="pt-2.5">
         {tab === "people" ? (
           <LocationAutocomplete
             placeholder="Enter location"

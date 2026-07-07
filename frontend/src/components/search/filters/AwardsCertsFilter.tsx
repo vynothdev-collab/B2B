@@ -4,8 +4,8 @@ import { CERTIFICATION_OPTIONS } from "@/types/search";
 import type { PersonFilters } from "@/types/search";
 
 const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
-const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 focus:border-red-500 focus:outline-none";
+const labelCls = "mb-1 block text-[12px] text-gray-500";
 
 interface Props {
   filters: PersonFilters;

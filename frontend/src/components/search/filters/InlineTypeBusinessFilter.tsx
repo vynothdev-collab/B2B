@@ -74,7 +74,7 @@ export default function InlineTypeBusinessFilter({ filters, onChange }: Props) {
     <div className="flex flex-col gap-2">
       {/* Company Status */}
       <div>
-        <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Company Status</p>
+        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Company Status</p>
         <CheckList
           options={COMPANY_STATUS_OPTIONS}
           values={filters.companyStatus}
@@ -84,14 +84,14 @@ export default function InlineTypeBusinessFilter({ filters, onChange }: Props) {
 
       {/* Company Type — What They Are */}
       <div>
-        <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Company Type</p>
+        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Company Type</p>
         <p className="mb-1 text-[10px] uppercase tracking-wider text-gray-300">What they are</p>
         <input
           type="text"
           placeholder="Search types..."
           value={typeSearch}
           onChange={(e) => setTypeSearch(e.target.value)}
-          className="mb-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none sm:border-2 sm:text-xs"
+          className="mb-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-1 text-[12px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none"
         />
         <CheckList
           options={filteredTypes}

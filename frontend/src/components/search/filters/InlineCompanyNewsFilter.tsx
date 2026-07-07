@@ -8,7 +8,7 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none sm:border-2 sm:text-xs";
+  "w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none";
 
 export default function InlineCompanyNewsFilter({ filters, onChange }: Props) {
   const toggleCategory = (val: string) => {
@@ -42,7 +42,7 @@ export default function InlineCompanyNewsFilter({ filters, onChange }: Props) {
     <div className="flex flex-col gap-4">
       {/* News Keywords */}
       <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">News Keywords</p>
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">News Keywords</p>
         {filters.companyNewsKeywords.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-1.5">
             {filters.companyNewsKeywords.map((kw) => (
@@ -72,7 +72,7 @@ export default function InlineCompanyNewsFilter({ filters, onChange }: Props) {
 
       {/* News Categories */}
       <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">News Categories</p>
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">News Categories</p>
         <div className="flex flex-col gap-0.5">
           {COMPANY_NEWS_CATEGORIES.map((opt) => {
             const selected = filters.companyNewsCategories.includes(opt.value);
@@ -103,7 +103,7 @@ export default function InlineCompanyNewsFilter({ filters, onChange }: Props) {
 
       {/* Timeframe */}
       <div>
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Timeframe</p>
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Timeframe</p>
         <div className="flex flex-col gap-0.5">
           {COMPANY_NEWS_TIMEFRAMES.map((opt) => {
             const selected = filters.companyNewsTimeframe === opt.value;

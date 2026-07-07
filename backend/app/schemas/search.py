@@ -8,6 +8,7 @@ PAGE_SIZE = 10
 class PersonSearchRequest(BaseModel):
     name: Optional[str] = None
     job_title: Optional[list[str]] = None
+    job_title_match_type: Literal["contains", "exact"] = "contains"
     departments: Optional[list[str]] = None
     seniority: Optional[list[str]] = None
     companies: Optional[list[str]] = None
@@ -25,6 +26,8 @@ class PersonSearchRequest(BaseModel):
     industries: Optional[list[str]] = None
     technologies: Optional[list[str]] = None
     revenue_buckets: Optional[list[str]] = None
+    revenue_min: Optional[float] = None
+    revenue_max: Optional[float] = None
 
     funding_min: Optional[float] = None
     funding_max: Optional[float] = None
@@ -54,6 +57,12 @@ class PersonSearchRequest(BaseModel):
     traffic_country: Optional[str] = None
     traffic_country_min: Optional[float] = None
     traffic_country_max: Optional[float] = None
+
+    # Keyword search — matched against company description fields
+    keywords_include: Optional[list[str]] = None
+    keywords_match_mode: Literal["any", "all"] = "any"
+    keywords_scope: Optional[list[str]] = None   # None / empty = search everywhere
+    keywords_exclude: Optional[list[str]] = None
 
     # Company news filters — requires separate news API integration (not yet wired to CoreSignal)
     company_news_keywords: Optional[list[str]] = None
@@ -102,6 +111,8 @@ class CompanySearchRequest(BaseModel):
     industries: Optional[list[str]] = None
     technologies: Optional[list[str]] = None
     revenue_buckets: Optional[list[str]] = None
+    revenue_min: Optional[float] = None
+    revenue_max: Optional[float] = None
 
     funding_min: Optional[float] = None
     funding_max: Optional[float] = None
@@ -142,6 +153,12 @@ class CompanySearchRequest(BaseModel):
 
     # Job posting keyword search
     job_posting_keywords: Optional[list[str]] = None
+
+    # Keyword search — matched against company description fields
+    keywords_include: Optional[list[str]] = None
+    keywords_match_mode: Literal["any", "all"] = "any"
+    keywords_scope: Optional[list[str]] = None
+    keywords_exclude: Optional[list[str]] = None
 
     company_status: Optional[list[str]] = None
     company_how_they_sell: Optional[list[str]] = None

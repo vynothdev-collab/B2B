@@ -1,26 +1,34 @@
 "use client";
-import { EMPLOYEE_HEADCOUNT_RANGES } from "@/types/search";
+
+interface Option {
+  value: string;
+  label: string;
+}
 
 interface Props {
+  options: Option[];
   mode: "predefined" | "custom";
-  ranges: string[];
-  countMin: string;
-  countMax: string;
+  presets: string[];
+  customMin: string;
+  customMax: string;
   onModeChange: (v: "predefined" | "custom") => void;
-  onRangesChange: (v: string[]) => void;
+  onPresetsChange: (v: string[]) => void;
   onMinChange: (v: string) => void;
   onMaxChange: (v: string) => void;
+  minPlaceholder?: string;
+  maxPlaceholder?: string;
 }
 
 const inputCls = "w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-[12px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none sm:border-2";
 
-export default function EmployeeHeadcountFilter({
-  mode, ranges, countMin, countMax,
-  onModeChange, onRangesChange, onMinChange, onMaxChange,
+export default function PresetRangeFilter({
+  options, mode, presets, customMin, customMax,
+  onModeChange, onPresetsChange, onMinChange, onMaxChange,
+  minPlaceholder = "Min", maxPlaceholder = "Max",
 }: Props) {
-  const toggleRange = (value: string) => {
-    onRangesChange(
-      ranges.includes(value) ? ranges.filter((v) => v !== value) : [...ranges, value]
+  const toggle = (value: string) => {
+    onPresetsChange(
+      presets.includes(value) ? presets.filter((v) => v !== value) : [...presets, value]
     );
   };
 
@@ -45,24 +53,29 @@ export default function EmployeeHeadcountFilter({
 
       {mode === "predefined" && (
         <div className="flex flex-col pl-1">
-          {EMPLOYEE_HEADCOUNT_RANGES.map((opt) => {
-            const selected = ranges.includes(opt.value);
+          {options.map((opt) => {
+            const selected = presets.includes(opt.value);
             return (
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => toggleRange(opt.value)}
-                className={`flex w-full items-center gap-2 rounded px-1 py-[3px] text-left transition-colors hover:bg-gray-50 ${selected ? "text-red-700" : "text-gray-700"}`}
+                onClick={() => toggle(opt.value)}
+                className={`flex w-full items-center gap-2 rounded px-1 py-[3px] text-left transition-colors hover:bg-gray-50 ${
+                  selected ? "text-red-700" : "text-gray-700"
+                }`}
               >
-                <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${selected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"}`}>
+                <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                  selected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
+                }`}>
                   {selected && (
                     <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   )}
                 </span>
-                <span className={`flex-1 text-[12px] leading-none ${selected ? "font-medium" : ""}`}>{opt.label}</span>
-                <span className="text-[10px] text-gray-400 tabular-nums">{opt.count}</span>
+                <span className={`flex-1 text-[12px] leading-none ${selected ? "font-medium" : ""}`}>
+                  {opt.label}
+                </span>
               </button>
             );
           })}
@@ -90,19 +103,17 @@ export default function EmployeeHeadcountFilter({
         <div className="flex gap-2 pl-1">
           <input
             type="number"
-            placeholder="Min"
-            value={countMin}
+            placeholder={minPlaceholder}
+            value={customMin}
             onChange={(e) => onMinChange(e.target.value)}
             className={inputCls}
-            min={0}
           />
           <input
             type="number"
-            placeholder="Max"
-            value={countMax}
+            placeholder={maxPlaceholder}
+            value={customMax}
             onChange={(e) => onMaxChange(e.target.value)}
             className={inputCls}
-            min={0}
           />
         </div>
       )}

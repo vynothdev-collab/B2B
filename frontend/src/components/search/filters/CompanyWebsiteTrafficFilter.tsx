@@ -4,8 +4,8 @@ import { WEBSITE_TRAFFIC_TIMEFRAMES } from "@/types/search";
 import type { CompanyFilters } from "@/types/search";
 
 const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
-const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 focus:border-red-500 focus:outline-none";
+const labelCls = "mb-1 block text-[12px] text-gray-500";
 
 interface Props {
   filters: CompanyFilters;
@@ -27,7 +27,7 @@ export default function CompanyWebsiteTrafficFilter({ filters, onChange }: Props
             className={inputCls}
             min={0}
           />
-          <span className="text-gray-400 text-xs">–</span>
+          <span className="text-gray-400 text-[12px]">–</span>
           <input
             type="number"
             placeholder="Max"
@@ -48,7 +48,7 @@ export default function CompanyWebsiteTrafficFilter({ filters, onChange }: Props
               key={opt.value}
               type="button"
               onClick={() => onChange({ visitChangeTimeframe: opt.value as CompanyFilters["visitChangeTimeframe"] })}
-              className={`flex-1 rounded-md border px-2 py-1 text-[11px] transition-colors ${
+              className={`flex-1 rounded-md border px-2 py-1 text-[12px] transition-colors ${
                 filters.visitChangeTimeframe === opt.value
                   ? "border-red-500 bg-red-50 text-red-700 font-medium"
                   : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
@@ -66,7 +66,7 @@ export default function CompanyWebsiteTrafficFilter({ filters, onChange }: Props
             onChange={(e) => onChange({ visitChangeMin: e.target.value })}
             className={inputCls}
           />
-          <span className="text-gray-400 text-xs">–</span>
+          <span className="text-gray-400 text-[12px]">–</span>
           <input
             type="number"
             placeholder="Max %"
@@ -96,7 +96,7 @@ export default function CompanyWebsiteTrafficFilter({ filters, onChange }: Props
             min={0}
             max={100}
           />
-          <span className="text-gray-400 text-xs">–</span>
+          <span className="text-gray-400 text-[12px]">–</span>
           <input
             type="number"
             placeholder="Max %"

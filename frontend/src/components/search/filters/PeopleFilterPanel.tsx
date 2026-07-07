@@ -25,28 +25,22 @@ import JobPostingFilter from "./JobPostingFilter";
 import IndustryFilter from "./IndustryFilter";
 import TabbedLocationFilter from "./TabbedLocationFilter";
 import ContactDetailsFilter from "./ContactDetailsFilter";
-import RangeDropdown from "./RangeDropdown";
+import KeywordsFilter from "./KeywordsFilter";
+import RevenueFilter from "./RevenueFilter";
+import FundingFilter from "./FundingFilter";
+import PresetRangeFilter from "./PresetRangeFilter";
 import StaticPlaceholder from "./StaticPlaceholder";
 import type { PersonFilters } from "@/types/search";
 import {
   SENIORITY_OPTIONS,
   DEPARTMENT_OPTIONS,
   DEPARTMENT_OPTIONS_HIERARCHICAL,
-  REVENUE_OPTIONS,
-  KEYWORDS_STATIC,
   BUYING_INTENT_STATIC,
-  FUNDING_PRESETS,
   GROWTH_PRESETS,
   FOUNDED_YEAR_PRESETS,
-  HEADCOUNT_RANGE_PRESETS,
+  HEADCOUNT_RANGE_OPTIONS,
 } from "@/types/search";
 
-function fmtUsd(n: number): string {
-  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(n % 1_000_000_000 === 0 ? 0 : 1)}B`;
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
-  return `$${n}`;
-}
 
 interface Props {
   filters: PersonFilters;
@@ -54,8 +48,8 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
-const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none";
+const labelCls = "mb-1 block text-[12px] text-gray-500";
 
 const SECTIONS = [
   "lookalikes", "people", "title", "company", "location",
@@ -77,7 +71,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
       <FilterSection title="AI Lookalikes" icon={<Sparkles className="h-4 w-4" />} info="Find similar profiles" isOpen={open === "lookalikes"} onToggle={() => toggle("lookalikes")}>
         <div className="flex items-center gap-2 rounded-lg border border-dashed border-red-200 bg-red-50 px-2.5 py-2">
           <Sparkles className="h-3.5 w-3.5 text-red-500" />
-          <p className="text-[11px] text-red-700">Find similar profiles — coming soon.</p>
+          <p className="text-[12px] text-red-700">Find similar profiles — coming soon.</p>
         </div>
       </FilterSection>
 
@@ -97,11 +91,27 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
       <FilterSection title="Job Title" icon={<Briefcase className="h-4 w-4" />} isOpen={open === "title"} onToggle={() => toggle("title")}>
         <MultiChipAutocomplete
           label="Job title"
-          placeholder="e.g. Software Engineer"
+          placeholder={filters.jobTitleMatchType === "exact" ? "e.g. Chief Executive Officer" : "e.g. Software Engineer"}
           field="title"
           values={filters.jobTitle}
           onChange={(v) => onChange({ jobTitle: v })}
         />
+        <div className="flex gap-1 rounded-lg border border-gray-200 p-0.5">
+          {(["contains", "exact"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onChange({ jobTitleMatchType: mode })}
+              className={`flex-1 rounded-md py-1 text-[12px] font-medium capitalize transition-colors ${
+                filters.jobTitleMatchType === mode
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {mode.charAt(0).toUpperCase() + mode.slice(1)}
+            </button>
+          ))}
+        </div>
 
         {/* Departments sub-row */}
         <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -194,23 +204,38 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
       </FilterSection>
 
       <FilterSection title="Keywords" icon={<Type className="h-4 w-4" />} isOpen={open === "keywords"} onToggle={() => toggle("keywords")}>
-        <StaticPlaceholder
-          description="Static suggestions — keyword search not yet wired up."
-          options={KEYWORDS_STATIC.map((k) => ({ label: k }))}
+        <KeywordsFilter
+          include={filters.keywordsInclude}
+          matchMode={filters.keywordsMatchMode}
+          scope={filters.keywordsScope}
+          exclude={filters.keywordsExclude}
+          onIncludeChange={(v) => onChange({ keywordsInclude: v })}
+          onMatchModeChange={(v) => onChange({ keywordsMatchMode: v })}
+          onScopeChange={(v) => onChange({ keywordsScope: v })}
+          onExcludeChange={(v) => onChange({ keywordsExclude: v })}
         />
       </FilterSection>
 
       <FilterSection title="Employee Headcount" icon={<Users className="h-4 w-4" />} isOpen={open === "employeeHeadcount"} onToggle={() => toggle("employeeHeadcount")}>
-        <EmployeeHeadcountFilter filters={filters} onChange={onChange} />
+        <EmployeeHeadcountFilter
+          mode={filters.employeeHeadcountMode}
+          ranges={filters.employeeHeadcountRanges}
+          countMin={filters.employeeCountMin}
+          countMax={filters.employeeCountMax}
+          onModeChange={(v) => onChange({ employeeHeadcountMode: v })}
+          onRangesChange={(v) => onChange({ employeeHeadcountRanges: v })}
+          onMinChange={(v) => onChange({ employeeCountMin: v })}
+          onMaxChange={(v) => onChange({ employeeCountMax: v })}
+        />
       </FilterSection>
 
       <FilterSection title="Industry" icon={<Tag className="h-4 w-4" />} isOpen={open === "industry"} onToggle={() => toggle("industry")}>
-        <IndustryFilter filters={filters} onChange={onChange} />
+        <IndustryFilter values={filters.industries} onChange={(v) => onChange({ industries: v })} />
       </FilterSection>
 
       <FilterSection title="Buying Intent" icon={<TrendingUp className="h-4 w-4" />} isOpen={open === "intent"} onToggle={() => toggle("intent")}>
         <StaticPlaceholder
-          description="Buying intent signals are not exposed by Coresignal."
+          description="Buying intent signals are not currently available."
           options={BUYING_INTENT_STATIC.map((k) => ({ label: k }))}
         />
       </FilterSection>
@@ -229,38 +254,44 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
       </FilterSection>
 
       <FilterSection title="Revenue" icon={<DollarSign className="h-4 w-4" />} isOpen={open === "revenue"} onToggle={() => toggle("revenue")}>
-        <MultiChipSelect
-          label="Company revenue"
-          placeholder="Select revenue range"
-          options={REVENUE_OPTIONS}
-          values={filters.revenueBuckets}
-          onChange={(v) => onChange({ revenueBuckets: v })}
+        <RevenueFilter
+          mode={filters.revenueMode}
+          buckets={filters.revenueBuckets}
+          revenueMin={filters.revenueMin}
+          revenueMax={filters.revenueMax}
+          onModeChange={(v) => onChange({ revenueMode: v })}
+          onBucketsChange={(v) => onChange({ revenueBuckets: v })}
+          onMinChange={(v) => onChange({ revenueMin: v })}
+          onMaxChange={(v) => onChange({ revenueMax: v })}
         />
       </FilterSection>
 
       <FilterSection title="Funding" icon={<Banknote className="h-4 w-4" />} isOpen={open === "funding"} onToggle={() => toggle("funding")}>
-        <RangeDropdown
-          label="Total funding raised (USD)"
-          placeholder="Any amount"
-          minValue={filters.fundingMin}
-          maxValue={filters.fundingMax}
+        <FundingFilter
+          mode={filters.fundingMode}
+          presets={filters.fundingPresets}
+          fundingMin={filters.fundingMin}
+          fundingMax={filters.fundingMax}
+          onModeChange={(v) => onChange({ fundingMode: v })}
+          onPresetsChange={(v) => onChange({ fundingPresets: v })}
           onMinChange={(v) => onChange({ fundingMin: v })}
           onMaxChange={(v) => onChange({ fundingMax: v })}
-          presets={FUNDING_PRESETS}
-          format={fmtUsd}
         />
       </FilterSection>
 
       <FilterSection title="Headcount Growth" icon={<Activity className="h-4 w-4" />} info="Filters companies by 12-month growth" isOpen={open === "headcountGrowth"} onToggle={() => toggle("headcountGrowth")}>
-        <RangeDropdown
-          label="12-month employee growth"
-          placeholder="Any growth"
-          minValue={filters.headcountGrowthMin}
-          maxValue={filters.headcountGrowthMax}
+        <PresetRangeFilter
+          options={GROWTH_PRESETS}
+          mode={filters.headcountGrowthMode}
+          presets={filters.headcountGrowthPresets}
+          customMin={filters.headcountGrowthMin}
+          customMax={filters.headcountGrowthMax}
+          onModeChange={(v) => onChange({ headcountGrowthMode: v })}
+          onPresetsChange={(v) => onChange({ headcountGrowthPresets: v })}
           onMinChange={(v) => onChange({ headcountGrowthMin: v })}
           onMaxChange={(v) => onChange({ headcountGrowthMax: v })}
-          presets={GROWTH_PRESETS}
-          unitSuffix="%"
+          minPlaceholder="Min (%)"
+          maxPlaceholder="Max (%)"
         />
       </FilterSection>
 
@@ -272,14 +303,18 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           values={filters.headcountByDepartment ? [filters.headcountByDepartment] : []}
           onChange={(v) => onChange({ headcountByDepartment: v[v.length - 1] ?? "" })}
         />
-        <RangeDropdown
-          label="Employees in department"
-          placeholder="Any size"
-          minValue={filters.headcountByDepartmentMin}
-          maxValue={filters.headcountByDepartmentMax}
+        <PresetRangeFilter
+          options={HEADCOUNT_RANGE_OPTIONS}
+          mode={filters.headcountByDepartmentMode}
+          presets={filters.headcountByDepartmentPresets}
+          customMin={filters.headcountByDepartmentMin}
+          customMax={filters.headcountByDepartmentMax}
+          onModeChange={(v) => onChange({ headcountByDepartmentMode: v })}
+          onPresetsChange={(v) => onChange({ headcountByDepartmentPresets: v })}
           onMinChange={(v) => onChange({ headcountByDepartmentMin: v })}
           onMaxChange={(v) => onChange({ headcountByDepartmentMax: v })}
-          presets={HEADCOUNT_RANGE_PRESETS}
+          minPlaceholder="Min employees"
+          maxPlaceholder="Max employees"
         />
       </FilterSection>
 
@@ -290,27 +325,34 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           value={filters.headcountByLocationCountry}
           onChange={(v) => onChange({ headcountByLocationCountry: v })}
         />
-        <RangeDropdown
-          label="Employees in country"
-          placeholder="Any size"
-          minValue={filters.headcountByLocationMin}
-          maxValue={filters.headcountByLocationMax}
+        <PresetRangeFilter
+          options={HEADCOUNT_RANGE_OPTIONS}
+          mode={filters.headcountByLocationMode}
+          presets={filters.headcountByLocationPresets}
+          customMin={filters.headcountByLocationMin}
+          customMax={filters.headcountByLocationMax}
+          onModeChange={(v) => onChange({ headcountByLocationMode: v })}
+          onPresetsChange={(v) => onChange({ headcountByLocationPresets: v })}
           onMinChange={(v) => onChange({ headcountByLocationMin: v })}
           onMaxChange={(v) => onChange({ headcountByLocationMax: v })}
-          presets={HEADCOUNT_RANGE_PRESETS}
+          minPlaceholder="Min employees"
+          maxPlaceholder="Max employees"
         />
-
       </FilterSection>
 
       <FilterSection title="Founded Year" icon={<Calendar className="h-4 w-4" />} isOpen={open === "founded"} onToggle={() => toggle("founded")}>
-        <RangeDropdown
-          label="Year range"
-          placeholder="Any year"
-          minValue={filters.foundedMin}
-          maxValue={filters.foundedMax}
+        <PresetRangeFilter
+          options={FOUNDED_YEAR_PRESETS}
+          mode={filters.foundedMode}
+          presets={filters.foundedPresets}
+          customMin={filters.foundedMin}
+          customMax={filters.foundedMax}
+          onModeChange={(v) => onChange({ foundedMode: v })}
+          onPresetsChange={(v) => onChange({ foundedPresets: v })}
           onMinChange={(v) => onChange({ foundedMin: v })}
           onMaxChange={(v) => onChange({ foundedMax: v })}
-          presets={FOUNDED_YEAR_PRESETS}
+          minPlaceholder="From year"
+          maxPlaceholder="To year"
         />
       </FilterSection>
 

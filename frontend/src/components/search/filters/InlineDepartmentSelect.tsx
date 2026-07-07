@@ -138,11 +138,11 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
         placeholder="Search department..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none sm:border-2 sm:text-xs"
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 focus:border-red-400 focus:outline-none"
       />
       <div className="max-h-64 overflow-y-auto mt-0.5">
         {filtered.length === 0 ? (
-          <p className="px-1 py-2 text-[11px] text-gray-400">No departments found</p>
+          <p className="px-1 py-2 text-[12px] text-gray-400">No departments found</p>
         ) : (
           filtered.map((o) => renderOption(o))
         )}

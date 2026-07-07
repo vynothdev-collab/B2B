@@ -199,26 +199,22 @@ _REVENUE_BUCKET_TO_RANGE: dict[str, tuple[Optional[float], Optional[float]]] = {
 def _add_revenue_bucket_filter(clauses: list[dict], buckets: Optional[list[str]]) -> None:
     if not buckets:
         return
-    should: list[dict] = []
+    bucket_should: list[dict] = []
     for b in buckets:
         rng = _REVENUE_BUCKET_TO_RANGE.get(b)
         if not rng:
             continue
         low, high = rng
-        # Match records whose annual_revenue_range overlaps the bucket.
-        clause: dict[str, Any] = {"bool": {"filter": []}}
-        if high is not None:
-            clause["bool"]["filter"].append({
-                "range": {"revenue_annual_range.annual_revenue_range_from": {"lte": high}}
-            })
-        if low is not None:
-            clause["bool"]["filter"].append({
-                "range": {"revenue_annual_range.annual_revenue_range_to": {"gte": low}}
-            })
-        if clause["bool"]["filter"]:
-            should.append(clause)
-    if should:
-        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+        for src in ("source_4_annual_revenue_range", "source_6_annual_revenue_range"):
+            sub: list[dict] = []
+            if high is not None:
+                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_from": {"lte": high}}})
+            if low is not None:
+                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_to": {"gte": low}}})
+            if sub:
+                bucket_should.append({"bool": {"filter": sub}})
+    if bucket_should:
+        clauses.append({"bool": {"should": bucket_should, "minimum_should_match": 1}})
 
 
 _DESCRIPTION_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
@@ -388,6 +384,58 @@ def _add_certifications_filter(clauses: list[dict], certs: Optional[list[str]]) 
         clauses.append({"bool": {"should": cert_should, "minimum_should_match": 1}})
 
 
+_KEYWORD_SCOPE_TO_FIELDS: dict[str, list[str]] = {
+    "company_specialties":      ["categories_and_keywords"],
+    "social_media_description": ["description_enriched"],
+    "seo_description":          ["description"],
+    "ai_description":           ["description_enriched"],
+    "product_service_tags":     ["categories_and_keywords"],
+    "website_pages":            ["description"],
+}
+_KEYWORD_ALL_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
+
+
+def _add_keywords_filter(
+    must: list[dict],
+    filters: list[dict],
+    must_not: list[dict],
+    include: Optional[list[str]],
+    match_mode: str,
+    scope: Optional[list[str]],
+    exclude: Optional[list[str]],
+) -> None:
+    if not include and not exclude:
+        return
+
+    # Resolve target fields from scope
+    if not scope:
+        fields = _KEYWORD_ALL_FIELDS
+    else:
+        fields_set: set[str] = set()
+        for s in scope:
+            fields_set.update(_KEYWORD_SCOPE_TO_FIELDS.get(s, []))
+        fields = list(fields_set) if fields_set else _KEYWORD_ALL_FIELDS
+
+    if include:
+        if match_mode == "all":
+            # Every keyword must match → one filter clause per keyword
+            for kw in include:
+                kw_should = [{"match_phrase": {f: kw}} for f in fields]
+                must.append({"bool": {"should": kw_should, "minimum_should_match": 1}})
+        else:
+            # Any keyword can match → single OR clause
+            kw_should: list[dict] = []
+            for kw in include:
+                for f in fields:
+                    kw_should.append({"match_phrase": {f: kw}})
+            filters.append({"bool": {"should": kw_should, "minimum_should_match": 1}})
+
+    if exclude:
+        for kw in exclude:
+            kw_must_not = [{"match_phrase": {f: kw}} for f in fields]
+            must_not.append({"bool": {"should": kw_must_not, "minimum_should_match": 1}})
+
+
 _VISIT_CHANGE_TIMEFRAME_TO_FIELD: dict[str, str] = {
     "monthly":   "total_website_visits_change.change_monthly_percentage",
     "quarterly": "total_website_visits_change.change_quarterly_percentage",
@@ -438,6 +486,22 @@ _REVENUE_MODEL_TERMS: dict[str, list[str]] = {
     "public_pricing": ["pricing page", "public pricing"],
 }
 
+_NEWS_TIMEFRAME_DAYS: dict[str, int] = {
+    "60d": 60,
+    "90d": 90,
+    "6m":  180,
+    "12m": 365,
+}
+
+
+def _news_timeframe_to_date(timeframe: str) -> Optional[str]:
+    days = _NEWS_TIMEFRAME_DAYS.get(timeframe)
+    if not days:
+        return None
+    from datetime import timedelta
+    return (date.today() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+
 _NEWS_CATEGORY_TERMS: dict[str, list[str]] = {
     "funding_investment": ["funding", "investment", "raised", "series"],
     "mergers_acquisitions": ["acquisition", "merger", "acquired"],
@@ -470,6 +534,43 @@ def _add_enum_text_filter(
         clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
 
 
+def _add_news_filter(
+    clauses: list[dict],
+    keywords: Optional[list[str]],
+    categories: Optional[list[str]],
+    timeframe: Optional[str],
+) -> None:
+    """Filter against news_articles nested field using headline/summary and published_date."""
+    if not keywords and not categories and not timeframe:
+        return
+    inner: list[dict] = []
+
+    if keywords:
+        kw_should: list[dict] = []
+        for kw in keywords:
+            kw_should.append({"match_phrase": {"news_articles.headline": kw}})
+            kw_should.append({"match_phrase": {"news_articles.summary": kw}})
+        inner.append({"bool": {"should": kw_should, "minimum_should_match": 1}})
+
+    if categories:
+        cat_should: list[dict] = []
+        for cat in categories:
+            aliases = _NEWS_CATEGORY_TERMS.get(cat.lower(), [cat])
+            for alias in aliases:
+                cat_should.append({"match_phrase": {"news_articles.headline": alias}})
+                cat_should.append({"match_phrase": {"news_articles.summary": alias}})
+        inner.append({"bool": {"should": cat_should, "minimum_should_match": 1}})
+
+    if timeframe:
+        date_str = _news_timeframe_to_date(timeframe)
+        if date_str:
+            inner.append({"range": {"news_articles.published_date": {"gte": date_str}}})
+
+    if inner:
+        inner_query = {"bool": {"filter": inner}} if len(inner) > 1 else inner[0]
+        clauses.append({"nested": {"path": "news_articles", "query": inner_query}})
+
+
 # ---------------------------------------------------------------------------
 # Query builders — Person (employee_multi_source).
 # ---------------------------------------------------------------------------
@@ -482,7 +583,7 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     if f.name:
         must.append({"match": {"full_name": f.name.lower()}})
 
-    _add_multi_match(must, "active_experience_title", f.job_title)
+    _add_multi_match(must, "active_experience_title", f.job_title, phrase=(f.job_title_match_type == "exact"))
     _add_multi_term(filters, "active_experience_department", f.departments)
     _add_multi_term(filters, "active_experience_management_level", f.seniority)
     _add_multi_match(must, "active_experience_company_name", f.companies, phrase=True)
@@ -508,7 +609,7 @@ def build_person_query(f: PersonSearchRequest) -> dict:
         filters.append({"exists": {"field": "primary_professional_email"}})
 
     _add_multi_match(must, "active_experience_company_industry", f.industries, phrase=True)
-    _add_multi_term(filters, "inferred_skills", f.technologies)
+    _add_multi_match(filters, "inferred_skills", f.technologies, phrase=True)
 
     if f.exclude_person_ids:
         must_not.append({"terms": {"id": f.exclude_person_ids}})
@@ -537,6 +638,46 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     return _build_bool_query(must, filters, must_not=must_not or None)
 
 
+_FUNDING_STAGE_MAP: dict[str, list[str]] = {
+    "pre_seed":              ["Pre-Seed", "Pre-seed"],
+    "seed":                  ["Seed"],
+    "angel":                 ["Angel"],
+    "series_a":              ["Series A"],
+    "series_b":              ["Series B"],
+    "series_c":              ["Series C"],
+    "series_d":              ["Series D"],
+    "series_e":              ["Series E"],
+    "series_f":              ["Series F"],
+    "series_g":              ["Series G"],
+    "series_h":              ["Series H"],
+    "series_unknown":        ["Series Unknown", "Undisclosed"],
+    "convertible_note":      ["Convertible Note"],
+    "corporate_round":       ["Corporate Round"],
+    "debt_financing":        ["Debt Financing"],
+    "equity_crowdfunding":   ["Equity Crowdfunding"],
+    "grant":                 ["Grant"],
+    "private_equity":        ["Private Equity"],
+    "post_ipo_equity":       ["Post-IPO Equity"],
+    "post_ipo_debt":         ["Post-IPO Debt"],
+    "secondary_market":      ["Secondary Market"],
+    "venture_round":         ["Venture Round"],
+    "initial_coin_offering": ["ICO", "Initial Coin Offering"],
+    "non_equity_assistance": ["Non-equity Assistance"],
+}
+
+
+def _add_funding_stage_filter(clauses: list[dict], stages: Optional[list[str]]) -> None:
+    if not stages:
+        return
+    should: list[dict] = []
+    for s in stages:
+        aliases = _FUNDING_STAGE_MAP.get(s.lower().strip(), [s])
+        for alias in aliases:
+            should.append({"match": {"last_funding_round.type": alias}})
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
 # ---------------------------------------------------------------------------
 # Query builders — Company (company_multi_source).
 # ---------------------------------------------------------------------------
@@ -544,6 +685,7 @@ def build_person_query(f: PersonSearchRequest) -> dict:
 def build_company_query(f: CompanySearchRequest) -> dict:
     must: list[dict] = []
     filters: list[dict] = []
+    must_not: list[dict] = []
 
     _add_multi_match(must, "company_name", f.companies, phrase=True)
 
@@ -558,8 +700,7 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     _add_enum_text_filter(filters, f.company_how_they_sell, _HOW_THEY_SELL_TERMS)
     _add_enum_text_filter(filters, f.company_more_flags, _MORE_FLAGS_TERMS)
     _add_enum_text_filter(filters, f.company_revenue_model, _REVENUE_MODEL_TERMS)
-    _add_text_search_filter(filters, f.company_news_keywords)
-    _add_enum_text_filter(filters, f.company_news_categories, _NEWS_CATEGORY_TERMS)
+    _add_news_filter(filters, f.company_news_keywords, f.company_news_categories, f.company_news_timeframe)
     _add_multi_term(filters, "industry.exact", f.industries, lowercase=False)
 
     # Technologies — nested field.
@@ -575,11 +716,29 @@ def build_company_query(f: CompanySearchRequest) -> dict:
         filters.append({"bool": {"should": should_tech, "minimum_should_match": 1}})
 
     _add_revenue_bucket_filter(filters, f.revenue_buckets)
-    _add_multi_term(filters, "last_funding_round.type", f.funding_stages)
+    if f.revenue_min is not None or f.revenue_max is not None:
+        rev_should: list[dict] = []
+        for src in ("source_4_annual_revenue_range", "source_6_annual_revenue_range"):
+            sub: list[dict] = []
+            if f.revenue_min is not None:
+                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_to": {"gte": f.revenue_min}}})
+            if f.revenue_max is not None:
+                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_from": {"lte": f.revenue_max}}})
+            if sub:
+                rev_should.append({"bool": {"filter": sub}})
+        if rev_should:
+            filters.append({"bool": {"should": rev_should, "minimum_should_match": 1}})
+    _add_funding_stage_filter(filters, f.funding_stages)
 
     _add_range(filters, "employees_count", f.employee_count_min, f.employee_count_max)
     _add_range(filters, "last_funding_round.amount_raised", f.funding_min, f.funding_max)
-    _add_range(filters, "founded_year", f.founded_min, f.founded_max)
+    if f.founded_min is not None or f.founded_max is not None:
+        yr: dict[str, str] = {}
+        if f.founded_min is not None:
+            yr["gte"] = str(f.founded_min)
+        if f.founded_max is not None:
+            yr["lte"] = str(f.founded_max)
+        filters.append({"range": {"founded_year": yr}})
 
     growth_field = _GROWTH_TIMEFRAME_TO_FIELD.get(
         f.headcount_growth_timeframe,
@@ -628,21 +787,19 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     _add_text_search_filter(filters, f.awards)
     _add_text_search_filter(filters, f.other_compliance)
 
-    # Job posting keywords — match against company description fields
+    # Job posting keywords — nested query on active_job_postings.job_posting_title
     if f.job_posting_keywords:
         for kw in f.job_posting_keywords:
             filters.append({
-                "bool": {
-                    "should": [
-                        {"match": {"description": kw}},
-                        {"match": {"description_enriched": kw}},
-                        {"match": {"categories_and_keywords": kw}},
-                    ],
-                    "minimum_should_match": 1,
+                "nested": {
+                    "path": "active_job_postings",
+                    "query": {"match": {"active_job_postings.job_posting_title": kw}},
                 }
             })
 
-    return _build_bool_query(must, filters)
+    _add_keywords_filter(must, filters, must_not, f.keywords_include, f.keywords_match_mode, f.keywords_scope, f.keywords_exclude)
+
+    return _build_bool_query(must, filters, must_not=must_not or None)
 
 
 # ---------------------------------------------------------------------------
@@ -666,18 +823,18 @@ def _extract_error(body: Any) -> str:
 def _raise_provider_error(status: int, body: Any) -> NoReturn:
     msg = _extract_error(body)
     if status == 400:
-        raise HTTPException(status_code=400, detail=f"Coresignal: Invalid search parameters: {msg}")
+        raise HTTPException(status_code=400, detail=f"Invalid search parameters. Please adjust your filters and try again.")
     if status == 401:
-        raise HTTPException(status_code=503, detail="Coresignal: API key is invalid or not configured")
+        raise HTTPException(status_code=503, detail="Search service is not configured. Please contact support.")
     if status == 402:
-        raise HTTPException(status_code=402, detail="Coresignal: API credit balance exhausted. Please upgrade your plan.")
+        raise HTTPException(status_code=402, detail="Search credit balance exhausted. Please upgrade your plan.")
     if status == 403:
-        raise HTTPException(status_code=403, detail="Coresignal: API key is not authorized for this endpoint")
+        raise HTTPException(status_code=403, detail="Search service access denied. Please contact support.")
     if status == 429:
-        raise HTTPException(status_code=429, detail="Coresignal: API rate limit reached. Please wait a moment and try again.")
+        raise HTTPException(status_code=429, detail="Too many requests. Please wait a moment and try again.")
     if status >= 500:
-        raise HTTPException(status_code=502, detail="Coresignal: API is temporarily unavailable. Please try again later.")
-    raise HTTPException(status_code=status, detail=f"Coresignal: {msg}")
+        raise HTTPException(status_code=502, detail="Search service is temporarily unavailable. Please try again later.")
+    raise HTTPException(status_code=status, detail=msg)
 
 
 def _search_url(dataset: str) -> str:
@@ -748,6 +905,8 @@ def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
     company_scoped = any([
         req.company_type,
         req.revenue_buckets,
+        req.revenue_min is not None,
+        req.revenue_max is not None,
         req.funding_min is not None,
         req.funding_max is not None,
         req.founded_min is not None,
@@ -773,6 +932,8 @@ def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
         bool(req.company_news_keywords),
         bool(req.company_news_categories),
         bool(req.company_news_timeframe),
+        bool(req.keywords_include),
+        bool(req.keywords_exclude),
     ])
     dept_active = bool(req.headcount_by_department) and (
         req.headcount_by_department_min is not None
@@ -789,6 +950,8 @@ async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int 
     co_req = CompanySearchRequest(
         type=req.company_type,
         revenue_buckets=req.revenue_buckets,
+        revenue_min=req.revenue_min,
+        revenue_max=req.revenue_max,
         funding_min=req.funding_min,
         funding_max=req.funding_max,
         founded_min=req.founded_min,
@@ -823,6 +986,10 @@ async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int 
         company_news_keywords=req.company_news_keywords,
         company_news_categories=req.company_news_categories,
         company_news_timeframe=req.company_news_timeframe,
+        keywords_include=req.keywords_include,
+        keywords_match_mode=req.keywords_match_mode,
+        keywords_scope=req.keywords_scope,
+        keywords_exclude=req.keywords_exclude,
     )
     body = _make_search_body(build_company_query(co_req))
 

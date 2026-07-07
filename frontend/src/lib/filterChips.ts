@@ -7,7 +7,12 @@ import {
   COMPANY_NEWS_CATEGORIES, COMPANY_NEWS_TIMEFRAMES,
   REVENUE_OPTIONS, FUNDING_STAGE_OPTIONS, CERTIFICATION_OPTIONS, EMAIL_PROVIDER_OPTIONS,
   JOB_CHANGE_TIMEFRAMES,
+  FUNDING_PRESETS, GROWTH_PRESETS, HEADCOUNT_RANGE_OPTIONS, FOUNDED_YEAR_PRESETS,
 } from "@/types/search";
+
+function presetLabels(values: string[], options: { value: string; label: string }[]): string {
+  return values.map(v => options.find(o => o.value === v)?.label ?? v).join(", ");
+}
 
 function labelOf(options: { value: string; label: string }[], v: string) {
   return options.find((o) => o.value === v)?.label ?? v;
@@ -133,36 +138,51 @@ export function buildPersonChips(
     chips.push({ id: "emp-headcount-custom", label: `Headcount: ${min} – ${max}`, onRemove: () => onChange({ employeeCountMin: "", employeeCountMax: "" }) });
   }
 
-  const fundRange = rangeLabel(filters.fundingMin, filters.fundingMax, fmtUsd);
-  if (fundRange)
-    chips.push({ id: "funding", label: `Funding: ${fundRange}`, onRemove: () => onChange({ fundingMin: "", fundingMax: "" }) });
+  if (filters.fundingMode === "predefined" && filters.fundingPresets.length)
+    chips.push({ id: "funding", label: `Funding: ${presetLabels(filters.fundingPresets, FUNDING_PRESETS)}`, onRemove: () => onChange({ fundingPresets: [] }) });
+  else if (filters.fundingMode === "custom") {
+    const fundRange = rangeLabel(filters.fundingMin, filters.fundingMax, fmtUsd);
+    if (fundRange) chips.push({ id: "funding", label: `Funding: ${fundRange}`, onRemove: () => onChange({ fundingMin: "", fundingMax: "" }) });
+  }
 
-  const growthRange = rangeLabel(filters.headcountGrowthMin, filters.headcountGrowthMax, (n) => `${n}%`);
-  if (growthRange)
-    chips.push({ id: "growth", label: `Growth: ${growthRange}`, onRemove: () => onChange({ headcountGrowthMin: "", headcountGrowthMax: "" }) });
+  if (filters.headcountGrowthMode === "predefined" && filters.headcountGrowthPresets.length)
+    chips.push({ id: "growth", label: `Growth: ${presetLabels(filters.headcountGrowthPresets, GROWTH_PRESETS)}`, onRemove: () => onChange({ headcountGrowthPresets: [] }) });
+  else if (filters.headcountGrowthMode === "custom") {
+    const growthRange = rangeLabel(filters.headcountGrowthMin, filters.headcountGrowthMax, (n) => `${n}%`);
+    if (growthRange) chips.push({ id: "growth", label: `Growth: ${growthRange}`, onRemove: () => onChange({ headcountGrowthMin: "", headcountGrowthMax: "" }) });
+  }
 
   if (filters.headcountByDepartment) {
     const deptLabel = labelOf(DEPARTMENT_OPTIONS, filters.headcountByDepartment);
-    const deptRange = rangeLabel(filters.headcountByDepartmentMin, filters.headcountByDepartmentMax);
+    let deptRangeStr = "";
+    if (filters.headcountByDepartmentMode === "predefined" && filters.headcountByDepartmentPresets.length)
+      deptRangeStr = presetLabels(filters.headcountByDepartmentPresets, HEADCOUNT_RANGE_OPTIONS);
+    else deptRangeStr = rangeLabel(filters.headcountByDepartmentMin, filters.headcountByDepartmentMax);
     chips.push({
       id: "hc-dept",
-      label: `${deptLabel} headcount${deptRange ? `: ${deptRange}` : ""}`,
-      onRemove: () => onChange({ headcountByDepartment: "", headcountByDepartmentMin: "", headcountByDepartmentMax: "" }),
+      label: `${deptLabel} headcount${deptRangeStr ? `: ${deptRangeStr}` : ""}`,
+      onRemove: () => onChange({ headcountByDepartment: "", headcountByDepartmentPresets: [], headcountByDepartmentMin: "", headcountByDepartmentMax: "" }),
     });
   }
 
   if (filters.headcountByLocationCountry) {
-    const locRange = rangeLabel(filters.headcountByLocationMin, filters.headcountByLocationMax);
+    let locRangeStr = "";
+    if (filters.headcountByLocationMode === "predefined" && filters.headcountByLocationPresets.length)
+      locRangeStr = presetLabels(filters.headcountByLocationPresets, HEADCOUNT_RANGE_OPTIONS);
+    else locRangeStr = rangeLabel(filters.headcountByLocationMin, filters.headcountByLocationMax);
     chips.push({
       id: "hc-loc",
-      label: `${capitalize(filters.headcountByLocationCountry)} headcount${locRange ? `: ${locRange}` : ""}`,
-      onRemove: () => onChange({ headcountByLocationCountry: "", headcountByLocationMin: "", headcountByLocationMax: "" }),
+      label: `${capitalize(filters.headcountByLocationCountry)} headcount${locRangeStr ? `: ${locRangeStr}` : ""}`,
+      onRemove: () => onChange({ headcountByLocationCountry: "", headcountByLocationPresets: [], headcountByLocationMin: "", headcountByLocationMax: "" }),
     });
   }
 
-  const foundRange = rangeLabel(filters.foundedMin, filters.foundedMax);
-  if (foundRange)
-    chips.push({ id: "founded", label: `Founded: ${foundRange}`, onRemove: () => onChange({ foundedMin: "", foundedMax: "" }) });
+  if (filters.foundedMode === "predefined" && filters.foundedPresets.length)
+    chips.push({ id: "founded", label: `Founded: ${presetLabels(filters.foundedPresets, FOUNDED_YEAR_PRESETS)}`, onRemove: () => onChange({ foundedPresets: [] }) });
+  else if (filters.foundedMode === "custom") {
+    const foundRange = rangeLabel(filters.foundedMin, filters.foundedMax);
+    if (foundRange) chips.push({ id: "founded", label: `Founded: ${foundRange}`, onRemove: () => onChange({ foundedMin: "", foundedMax: "" }) });
+  }
 
   const visitsRange = rangeLabel(filters.websiteVisitsMin, filters.websiteVisitsMax);
   if (visitsRange)
@@ -207,6 +227,14 @@ export function buildPersonChips(
 
   filters.jobPostingKeywords.forEach((v) =>
     chips.push({ id: `job-post-${v}`, label: `Hiring: ${v}`, onRemove: () => onChange({ jobPostingKeywords: filters.jobPostingKeywords.filter((x) => x !== v) }) })
+  );
+
+  filters.keywordsInclude.forEach((v) =>
+    chips.push({ id: `kw-inc-${v}`, label: `Keyword: ${v}`, onRemove: () => onChange({ keywordsInclude: filters.keywordsInclude.filter((x) => x !== v) }) })
+  );
+
+  filters.keywordsExclude.forEach((v) =>
+    chips.push({ id: `kw-exc-${v}`, label: `Excl. keyword: ${v}`, onRemove: () => onChange({ keywordsExclude: filters.keywordsExclude.filter((x) => x !== v) }) })
   );
 
   if (filters.hideAllSavedPeople)
@@ -272,6 +300,14 @@ export function buildCompanyChips(
     chips.push({ id: `job-post-${v}`, label: `Hiring: ${v}`, onRemove: () => onChange({ jobPostingKeywords: filters.jobPostingKeywords.filter((x) => x !== v) }) })
   );
 
+  filters.keywordsInclude.forEach((v) =>
+    chips.push({ id: `kw-inc-${v}`, label: `Keyword: ${v}`, onRemove: () => onChange({ keywordsInclude: filters.keywordsInclude.filter((x) => x !== v) }) })
+  );
+
+  filters.keywordsExclude.forEach((v) =>
+    chips.push({ id: `kw-exc-${v}`, label: `Excl. keyword: ${v}`, onRemove: () => onChange({ keywordsExclude: filters.keywordsExclude.filter((x) => x !== v) }) })
+  );
+
   filters.emailProviders.forEach((v) =>
     chips.push({ id: `email-${v}`, label: `Email: ${labelOf(EMAIL_PROVIDER_OPTIONS, v)}`, onRemove: () => onChange({ emailProviders: filters.emailProviders.filter((x) => x !== v) }) })
   );
@@ -334,40 +370,55 @@ export function buildCompanyChips(
     chips.push({ id: `rev-${v}`, label: labelOf(REVENUE_OPTIONS, v), onRemove: () => onChange({ revenueBuckets: filters.revenueBuckets.filter((x) => x !== v) }) })
   );
 
-  const fundRange = rangeLabel(filters.fundingMin, filters.fundingMax, fmtUsd);
-  if (fundRange)
-    chips.push({ id: "funding", label: `Funding: ${fundRange}`, onRemove: () => onChange({ fundingMin: "", fundingMax: "" }) });
+  if (filters.fundingMode === "predefined" && filters.fundingPresets.length)
+    chips.push({ id: "funding", label: `Funding: ${presetLabels(filters.fundingPresets, FUNDING_PRESETS)}`, onRemove: () => onChange({ fundingPresets: [] }) });
+  else if (filters.fundingMode === "custom") {
+    const fundRange = rangeLabel(filters.fundingMin, filters.fundingMax, fmtUsd);
+    if (fundRange) chips.push({ id: "funding", label: `Funding: ${fundRange}`, onRemove: () => onChange({ fundingMin: "", fundingMax: "" }) });
+  }
 
   filters.fundingStages.forEach((v) =>
     chips.push({ id: `stage-${v}`, label: labelOf(FUNDING_STAGE_OPTIONS, v), onRemove: () => onChange({ fundingStages: filters.fundingStages.filter((x) => x !== v) }) })
   );
 
-  const growthRange = rangeLabel(filters.headcountGrowthMin, filters.headcountGrowthMax, (n) => `${n}%`);
-  if (growthRange)
-    chips.push({ id: "growth", label: `Growth: ${growthRange}`, onRemove: () => onChange({ headcountGrowthMin: "", headcountGrowthMax: "" }) });
+  if (filters.headcountGrowthMode === "predefined" && filters.headcountGrowthPresets.length)
+    chips.push({ id: "growth", label: `Growth: ${presetLabels(filters.headcountGrowthPresets, GROWTH_PRESETS)}`, onRemove: () => onChange({ headcountGrowthPresets: [] }) });
+  else if (filters.headcountGrowthMode === "custom") {
+    const growthRange = rangeLabel(filters.headcountGrowthMin, filters.headcountGrowthMax, (n) => `${n}%`);
+    if (growthRange) chips.push({ id: "growth", label: `Growth: ${growthRange}`, onRemove: () => onChange({ headcountGrowthMin: "", headcountGrowthMax: "" }) });
+  }
 
   if (filters.headcountByDepartment) {
     const deptLabel = labelOf(DEPARTMENT_OPTIONS, filters.headcountByDepartment);
-    const deptRange = rangeLabel(filters.headcountByDepartmentMin, filters.headcountByDepartmentMax);
+    let deptRangeStr = "";
+    if (filters.headcountByDepartmentMode === "predefined" && filters.headcountByDepartmentPresets.length)
+      deptRangeStr = presetLabels(filters.headcountByDepartmentPresets, HEADCOUNT_RANGE_OPTIONS);
+    else deptRangeStr = rangeLabel(filters.headcountByDepartmentMin, filters.headcountByDepartmentMax);
     chips.push({
       id: "hc-dept",
-      label: `${deptLabel} headcount${deptRange ? `: ${deptRange}` : ""}`,
-      onRemove: () => onChange({ headcountByDepartment: "", headcountByDepartmentMin: "", headcountByDepartmentMax: "" }),
+      label: `${deptLabel} headcount${deptRangeStr ? `: ${deptRangeStr}` : ""}`,
+      onRemove: () => onChange({ headcountByDepartment: "", headcountByDepartmentPresets: [], headcountByDepartmentMin: "", headcountByDepartmentMax: "" }),
     });
   }
 
   if (filters.headcountByLocationCountry) {
-    const locRange = rangeLabel(filters.headcountByLocationMin, filters.headcountByLocationMax);
+    let locRangeStr = "";
+    if (filters.headcountByLocationMode === "predefined" && filters.headcountByLocationPresets.length)
+      locRangeStr = presetLabels(filters.headcountByLocationPresets, HEADCOUNT_RANGE_OPTIONS);
+    else locRangeStr = rangeLabel(filters.headcountByLocationMin, filters.headcountByLocationMax);
     chips.push({
       id: "hc-loc",
-      label: `${capitalize(filters.headcountByLocationCountry)} headcount${locRange ? `: ${locRange}` : ""}`,
-      onRemove: () => onChange({ headcountByLocationCountry: "", headcountByLocationMin: "", headcountByLocationMax: "" }),
+      label: `${capitalize(filters.headcountByLocationCountry)} headcount${locRangeStr ? `: ${locRangeStr}` : ""}`,
+      onRemove: () => onChange({ headcountByLocationCountry: "", headcountByLocationPresets: [], headcountByLocationMin: "", headcountByLocationMax: "" }),
     });
   }
 
-  const foundRange = rangeLabel(filters.foundedMin, filters.foundedMax);
-  if (foundRange)
-    chips.push({ id: "founded", label: `Founded: ${foundRange}`, onRemove: () => onChange({ foundedMin: "", foundedMax: "" }) });
+  if (filters.foundedMode === "predefined" && filters.foundedPresets.length)
+    chips.push({ id: "founded", label: `Founded: ${presetLabels(filters.foundedPresets, FOUNDED_YEAR_PRESETS)}`, onRemove: () => onChange({ foundedPresets: [] }) });
+  else if (filters.foundedMode === "custom") {
+    const foundRange = rangeLabel(filters.foundedMin, filters.foundedMax);
+    if (foundRange) chips.push({ id: "founded", label: `Founded: ${foundRange}`, onRemove: () => onChange({ foundedMin: "", foundedMax: "" }) });
+  }
 
   return chips;
 }

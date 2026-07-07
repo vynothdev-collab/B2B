@@ -12,8 +12,8 @@ interface Props {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 pr-7 text-[11px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
-const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 pr-7 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none";
+const labelCls = "mb-1 block text-[12px] text-gray-500";
 const DROPDOWN_MAX_H = 220;
 
 export default function CountrySelect({ label, placeholder, value, onChange }: Props) {
@@ -132,14 +132,14 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
           >
             <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
               {suggestions.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-gray-400">No matches</div>
+                <div className="px-3 py-2 text-[12px] text-gray-400">No matches</div>
               ) : (
                 suggestions.map((name, i) => (
                   <button
                     key={name}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); select(name); }}
-                    className={`flex w-full items-center px-2.5 py-1.5 text-left text-[11px] transition-colors sm:px-3 sm:py-2 sm:text-xs ${
+                    className={`flex w-full items-center px-2.5 py-1.5 text-left text-[12px] transition-colors ${
                       i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >

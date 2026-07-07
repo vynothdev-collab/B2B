@@ -6,7 +6,7 @@ import type { PersonFilters } from "@/types/search";
 
 const labelCls = "mb-1.5 block text-[10px] font-semibold uppercase tracking-wide text-gray-400";
 const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 focus:border-red-500 focus:outline-none";
 
 interface Props {
   filters: PersonFilters;
@@ -66,7 +66,7 @@ function ListSelect({
             <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border ${sel ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"}`}>
               {sel && <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
             </span>
-            <span className="text-[11px]">{lst.name}</span>
+            <span className="text-[12px]">{lst.name}</span>
             <span className="ml-auto text-[10px] text-gray-400">{lst.record_count}</span>
           </button>
         );

@@ -17,7 +17,7 @@ interface LocOption {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none sm:border-2 sm:px-3 sm:py-2 sm:text-xs";
+  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none";
 const DROPDOWN_MAX_H = 260;
 
 const KIND_ORDER: Record<LocOption["kind"], number> = { country: 0, state: 1, city: 2 };
@@ -183,10 +183,10 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1.5">
           {values.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[10px] font-medium capitalize text-red-700 sm:px-2 sm:text-[11px]">
+            <span key={v} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium capitalize text-red-700">
               {v}
               <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
-                <X className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
+                <X className="h-2.5 w-2.5" />
               </button>
             </span>
           ))}
@@ -216,20 +216,20 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
           >
             <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
               {suggestions.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-gray-400">No matches</div>
+                <div className="px-3 py-2 text-[12px] text-gray-400">No matches</div>
               ) : (
                 suggestions.map((s, i) => (
                   <button
                     key={s.stored}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); add(s); }}
-                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors sm:px-3 sm:py-2 sm:text-xs ${
+                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[12px] transition-colors ${
                       i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >
                     <MapPin className="h-3 w-3 shrink-0 text-gray-400" />
                     <span className="truncate flex-1">{s.display}</span>
-                    <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-gray-500">
+                    <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-gray-500">
                       {KIND_LABEL[s.kind]}
                     </span>
                   </button>

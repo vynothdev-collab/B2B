@@ -31,15 +31,15 @@ export default function FilterSection({ title, icon, info, children, isOpen, onT
       ref={wrapRef}
       className={
         isOpen
-          ? "mx-1.5 my-1 overflow-hidden rounded-lg border border-red-300 bg-white shadow-sm sm:mx-2 sm:rounded-xl sm:border-2"
-          : "mx-1.5 my-1 overflow-hidden rounded-lg border border-gray-100 transition-colors hover:border-gray-200 sm:mx-2 sm:rounded-xl sm:border-2"
+          ? "mx-1.5 my-1 overflow-hidden rounded-xl border-2 border-red-300 bg-white shadow-sm"
+          : "mx-1.5 my-1 overflow-hidden rounded-xl border-2 border-gray-100 transition-colors hover:border-gray-200"
       }
     >
       <button
         type="button"
         onClick={onToggle}
         title={info}
-        className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-[12px] font-medium transition-colors sm:gap-3 sm:px-4 sm:py-3 sm:text-sm [&_svg]:h-3.5 [&_svg]:w-3.5 sm:[&_svg]:h-4 sm:[&_svg]:w-4 ${
+        className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium transition-colors [&_svg]:h-3.5 [&_svg]:w-3.5 ${
           isOpen
             ? "text-red-700 bg-red-50/60"
             : "text-gray-800 hover:bg-gray-50/60"
@@ -65,7 +65,7 @@ export default function FilterSection({ title, icon, info, children, isOpen, onT
         }`}
       >
         <div className="overflow-hidden">
-          <div className="space-y-1.5 px-3 pb-3 pt-1 sm:space-y-2 sm:px-4 sm:pb-4">{children}</div>
+          <div className="space-y-1.5 px-3 pb-3 pt-1">{children}</div>
         </div>
       </div>
     </div>

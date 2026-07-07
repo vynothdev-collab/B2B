@@ -2,7 +2,7 @@
 import type { PersonFilters } from "@/types/search";
 
 const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[11px] text-gray-800 placeholder-gray-400 focus:border-red-500 focus:outline-none sm:border-2 sm:text-xs";
+  "w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 focus:border-red-500 focus:outline-none";
 const labelCls = "mb-0.5 block text-[10px] text-gray-400";
 
 interface RangeRowProps {
@@ -16,7 +16,7 @@ interface RangeRowProps {
 function RangeRow({ label, years, months, onYears, onMonths }: RangeRowProps) {
   return (
     <div>
-      <span className="mb-1 block text-[11px] font-medium text-gray-600">{label}</span>
+      <span className="mb-1 block text-[12px] font-medium text-gray-600">{label}</span>
       <div className="grid grid-cols-2 gap-2">
         <div>
           <span className={labelCls}>Years</span>

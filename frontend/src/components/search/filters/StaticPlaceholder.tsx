@@ -6,15 +6,15 @@ interface Props {
   options?: { value?: string; label: string }[];
 }
 
-const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
+const labelCls = "mb-1 block text-[12px] text-gray-500";
 
 export default function StaticPlaceholder({ description, options }: Props) {
   return (
-    <div className="space-y-1.5 sm:space-y-2">
+    <div className="space-y-1.5">
       {description && (
         <div className="flex items-start gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1.5 sm:px-2.5">
           <Lock className="h-3 w-3 mt-0.5 shrink-0 text-amber-500" />
-          <p className="text-[9px] leading-snug text-amber-700 sm:text-[10px]">
+          <p className="text-[10px] leading-snug text-amber-700">
             {description}
           </p>
         </div>

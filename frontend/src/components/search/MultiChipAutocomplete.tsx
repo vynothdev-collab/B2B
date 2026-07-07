@@ -13,7 +13,7 @@ interface Props {
   size?: number;
 }
 
-const labelCls = "mb-1 block text-[11px] text-gray-500 sm:text-xs";
+const labelCls = "mb-1 block text-[12px] text-gray-500";
 
 export default function MultiChipAutocomplete({ label, placeholder, values, onChange }: Props) {
   const [inputText, setInputText] = useState("");
@@ -58,7 +58,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
           {values.map((val) => (
             <span
               key={val}
-              className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 sm:px-2 sm:text-[11px]"
+              className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-700"
             >
               {val}
               <button
@@ -66,7 +66,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
                 onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
                 className="hover:opacity-70"
               >
-                <X className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
+                <X className="h-2.5 w-2.5" />
               </button>
             </span>
           ))}
@@ -85,7 +85,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKey}
           onBlur={handleBlur}
-          className="w-full bg-transparent text-[11px] text-gray-800 placeholder-gray-400 focus:outline-none sm:text-xs"
+          className="w-full bg-transparent text-[12px] text-gray-800 placeholder-gray-400 focus:outline-none"
         />
       </div>
     </div>
