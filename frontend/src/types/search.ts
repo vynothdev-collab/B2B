@@ -315,6 +315,7 @@ export interface PersonResult {
   full_name?: string;
   first_name?: string;
   last_name?: string;
+  picture_url?: string;
   headline?: string;
   inferred_skills?: string[];
   active_experience_start_date?: string;

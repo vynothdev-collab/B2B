@@ -2,7 +2,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, JSON, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -45,7 +46,7 @@ class ListItem(Base):
     )
     record_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     item_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    data: Mapped[Any] = mapped_column(JSON, nullable=False)
+    data: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
     added_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
     )

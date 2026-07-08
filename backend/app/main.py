@@ -17,6 +17,13 @@ def _add_column_if_missing(sync_conn, table: str, column: str, definition: str) 
         sync_conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {definition}"))
 
 
+def _drop_not_null_if_exists(sync_conn, table: str, column: str) -> None:
+    insp = inspect(sync_conn)
+    cols = {c["name"]: c for c in insp.get_columns(table)}
+    if column in cols and not cols[column]["nullable"]:
+        sync_conn.execute(text(f"ALTER TABLE {table} ALTER COLUMN {column} DROP NOT NULL"))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
@@ -26,6 +33,14 @@ async def lifespan(app: FastAPI):
             _add_column_if_missing, "lists", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
         )
         # list_items table migrations
+        await conn.run_sync(_drop_not_null_if_exists, "list_items", "pdl_id")
+        await conn.run_sync(_drop_not_null_if_exists, "list_items", "user_id")
+        await conn.run_sync(
+            _add_column_if_missing, "list_items", "record_id", "VARCHAR(255) NOT NULL DEFAULT ''"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "list_items", "item_type", "VARCHAR(50) NOT NULL DEFAULT ''"
+        )
         await conn.run_sync(
             _add_column_if_missing, "list_items", "data", "JSONB NOT NULL DEFAULT '{}'"
         )

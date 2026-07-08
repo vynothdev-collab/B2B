@@ -1,8 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import {
-  Building2, ExternalLink, Globe, ListPlus, MoreHorizontal, Settings, Users,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, ChevronsUpDown, Globe, Users } from "lucide-react";
 import type { CompanyResult } from "@/types/search";
 import { COMPANY_COLUMNS } from "@/hooks/useColumnSettings";
 
@@ -23,6 +21,8 @@ const FLAG: Record<string, string> = {
   france: "🇫🇷", germany: "🇩🇪", india: "🇮🇳", portugal: "🇵🇹",
   ireland: "🇮🇪", australia: "🇦🇺", singapore: "🇸🇬", brazil: "🇧🇷",
   netherlands: "🇳🇱", spain: "🇪🇸", italy: "🇮🇹", sweden: "🇸🇪",
+  "sri lanka": "🇱🇰", indonesia: "🇮🇩", malaysia: "🇲🇾",
+  "united arab emirates": "🇦🇪", pakistan: "🇵🇰", philippines: "🇵🇭",
 };
 const flag = (c = "") => FLAG[c.toLowerCase()] ?? "🌍";
 
@@ -31,6 +31,18 @@ const SIZE_LABEL: Record<string, string> = {
   "201-500": "201–500", "501-1000": "501–1K", "1001-5000": "1–5K",
   "5001-10000": "5–10K", "10001+": "10K+",
 };
+
+function normalizeSizeRange(raw: string): string {
+  // Strip trailing " employees" (case-insensitive), commas, spaces
+  const cleaned = raw.replace(/\s*employees?/gi, "").replace(/,/g, "").trim();
+  // Handle special strings
+  const lc = cleaned.toLowerCase();
+  if (lc === "myself only" || lc === "self employed" || lc === "1") return "Solo";
+  if (lc === "0" || lc === "") return "—";
+  // Normalise range separators: "5001-10000", "5001-10,000" → key lookup
+  const normalised = cleaned.replace(/\s*-\s*/g, "-");
+  return SIZE_LABEL[normalised] ?? cleaned;
+}
 
 const TYPE_COLORS: Record<string, string> = {
   "privately held": "bg-blue-50 text-blue-600",
@@ -54,7 +66,7 @@ function toStringArr(v: string | string[] | undefined | null): string[] {
 }
 
 function Dash() {
-  return <span className="text-xs text-gray-400">—</span>;
+  return <span className="text-gray-400">—</span>;
 }
 
 function fmtMoney(n: number): string {
@@ -63,74 +75,43 @@ function fmtMoney(n: number): string {
   return `$${Math.round(n / 1_000)}K`;
 }
 
-function ActionMenu({ onAddToList }: { onAddToList: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, right: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
-    return () => {
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
-    };
-  }, [open]);
-
-  const handleOpen = () => {
-    if (btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
-    }
-    setOpen((v) => !v);
-  };
-
-  const menuItems = [
-    { icon: <Building2 className="h-3.5 w-3.5" />, label: "View company", action: () => {} },
-    { icon: <ExternalLink className="h-3.5 w-3.5" />, label: "Push to CRM", action: () => {} },
-    { icon: <ListPlus className="h-3.5 w-3.5" />, label: "Add to list", action: onAddToList },
-  ];
-
+function Cell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={handleOpen}
-        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-      >
-        <MoreHorizontal className="h-4 w-4" />
-      </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            className="fixed z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
-            style={{ top: pos.top, right: pos.right }}
-          >
-            {menuItems.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => { setOpen(false); item.action(); }}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-[12px] text-gray-700 hover:bg-gray-50"
-              >
-                <span className="text-gray-400">{item.icon}</span>
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+    <td className={`px-4 py-0 align-middle ${className}`}>
+      <div className="flex h-[64px] items-center overflow-hidden">{children}</div>
+    </td>
+  );
+}
+
+function SortTh({
+  label, sortKey, current, dir, onSort, className = "",
+}: {
+  label: string; sortKey: string; current: string | null;
+  dir: "asc" | "desc"; onSort: (k: string) => void; className?: string;
+}) {
+  const active = current === sortKey;
+  return (
+    <th
+      className={`${TH} cursor-pointer select-none whitespace-nowrap hover:bg-gray-100 ${className}`}
+      onClick={() => onSort(sortKey)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {active
+          ? dir === "asc"
+            ? <ChevronUp className="h-3.5 w-3.5 text-red-500" />
+            : <ChevronDown className="h-3.5 w-3.5 text-red-500" />
+          : <ChevronsUpDown className="h-3.5 w-3.5 text-gray-300" />}
+      </div>
+    </th>
   );
 }
 
 // ---------------------------------------------------------------------------
 // Skeleton
 // ---------------------------------------------------------------------------
+
+const TH = "border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600";
 
 export function CompanyTableSkeleton({
   rows = 8,
@@ -146,43 +127,42 @@ export function CompanyTableSkeleton({
 
   return (
     <div className="max-w-full overflow-x-auto">
-      <table className="w-full min-w-[580px] text-xs [&_td]:px-3 [&_td]:py-3 [&_th]:px-3 [&_th]:py-2.5">
+      <table className="w-full min-w-[580px] border-separate border-spacing-0 text-xs">
         <thead>
-          <tr className="border-b border-gray-100 bg-gray-50">
-            <th className="w-8" />
-            <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[200px]">Company ↓</th>
-            {isCol("industry") && <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[120px]">Industry</th>}
-            {isCol("employees") && <th className="text-left text-[11px] font-semibold text-gray-500">Employees</th>}
-            {isCol("website") && <th className="text-left text-[11px] font-semibold text-gray-500">Website</th>}
-            {isCol("location") && <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[120px]">Location</th>}
-            {isCol("type") && <th className="text-left text-[11px] font-semibold text-gray-500">Type</th>}
-            {isCol("co_status") && <th className="text-left text-[11px] font-semibold text-gray-500">Status</th>}
-            {isCol("founded") && <th className="text-left text-[11px] font-semibold text-gray-500">Founded</th>}
-            {isCol("legal_name") && <th className="text-left text-[11px] font-semibold text-gray-500">Legal Name</th>}
-            {isCol("co_country") && <th className="text-left text-[11px] font-semibold text-gray-500">Country</th>}
-            {isCol("co_city") && <th className="text-left text-[11px] font-semibold text-gray-500">City</th>}
-            {isCol("state") && <th className="text-left text-[11px] font-semibold text-gray-500">State</th>}
-            {isCol("co_address") && <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[140px]">Address</th>}
-            {isCol("co_keywords") && <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[140px]">Keywords</th>}
-            {isCol("products_services") && <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[140px]">Products & Services</th>}
-            {isCol("awards_certs") && <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[140px]">Awards & Certs</th>}
-            {isCol("growth") && <th className="text-left text-[11px] font-semibold text-gray-500">HC Growth</th>}
-            {isCol("web_traffic") && <th className="text-left text-[11px] font-semibold text-gray-500">Web Traffic</th>}
-            {isCol("traffic_growth") && <th className="text-left text-[11px] font-semibold text-gray-500">Traffic Growth</th>}
-            {isCol("revenue") && <th className="text-left text-[11px] font-semibold text-gray-500">Revenue</th>}
-            {isCol("funding") && <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[120px]">Last Funding</th>}
-            {isCol("rating") && <th className="text-left text-[11px] font-semibold text-gray-500">Rating</th>}
-            {isCol("open_jobs") && <th className="text-left text-[11px] font-semibold text-gray-500">Open Jobs</th>}
-            {isCol("technologies") && <th className="text-left text-[11px] font-semibold text-gray-500 min-w-[140px]">Technologies</th>}
-            {isCol("linkedin") && <th className="text-left text-[11px] font-semibold text-gray-500">LinkedIn</th>}
-            <th className="text-left text-[11px] font-semibold text-gray-500">Actions</th>
+          <tr className="bg-gray-50">
+            <th className={`${TH} w-9`} />
+            <th className={`${TH} min-w-[200px]`}>Company</th>
+            {isCol("industry")         && <th className={`${TH} min-w-[120px]`}>Industry</th>}
+            {isCol("employees")        && <th className={`${TH} min-w-[90px]`}>Employees</th>}
+            {isCol("website")          && <th className={`${TH} min-w-[120px]`}>Website</th>}
+            {isCol("location")         && <th className={`${TH} min-w-[120px]`}>Location</th>}
+            {isCol("type")             && <th className={`${TH} min-w-[100px]`}>Type</th>}
+            {isCol("co_status")        && <th className={`${TH} min-w-[80px]`}>Status</th>}
+            {isCol("founded")          && <th className={`${TH} min-w-[70px]`}>Founded</th>}
+            {isCol("legal_name")       && <th className={`${TH} min-w-[140px]`}>Legal Name</th>}
+            {isCol("co_country")       && <th className={`${TH} min-w-[100px]`}>Country</th>}
+            {isCol("co_city")          && <th className={`${TH} min-w-[100px]`}>City</th>}
+            {isCol("state")            && <th className={`${TH} min-w-[100px]`}>State</th>}
+            {isCol("co_address")       && <th className={`${TH} min-w-[140px]`}>Address</th>}
+            {isCol("co_keywords")      && <th className={`${TH} min-w-[140px]`}>Keywords</th>}
+            {isCol("products_services") && <th className={`${TH} min-w-[140px]`}>Products & Services</th>}
+            {isCol("awards_certs")     && <th className={`${TH} min-w-[140px]`}>Awards & Certs</th>}
+            {isCol("growth")           && <th className={`${TH} min-w-[80px]`}>HC Growth</th>}
+            {isCol("web_traffic")      && <th className={`${TH} min-w-[90px]`}>Web Traffic</th>}
+            {isCol("traffic_growth")   && <th className={`${TH} min-w-[90px]`}>Traffic Growth</th>}
+            {isCol("revenue")          && <th className={`${TH} min-w-[100px]`}>Revenue</th>}
+            {isCol("funding")          && <th className={`${TH} min-w-[120px]`}>Last Funding</th>}
+            {isCol("rating")           && <th className={`${TH} min-w-[70px]`}>Rating</th>}
+            {isCol("open_jobs")        && <th className={`${TH} min-w-[70px]`}>Open Jobs</th>}
+            {isCol("technologies")     && <th className={`${TH} min-w-[140px]`}>Technologies</th>}
+            {isCol("linkedin")         && <th className={`${TH} min-w-[80px]`}>LinkedIn</th>}
           </tr>
         </thead>
         <tbody>
           {Array.from({ length: rows }).map((_, i) => (
-            <tr key={i} className="animate-pulse border-b border-gray-50">
-              <td><div className="mx-auto h-3.5 w-3.5 rounded bg-gray-200" /></td>
-              <td>
+            <tr key={i} className="animate-pulse">
+              <td className="px-3 py-2.5"><div className="mx-auto h-3.5 w-3.5 rounded bg-gray-200" /></td>
+              <td className="px-3 py-2.5">
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 shrink-0 rounded bg-gray-200" />
                   <div className="min-w-0 flex-1 space-y-1.5">
@@ -191,31 +171,31 @@ export function CompanyTableSkeleton({
                   </div>
                 </div>
               </td>
-              {isCol("industry") && <td><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("employees") && <td><div className="h-5 w-16 rounded-full bg-gray-200" /></td>}
-              {isCol("website") && <td><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("location") && <td><div className="h-3 w-20 rounded bg-gray-200" /></td>}
-              {isCol("type") && <td><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("co_status") && <td><div className="h-3 w-14 rounded bg-gray-200" /></td>}
-              {isCol("founded") && <td><div className="h-3 w-12 rounded bg-gray-200" /></td>}
-              {isCol("legal_name") && <td><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("co_country") && <td><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("co_city") && <td><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("state") && <td><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("co_address") && <td><div className="h-3 w-28 rounded bg-gray-200" /></td>}
-              {isCol("co_keywords") && <td><div className="h-3 w-28 rounded bg-gray-200" /></td>}
-              {isCol("products_services") && <td><div className="h-3 w-28 rounded bg-gray-200" /></td>}
-              {isCol("awards_certs") && <td><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("growth") && <td><div className="h-3 w-12 rounded bg-gray-200" /></td>}
-              {isCol("web_traffic") && <td><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("traffic_growth") && <td><div className="h-3 w-12 rounded bg-gray-200" /></td>}
-              {isCol("revenue") && <td><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("funding") && <td><div className="h-3 w-20 rounded bg-gray-200" /></td>}
-              {isCol("rating") && <td><div className="h-3 w-10 rounded bg-gray-200" /></td>}
-              {isCol("open_jobs") && <td><div className="h-3 w-10 rounded bg-gray-200" /></td>}
-              {isCol("technologies") && <td><div className="h-3 w-28 rounded bg-gray-200" /></td>}
-              {isCol("linkedin") && <td><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              <td><div className="mx-auto h-6 w-6 rounded bg-gray-200" /></td>
+              {isCol("industry")         && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
+              {isCol("employees")        && <td className="px-3 py-2.5"><div className="h-5 w-16 rounded-full bg-gray-200" /></td>}
+              {isCol("website")          && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
+              {isCol("location")         && <td className="px-3 py-2.5"><div className="h-3 w-20 rounded bg-gray-200" /></td>}
+              {isCol("type")             && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
+              {isCol("co_status")        && <td className="px-3 py-2.5"><div className="h-3 w-14 rounded bg-gray-200" /></td>}
+              {isCol("founded")          && <td className="px-3 py-2.5"><div className="h-3 w-12 rounded bg-gray-200" /></td>}
+              {isCol("legal_name")       && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
+              {isCol("co_country")       && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
+              {isCol("co_city")          && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
+              {isCol("state")            && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
+              {isCol("co_address")       && <td className="px-3 py-2.5"><div className="h-3 w-28 rounded bg-gray-200" /></td>}
+              {isCol("co_keywords")      && <td className="px-3 py-2.5"><div className="h-3 w-28 rounded bg-gray-200" /></td>}
+              {isCol("products_services") && <td className="px-3 py-2.5"><div className="h-3 w-28 rounded bg-gray-200" /></td>}
+              {isCol("awards_certs")     && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
+              {isCol("growth")           && <td className="px-3 py-2.5"><div className="h-3 w-12 rounded bg-gray-200" /></td>}
+              {isCol("web_traffic")      && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
+              {isCol("traffic_growth")   && <td className="px-3 py-2.5"><div className="h-3 w-12 rounded bg-gray-200" /></td>}
+              {isCol("revenue")          && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
+              {isCol("funding")          && <td className="px-3 py-2.5"><div className="h-3 w-20 rounded bg-gray-200" /></td>}
+              {isCol("rating")           && <td className="px-3 py-2.5"><div className="h-3 w-10 rounded bg-gray-200" /></td>}
+              {isCol("open_jobs")        && <td className="px-3 py-2.5"><div className="h-3 w-10 rounded bg-gray-200" /></td>}
+              {isCol("technologies")     && <td className="px-3 py-2.5"><div className="h-3 w-28 rounded bg-gray-200" /></td>}
+              {isCol("linkedin")         && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
+              <td className="px-3 py-2.5"><div className="mx-auto h-6 w-6 rounded bg-gray-200" /></td>
             </tr>
           ))}
         </tbody>
@@ -233,9 +213,7 @@ interface Props {
   selected: Set<string>;
   onSelect: (id: string) => void;
   onSelectAll: (all: boolean) => void;
-  onAddToList: (company: CompanyResult) => void;
   visibleColumns: Record<string, boolean>;
-  onOpenColumnSettings: () => void;
 }
 
 export default function CompanyTable({
@@ -243,116 +221,90 @@ export default function CompanyTable({
   selected,
   onSelect,
   onSelectAll,
-  onAddToList,
   visibleColumns,
-  onOpenColumnSettings,
 }: Props) {
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (key: string) => {
+    setSortDir((prev) => sortKey === key ? (prev === "asc" ? "desc" : "asc") : "asc");
+    setSortKey(key);
+  };
+
+  const sortedData = useMemo(() => {
+    if (!sortKey) return data;
+    return [...data].sort((a, b) => {
+      let av: string | number = 0;
+      let bv: string | number = 0;
+      switch (sortKey) {
+        case "name":         av = a.company_name ?? ""; bv = b.company_name ?? ""; break;
+        case "industry":     av = a.industry ?? ""; bv = b.industry ?? ""; break;
+        case "employees":    av = a.employees_count ?? -1; bv = b.employees_count ?? -1; break;
+        case "location":     av = a.hq_country ?? ""; bv = b.hq_country ?? ""; break;
+        case "status":       av = a.company_status ?? ""; bv = b.company_status ?? ""; break;
+        case "founded":      av = Number(a.founded) || 0; bv = Number(b.founded) || 0; break;
+        case "legal_name":   av = (a as unknown as Record<string,string>).legal_name ?? ""; bv = (b as unknown as Record<string,string>).legal_name ?? ""; break;
+        case "country":      av = a.hq_country ?? ""; bv = b.hq_country ?? ""; break;
+        case "city":         av = a.hq_city ?? ""; bv = b.hq_city ?? ""; break;
+        case "state":        av = (a as unknown as Record<string,string>).hq_region ?? ""; bv = (b as unknown as Record<string,string>).hq_region ?? ""; break;
+        case "growth":       av = (a.employees_count_change as Record<string,number>)?.change_yearly_percentage ?? -Infinity; bv = (b.employees_count_change as Record<string,number>)?.change_yearly_percentage ?? -Infinity; break;
+        case "web_traffic":  av = a.total_website_visits_monthly ?? -1; bv = b.total_website_visits_monthly ?? -1; break;
+        case "traffic_growth": av = (a.total_website_visits_change as Record<string,number>)?.change_yearly_percentage ?? -Infinity; bv = (b.total_website_visits_change as Record<string,number>)?.change_yearly_percentage ?? -Infinity; break;
+        case "rating":       av = a.company_employee_reviews_aggregate_score ?? -1; bv = b.company_employee_reviews_aggregate_score ?? -1; break;
+        case "open_jobs":    av = Array.isArray(a.active_job_postings) ? a.active_job_postings.length : -1; bv = Array.isArray(b.active_job_postings) ? b.active_job_postings.length : -1; break;
+      }
+      if (typeof av === "string" && typeof bv === "string")
+        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
+    });
+  }, [data, sortKey, sortDir]);
+
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
   const isCol = (key: string) => visibleColumns[key] !== false;
+  const S = { current: sortKey, dir: sortDir, onSort: handleSort };
 
   return (
     <div className="max-w-full overflow-x-auto">
-      <table className="w-full min-w-[580px] text-xs sm:text-sm [&_td]:px-2 [&_td]:py-2 [&_th]:px-2 [&_th]:py-2 [&_th]:text-[11px] sm:[&_td]:px-3 sm:[&_td]:py-3 sm:[&_th]:px-3 sm:[&_th]:py-2.5 sm:[&_th]:text-xs">
+      <table className="w-full min-w-[580px] border-separate border-spacing-0 text-xs">
         <thead>
-          <tr className="border-b border-gray-100 bg-gray-50">
-            <th className="w-8 px-3 py-2.5">
+          <tr className="bg-gray-50">
+            <th className={`${TH} w-9`}>
               <input
                 type="checkbox"
                 checked={allSelected}
                 onChange={(e) => onSelectAll(e.target.checked)}
-                className="h-3.5 w-3.5 rounded border-gray-300 accent-red-600 text-red-600 focus:ring-red-400"
+                className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 accent-red-600"
               />
             </th>
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[200px]">Company ↓</th>
-            {isCol("industry") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[120px]">Industry</th>
-            )}
-            {isCol("employees") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Employees</th>
-            )}
-            {isCol("website") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Website</th>
-            )}
-            {isCol("location") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[120px]">Location</th>
-            )}
-            {isCol("type") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Type</th>
-            )}
-            {isCol("co_status") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Status</th>
-            )}
-            {isCol("founded") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Founded</th>
-            )}
-            {isCol("legal_name") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Legal Name</th>
-            )}
-            {isCol("co_country") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Country</th>
-            )}
-            {isCol("co_city") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">City</th>
-            )}
-            {isCol("state") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">State</th>
-            )}
-            {isCol("co_address") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[140px]">Address</th>
-            )}
-            {isCol("co_keywords") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[140px]">Keywords</th>
-            )}
-            {isCol("products_services") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[140px]">Products & Services</th>
-            )}
-            {isCol("awards_certs") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[140px]">Awards & Certs</th>
-            )}
-            {isCol("growth") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">HC Growth</th>
-            )}
-            {isCol("web_traffic") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Web Traffic</th>
-            )}
-            {isCol("traffic_growth") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Traffic Growth</th>
-            )}
-            {isCol("revenue") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Revenue</th>
-            )}
-            {isCol("funding") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[120px]">Last Funding</th>
-            )}
-            {isCol("rating") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Rating</th>
-            )}
-            {isCol("open_jobs") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">Open Jobs</th>
-            )}
-            {isCol("technologies") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500 min-w-[140px]">Technologies</th>
-            )}
-            {isCol("linkedin") && (
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">LinkedIn</th>
-            )}
-            <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">
-              <div className="flex items-center gap-1">
-                <span>Actions</span>
-                <button
-                  type="button"
-                  onClick={onOpenColumnSettings}
-                  title="Column settings"
-                  className="rounded p-0.5 text-gray-300 transition-colors hover:text-gray-500"
-                >
-                  <Settings className="h-3 w-3" />
-                </button>
-              </div>
-            </th>
+            <SortTh label="Company"          sortKey="name"           className="min-w-[200px]" {...S} />
+            {isCol("industry")          && <SortTh label="Industry"        sortKey="industry"       className="min-w-[120px]" {...S} />}
+            {isCol("employees")         && <SortTh label="Employees"       sortKey="employees"      className="min-w-[90px]"  {...S} />}
+            {isCol("website")           && <th className={`${TH} min-w-[120px]`}>Website</th>}
+            {isCol("location")          && <SortTh label="Location"        sortKey="location"       className="min-w-[120px]" {...S} />}
+            {isCol("type")              && <th className={`${TH} min-w-[100px]`}>Type</th>}
+            {isCol("co_status")         && <SortTh label="Status"          sortKey="status"         className="min-w-[80px]"  {...S} />}
+            {isCol("founded")           && <SortTh label="Founded"         sortKey="founded"        className="min-w-[70px]"  {...S} />}
+            {isCol("legal_name")        && <SortTh label="Legal Name"      sortKey="legal_name"     className="min-w-[140px]" {...S} />}
+            {isCol("co_country")        && <SortTh label="Country"         sortKey="country"        className="min-w-[100px]" {...S} />}
+            {isCol("co_city")           && <SortTh label="City"            sortKey="city"           className="min-w-[100px]" {...S} />}
+            {isCol("state")             && <SortTh label="State"           sortKey="state"          className="min-w-[100px]" {...S} />}
+            {isCol("co_address")        && <th className={`${TH} min-w-[140px]`}>Address</th>}
+            {isCol("co_keywords")       && <th className={`${TH} min-w-[140px]`}>Keywords</th>}
+            {isCol("products_services") && <th className={`${TH} min-w-[140px]`}>Products & Services</th>}
+            {isCol("awards_certs")      && <th className={`${TH} min-w-[140px]`}>Awards & Certs</th>}
+            {isCol("growth")            && <SortTh label="HC Growth"       sortKey="growth"         className="min-w-[80px]"  {...S} />}
+            {isCol("web_traffic")       && <SortTh label="Web Traffic"     sortKey="web_traffic"    className="min-w-[90px]"  {...S} />}
+            {isCol("traffic_growth")    && <SortTh label="Traffic Growth"  sortKey="traffic_growth" className="min-w-[90px]"  {...S} />}
+            {isCol("revenue")           && <th className={`${TH} min-w-[100px]`}>Revenue</th>}
+            {isCol("funding")           && <th className={`${TH} min-w-[120px]`}>Last Funding</th>}
+            {isCol("rating")            && <SortTh label="Rating"          sortKey="rating"         className="min-w-[70px]"  {...S} />}
+            {isCol("open_jobs")         && <SortTh label="Open Jobs"       sortKey="open_jobs"      className="min-w-[70px]"  {...S} />}
+            {isCol("technologies")      && <th className={`${TH} min-w-[140px]`}>Technologies</th>}
+            {isCol("linkedin")          && <th className={`${TH} min-w-[80px]`}>LinkedIn</th>}
           </tr>
         </thead>
         <tbody>
-          {data.map((company) => {
+          {sortedData.map((company) => {
             const name = company.company_name ?? "—";
             const color = avatarColor(name);
             const checked = selected.has(company.id);
@@ -373,239 +325,253 @@ export default function CompanyTable({
             return (
               <tr
                 key={company.id}
-                className={`border-b border-gray-50 transition-colors hover:bg-gray-50/60 ${checked ? "bg-red-50/40" : ""}`}
+                className={`border-b border-gray-100 transition-colors hover:bg-gray-50/60 ${checked ? "bg-red-50/40" : ""}`}
               >
-                <td className="px-3 py-3">
+                {/* Checkbox */}
+                <Cell>
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => onSelect(company.id)}
-                    className="h-3.5 w-3.5 rounded border-gray-300 accent-red-600 text-red-600 focus:ring-red-400"
+                    className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 accent-red-600"
                   />
-                </td>
+                </Cell>
 
                 {/* Company name — always visible */}
-                <td className="px-3 py-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-bold text-white sm:h-8 sm:w-8 sm:text-sm ${color}`}>
+                <Cell className="max-w-[220px]">
+                  <div className="flex items-center gap-2.5 overflow-hidden">
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded text-[13px] font-bold text-white ${color}`}>
                       {name[0]?.toUpperCase()}
                     </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-gray-900 sm:text-sm">{name}</p>
+                    <div className="min-w-0 overflow-hidden">
+                      <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
                       {!isCol("type") && typeLabel && (
-                        <span className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize ${typeBadgeClass}`}>
+                        <span className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize ${typeBadgeClass}`}>
                           {typeLabel}
                         </span>
                       )}
                     </div>
                   </div>
-                </td>
+                </Cell>
 
                 {/* Industry */}
                 {isCol("industry") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.industry ? (
-                      <span className="inline-block max-w-[140px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium capitalize text-gray-600">
+                      <span className="inline-block max-w-[140px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">
                         {company.industry}
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Employees */}
                 {isCol("employees") && (
-                  <td className="px-3 py-3">
-                    {company.size_range || company.employees_count != null ? (
-                      <div className="flex items-center gap-1 text-xs text-gray-700">
-                        <Users className="h-3 w-3 shrink-0 text-gray-400" />
-                        {company.size_range
-                          ? (SIZE_LABEL[company.size_range] ?? company.size_range)
-                          : String(company.employees_count)}
-                      </div>
-                    ) : <Dash />}
-                  </td>
+                  <Cell>
+                    {(() => {
+                      const raw = company.size_range;
+                      const count = company.employees_count;
+                      if (raw) {
+                        const label = normalizeSizeRange(raw);
+                        if (label === "—") return <Dash />;
+                        return (
+                          <div className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-gray-800">
+                            <Users className="h-3 w-3 shrink-0 text-gray-400" />
+                            {label}
+                          </div>
+                        );
+                      }
+                      if (count != null && count > 0) {
+                        return (
+                          <div className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-gray-800">
+                            <Users className="h-3 w-3 shrink-0 text-gray-400" />
+                            {count.toLocaleString()}
+                          </div>
+                        );
+                      }
+                      return <Dash />;
+                    })()}
+                  </Cell>
                 )}
 
                 {/* Website */}
                 {isCol("website") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.website ? (
                       <a
                         href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 max-w-[120px] truncate text-xs text-blue-500 hover:underline"
+                        className="flex items-center gap-1 max-w-[120px] truncate text-[13px] text-blue-500 hover:underline"
                       >
                         <Globe className="h-3 w-3 shrink-0" />
                         {company.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                       </a>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Location (combined) */}
                 {isCol("location") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm">{flag(country)}</span>
+                      <span className="text-base leading-none">{flag(country)}</span>
                       <div className="min-w-0">
-                        <p className="truncate text-xs capitalize text-gray-700">{country || "—"}</p>
-                        {city && <p className="truncate text-[10px] capitalize text-gray-400">{city}</p>}
+                        <p className="truncate text-[13px] capitalize text-gray-700">{country || "—"}</p>
+                        {city && <p className="truncate text-xs capitalize text-gray-400">{city}</p>}
                       </div>
                     </div>
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Type */}
                 {isCol("type") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {typeLabel ? (
-                      <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize ${typeBadgeClass}`}>
+                      <span className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${typeBadgeClass}`}>
                         {typeLabel}
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Company Status */}
                 {isCol("co_status") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.company_status ? (
-                      <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize ${statusBadgeClass}`}>
+                      <span className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${statusBadgeClass}`}>
                         {company.company_status}
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Founded */}
                 {isCol("founded") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.founded ? (
-                      <span className="text-xs text-gray-700">{company.founded}</span>
+                      <span className="text-[13px] text-gray-800">{company.founded}</span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Legal Name */}
                 {isCol("legal_name") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.company_legal_name ? (
-                      <span className="block max-w-[160px] truncate text-xs text-gray-700">
+                      <span className="block max-w-[160px] truncate text-[13px] text-gray-800">
                         {company.company_legal_name}
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Company Country */}
                 {isCol("co_country") && (
-                  <td className="px-3 py-3">
-                    {country ? (
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm">{flag(country)}</span>
-                        <span className="text-xs capitalize text-gray-700">{country}</span>
-                      </div>
-                    ) : <Dash />}
-                  </td>
+                  <Cell>
+                    <div className="flex items-center gap-1">
+                      <span className="text-base leading-none">{flag(country)}</span>
+                      <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
+                    </div>
+                  </Cell>
                 )}
 
                 {/* Company City */}
                 {isCol("co_city") && (
-                  <td className="px-3 py-3">
-                    <span className="text-xs capitalize text-gray-700">{city || "—"}</span>
-                  </td>
+                  <Cell>
+                    <span className="text-[13px] capitalize text-gray-700">{city || "—"}</span>
+                  </Cell>
                 )}
 
                 {/* HQ State */}
                 {isCol("state") && (
-                  <td className="px-3 py-3">
-                    <span className="text-xs capitalize text-gray-700">{company.hq_state ?? "—"}</span>
-                  </td>
+                  <Cell>
+                    <span className="text-[13px] text-gray-800">{company.hq_state ?? "—"}</span>
+                  </Cell>
                 )}
 
                 {/* Company Address */}
                 {isCol("co_address") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.hq_location ? (
-                      <span className="block max-w-[160px] truncate text-xs text-gray-700">
+                      <span className="block max-w-[160px] truncate text-[13px] text-gray-800" title={company.hq_location}>
                         {company.hq_location}
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Keywords (gray) */}
                 {isCol("co_keywords") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {keywords.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {keywords.slice(0, 3).map((k, i) => (
-                          <span key={i} className="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
+                      <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+                        {keywords.slice(0, 2).map((k, i) => (
+                          <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
                             {k}
                           </span>
                         ))}
-                        {keywords.length > 3 && (
-                          <span className="text-[10px] text-gray-400">+{keywords.length - 3}</span>
+                        {keywords.length > 2 && (
+                          <span className="shrink-0 text-xs text-gray-500">+{keywords.length - 2}</span>
                         )}
                       </div>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Products & Services (purple) */}
                 {isCol("products_services") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {keywords.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {keywords.slice(0, 3).map((k, i) => (
-                          <span key={i} className="inline-block rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-600">
+                      <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+                        {keywords.slice(0, 2).map((k, i) => (
+                          <span key={i} className="shrink-0 inline-block rounded bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-700">
                             {k}
                           </span>
                         ))}
-                        {keywords.length > 3 && (
-                          <span className="text-[10px] text-gray-400">+{keywords.length - 3}</span>
+                        {keywords.length > 2 && (
+                          <span className="shrink-0 text-xs text-gray-500">+{keywords.length - 2}</span>
                         )}
                       </div>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Awards & Certs (amber) */}
                 {isCol("awards_certs") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {awards.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
                         {awards.slice(0, 2).map((a, i) => (
-                          <span key={i} className="inline-block rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                          <span key={i} className="shrink-0 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">
                             {a}
                           </span>
                         ))}
                         {awards.length > 2 && (
-                          <span className="text-[10px] text-gray-400">+{awards.length - 2}</span>
+                          <span className="shrink-0 text-xs text-gray-500">+{awards.length - 2}</span>
                         )}
                       </div>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Headcount Growth */}
                 {isCol("growth") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.employees_count_change?.change_yearly_percentage != null ? (
-                      <span className={`text-xs font-medium ${company.employees_count_change.change_yearly_percentage >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      <span className={`text-[13px] font-medium ${company.employees_count_change.change_yearly_percentage >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                         {company.employees_count_change.change_yearly_percentage >= 0 ? "+" : ""}
                         {company.employees_count_change.change_yearly_percentage.toFixed(1)}%
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Web Traffic */}
                 {isCol("web_traffic") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.total_website_visits_monthly != null ? (
-                      <span className="text-xs text-gray-700">
+                      <span className="text-[13px] text-gray-800">
                         {company.total_website_visits_monthly >= 1_000_000
                           ? `${(company.total_website_visits_monthly / 1_000_000).toFixed(1)}M`
                           : company.total_website_visits_monthly >= 1_000
@@ -613,24 +579,24 @@ export default function CompanyTable({
                             : String(company.total_website_visits_monthly)}
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Traffic Growth */}
                 {isCol("traffic_growth") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.total_website_visits_change?.change_yearly_percentage != null ? (
-                      <span className={`text-xs font-medium ${company.total_website_visits_change.change_yearly_percentage >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      <span className={`text-[13px] font-medium ${company.total_website_visits_change.change_yearly_percentage >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                         {company.total_website_visits_change.change_yearly_percentage >= 0 ? "+" : ""}
                         {company.total_website_visits_change.change_yearly_percentage.toFixed(1)}%
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Revenue */}
                 {isCol("revenue") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {(() => {
                       const r = company.revenue_annual_range;
                       if (!r) return <Dash />;
@@ -638,97 +604,94 @@ export default function CompanyTable({
                       if (!src) return <Dash />;
                       const lo = src.annual_revenue_range_from;
                       const hi = src.annual_revenue_range_to;
-                      if (lo != null && hi != null) return <span className="text-xs text-gray-700">{fmtMoney(lo)} – {fmtMoney(hi)}</span>;
-                      if (lo != null) return <span className="text-xs text-gray-700">&gt;{fmtMoney(lo)}</span>;
-                      if (hi != null) return <span className="text-xs text-gray-700">&lt;{fmtMoney(hi)}</span>;
+                      if (lo != null && hi != null) return <span className="text-[13px] text-gray-800 whitespace-nowrap">{fmtMoney(lo)} – {fmtMoney(hi)}</span>;
+                      if (lo != null) return <span className="text-[13px] text-gray-800">&gt;{fmtMoney(lo)}</span>;
+                      if (hi != null) return <span className="text-[13px] text-gray-800">&lt;{fmtMoney(hi)}</span>;
                       return <Dash />;
                     })()}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Last Funding */}
                 {isCol("funding") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.last_funding_round ? (
-                      <div>
+                      <div className="flex flex-nowrap items-center gap-1.5 overflow-hidden">
                         {company.last_funding_round.type && (
-                          <span className="inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
+                          <span className="shrink-0 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-600 whitespace-nowrap">
                             {company.last_funding_round.type}
                           </span>
                         )}
                         {company.last_funding_round.amount_raised != null && (
-                          <p className="mt-0.5 text-[10px] text-gray-500">
+                          <span className="shrink-0 text-xs text-gray-500 whitespace-nowrap">
                             {fmtMoney(company.last_funding_round.amount_raised)}
-                          </p>
+                          </span>
                         )}
                       </div>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Employee Rating */}
                 {isCol("rating") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.company_employee_reviews_aggregate_score != null ? (
-                      <span className="text-xs text-gray-700">
+                      <span className="text-[13px] text-gray-800">
                         ★ {company.company_employee_reviews_aggregate_score.toFixed(1)}
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Open Jobs */}
                 {isCol("open_jobs") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.active_job_postings != null ? (
-                      <span className="text-xs text-gray-700">
+                      <span className="text-[13px] text-gray-800">
                         {Array.isArray(company.active_job_postings) ? company.active_job_postings.length : "—"}
                       </span>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* Technologies */}
                 {isCol("technologies") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.technologies_used && company.technologies_used.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {company.technologies_used.slice(0, 3).map((t, i) => {
+                      <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+                        {company.technologies_used.slice(0, 2).map((t, i) => {
                           const label = typeof t === "string" ? t : (t?.technology ?? "");
                           return label ? (
-                            <span key={i} className="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
+                            <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
                               {label}
                             </span>
                           ) : null;
                         })}
-                        {company.technologies_used.length > 3 && (
-                          <span className="text-[10px] text-gray-400">+{company.technologies_used.length - 3}</span>
+                        {company.technologies_used.length > 2 && (
+                          <span className="shrink-0 text-xs text-gray-500">+{company.technologies_used.length - 2}</span>
                         )}
                       </div>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
                 {/* LinkedIn */}
                 {isCol("linkedin") && (
-                  <td className="px-3 py-3">
+                  <Cell>
                     {company.canonical_linkedin_url ? (
                       <a
                         href={`https://${company.canonical_linkedin_url.replace(/^https?:\/\//, "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
+                        className="flex items-center gap-1 text-[13px] text-blue-500 hover:underline whitespace-nowrap"
                       >
                         <Globe className="h-3 w-3 shrink-0" />
                         LinkedIn
                       </a>
                     ) : <Dash />}
-                  </td>
+                  </Cell>
                 )}
 
-                <td className="px-3 py-3">
-                  <ActionMenu onAddToList={() => onAddToList(company)} />
-                </td>
               </tr>
             );
           })}

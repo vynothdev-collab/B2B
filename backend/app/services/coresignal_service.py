@@ -7,7 +7,8 @@ Endpoints hit:
 
 from __future__ import annotations
 
-from datetime import date
+import asyncio
+from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any, NoReturn, Optional
 
 import httpx
@@ -70,7 +71,7 @@ def _add_location_match_multi(
     fields: list[str],
     values: Optional[list[str]],
 ) -> None:
-    """OR each provided location string across all listed Coresignal location fields."""
+    """OR each location value across all listed fields."""
     if not values:
         return
     cleaned = [v.lower().strip() for v in values if v and v.strip()]
@@ -107,9 +108,9 @@ def _add_nested_range(
     minv: Optional[float],
     maxv: Optional[float],
 ) -> None:
-    """Nested range query used for Coresignal's array-of-object breakdowns.
+    """Nested range query for CoreSignal array-of-object breakdowns.
 
-    Example: `employees_count_by_country[]` where each entry has `country` + `employee_count`.
+    Example: employees_count_by_country[] — each entry has `country` + `employee_count`.
     """
     r: dict[str, float] = {}
     if minv is not None:
@@ -134,7 +135,6 @@ def _add_nested_range(
 
 
 def _months_ago_str(months: int) -> str:
-    """Return YYYY-MM-DD string for `months` months before today (1st of that month)."""
     today = date.today()
     total = today.year * 12 + (today.month - 1) - months
     y, m = divmod(total, 12)
@@ -144,8 +144,8 @@ def _months_ago_str(months: int) -> str:
 def _add_date_range(
     clauses: list[dict],
     field: str,
-    min_months: Optional[int],   # person has been in role AT LEAST this many months → start_date <= N months ago
-    max_months: Optional[int],   # person has been in role AT MOST this many months  → start_date >= N months ago
+    min_months: Optional[int],   # AT LEAST N months in role → start_date <= N months ago
+    max_months: Optional[int],   # AT MOST N months in role  → start_date >= N months ago
 ) -> None:
     r: dict[str, str] = {}
     if max_months is not None:
@@ -179,12 +179,10 @@ def _build_bool_query(
 
 
 # ---------------------------------------------------------------------------
-# Bucket conversion helpers.
+# Constants and lookup tables.
 # ---------------------------------------------------------------------------
 
-# Revenue bucket strings come from the frontend enum. Coresignal stores actual
-# numeric ranges under `revenue_annual_range` — convert the bucket into a
-# (min, max) pair applied as a range clause.
+# Frontend revenue bucket labels → (min, max) numeric range in USD.
 _REVENUE_BUCKET_TO_RANGE: dict[str, tuple[Optional[float], Optional[float]]] = {
     "$0-$1M": (0, 1_000_000),
     "$1M-$10M": (1_000_000, 10_000_000),
@@ -198,31 +196,14 @@ _REVENUE_BUCKET_TO_RANGE: dict[str, tuple[Optional[float], Optional[float]]] = {
     "$10B+": (10_000_000_000, None),
 }
 
-
-def _add_revenue_bucket_filter(clauses: list[dict], buckets: Optional[list[str]]) -> None:
-    if not buckets:
-        return
-    bucket_should: list[dict] = []
-    for b in buckets:
-        rng = _REVENUE_BUCKET_TO_RANGE.get(b)
-        if not rng:
-            continue
-        low, high = rng
-        for src in ("source_4_annual_revenue_range", "source_6_annual_revenue_range"):
-            sub: list[dict] = []
-            if high is not None:
-                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_from": {"lte": high}}})
-            if low is not None:
-                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_to": {"gte": low}}})
-            if sub:
-                bucket_should.append({"bool": {"filter": sub}})
-    if bucket_should:
-        clauses.append({"bool": {"should": bucket_should, "minimum_should_match": 1}})
-
+# CoreSignal exposes two revenue source types with different field structures:
+#   Range sources (4, 6): annual_revenue_range_from / annual_revenue_range_to
+#   Point sources (5, 1): single annual_revenue value
+_REVENUE_RANGE_SOURCES = ("source_4_annual_revenue_range", "source_6_annual_revenue_range")
+_REVENUE_POINT_SOURCES = ("source_5_annual_revenue", "source_1_annual_revenue")
 
 _DESCRIPTION_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
 
-# Company type — map frontend enum values to Coresignal fields.
 _COMPANY_TYPE_TERMS: dict[str, list[str]] = {
     "saas":           ["SaaS", "software as a service"],
     "marketplace":    ["marketplace"],
@@ -248,53 +229,27 @@ _TYPE_MAP_DIRECT = {
     "educational": "Educational",
 }
 
-
-def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) -> None:
-    if not types:
-        return
-    should: list[dict] = []
-    for t in types:
-        t_norm = (t or "").lower().strip()
-        if t_norm == "public":
-            should.append({"term": {"is_public": True}})
-        elif t_norm == "private":
-            should.append({"term": {"is_public": False}})
-        elif t_norm == "public_subsidiary":
-            should.append({"bool": {"filter": [
-                {"term": {"is_public": True}},
-                {"exists": {"field": "parent_company_name"}},
-            ]}})
-        elif t_norm in _TYPE_MAP_DIRECT:
-            should.append({"term": {"type": _TYPE_MAP_DIRECT[t_norm]}})
-        elif t_norm in _COMPANY_TYPE_TERMS:
-            for phrase in _COMPANY_TYPE_TERMS[t_norm]:
-                for field in _DESCRIPTION_FIELDS:
-                    should.append({"match_phrase": {field: phrase}})
-    if should:
-        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
-
-
-# Department name -> flat field inside employees_count_breakdown_by_department.
-# CoreSignal exposes this as a flat object (not a nested array).
+# CoreSignal stores employees_count_breakdown_by_department as a flat object (not nested array).
+# Field names verified against CoreSignal sample data.
 _DEPT_TO_FIELD: dict[str, str] = {
-    "sales":          "employees_count_breakdown_by_department.employees_count_sales",
-    "engineering":    "employees_count_breakdown_by_department.employees_count_engineering",
-    "marketing":      "employees_count_breakdown_by_department.employees_count_marketing",
-    "operations":     "employees_count_breakdown_by_department.employees_count_operations",
-    "finance":        "employees_count_breakdown_by_department.employees_count_finance",
-    "human_resources":"employees_count_breakdown_by_department.employees_count_human_resources",
-    "it":             "employees_count_breakdown_by_department.employees_count_it",
-    "legal":          "employees_count_breakdown_by_department.employees_count_legal",
-    "product":        "employees_count_breakdown_by_department.employees_count_product_management",
-    "customer_success":"employees_count_breakdown_by_department.employees_count_customer_success",
-    "design":         "employees_count_breakdown_by_department.employees_count_design",
-    "data":           "employees_count_breakdown_by_department.employees_count_data_science",
+    "sales":           "employees_count_breakdown_by_department.employees_count_sales",
+    "engineering":     "employees_count_breakdown_by_department.employees_count_technical",
+    "marketing":       "employees_count_breakdown_by_department.employees_count_marketing",
+    "operations":      "employees_count_breakdown_by_department.employees_count_operations",
+    "finance":         "employees_count_breakdown_by_department.employees_count_finance",
+    "human_resources": "employees_count_breakdown_by_department.employees_count_hr",
+    "it":              "employees_count_breakdown_by_department.employees_count_technical",
+    "legal":           "employees_count_breakdown_by_department.employees_count_legal",
+    "product":         "employees_count_breakdown_by_department.employees_count_product",
+    "customer_success":"employees_count_breakdown_by_department.employees_count_customer_service",
+    "design":          "employees_count_breakdown_by_department.employees_count_design",
+    "data":            "employees_count_breakdown_by_department.employees_count_research",
+    "consulting":      "employees_count_breakdown_by_department.employees_count_consulting",
+    "administrative":  "employees_count_breakdown_by_department.employees_count_administrative",
 }
 
-
-# Growth timeframe -> Coresignal percentage field.
-# Coresignal exposes native monthly/quarterly/yearly change percentages;
-# 6- and 24-month buckets fall back to the closest native window.
+# CoreSignal only exposes quarterly and yearly native windows; 6- and 24-month
+# buckets fall back to the closest available window.
 _GROWTH_TIMEFRAME_TO_FIELD: dict[str, str] = {
     "3_month": "employees_count_change.change_quarterly_percentage",
     "6_month": "employees_count_change.change_quarterly_percentage",
@@ -302,7 +257,6 @@ _GROWTH_TIMEFRAME_TO_FIELD: dict[str, str] = {
     "24_month": "employees_count_change.change_yearly_percentage",
 }
 
-# Email provider → technology aliases stored in technologies_used.technology (lowercase).
 _EMAIL_PROVIDER_TECH_ALIASES: dict[str, list[str]] = {
     "microsoft": [
         "microsoft 365", "office 365", "microsoft exchange",
@@ -319,41 +273,6 @@ _KNOWN_EMAIL_PROVIDER_TECHS: list[str] = [
     alias for aliases in _EMAIL_PROVIDER_TECH_ALIASES.values() for alias in aliases
 ]
 
-
-def _add_email_provider_filter(clauses: list[dict], providers: Optional[list[str]]) -> None:
-    if not providers:
-        return
-    known = [p.lower() for p in providers if p.lower() in _EMAIL_PROVIDER_TECH_ALIASES]
-    include_other = any(p.lower() == "other" for p in providers)
-
-    should: list[dict] = []
-
-    for provider in known:
-        for alias in _EMAIL_PROVIDER_TECH_ALIASES[provider]:
-            should.append({
-                "nested": {
-                    "path": "technologies_used",
-                    "query": {"term": {"technologies_used.technology": alias}},
-                }
-            })
-
-    if include_other:
-        # "Other" = no technologies_used entry matching any known provider.
-        must_not_clauses: list[dict] = []
-        for alias in _KNOWN_EMAIL_PROVIDER_TECHS:
-            must_not_clauses.append({
-                "nested": {
-                    "path": "technologies_used",
-                    "query": {"term": {"technologies_used.technology": alias}},
-                }
-            })
-        should.append({"bool": {"must_not": must_not_clauses}})
-
-    if should:
-        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
-
-
-# Certification keyword aliases — each value is tried as match_phrase on short_description.
 _CERT_SEARCH_TERMS: dict[str, list[str]] = {
     "soc2":      ["SOC 2", "SOC2"],
     "gdpr":      ["GDPR"],
@@ -362,30 +281,6 @@ _CERT_SEARCH_TERMS: dict[str, list[str]] = {
     "hipaa":     ["HIPAA"],
     "pci_dss":   ["PCI-DSS", "PCI DSS"],
 }
-
-def _add_text_search_filter(clauses: list[dict], terms: Optional[list[str]]) -> None:
-    """OR-match each term as a phrase across company description/tag fields."""
-    if not terms:
-        return
-    should: list[dict] = []
-    for term in terms:
-        for field in _DESCRIPTION_FIELDS:
-            should.append({"match_phrase": {field: term}})
-    clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
-
-
-def _add_certifications_filter(clauses: list[dict], certs: Optional[list[str]]) -> None:
-    """Each selected cert generates an OR-group of phrase matches; all selected certs must match (AND)."""
-    if not certs:
-        return
-    for cert in certs:
-        aliases = _CERT_SEARCH_TERMS.get(cert.lower(), [cert])
-        cert_should: list[dict] = []
-        for alias in aliases:
-            for field in _DESCRIPTION_FIELDS:
-                cert_should.append({"match_phrase": {field: alias}})
-        clauses.append({"bool": {"should": cert_should, "minimum_should_match": 1}})
-
 
 _KEYWORD_SCOPE_TO_FIELDS: dict[str, list[str]] = {
     "company_specialties":      ["categories_and_keywords"],
@@ -397,70 +292,11 @@ _KEYWORD_SCOPE_TO_FIELDS: dict[str, list[str]] = {
 }
 _KEYWORD_ALL_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
 
-
-def _add_keywords_filter(
-    must: list[dict],
-    filters: list[dict],
-    must_not: list[dict],
-    include: Optional[list[str]],
-    match_mode: str,
-    scope: Optional[list[str]],
-    exclude: Optional[list[str]],
-) -> None:
-    if not include and not exclude:
-        return
-
-    # Resolve target fields from scope
-    if not scope:
-        fields = _KEYWORD_ALL_FIELDS
-    else:
-        fields_set: set[str] = set()
-        for s in scope:
-            fields_set.update(_KEYWORD_SCOPE_TO_FIELDS.get(s, []))
-        fields = list(fields_set) if fields_set else _KEYWORD_ALL_FIELDS
-
-    if include:
-        if match_mode == "all":
-            # Every keyword must match → one filter clause per keyword
-            for kw in include:
-                kw_should = [{"match_phrase": {f: kw}} for f in fields]
-                must.append({"bool": {"should": kw_should, "minimum_should_match": 1}})
-        else:
-            # Any keyword can match → single OR clause
-            kw_should: list[dict] = []
-            for kw in include:
-                for f in fields:
-                    kw_should.append({"match_phrase": {f: kw}})
-            filters.append({"bool": {"should": kw_should, "minimum_should_match": 1}})
-
-    if exclude:
-        for kw in exclude:
-            kw_must_not = [{"match_phrase": {f: kw}} for f in fields]
-            must_not.append({"bool": {"should": kw_must_not, "minimum_should_match": 1}})
-
-
 _VISIT_CHANGE_TIMEFRAME_TO_FIELD: dict[str, str] = {
     "monthly":   "total_website_visits_change.change_monthly_percentage",
     "quarterly": "total_website_visits_change.change_quarterly_percentage",
     "yearly":    "total_website_visits_change.change_yearly_percentage",
 }
-
-
-def _add_company_status_filter(clauses: list[dict], statuses: Optional[list[str]]) -> None:
-    if not statuses:
-        return
-    should: list[dict] = []
-    for s in statuses:
-        s_norm = (s or "").lower().strip()
-        if s_norm == "public":
-            should.append({"term": {"is_public": True}})
-        elif s_norm == "private":
-            should.append({"term": {"is_public": False}})
-        elif s_norm == "nonprofit":
-            should.append({"term": {"type": "Nonprofit"}})
-    if should:
-        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
-
 
 _HOW_THEY_SELL_TERMS: dict[str, list[str]] = {
     "b2b": ["B2B", "business to business"],
@@ -496,15 +332,6 @@ _NEWS_TIMEFRAME_DAYS: dict[str, int] = {
     "12m": 365,
 }
 
-
-def _news_timeframe_to_date(timeframe: str) -> Optional[str]:
-    days = _NEWS_TIMEFRAME_DAYS.get(timeframe)
-    if not days:
-        return None
-    from datetime import timedelta
-    return (date.today() - timedelta(days=days)).strftime("%Y-%m-%d")
-
-
 _NEWS_CATEGORY_TERMS: dict[str, list[str]] = {
     "funding_investment": ["funding", "investment", "raised", "series"],
     "mergers_acquisitions": ["acquisition", "merger", "acquired"],
@@ -518,13 +345,228 @@ _NEWS_CATEGORY_TERMS: dict[str, list[str]] = {
     "awards_recognition": ["award", "recognition", "ranked", "best place"],
 }
 
+_FUNDING_STAGE_MAP: dict[str, list[str]] = {
+    "pre_seed":              ["Pre-Seed", "Pre-seed"],
+    "seed":                  ["Seed"],
+    "angel":                 ["Angel"],
+    "series_a":              ["Series A"],
+    "series_b":              ["Series B"],
+    "series_c":              ["Series C"],
+    "series_d":              ["Series D"],
+    "series_e":              ["Series E"],
+    "series_f":              ["Series F"],
+    "series_g":              ["Series G"],
+    "series_h":              ["Series H"],
+    "series_unknown":        ["Series Unknown", "Undisclosed"],
+    "convertible_note":      ["Convertible Note"],
+    "corporate_round":       ["Corporate Round"],
+    "debt_financing":        ["Debt Financing"],
+    "equity_crowdfunding":   ["Equity Crowdfunding"],
+    "grant":                 ["Grant"],
+    "private_equity":        ["Private Equity"],
+    "post_ipo_equity":       ["Post-IPO Equity"],
+    "post_ipo_debt":         ["Post-IPO Debt"],
+    "secondary_market":      ["Secondary Market"],
+    "venture_round":         ["Venture Round"],
+    "initial_coin_offering": ["ICO", "Initial Coin Offering"],
+    "non_equity_assistance": ["Non-equity Assistance"],
+}
+
+
+# ---------------------------------------------------------------------------
+# Filter helpers.
+# ---------------------------------------------------------------------------
+
+def _add_revenue_bucket_filter(clauses: list[dict], buckets: Optional[list[str]]) -> None:
+    if not buckets:
+        return
+    bucket_should: list[dict] = []
+    for b in buckets:
+        rng = _REVENUE_BUCKET_TO_RANGE.get(b)
+        if not rng:
+            continue
+        low, high = rng
+        for src in _REVENUE_RANGE_SOURCES:
+            sub: list[dict] = []
+            if high is not None:
+                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_from": {"lte": high}}})
+            if low is not None:
+                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_to": {"gte": low}}})
+            if sub:
+                bucket_should.append({"bool": {"filter": sub}})
+        for src in _REVENUE_POINT_SOURCES:
+            sub = {}
+            if low is not None:
+                sub["gte"] = low
+            if high is not None:
+                sub["lte"] = high
+            if sub:
+                bucket_should.append({"range": {f"revenue_annual_range.{src}.annual_revenue": sub}})
+    if bucket_should:
+        clauses.append({"bool": {"should": bucket_should, "minimum_should_match": 1}})
+
+
+def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) -> None:
+    if not types:
+        return
+    should: list[dict] = []
+    for t in types:
+        t_norm = (t or "").lower().strip()
+        if t_norm == "public":
+            should.append({"term": {"is_public": True}})
+        elif t_norm == "private":
+            should.append({"term": {"is_public": False}})
+        elif t_norm == "public_subsidiary":
+            should.append({"bool": {"filter": [
+                {"term": {"is_public": True}},
+                {"exists": {"field": "parent_company_name"}},
+            ]}})
+        elif t_norm in _TYPE_MAP_DIRECT:
+            should.append({"term": {"type": _TYPE_MAP_DIRECT[t_norm]}})
+        elif t_norm in _COMPANY_TYPE_TERMS:
+            for phrase in _COMPANY_TYPE_TERMS[t_norm]:
+                for field in _DESCRIPTION_FIELDS:
+                    should.append({"match_phrase": {field: phrase}})
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+def _add_company_status_filter(clauses: list[dict], statuses: Optional[list[str]]) -> None:
+    """CoreSignal uses two separate fields for company status:
+      is_public (boolean)          — ownership type (public / private)
+      type (keyword)               — "Nonprofit", "Government Agency", "Educational"
+      company_status (keyword)     — operational: "active", "acquired", "closed", "defunct", "ipo"
+    """
+    if not statuses:
+        return
+    should: list[dict] = []
+    for s in statuses:
+        s_norm = (s or "").lower().strip()
+        if s_norm == "public":
+            should.append({"term": {"is_public": True}})
+        elif s_norm == "private":
+            should.append({"term": {"is_public": False}})
+        elif s_norm == "nonprofit":
+            should.append({"term": {"type": "Nonprofit"}})
+        elif s_norm == "active":
+            should.append({"term": {"company_status": "active"}})
+        elif s_norm == "acquired":
+            should.append({"term": {"company_status": "acquired"}})
+        elif s_norm in ("closed", "defunct"):
+            # CoreSignal uses both "closed" and "defunct" for shut-down companies
+            should.append({"bool": {"should": [
+                {"term": {"company_status": "closed"}},
+                {"term": {"company_status": "defunct"}},
+            ], "minimum_should_match": 1}})
+        elif s_norm == "ipo":
+            # IPO companies are public — match either status flag
+            should.append({"bool": {"should": [
+                {"term": {"company_status": "ipo"}},
+                {"term": {"is_public": True}},
+            ], "minimum_should_match": 1}})
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+def _add_email_provider_filter(clauses: list[dict], providers: Optional[list[str]]) -> None:
+    if not providers:
+        return
+    known = [p.lower() for p in providers if p.lower() in _EMAIL_PROVIDER_TECH_ALIASES]
+    include_other = any(p.lower() == "other" for p in providers)
+
+    should: list[dict] = []
+
+    for provider in known:
+        for alias in _EMAIL_PROVIDER_TECH_ALIASES[provider]:
+            should.append({
+                "nested": {
+                    "path": "technologies_used",
+                    "query": {"term": {"technologies_used.technology": alias}},
+                }
+            })
+
+    if include_other:
+        # "Other" = no technologies_used entry matching any known provider
+        must_not_clauses: list[dict] = []
+        for alias in _KNOWN_EMAIL_PROVIDER_TECHS:
+            must_not_clauses.append({
+                "nested": {
+                    "path": "technologies_used",
+                    "query": {"term": {"technologies_used.technology": alias}},
+                }
+            })
+        should.append({"bool": {"must_not": must_not_clauses}})
+
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+def _add_text_search_filter(clauses: list[dict], terms: Optional[list[str]]) -> None:
+    if not terms:
+        return
+    should: list[dict] = []
+    for term in terms:
+        for field in _DESCRIPTION_FIELDS:
+            should.append({"match_phrase": {field: term}})
+    clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+def _add_certifications_filter(clauses: list[dict], certs: Optional[list[str]]) -> None:
+    """Each cert is an AND requirement; within a cert, aliases are OR-matched."""
+    if not certs:
+        return
+    for cert in certs:
+        aliases = _CERT_SEARCH_TERMS.get(cert.lower(), [cert])
+        cert_should: list[dict] = []
+        for alias in aliases:
+            for field in _DESCRIPTION_FIELDS:
+                cert_should.append({"match_phrase": {field: alias}})
+        clauses.append({"bool": {"should": cert_should, "minimum_should_match": 1}})
+
+
+def _add_keywords_filter(
+    must: list[dict],
+    filters: list[dict],
+    must_not: list[dict],
+    include: Optional[list[str]],
+    match_mode: str,
+    scope: Optional[list[str]],
+    exclude: Optional[list[str]],
+) -> None:
+    if not include and not exclude:
+        return
+
+    if not scope:
+        fields = _KEYWORD_ALL_FIELDS
+    else:
+        fields_set: set[str] = set()
+        for s in scope:
+            fields_set.update(_KEYWORD_SCOPE_TO_FIELDS.get(s, []))
+        fields = list(fields_set) if fields_set else _KEYWORD_ALL_FIELDS
+
+    if include:
+        if match_mode == "all":
+            for kw in include:
+                kw_should = [{"match_phrase": {f: kw}} for f in fields]
+                must.append({"bool": {"should": kw_should, "minimum_should_match": 1}})
+        else:
+            kw_should: list[dict] = []
+            for kw in include:
+                for f in fields:
+                    kw_should.append({"match_phrase": {f: kw}})
+            filters.append({"bool": {"should": kw_should, "minimum_should_match": 1}})
+
+    if exclude:
+        for kw in exclude:
+            kw_must_not = [{"match_phrase": {f: kw}} for f in fields]
+            must_not.append({"bool": {"should": kw_must_not, "minimum_should_match": 1}})
+
 
 def _add_enum_text_filter(
     clauses: list[dict],
     values: Optional[list[str]],
     term_map: dict[str, list[str]],
 ) -> None:
-    """For each selected value, OR-match its aliases across description fields."""
     if not values:
         return
     should: list[dict] = []
@@ -537,13 +579,19 @@ def _add_enum_text_filter(
         clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
 
 
+def _news_timeframe_to_date(timeframe: str) -> Optional[str]:
+    days = _NEWS_TIMEFRAME_DAYS.get(timeframe)
+    if not days:
+        return None
+    return (date.today() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+
 def _add_news_filter(
     clauses: list[dict],
     keywords: Optional[list[str]],
     categories: Optional[list[str]],
     timeframe: Optional[str],
 ) -> None:
-    """Filter against news_articles nested field using headline/summary and published_date."""
     if not keywords and not categories and not timeframe:
         return
     inner: list[dict] = []
@@ -574,11 +622,31 @@ def _add_news_filter(
         clauses.append({"nested": {"path": "news_articles", "query": inner_query}})
 
 
+def _add_funding_stage_filter(clauses: list[dict], stages: Optional[list[str]]) -> None:
+    # term on .keyword subfield — prevents "Seed" matching "Pre-Seed" and handles
+    # multi-word values like "Series A" that a text-field term query would miss.
+    if not stages:
+        return
+    should: list[dict] = []
+    for s in stages:
+        aliases = _FUNDING_STAGE_MAP.get(s.lower().strip(), [s])
+        for alias in aliases:
+            should.append({"term": {"last_funding_round.type.keyword": alias}})
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
 # ---------------------------------------------------------------------------
 # Query builders — Person (employee_multi_source).
 # ---------------------------------------------------------------------------
 
-def build_person_query(f: PersonSearchRequest) -> dict:
+def build_person_query(f: PersonSearchRequest, *, use_company_id_filter: bool = False) -> dict:
+    """Build ES-DSL query for employee_multi_source.
+
+    When use_company_id_filter=True the caller has already resolved company names
+    to IDs and will inject a `terms` clause on active_experience_company_id, so
+    we skip the less-reliable active_experience_company_name match_phrase.
+    """
     must: list[dict] = []
     filters: list[dict] = []
     must_not: list[dict] = []
@@ -589,29 +657,29 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     _add_multi_match(must, "active_experience_title", f.job_title, phrase=(f.job_title_match_type == "exact"))
     _add_multi_term(filters, "active_experience_department", f.departments)
     _add_multi_term(filters, "active_experience_management_level", f.seniority)
-    _add_multi_match(must, "active_experience_company_name", f.companies, phrase=True)
 
-    # Person location: OR across country/state/city.
+    if not use_company_id_filter:
+        _add_multi_match(must, "active_experience_company_name", f.companies, phrase=True)
+        _add_location_match_multi(
+            must,
+            [
+                "active_experience_company_hq_country",
+                "active_experience_company_hq_region",
+                "active_experience_company_hq_city",
+            ],
+            f.hq_locations,
+        )
+        _add_multi_match(must, "active_experience_company_industry", f.industries, phrase=True)
+
     _add_location_match_multi(
         must,
         ["location_country", "location_state", "location_city"],
         f.person_locations,
     )
-    # Company HQ location.
-    _add_location_match_multi(
-        must,
-        [
-            "active_experience_company_hq_country",
-            "active_experience_company_hq_region",
-            "active_experience_company_hq_city",
-        ],
-        f.hq_locations,
-    )
 
     if f.require_work_email:
         filters.append({"exists": {"field": "primary_professional_email"}})
 
-    _add_multi_match(must, "active_experience_company_industry", f.industries, phrase=True)
     _add_multi_match(filters, "inferred_skills", f.technologies, phrase=True)
 
     if f.exclude_person_ids:
@@ -622,8 +690,8 @@ def build_person_query(f: PersonSearchRequest) -> dict:
         for name in f.exclude_company_names:
             must_not.append({"match_phrase": {"active_experience_company_name": name}})
 
-    # Time in role + time in company both map to active_experience_start_date.
-    # Merge into one range clause to avoid conflicting gte/lte clauses.
+    # time_in_role and time_in_company both map to active_experience_start_date;
+    # merge into one range clause to avoid conflicting gte/lte bounds.
     role_min = f.time_in_role_min_months
     role_max = f.time_in_role_max_months
     co_min = f.time_in_company_min_months
@@ -632,53 +700,12 @@ def build_person_query(f: PersonSearchRequest) -> dict:
     merged_max: Optional[int] = min(v for v in (role_max, co_max) if v is not None) if any(v is not None for v in (role_max, co_max)) else None
     _add_date_range(filters, "active_experience_start_date", min_months=merged_min, max_months=merged_max)
 
-    # Total years of experience → convert to months range
     if f.experience_years_min is not None or f.experience_years_max is not None:
         months_min = int(f.experience_years_min * 12) if f.experience_years_min is not None else None
         months_max = int(f.experience_years_max * 12) if f.experience_years_max is not None else None
         _add_range(filters, "total_experience_duration_months", months_min, months_max)
 
     return _build_bool_query(must, filters, must_not=must_not or None)
-
-
-_FUNDING_STAGE_MAP: dict[str, list[str]] = {
-    "pre_seed":              ["Pre-Seed", "Pre-seed"],
-    "seed":                  ["Seed"],
-    "angel":                 ["Angel"],
-    "series_a":              ["Series A"],
-    "series_b":              ["Series B"],
-    "series_c":              ["Series C"],
-    "series_d":              ["Series D"],
-    "series_e":              ["Series E"],
-    "series_f":              ["Series F"],
-    "series_g":              ["Series G"],
-    "series_h":              ["Series H"],
-    "series_unknown":        ["Series Unknown", "Undisclosed"],
-    "convertible_note":      ["Convertible Note"],
-    "corporate_round":       ["Corporate Round"],
-    "debt_financing":        ["Debt Financing"],
-    "equity_crowdfunding":   ["Equity Crowdfunding"],
-    "grant":                 ["Grant"],
-    "private_equity":        ["Private Equity"],
-    "post_ipo_equity":       ["Post-IPO Equity"],
-    "post_ipo_debt":         ["Post-IPO Debt"],
-    "secondary_market":      ["Secondary Market"],
-    "venture_round":         ["Venture Round"],
-    "initial_coin_offering": ["ICO", "Initial Coin Offering"],
-    "non_equity_assistance": ["Non-equity Assistance"],
-}
-
-
-def _add_funding_stage_filter(clauses: list[dict], stages: Optional[list[str]]) -> None:
-    if not stages:
-        return
-    should: list[dict] = []
-    for s in stages:
-        aliases = _FUNDING_STAGE_MAP.get(s.lower().strip(), [s])
-        for alias in aliases:
-            should.append({"match": {"last_funding_round.type": alias}})
-    if should:
-        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
 
 
 # ---------------------------------------------------------------------------
@@ -706,7 +733,6 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     _add_news_filter(filters, f.company_news_keywords, f.company_news_categories, f.company_news_timeframe)
     _add_multi_term(filters, "industry.exact", f.industries, lowercase=False)
 
-    # Technologies — nested field.
     if f.technologies:
         should_tech: list[dict] = []
         for tech in f.technologies:
@@ -721,7 +747,7 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     _add_revenue_bucket_filter(filters, f.revenue_buckets)
     if f.revenue_min is not None or f.revenue_max is not None:
         rev_should: list[dict] = []
-        for src in ("source_4_annual_revenue_range", "source_6_annual_revenue_range"):
+        for src in _REVENUE_RANGE_SOURCES:
             sub: list[dict] = []
             if f.revenue_min is not None:
                 sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_to": {"gte": f.revenue_min}}})
@@ -729,16 +755,25 @@ def build_company_query(f: CompanySearchRequest) -> dict:
                 sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_from": {"lte": f.revenue_max}}})
             if sub:
                 rev_should.append({"bool": {"filter": sub}})
+        for src in _REVENUE_POINT_SOURCES:
+            sub = {}
+            if f.revenue_min is not None:
+                sub["gte"] = f.revenue_min
+            if f.revenue_max is not None:
+                sub["lte"] = f.revenue_max
+            if sub:
+                rev_should.append({"range": {f"revenue_annual_range.{src}.annual_revenue": sub}})
         if rev_should:
             filters.append({"bool": {"should": rev_should, "minimum_should_match": 1}})
-    _add_funding_stage_filter(filters, f.funding_stages)
 
+    _add_funding_stage_filter(filters, f.funding_stages)
     _add_range(filters, "employees_count", f.employee_count_min, f.employee_count_max)
     _add_range(filters, "last_funding_round.amount_raised", f.funding_min, f.funding_max)
+
     if f.founded_min is not None or f.founded_max is not None:
-        yr: dict[str, str] = {}
+        yr: dict[str, Any] = {}
         if f.founded_min is not None:
-            yr["gte"] = str(f.founded_min)
+            yr["gte"] = str(f.founded_min)   # CoreSignal stores founded_year as a string e.g. "2015"
         if f.founded_max is not None:
             yr["lte"] = str(f.founded_max)
         filters.append({"range": {"founded_year": yr}})
@@ -747,7 +782,7 @@ def build_company_query(f: CompanySearchRequest) -> dict:
         f.headcount_growth_timeframe,
         "employees_count_change.change_yearly_percentage",
     )
-    # Coresignal already stores percent; no /100 conversion.
+    # CoreSignal already stores as percentage; no /100 conversion needed.
     _add_range(filters, growth_field, f.headcount_growth_min, f.headcount_growth_max)
 
     if f.headcount_by_location_country:
@@ -790,7 +825,6 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     _add_text_search_filter(filters, f.awards)
     _add_text_search_filter(filters, f.other_compliance)
 
-    # Job posting keywords — nested query on active_job_postings.job_posting_title
     if f.job_posting_keywords:
         for kw in f.job_posting_keywords:
             filters.append({
@@ -826,7 +860,7 @@ def _extract_error(body: Any) -> str:
 def _raise_provider_error(status: int, body: Any) -> NoReturn:
     msg = _extract_error(body)
     if status == 400:
-        raise HTTPException(status_code=400, detail=f"Invalid search parameters. Please adjust your filters and try again.")
+        raise HTTPException(status_code=400, detail="Invalid search parameters. Please adjust your filters and try again.")
     if status == 401:
         raise HTTPException(status_code=503, detail="Search service is not configured. Please contact support.")
     if status == 402:
@@ -841,9 +875,6 @@ def _raise_provider_error(status: int, body: Any) -> NoReturn:
 
 
 def _search_url(dataset: str) -> str:
-    # dataset is "employee_multi_source" or "company_multi_source".
-    # Coresignal's ES DSL search returns a JSON array of record IDs; use /collect/{id}
-    # to fetch each full record.
     return f"{settings.CORESIGNAL_BASE_URL}/v2/{dataset}/search/es_dsl"
 
 
@@ -852,7 +883,7 @@ def _collect_url(dataset: str, record_id: str | int) -> str:
 
 
 def _make_search_body(query: dict) -> dict:
-    # Coresignal restricts the ES DSL body to `query` and a string-list `sort`.
+    # CoreSignal restricts the ES DSL body to `query` and a string-list `sort`.
     return {"query": query, "sort": ["_score"]}
 
 
@@ -861,45 +892,193 @@ async def _collect_records(
     dataset: str,
     ids: list,
 ) -> list[dict]:
-    """Fetch full records for the given IDs. Missing IDs (404) are skipped silently."""
-    records: list[dict] = []
-    for rid in ids:
+    """Fetch full records concurrently.
+
+    - 404s are silently skipped (record deleted / not found).
+    - Network errors per ID are skipped; partial results are returned.
+    - API errors (401, 402, 429, 5xx) abort the entire batch.
+    """
+    async def fetch_one(rid: Any) -> dict | None:
         try:
             resp = await client.get(_collect_url(dataset, rid), headers=_headers())
         except httpx.RequestError:
-            continue
+            return None
         if resp.status_code == 200:
             body = resp.json()
             if isinstance(body, dict) and "data" in body and isinstance(body["data"], dict):
                 body = body["data"]
-            if isinstance(body, dict):
-                records.append(body)
-        elif resp.status_code == 404:
-            continue
-        else:
-            try:
-                err_body = resp.json()
-            except Exception:
-                err_body = {}
-            _raise_provider_error(resp.status_code, err_body)
-    return records
+            return body if isinstance(body, dict) else None
+        if resp.status_code == 404:
+            return None
+        try:
+            err_body = resp.json()
+        except Exception:
+            err_body = {}
+        _raise_provider_error(resp.status_code, err_body)
+
+    results = await asyncio.gather(*[fetch_one(rid) for rid in ids])
+    return [r for r in results if isinstance(r, dict)]
 
 
 # ---------------------------------------------------------------------------
-# Response pass-through — return the raw Coresignal record unchanged, with `id`
-# normalized to a string so the frontend can key rows by it.
+# Response mappers.
+#
+# CoreSignal top-level active_experience_* fields only carry a handful of values
+# (title, department, management_level, company_id, company_website, logo_url).
+# All richer company details live inside the nested experience[] array.
 # ---------------------------------------------------------------------------
 
-def _passthrough(r: dict) -> dict:
+def _active_experience_item(r: dict) -> dict:
+    experiences = [e for e in (r.get("experience") or []) if isinstance(e, dict)]
+    if not experiences:
+        return {}
+    for exp in experiences:
+        if exp.get("active_experience") == 1:
+            return exp
+    return min(experiences, key=lambda e: e.get("order_in_profile") or 999)
+
+
+def _build_start_date(exp: dict) -> str | None:
+    if exp.get("date_from"):
+        return exp["date_from"]
+    yr = exp.get("date_from_year")
+    if not yr:
+        return None
+    mo = exp.get("date_from_month")
+    return f"{yr}-{str(mo).zfill(2)}-01" if mo else f"{yr}-01-01"
+
+
+def _extract_awards_certs(r: dict) -> list | None:
+    result: list[str] = []
+    for item in (r.get("awards") or []):
+        label = (item.get("title") or item.get("name")) if isinstance(item, dict) else str(item)
+        if label:
+            result.append(label)
+    for item in (r.get("certifications") or []):
+        label = (item.get("name") or item.get("title")) if isinstance(item, dict) else str(item)
+        if label:
+            result.append(label)
+    return result or None
+
+
+def _map_person(r: dict) -> dict:
     if not isinstance(r, dict):
         return {}
-    rid = r.get("id")
-    if rid is not None:
-        r["id"] = str(rid)
-    email = r.pop("primary_professional_email", None)
-    r.pop("primary_professional_email_status", None)
-    r["has_email"] = bool(email)
-    return r
+    email = r.get("primary_professional_email")
+    exp = _active_experience_item(r)
+
+    return {
+        # ── Identity ──────────────────────────────────────────────────────────
+        "id": str(r.get("id", "")),
+        "full_name": r.get("full_name"),
+        "first_name": r.get("first_name"),
+        "last_name": r.get("last_name"),
+        "headline": r.get("headline"),
+        "picture_url": r.get("picture_url"),
+        "linkedin_url": r.get("linkedin_url"),
+        # ── Location ─────────────────────────────────────────────────────────
+        "location_country": r.get("location_country"),
+        "location_city": r.get("location_city"),
+        "location_state": r.get("location_state"),
+        # ── Contact / social ─────────────────────────────────────────────────
+        "mobile_phone": r.get("mobile_phone"),
+        "connections_count": r.get("connections_count"),
+        "followers_count": r.get("followers_count"),
+        "has_email": bool(email),
+        # ── Skills / experience ───────────────────────────────────────────────
+        "inferred_skills": r.get("inferred_skills") or [],
+        "total_experience_duration_months": r.get("total_experience_duration_months"),
+        # ── Salary ───────────────────────────────────────────────────────────
+        "projected_base_salary_median": r.get("projected_base_salary_median"),
+        "projected_base_salary_currency": r.get("projected_base_salary_currency"),
+        # ── Active role ───────────────────────────────────────────────────────
+        "active_experience_title": r.get("active_experience_title") or exp.get("position_title"),
+        "active_experience_department": r.get("active_experience_department") or exp.get("department"),
+        "active_experience_management_level": r.get("active_experience_management_level") or exp.get("management_level"),
+        "active_experience_start_date": _build_start_date(exp),
+        # ── Active company ────────────────────────────────────────────────────
+        "active_experience_company_id": r.get("active_experience_company_id") or exp.get("company_id"),
+        # CoreSignal top-level carries shorthand name; full name is in experience[]
+        "active_experience_company_name": (
+            exp.get("company_name")
+            or r.get("active_experience_company_shorthand_name")
+        ),
+        "active_experience_company_website": r.get("active_experience_company_website") or exp.get("company_website"),
+        "active_experience_company_industry": exp.get("company_industry"),
+        "active_experience_company_employees_count": exp.get("company_employees_count"),
+        "active_experience_company_size": exp.get("company_size_range"),
+        "active_experience_company_type": exp.get("company_type"),
+        "active_experience_company_status": r.get("active_experience_company_status"),
+        "active_experience_company_founded": exp.get("company_founded_year"),
+        "active_experience_company_founded_year": exp.get("company_founded_year"),
+        "active_experience_company_hq_country": exp.get("company_hq_country"),
+        "active_experience_company_hq_city": exp.get("company_hq_city"),
+        # company_hq_state is the state/province; company_hq_regions is a broad regions array
+        "active_experience_company_hq_region": exp.get("company_hq_state"),
+        "active_experience_company_hq_location": exp.get("company_hq_full_address"),
+        "active_experience_company_categories_and_keywords": exp.get("company_categories_and_keywords"),
+        # Revenue: first non-null across sources in preference order (5 → 4 → 6 → 1)
+        "active_experience_company_annual_revenue": next(
+            (exp.get(f"company_annual_revenue_source_{s}")
+             for s in ("5", "4", "6", "1")
+             if exp.get(f"company_annual_revenue_source_{s}") is not None),
+            None,
+        ),
+        # ── Awards & certs ────────────────────────────────────────────────────
+        "awards_certifications": _extract_awards_certs(r),
+    }
+
+
+def _map_company(r: dict) -> dict:
+    """CoreSignal uses `founded_year`; frontend expects `founded`."""
+    if not isinstance(r, dict):
+        return {}
+    techs_raw = r.get("technologies_used") or []
+    technologies_used = [
+        {"technology": t["technology"]} if isinstance(t, dict) and "technology" in t else t
+        for t in techs_raw
+    ]
+    # Frontend only needs the count of active job postings, not the full objects
+    jobs_raw = r.get("active_job_postings") or []
+    active_job_postings = [{"id": j.get("id")} if isinstance(j, dict) else j for j in jobs_raw]
+
+    return {
+        # ── Identity ──────────────────────────────────────────────────────────
+        "id": str(r.get("id", "")),
+        "company_name": r.get("company_name") or r.get("name"),
+        "company_legal_name": r.get("company_legal_name"),
+        "website": r.get("website"),
+        "canonical_linkedin_url": r.get("canonical_linkedin_url"),
+        # ── Classification ────────────────────────────────────────────────────
+        "industry": r.get("industry"),
+        "type": r.get("type"),
+        "is_public": r.get("is_public"),
+        "company_status": r.get("company_status"),
+        "founded": r.get("founded_year") or r.get("founded"),
+        # ── Size ─────────────────────────────────────────────────────────────
+        "employees_count": r.get("employees_count"),
+        "size_range": r.get("size_range"),
+        # ── Location ─────────────────────────────────────────────────────────
+        "hq_country": r.get("hq_country"),
+        "hq_region": r.get("hq_region"),
+        "hq_city": r.get("hq_city"),
+        "hq_state": r.get("hq_state"),
+        "hq_location": r.get("hq_location"),
+        # ── Keywords / tags ───────────────────────────────────────────────────
+        "categories_and_keywords": r.get("categories_and_keywords"),
+        "awards_certifications": _extract_awards_certs(r),
+        # ── Growth metrics ────────────────────────────────────────────────────
+        "employees_count_change": r.get("employees_count_change"),
+        "total_website_visits_monthly": r.get("total_website_visits_monthly"),
+        "total_website_visits_change": r.get("total_website_visits_change"),
+        # ── Financial ────────────────────────────────────────────────────────
+        "revenue_annual_range": r.get("revenue_annual_range"),
+        "last_funding_round": r.get("last_funding_round"),
+        # ── Ratings / activity ────────────────────────────────────────────────
+        "company_employee_reviews_aggregate_score": r.get("company_employee_reviews_aggregate_score"),
+        "active_job_postings": active_job_postings,
+        "technologies_used": technologies_used,
+    }
 
 
 async def _store_person_records(db: "AsyncSession", records: list[dict]) -> None:
@@ -937,12 +1116,45 @@ async def _store_person_records(db: "AsyncSession", records: list[dict]) -> None
     await db.execute(stmt)
 
 
+async def _store_company_records(db: "AsyncSession", records: list[dict]) -> None:
+    import uuid as _uuid
+    import datetime as _dt
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+    from app.models.search_record import CompanySearchRecord
+
+    if not records:
+        return
+    now = _dt.datetime.now(_dt.timezone.utc)
+    rows = [
+        {
+            "id": str(_uuid.uuid4()),
+            "coresignal_id": str(r.get("id", "")),
+            "raw_data": r,
+            "created_at": now,
+            "updated_at": now,
+        }
+        for r in records
+        if r.get("id")
+    ]
+    if not rows:
+        return
+    stmt = pg_insert(CompanySearchRecord).values(rows)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["coresignal_id"],
+        set_={
+            "raw_data": stmt.excluded.raw_data,
+            "updated_at": stmt.excluded.updated_at,
+        },
+    )
+    await db.execute(stmt)
+
+
 # ---------------------------------------------------------------------------
-# Company pre-fetch — resolve headcount-derived filters into a set of company IDs
-# so the person query can constrain on `active_experience_company_id`.
+# Company pre-fetch — resolve company filters into IDs for person search.
 # ---------------------------------------------------------------------------
 
-def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
+def _person_has_non_name_company_filters(req: PersonSearchRequest) -> bool:
+    """True when company-scoped filters beyond company name are present."""
     company_scoped = any([
         req.company_type,
         req.revenue_buckets,
@@ -975,6 +1187,8 @@ def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
         bool(req.company_news_timeframe),
         bool(req.keywords_include),
         bool(req.keywords_exclude),
+        bool(req.industries),
+        bool(req.hq_locations),
     ])
     dept_active = bool(req.headcount_by_department) and (
         req.headcount_by_department_min is not None
@@ -987,8 +1201,15 @@ def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
     return company_scoped or dept_active or loc_active
 
 
+def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
+    return bool(req.companies) or _person_has_non_name_company_filters(req)
+
+
 async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int = 200) -> list[str]:
     co_req = CompanySearchRequest(
+        companies=req.companies,
+        locations=req.hq_locations,
+        industries=req.industries,
         type=req.company_type,
         revenue_buckets=req.revenue_buckets,
         revenue_min=req.revenue_min,
@@ -1054,7 +1275,7 @@ async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int 
 
 
 # ---------------------------------------------------------------------------
-# Public surface — search_persons / search_companies.
+# Public surface — search_persons / search_companies / agentic_search.
 # ---------------------------------------------------------------------------
 
 def _require_api_key() -> None:
@@ -1063,7 +1284,6 @@ def _require_api_key() -> None:
 
 
 def _paginate_ids(ids: list, scroll_token: Optional[str]) -> tuple[list, Optional[str]]:
-    """Slice the full ID list into a single page. Returns (page_ids, next_token)."""
     try:
         offset = int(scroll_token) if scroll_token else 0
     except ValueError:
@@ -1075,7 +1295,6 @@ def _paginate_ids(ids: list, scroll_token: Optional[str]) -> tuple[list, Optiona
 
 
 async def _search_ids(client: httpx.AsyncClient, dataset: str, query: dict) -> list:
-    """POST an ES DSL query and return the ID list. Raises on non-2xx."""
     resp = await client.post(
         _search_url(dataset),
         headers=_headers(),
@@ -1102,12 +1321,21 @@ async def search_persons(req: PersonSearchRequest, db: Optional["AsyncSession"] 
             raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
         except httpx.RequestError:
             raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
-        if not company_id_constraint:
-            return SearchResponse(data=[], meta=SearchMeta(total=0))
 
-    query = build_person_query(req)
-    if company_id_constraint:
-        terms_clause = {"terms": {"active_experience_company_id": company_id_constraint}}
+        if not company_id_constraint:
+            # Non-name company filters returned zero matching companies — no results possible.
+            if _person_has_non_name_company_filters(req):
+                return SearchResponse(data=[], meta=SearchMeta(total=0))
+            # Company name not found in company dataset (new/unlisted company);
+            # fall back to direct active_experience_company_name match.
+            company_id_constraint = None
+
+    # active_experience_company_id is a long field — convert strings to integers before
+    # building the terms clause, otherwise ES returns 0 results on type mismatch.
+    int_ids = [int(i) for i in (company_id_constraint or []) if str(i).isdigit()]
+    query = build_person_query(req, use_company_id_filter=bool(int_ids))
+    if int_ids:
+        terms_clause = {"terms": {"active_experience_company_id": int_ids}}
         if "bool" in query:
             query["bool"].setdefault("filter", []).append(terms_clause)
         else:
@@ -1130,12 +1358,12 @@ async def search_persons(req: PersonSearchRequest, db: Optional["AsyncSession"] 
             pass  # storage failure must never block search results
 
     return SearchResponse(
-        data=[_passthrough(r) for r in records],
+        data=[_map_person(r) for r in records],
         meta=SearchMeta(total=len(all_ids), scroll_token=next_token),
     )
 
 
-async def search_companies(req: CompanySearchRequest) -> SearchResponse:
+async def search_companies(req: CompanySearchRequest, db: Optional["AsyncSession"] = None) -> SearchResponse:
     _require_api_key()
 
     query = build_company_query(req)
@@ -1149,8 +1377,14 @@ async def search_companies(req: CompanySearchRequest) -> SearchResponse:
     except httpx.RequestError:
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
+    if db is not None:
+        try:
+            await _store_company_records(db, records)
+        except Exception:
+            pass  # storage failure must never block search results
+
     return SearchResponse(
-        data=[_passthrough(r) for r in records],
+        data=[_map_company(r) for r in records],
         meta=SearchMeta(total=len(all_ids), scroll_token=next_token),
     )
 
@@ -1163,14 +1397,13 @@ _ENTITY_TO_DATASET = {
 
 
 async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
-    """Translate a natural-language prompt to an ES query via CoreSignal Agentic API, then collect full records."""
+    """Translate a natural-language prompt to an ES query via CoreSignal Agentic API."""
     _require_api_key()
 
     dataset = _ENTITY_TO_DATASET.get(req.entity, "employee_multi_source")
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            # Step 1: Translate prompt → ES DSL query
             agentic_resp = await client.post(
                 _AGENTIC_URL,
                 headers=_headers(),
@@ -1188,11 +1421,8 @@ async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
             if not es_query:
                 return SearchResponse(data=[], meta=SearchMeta(total=0))
 
-            # Step 2: Search dataset with the generated query
             all_ids = await _search_ids(client, dataset, es_query)
             page_ids = all_ids[: req.limit]
-
-            # Step 3: Collect full records
             records = await _collect_records(client, dataset, page_ids)
 
     except httpx.TimeoutException:
@@ -1200,7 +1430,8 @@ async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
     except httpx.RequestError:
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
+    mapper = _map_company if req.entity == "company" else _map_person
     return SearchResponse(
-        data=[_passthrough(r) for r in records],
+        data=[mapper(r) for r in records],
         meta=SearchMeta(total=len(all_ids)),
     )

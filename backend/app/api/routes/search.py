@@ -25,8 +25,11 @@ async def person_search(
 
 
 @router.post("/companies", response_model=SearchResponse, summary="Search companies")
-async def company_search(body: CompanySearchRequest) -> SearchResponse:
-    return await coresignal_service.search_companies(body)
+async def company_search(
+    body: CompanySearchRequest,
+    db: AsyncSession = Depends(get_db),
+) -> SearchResponse:
+    return await coresignal_service.search_companies(body, db=db)
 
 
 @router.post("/agentic", response_model=SearchResponse, summary="Natural-language AI search")

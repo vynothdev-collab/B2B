@@ -29,7 +29,7 @@ class ListUpdate(BaseModel):
 class ListItemPayload(BaseModel):
     record_id: str
     item_type: str
-    data: dict[str, Any]
+    data: dict[str, Any] = {}
 
 
 class ListItemOut(BaseModel):
