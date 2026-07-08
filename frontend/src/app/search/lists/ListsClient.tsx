@@ -1,10 +1,193 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Users, Building2, Trash2, Loader2, List, Pencil, Check, X, Plus } from "lucide-react";
+import { Users, Building2, Trash2, Loader2, List, Pencil, Check, X, Plus, MoreHorizontal } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import { getLists, createList, deleteList, renameList, type ListRecord } from "@/lib/listsApi";
 import { toast } from "@/lib/toast";
+
+function DeleteConfirmModal({
+  listName,
+  onConfirm,
+  onClose,
+  loading,
+}: {
+  listName: string;
+  onConfirm: () => void;
+  onClose: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <Trash2 className="h-4 w-4 text-red-500" />
+            <h2 className="text-sm font-semibold text-gray-900">Delete list</h2>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4">
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold text-gray-900">&ldquo;{listName}&rdquo;</span>?
+            This action cannot be undone.
+          </p>
+
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={loading}
+              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            >
+              {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NewListModal({
+  type,
+  onConfirm,
+  onClose,
+  loading,
+}: {
+  type: "people" | "companies";
+  onConfirm: (name: string) => void;
+  onClose: () => void;
+  loading: boolean;
+}) {
+  const [name, setName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (name.trim()) onConfirm(name.trim());
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="flex items-center gap-2">
+            {type === "people"
+              ? <Users className="h-4 w-4 text-red-600" />
+              : <Building2 className="h-4 w-4 text-red-600" />}
+            <h2 className="text-sm font-semibold text-gray-900">
+              New {type === "people" ? "people" : "company"} list
+            </h2>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-5 py-4">
+          <label className="mb-1.5 block text-xs font-medium text-gray-600">List name</label>
+          <input
+            ref={inputRef}
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={type === "people" ? "e.g. Q3 Prospects" : "e.g. Target Accounts"}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100"
+            onKeyDown={(e) => e.key === "Escape" && onClose()}
+          />
+
+          <div className="mt-4 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!name.trim() || loading}
+              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+            >
+              {loading && <Loader2 className="h-3 w-3 animate-spin" />}
+              Create list
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function RowMenu({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: (e: React.MouseEvent) => void;
+  onDelete: (e: React.MouseEvent) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+        title="Actions"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full z-30 mt-1 w-36 rounded-lg border border-gray-100 bg-white py-1 shadow-lg">
+          <button
+            type="button"
+            onClick={(e) => { setOpen(false); onEdit(e); }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Pencil className="h-3.5 w-3.5 text-gray-400" />
+            Rename
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { setOpen(false); onDelete(e); }}
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -19,6 +202,8 @@ export default function ListsPage() {
   const [editName, setEditName] = useState("");
   const [saving, setSaving] = useState(false);
   const [creatingList, setCreatingList] = useState(false);
+  const [newListModal, setNewListModal] = useState<"people" | "companies" | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const hasFetched = useRef(false);
 
   useEffect(() => {
@@ -30,14 +215,20 @@ export default function ListsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleDelete(e: React.MouseEvent, id: string, name: string) {
+  function handleDelete(e: React.MouseEvent, id: string, name: string) {
     e.stopPropagation();
-    if (!confirm(`Delete list "${name}"?`)) return;
+    setDeleteTarget({ id, name });
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    const { id, name } = deleteTarget;
     setDeleting(id);
     try {
       await deleteList(id);
       setLists((prev) => prev.filter((l) => l.id !== id));
       toast.success(`"${name}" deleted`);
+      setDeleteTarget(null);
     } catch {
       toast.error("Failed to delete list");
     } finally {
@@ -72,14 +263,15 @@ export default function ListsPage() {
     setEditingId(null);
   }
 
-  async function handleNewList(type: "people" | "companies") {
-    const name = prompt(`Name for new ${type === "people" ? "people" : "companies"} list:`);
-    if (!name?.trim()) return;
+  async function handleCreateList(name: string) {
+    if (!newListModal) return;
+    const type = newListModal;
     setCreatingList(true);
     try {
-      const created = await createList(name.trim(), type);
+      const created = await createList(name, type);
       setLists((prev) => [...prev, created]);
       toast.success(`"${created.name}" created`);
+      setNewListModal(null);
     } catch {
       toast.error("Failed to create list");
     } finally {
@@ -103,7 +295,7 @@ export default function ListsPage() {
             <div className="ml-auto flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => handleNewList("people")}
+                onClick={() => setNewListModal("people")}
                 disabled={creatingList}
                 className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 sm:text-xs"
               >
@@ -113,7 +305,7 @@ export default function ListsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => handleNewList("companies")}
+                onClick={() => setNewListModal("companies")}
                 disabled={creatingList}
                 className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-50 sm:text-xs"
               >
@@ -219,55 +411,34 @@ export default function ListsPage() {
                       <td className="px-4 py-3 text-xs text-gray-500">{formatDate(list.updated_at)}</td>
 
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          {editingId === list.id ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={saveEdit}
-                                disabled={saving}
-                                className="rounded p-1.5 text-gray-400 hover:bg-green-50 hover:text-green-600 transition-colors disabled:opacity-50"
-                                title="Save"
-                              >
-                                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={cancelEdit}
-                                className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-                                title="Cancel"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </>
-                          ) : (
-                            !list.is_default && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={(e) => startEdit(e, list)}
-                                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-                                  title="Rename list"
-                                >
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => handleDelete(e, list.id, list.name)}
-                                  disabled={deleting === list.id}
-                                  className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
-                                  title="Delete list"
-                                >
-                                  {deleting === list.id ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  )}
-                                </button>
-                              </>
-                            )
-                          )}
-                        </div>
+                        {editingId === list.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={saveEdit}
+                              disabled={saving}
+                              className="rounded p-1.5 text-gray-400 hover:bg-green-50 hover:text-green-600 transition-colors disabled:opacity-50"
+                              title="Save"
+                            >
+                              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEdit}
+                              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                              title="Cancel"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          !list.is_default && (
+                            <RowMenu
+                              onEdit={(e) => startEdit(e, list)}
+                              onDelete={(e) => handleDelete(e, list.id, list.name)}
+                            />
+                          )
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -285,6 +456,24 @@ export default function ListsPage() {
           )}
         </div>
       </div>
+
+      {deleteTarget && (
+        <DeleteConfirmModal
+          listName={deleteTarget.name}
+          onConfirm={confirmDelete}
+          onClose={() => setDeleteTarget(null)}
+          loading={deleting === deleteTarget.id}
+        />
+      )}
+
+      {newListModal && (
+        <NewListModal
+          type={newListModal}
+          onConfirm={handleCreateList}
+          onClose={() => setNewListModal(null)}
+          loading={creatingList}
+        />
+      )}
     </>
   );
 }
