@@ -551,9 +551,9 @@ function CompanyListTable({
                   <Cell>
                     {funding ? (
                       <div className="flex flex-nowrap items-center gap-1.5 overflow-hidden">
-                        {funding.type && (
+                        {funding.type != null && (
                           <span className="shrink-0 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-600 whitespace-nowrap">
-                            {funding.type as string}
+                            {String(funding.type)}
                           </span>
                         )}
                         {funding.amount_raised != null && (
@@ -720,7 +720,7 @@ function PeopleListTable({
                     <Avatar name={name} pictureUrl={d.picture_url as string | undefined} />
                     <div className="min-w-0 overflow-hidden">
                       <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
-                      {!isCol("linkedin") && d.linkedin_url && (
+                      {!isCol("linkedin") && d.linkedin_url != null && (
                         <a
                           href={`https://${(d.linkedin_url as string).replace(/^https?:\/\//, "")}`}
                           target="_blank"
@@ -741,7 +741,7 @@ function PeopleListTable({
                       <p className="truncate text-[13px] font-medium text-gray-800">
                         {(d.active_experience_company_name as string) ?? "—"}
                       </p>
-                      {d.active_experience_company_website && (
+                      {d.active_experience_company_website != null && (
                         <a
                           href={`https://${(d.active_experience_company_website as string).replace(/^https?:\/\//, "")}`}
                           target="_blank"
@@ -761,7 +761,7 @@ function PeopleListTable({
                   <Cell>
                     <div className="min-w-0">
                       <p className="truncate text-[13px] text-gray-800">{(d.active_experience_title as string) ?? "—"}</p>
-                      {!isCol("headline") && d.headline && (
+                      {!isCol("headline") && d.headline != null && (
                         <p className="truncate text-xs text-gray-500" title={d.headline as string}>{d.headline as string}</p>
                       )}
                     </div>
