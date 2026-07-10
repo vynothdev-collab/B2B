@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ListPlus, Settings, SlidersHorizontal, X } from "lucide-react";
+import { ListPlus, SearchX, Settings, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import CompanyFilterPanel from "./filters/CompanyFilterPanel";
@@ -10,6 +10,7 @@ import EmptyState from "./EmptyState";
 import ActiveFilterChips from "./ActiveFilterChips";
 import AddToListModal from "./AddToListModal";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { searchCompanies, agenticSearch } from "@/lib/searchApi";
 import { buildCompanyChips } from "@/lib/filterChips";
 import { useColumnSettings, COMPANY_COLUMNS } from "@/hooks/useColumnSettings";
@@ -37,6 +38,7 @@ export default function CompanySearchPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
+  const [noDataDialog, setNoDataDialog] = useState(false);
 
   const { visible: visibleColumns, toggle, reset, cols } = useColumnSettings("b2b:col:companies", COMPANY_COLUMNS);
   const [columnSettingsOpen, setColumnSettingsOpen] = useState(false);
@@ -59,6 +61,7 @@ export default function CompanySearchPage() {
       setHasSearched(true);
       setCurrentPage(page);
       pageCacheRef.current.set(page, res);
+      if ((res.data?.length ?? 0) === 0) setNoDataDialog(true);
       setTokenHistory((prev) => {
         const next = prev.slice(0, page - 1);
         if (res.meta?.scroll_token) next.push(res.meta.scroll_token);
@@ -100,6 +103,7 @@ export default function CompanySearchPage() {
       setMeta(res.meta ?? null);
       setHasSearched(true);
       pageCacheRef.current.set(1, res);
+      if ((res.data?.length ?? 0) === 0) setNoDataDialog(true);
     } catch (e: unknown) {
       toast.apiError(e);
     } finally {
@@ -275,6 +279,15 @@ export default function CompanySearchPage() {
         onClose={() => setListModalItems([])}
         items={listModalItems}
         itemType="company"
+      />
+
+      <ConfirmDialog
+        open={noDataDialog}
+        title="No results found"
+        message="No data available for your current search. Try adjusting your filters or search criteria."
+        icon={<SearchX className="h-4 w-4 text-gray-400" />}
+        confirmLabel="OK"
+        onClose={() => setNoDataDialog(false)}
       />
     </>
   );

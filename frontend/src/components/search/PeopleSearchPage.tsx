@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Eye, ListPlus, Settings, SlidersHorizontal, X } from "lucide-react";
+import { Eye, ListPlus, SearchX, Settings, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import PeopleFilterPanel from "./filters/PeopleFilterPanel";
@@ -10,6 +10,7 @@ import EmptyState from "./EmptyState";
 import ActiveFilterChips from "./ActiveFilterChips";
 import AddToListModal from "./AddToListModal";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { searchPersons, agenticSearch, revealPersonEmail } from "@/lib/searchApi";
 import type { PersonExclusions } from "@/lib/searchApi";
 import { buildPersonChips } from "@/lib/filterChips";
@@ -43,6 +44,8 @@ export default function PeopleSearchPage() {
   // Column settings
   const { visible: visibleColumns, toggle, reset, cols } = useColumnSettings("b2b:col:people", PEOPLE_COLUMNS);
   const [columnSettingsOpen, setColumnSettingsOpen] = useState(false);
+
+  const [noDataDialog, setNoDataDialog] = useState(false);
 
   // Email reveal state
   const [revealedEmails, setRevealedEmails] = useState<Map<string, string | null>>(new Map());
@@ -125,6 +128,7 @@ export default function PeopleSearchPage() {
       setHasSearched(true);
       setCurrentPage(page);
       pageCacheRef.current.set(page, res);
+      if ((res.data?.length ?? 0) === 0) setNoDataDialog(true);
       setTokenHistory((prev) => {
         const next = prev.slice(0, page - 1);
         if (res.meta?.scroll_token) next.push(res.meta.scroll_token);
@@ -168,6 +172,7 @@ export default function PeopleSearchPage() {
       setMeta(res.meta ?? null);
       setHasSearched(true);
       pageCacheRef.current.set(1, res);
+      if ((res.data?.length ?? 0) === 0) setNoDataDialog(true);
     } catch (e: unknown) {
       toast.apiError(e);
     } finally {
@@ -350,6 +355,15 @@ export default function PeopleSearchPage() {
         onClose={() => setListModalItems([])}
         items={listModalItems}
         itemType="person"
+      />
+
+      <ConfirmDialog
+        open={noDataDialog}
+        title="No results found"
+        message="No data available for your current search. Try adjusting your filters or search criteria."
+        icon={<SearchX className="h-4 w-4 text-gray-400" />}
+        confirmLabel="OK"
+        onClose={() => setNoDataDialog(false)}
       />
     </>
   );

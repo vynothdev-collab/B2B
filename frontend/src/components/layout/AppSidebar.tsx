@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Building2, List, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, Building2, List, LogOut, ChevronLeft, ChevronRight, UserCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMobileSidebar } from "@/contexts/MobileSidebarContext";
 
@@ -147,15 +147,32 @@ export default function AppSidebar() {
 
         <div className="border-t border-gray-100 px-3 py-3">
           <div className={["flex items-center gap-2.5", !showLabels ? "justify-center" : ""].join(" ")}>
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+            <Link
+              href="/search/profile"
+              onClick={close}
+              title={!showLabels ? "Profile" : undefined}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white hover:bg-red-500 transition-colors"
+            >
               {user?.name ? user.name.slice(0, 2).toUpperCase() : "??"}
-            </div>
+            </Link>
             {showLabels && (
               <>
-                <div className="flex flex-1 flex-col leading-tight overflow-hidden">
+                <Link
+                  href="/search/profile"
+                  onClick={close}
+                  className="flex flex-1 flex-col leading-tight overflow-hidden min-w-0 hover:opacity-75 transition-opacity"
+                >
                   <span className="truncate text-xs font-semibold text-gray-800">{user?.name ?? "—"}</span>
                   <span className="truncate text-[10px] text-gray-400 capitalize">{user?.role ?? "User"}</span>
-                </div>
+                </Link>
+                <Link
+                  href="/search/profile"
+                  onClick={close}
+                  title="View profile"
+                  className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                >
+                  <UserCircle className="h-4 w-4" />
+                </Link>
                 <button
                   type="button"
                   onClick={logout}
