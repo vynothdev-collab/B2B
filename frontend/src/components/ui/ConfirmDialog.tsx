@@ -55,7 +55,7 @@ export default function ConfirmDialog({
             <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
           </div>
           <button
-            type="  "
+            type="button"
             onClick={onClose}
             disabled={loading}
             className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
