@@ -190,7 +190,7 @@ class SearchResponse(BaseModel):
 class AgenticSearchRequest(BaseModel):
     prompt: str
     entity: Literal["employee", "company"] = "employee"
-    limit: int = 20
+    scroll_token: Optional[str] = None
 
 
 class EmailRevealResponse(BaseModel):

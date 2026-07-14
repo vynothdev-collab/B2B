@@ -276,12 +276,12 @@ export async function searchCompanies(
 export async function agenticSearch(
   prompt: string,
   entity: "employee" | "company",
-  limit = 20,
+  scrollToken?: string,
 ): Promise<SearchResponse> {
   const { data } = await apiClient.post<SearchResponse>("/search/agentic", {
     prompt,
     entity,
-    limit,
+    scroll_token: scrollToken,
   });
   return data;
 }

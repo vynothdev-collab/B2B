@@ -677,12 +677,16 @@ def build_person_query(f: PersonSearchRequest, *, use_company_id_filter: bool = 
     _add_multi_match(filters, "inferred_skills", f.technologies, phrase=True)
 
     if f.exclude_person_ids:
-        must_not.append({"terms": {"id": f.exclude_person_ids}})
+        int_person_ids = [int(i) for i in f.exclude_person_ids if str(i).isdigit()]
+        if int_person_ids:
+            must_not.append({"terms": {"id": int_person_ids}})
     if f.exclude_company_ids:
-        must_not.append({"terms": {"active_experience_company_id": f.exclude_company_ids}})
+        int_co_ids = [int(i) for i in f.exclude_company_ids if str(i).isdigit()]
+        if int_co_ids:
+            must_not.append({"terms": {"active_experience_company_id": int_co_ids}})
     if f.exclude_company_names:
         for name in f.exclude_company_names:
-            must_not.append({"match_phrase": {"active_experience_company_name": name}})
+            must_not.append({"match_phrase": {"active_experience_company_shorthand_name": name}})
 
     # time_in_role and time_in_company both map to active_experience_start_date;
     # merge into one range clause to avoid conflicting gte/lte bounds.
@@ -1385,49 +1389,132 @@ async def search_companies(req: CompanySearchRequest, db: Optional["AsyncSession
     )
 
 
-_AGENTIC_URL = "https://api.coresignal.com/cdapi/v2/agentic_search/fast"
-_ENTITY_TO_DATASET = {
-    "employee": "employee_multi_source",
-    "company": "company_multi_source",
-}
+_AGENTIC_URL = f"{settings.CORESIGNAL_BASE_URL}/v2/agentic_search/fast"
+
+
+def _map_agentic_person(r: dict) -> dict:
+    """Map the lightweight agentic preview record to the standard person shape."""
+    if not isinstance(r, dict):
+        return {}
+    return {
+        "id": str(r.get("id", "")),
+        "full_name": r.get("full_name"),
+        "first_name": None,
+        "last_name": None,
+        "headline": r.get("headline"),
+        "picture_url": None,
+        "linkedin_url": r.get("professional_network_url"),
+        "location_country": r.get("location_country"),
+        "location_city": None,
+        "location_state": None,
+        "mobile_phone": None,
+        "connections_count": r.get("connections_count"),
+        "followers_count": r.get("followers_count"),
+        "has_email": False,
+        "inferred_skills": [],
+        "total_experience_duration_months": None,
+        "projected_base_salary_median": None,
+        "projected_base_salary_currency": None,
+        "active_experience_title": r.get("active_experience_title"),
+        "active_experience_department": r.get("active_experience_department"),
+        "active_experience_management_level": r.get("active_experience_management_level"),
+        "active_experience_start_date": None,
+        "active_experience_company_id": None,
+        "active_experience_company_name": r.get("company_name"),
+        "active_experience_company_website": r.get("company_website"),
+        "active_experience_company_industry": r.get("company_industry"),
+        "active_experience_company_employees_count": None,
+        "active_experience_company_size": None,
+        "active_experience_company_type": None,
+        "active_experience_company_status": None,
+        "active_experience_company_founded": None,
+        "active_experience_company_founded_year": None,
+        "active_experience_company_hq_country": r.get("company_hq_country"),
+        "active_experience_company_hq_city": None,
+        "active_experience_company_hq_region": None,
+        "active_experience_company_hq_location": r.get("company_hq_full_address"),
+        "active_experience_company_categories_and_keywords": None,
+        "active_experience_company_annual_revenue": None,
+        "awards_certifications": None,
+    }
+
+
+def _map_agentic_company(r: dict) -> dict:
+    """Map the lightweight agentic preview record to the standard company shape."""
+    if not isinstance(r, dict):
+        return {}
+    return {
+        "id": str(r.get("id", "")),
+        "company_name": r.get("company_name"),
+        "company_legal_name": None,
+        "website": r.get("website"),
+        "canonical_linkedin_url": r.get("professional_network_url"),
+        "industry": r.get("industry"),
+        "type": None,
+        "is_public": None,
+        "company_status": None,
+        "founded": None,
+        "employees_count": r.get("employees_count"),
+        "size_range": r.get("size_range"),
+        "hq_country": r.get("hq_country"),
+        "hq_region": None,
+        "hq_city": None,
+        "hq_state": None,
+        "hq_location": None,
+        "categories_and_keywords": None,
+        "awards_certifications": None,
+        "employees_count_change": None,
+        "total_website_visits_monthly": None,
+        "total_website_visits_change": None,
+        "revenue_annual_range": None,
+        "last_funding_round": None,
+        "company_employee_reviews_aggregate_score": None,
+        "active_job_postings": [],
+        "technologies_used": [],
+    }
 
 
 async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
-    """Translate a natural-language prompt to an ES query via CoreSignal Agentic API."""
-    _require_api_key()
+    """Natural-language search via CoreSignal Agentic /fast endpoint (return_data=true).
 
-    dataset = _ENTITY_TO_DATASET.get(req.entity, "employee_multi_source")
+    Uses return_data=true so CoreSignal returns records directly — a single API call
+    instead of the previous agentic→search→collect chain that could silently drop
+    records or leave `records`/`all_ids` undefined when an inner call raised an error.
+    """
+    _require_api_key()
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            agentic_resp = await client.post(
+            resp = await client.post(
                 _AGENTIC_URL,
                 headers=_headers(),
-                json={"prompt": req.prompt, "entity": req.entity, "return_data": False},
+                json={"prompt": req.prompt, "entity": req.entity, "return_data": True, "limit": 100},
             )
-            if agentic_resp.status_code != 200:
-                try:
-                    err_body = agentic_resp.json()
-                except Exception:
-                    err_body = {}
-                _raise_provider_error(agentic_resp.status_code, err_body)
 
-            agentic_body = agentic_resp.json()
-            es_query = agentic_body.get("query") if isinstance(agentic_body, dict) else None
-            if not es_query:
-                return SearchResponse(data=[], meta=SearchMeta(total=0))
+        if resp.status_code != 200:
+            try:
+                err_body = resp.json()
+            except Exception:
+                err_body = {}
+            _raise_provider_error(resp.status_code, err_body)
 
-            all_ids = await _search_ids(client, dataset, es_query)
-            page_ids = all_ids[: req.limit]
-            records = await _collect_records(client, dataset, page_ids)
+        try:
+            body = resp.json()
+        except Exception:
+            return SearchResponse(data=[], meta=SearchMeta(total=0))
+
+        if not isinstance(body, list):
+            return SearchResponse(data=[], meta=SearchMeta(total=0))
 
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Agentic search timed out. Please try again.")
     except httpx.RequestError:
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
-    mapper = _map_company if req.entity == "company" else _map_person
+    mapper = _map_agentic_company if req.entity == "company" else _map_agentic_person
+    all_records = [mapper(r) for r in body]
+    page_records, next_token = _paginate_ids(all_records, req.scroll_token)
     return SearchResponse(
-        data=[mapper(r) for r in records],
-        meta=SearchMeta(total=len(all_ids)),
+        data=page_records,
+        meta=SearchMeta(total=len(all_records), scroll_token=next_token),
     )

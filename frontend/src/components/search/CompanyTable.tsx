@@ -1,6 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Globe, Users } from "lucide-react";
+import { Globe, Users } from "lucide-react";
 import type { CompanyResult } from "@/types/search";
 import { COMPANY_COLUMNS } from "@/hooks/useColumnSettings";
 
@@ -83,35 +82,11 @@ function Cell({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
-function SortTh({
-  label, sortKey, current, dir, onSort, className = "",
-}: {
-  label: string; sortKey: string; current: string | null;
-  dir: "asc" | "desc"; onSort: (k: string) => void; className?: string;
-}) {
-  const active = current === sortKey;
-  return (
-    <th
-      className={`${TH} cursor-pointer select-none whitespace-nowrap hover:bg-gray-100 ${className}`}
-      onClick={() => onSort(sortKey)}
-    >
-      <div className="flex items-center gap-1">
-        {label}
-        {active
-          ? dir === "asc"
-            ? <ChevronUp className="h-3.5 w-3.5 text-red-500" />
-            : <ChevronDown className="h-3.5 w-3.5 text-red-500" />
-          : <ChevronsUpDown className="h-3.5 w-3.5 text-gray-300" />}
-      </div>
-    </th>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Skeleton
 // ---------------------------------------------------------------------------
 
-const TH = "border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600";
+const TH = "border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap";
 
 export function CompanyTableSkeleton({
   rows = 8,
@@ -223,45 +198,8 @@ export default function CompanyTable({
   onSelectAll,
   visibleColumns,
 }: Props) {
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-
-  const handleSort = (key: string) => {
-    setSortDir((prev) => sortKey === key ? (prev === "asc" ? "desc" : "asc") : "asc");
-    setSortKey(key);
-  };
-
-  const sortedData = useMemo(() => {
-    if (!sortKey) return data;
-    return [...data].sort((a, b) => {
-      let av: string | number = 0;
-      let bv: string | number = 0;
-      switch (sortKey) {
-        case "name":         av = a.company_name ?? ""; bv = b.company_name ?? ""; break;
-        case "industry":     av = a.industry ?? ""; bv = b.industry ?? ""; break;
-        case "employees":    av = a.employees_count ?? -1; bv = b.employees_count ?? -1; break;
-        case "location":     av = a.hq_country ?? ""; bv = b.hq_country ?? ""; break;
-        case "status":       av = a.company_status ?? ""; bv = b.company_status ?? ""; break;
-        case "founded":      av = Number(a.founded) || 0; bv = Number(b.founded) || 0; break;
-        case "legal_name":   av = (a as unknown as Record<string,string>).legal_name ?? ""; bv = (b as unknown as Record<string,string>).legal_name ?? ""; break;
-        case "country":      av = a.hq_country ?? ""; bv = b.hq_country ?? ""; break;
-        case "city":         av = a.hq_city ?? ""; bv = b.hq_city ?? ""; break;
-        case "state":        av = (a as unknown as Record<string,string>).hq_region ?? ""; bv = (b as unknown as Record<string,string>).hq_region ?? ""; break;
-        case "growth":       av = (a.employees_count_change as Record<string,number>)?.change_yearly_percentage ?? -Infinity; bv = (b.employees_count_change as Record<string,number>)?.change_yearly_percentage ?? -Infinity; break;
-        case "web_traffic":  av = a.total_website_visits_monthly ?? -1; bv = b.total_website_visits_monthly ?? -1; break;
-        case "traffic_growth": av = (a.total_website_visits_change as Record<string,number>)?.change_yearly_percentage ?? -Infinity; bv = (b.total_website_visits_change as Record<string,number>)?.change_yearly_percentage ?? -Infinity; break;
-        case "rating":       av = a.company_employee_reviews_aggregate_score ?? -1; bv = b.company_employee_reviews_aggregate_score ?? -1; break;
-        case "open_jobs":    av = Array.isArray(a.active_job_postings) ? a.active_job_postings.length : -1; bv = Array.isArray(b.active_job_postings) ? b.active_job_postings.length : -1; break;
-      }
-      if (typeof av === "string" && typeof bv === "string")
-        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-      return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
-    });
-  }, [data, sortKey, sortDir]);
-
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
   const isCol = (key: string) => visibleColumns[key] !== false;
-  const S = { current: sortKey, dir: sortDir, onSort: handleSort };
 
   return (
     <div className="max-w-full overflow-x-auto">
@@ -276,35 +214,35 @@ export default function CompanyTable({
                 className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 accent-red-600"
               />
             </th>
-            <SortTh label="Company"          sortKey="name"           className="min-w-[200px]" {...S} />
-            {isCol("industry")          && <SortTh label="Industry"        sortKey="industry"       className="min-w-[120px]" {...S} />}
-            {isCol("employees")         && <SortTh label="Employees"       sortKey="employees"      className="min-w-[90px]"  {...S} />}
+            <th className={`${TH} min-w-[200px]`}>Company</th>
+            {isCol("industry")          && <th className={`${TH} min-w-[120px]`}>Industry</th>}
+            {isCol("employees")         && <th className={`${TH} min-w-[90px]`}>Employees</th>}
             {isCol("website")           && <th className={`${TH} min-w-[120px]`}>Website</th>}
-            {isCol("location")          && <SortTh label="Location"        sortKey="location"       className="min-w-[120px]" {...S} />}
+            {isCol("location")          && <th className={`${TH} min-w-[120px]`}>Location</th>}
             {isCol("type")              && <th className={`${TH} min-w-[100px]`}>Type</th>}
-            {isCol("co_status")         && <SortTh label="Status"          sortKey="status"         className="min-w-[80px]"  {...S} />}
-            {isCol("founded")           && <SortTh label="Founded"         sortKey="founded"        className="min-w-[70px]"  {...S} />}
-            {isCol("legal_name")        && <SortTh label="Legal Name"      sortKey="legal_name"     className="min-w-[140px]" {...S} />}
-            {isCol("co_country")        && <SortTh label="Country"         sortKey="country"        className="min-w-[100px]" {...S} />}
-            {isCol("co_city")           && <SortTh label="City"            sortKey="city"           className="min-w-[100px]" {...S} />}
-            {isCol("state")             && <SortTh label="State"           sortKey="state"          className="min-w-[100px]" {...S} />}
+            {isCol("co_status")         && <th className={`${TH} min-w-[80px]`}>Status</th>}
+            {isCol("founded")           && <th className={`${TH} min-w-[70px]`}>Founded</th>}
+            {isCol("legal_name")        && <th className={`${TH} min-w-[140px]`}>Legal Name</th>}
+            {isCol("co_country")        && <th className={`${TH} min-w-[100px]`}>Country</th>}
+            {isCol("co_city")           && <th className={`${TH} min-w-[100px]`}>City</th>}
+            {isCol("state")             && <th className={`${TH} min-w-[100px]`}>State</th>}
             {isCol("co_address")        && <th className={`${TH} min-w-[140px]`}>Address</th>}
             {isCol("co_keywords")       && <th className={`${TH} min-w-[140px]`}>Keywords</th>}
             {isCol("products_services") && <th className={`${TH} min-w-[140px]`}>Products & Services</th>}
             {isCol("awards_certs")      && <th className={`${TH} min-w-[140px]`}>Awards & Certs</th>}
-            {isCol("growth")            && <SortTh label="HC Growth"       sortKey="growth"         className="min-w-[80px]"  {...S} />}
-            {isCol("web_traffic")       && <SortTh label="Web Traffic"     sortKey="web_traffic"    className="min-w-[90px]"  {...S} />}
-            {isCol("traffic_growth")    && <SortTh label="Traffic Growth"  sortKey="traffic_growth" className="min-w-[90px]"  {...S} />}
+            {isCol("growth")            && <th className={`${TH} min-w-[80px]`}>HC Growth</th>}
+            {isCol("web_traffic")       && <th className={`${TH} min-w-[90px]`}>Web Traffic</th>}
+            {isCol("traffic_growth")    && <th className={`${TH} min-w-[90px]`}>Traffic Growth</th>}
             {isCol("revenue")           && <th className={`${TH} min-w-[100px]`}>Revenue</th>}
             {isCol("funding")           && <th className={`${TH} min-w-[120px]`}>Last Funding</th>}
-            {isCol("rating")            && <SortTh label="Rating"          sortKey="rating"         className="min-w-[70px]"  {...S} />}
-            {isCol("open_jobs")         && <SortTh label="Open Jobs"       sortKey="open_jobs"      className="min-w-[70px]"  {...S} />}
+            {isCol("rating")            && <th className={`${TH} min-w-[70px]`}>Rating</th>}
+            {isCol("open_jobs")         && <th className={`${TH} min-w-[70px]`}>Open Jobs</th>}
             {isCol("technologies")      && <th className={`${TH} min-w-[140px]`}>Technologies</th>}
             {isCol("linkedin")          && <th className={`${TH} min-w-[80px]`}>LinkedIn</th>}
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((company) => {
+          {data.map((company) => {
             const name = company.company_name ?? "—";
             const color = avatarColor(name);
             const checked = selected.has(company.id);
