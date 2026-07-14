@@ -10,86 +10,43 @@ interface Props {
   onPage: (p: number) => void;
 }
 
-function getWindowed(current: number, total: number): (number | "...")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-
-  const pages: (number | "...")[] = [];
-
-  if (current <= 4) {
-    pages.push(1, 2, 3, 4, 5);
-    if (total > 6) pages.push("...");
-    pages.push(total - 2, total - 1, total);
-  } else if (current >= total - 3) {
-    pages.push(1, "...");
-    pages.push(total - 4, total - 3, total - 2, total - 1, total);
-  } else {
-    pages.push(1, "...", current - 1, current, current + 1, "...", total);
-  }
-
-  return pages;
-}
-
-export default function Pagination({ page, total, pageSize, maxReachable, hasNext, onPage }: Props) {
+export default function Pagination({ page, total, pageSize, hasNext, onPage }: Props) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   if (totalPages <= 1 && !hasNext) return null;
 
-  const pages = getWindowed(page, Math.min(totalPages, Math.max(maxReachable + 1, page + 2)));
+  const from = ((page - 1) * pageSize + 1).toLocaleString();
+  const to = Math.min(page * pageSize, total).toLocaleString();
 
   return (
     <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
-      <p className="hidden sm:block text-xs text-gray-500">
-        <span className="font-medium text-gray-700">{((page - 1) * pageSize + 1).toLocaleString()}</span>
+      <p className="text-xs text-gray-500">
+        <span className="font-medium text-gray-700">{from}</span>
         {"–"}
-        <span className="font-medium text-gray-700">{Math.min(page * pageSize, total).toLocaleString()}</span>
+        <span className="font-medium text-gray-700">{to}</span>
         {" of "}
         <span className="font-medium text-gray-700">{total.toLocaleString()}</span>
       </p>
 
-      <div className="flex items-center gap-0.5 mx-auto sm:mx-0">
+      <div className="flex items-center gap-1">
         <button
           type="button"
           onClick={() => onPage(page - 1)}
           disabled={page === 1}
-          className="mr-1 flex items-center gap-0.5 rounded-md px-1.5 py-1 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 sm:px-2 sm:py-1.5 sm:text-xs"
+          className="flex items-center gap-0.5 rounded-md px-2 py-1.5 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 sm:text-xs"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           <span>Previous</span>
         </button>
 
-        <span className="px-2 py-1 text-[11px] font-medium text-gray-600 sm:hidden">
+        <span className="px-3 py-1 text-xs font-semibold text-gray-700">
           Page {page}
         </span>
-
-        {pages.map((p, i) =>
-          p === "..." ? (
-            <span key={`e-${i}`} className="hidden sm:inline px-1.5 py-1.5 text-xs text-gray-400 select-none">
-              …
-            </span>
-          ) : (
-            <button
-              key={p}
-              type="button"
-              onClick={() => onPage(p as number)}
-              disabled={(p as number) > maxReachable && (p as number) !== 1}
-              className={[
-                "hidden sm:inline-flex min-w-[30px] rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
-                p === page
-                  ? "bg-red-600 text-white shadow-sm"
-                  : (p as number) <= maxReachable || (p as number) === 1
-                    ? "text-gray-600 hover:bg-gray-100"
-                    : "text-gray-300 cursor-not-allowed",
-              ].join(" ")}
-            >
-              {p}
-            </button>
-          )
-        )}
 
         <button
           type="button"
           onClick={() => onPage(page + 1)}
           disabled={!hasNext}
-          className="ml-1 flex items-center gap-0.5 rounded-md px-1.5 py-1 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 sm:px-2 sm:py-1.5 sm:text-xs"
+          className="flex items-center gap-0.5 rounded-md px-2 py-1.5 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 sm:text-xs"
         >
           <span>Next</span>
           <ChevronRight className="h-3.5 w-3.5" />

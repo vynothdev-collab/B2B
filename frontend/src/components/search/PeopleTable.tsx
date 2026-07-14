@@ -1,6 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, ChevronsUpDown, Globe, Mail, Phone } from "lucide-react";
+import { useState } from "react";
+import { Globe, Mail, Phone } from "lucide-react";
 import type { PersonResult } from "@/types/search";
 import { PEOPLE_COLUMNS } from "@/hooks/useColumnSettings";
 
@@ -89,31 +89,7 @@ function Cell({ children, className = "" }: { children: React.ReactNode; classNa
   );
 }
 
-const PTH = "border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600";
-
-function SortTh({
-  label, sortKey, current, dir, onSort, className = "",
-}: {
-  label: string; sortKey: string; current: string | null;
-  dir: "asc" | "desc"; onSort: (k: string) => void; className?: string;
-}) {
-  const active = current === sortKey;
-  return (
-    <th
-      className={`${PTH} cursor-pointer select-none whitespace-nowrap hover:bg-gray-100 ${className}`}
-      onClick={() => onSort(sortKey)}
-    >
-      <div className="flex items-center gap-1">
-        {label}
-        {active
-          ? dir === "asc"
-            ? <ChevronUp className="h-3.5 w-3.5 text-red-500" />
-            : <ChevronDown className="h-3.5 w-3.5 text-red-500" />
-          : <ChevronsUpDown className="h-3.5 w-3.5 text-gray-300" />}
-      </div>
-    </th>
-  );
-}
+const PTH = "border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap";
 
 // ---------------------------------------------------------------------------
 // Skeleton
@@ -251,49 +227,8 @@ export default function PeopleTable({
   onRevealEmail,
   revealingIds,
 }: Props) {
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-
-  const handleSort = (key: string) => {
-    setSortDir((prev) => sortKey === key ? (prev === "asc" ? "desc" : "asc") : "asc");
-    setSortKey(key);
-  };
-
-  const sortedData = useMemo(() => {
-    if (!sortKey) return data;
-    return [...data].sort((a, b) => {
-      let av: string | number = 0;
-      let bv: string | number = 0;
-      const ap = a as unknown as Record<string, unknown>;
-      const bp = b as unknown as Record<string, unknown>;
-      switch (sortKey) {
-        case "name":         av = `${a.first_name ?? ""} ${a.last_name ?? ""}`.trim(); bv = `${b.first_name ?? ""} ${b.last_name ?? ""}`.trim(); break;
-        case "company":      av = (a.active_experience_company_name as string) ?? ""; bv = (b.active_experience_company_name as string) ?? ""; break;
-        case "title":        av = (a.active_experience_title as string) ?? ""; bv = (b.active_experience_title as string) ?? ""; break;
-        case "location":     av = a.location_country ?? ""; bv = b.location_country ?? ""; break;
-        case "country":      av = a.location_country ?? ""; bv = b.location_country ?? ""; break;
-        case "city":         av = a.location_city ?? ""; bv = b.location_city ?? ""; break;
-        case "state":        av = (ap.location_region as string) ?? ""; bv = (bp.location_region as string) ?? ""; break;
-        case "department":   av = (a.active_experience_department as string) ?? ""; bv = (b.active_experience_department as string) ?? ""; break;
-        case "seniority":    av = (a.active_experience_seniority as string) ?? ""; bv = (b.active_experience_seniority as string) ?? ""; break;
-        case "job_started":  av = (a.active_experience_start_date as string) ?? ""; bv = (b.active_experience_start_date as string) ?? ""; break;
-        case "time_in_role": av = (ap.active_experience_duration_months as number) ?? -1; bv = (bp.active_experience_duration_months as number) ?? -1; break;
-        case "exp_years":    av = (ap.total_experience_duration_months as number) ?? -1; bv = (bp.total_experience_duration_months as number) ?? -1; break;
-        case "connections":  av = a.connections_count ?? -1; bv = b.connections_count ?? -1; break;
-        case "followers":    av = a.followers_count ?? -1; bv = b.followers_count ?? -1; break;
-        case "salary":       av = a.projected_base_salary_median ?? -1; bv = b.projected_base_salary_median ?? -1; break;
-        case "co_employees": av = Number(a.active_experience_company_size) || -1; bv = Number(b.active_experience_company_size) || -1; break;
-        case "co_founded":   av = Number(a.active_experience_company_founded ?? a.active_experience_company_founded_year) || 0; bv = Number(b.active_experience_company_founded ?? b.active_experience_company_founded_year) || 0; break;
-      }
-      if (typeof av === "string" && typeof bv === "string")
-        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-      return sortDir === "asc" ? (av as number) - (bv as number) : (bv as number) - (av as number);
-    });
-  }, [data, sortKey, sortDir]);
-
   const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
   const isCol = (key: string) => visibleColumns[key] !== false;
-  const S = { current: sortKey, dir: sortDir, onSort: handleSort };
 
   return (
     <div className="max-w-full overflow-x-auto">
@@ -308,34 +243,34 @@ export default function PeopleTable({
                 className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 accent-red-600"
               />
             </th>
-            <SortTh label="Name"              sortKey="name"         className="min-w-[200px]" {...S} />
-            {isCol("company")           && <SortTh label="Company"        sortKey="company"      className="min-w-[160px]" {...S} />}
-            {isCol("title")             && <SortTh label="Title"          sortKey="title"        className="min-w-[150px]" {...S} />}
+            <th className={`${PTH} min-w-[200px]`}>Name</th>
+            {isCol("company")           && <th className={`${PTH} min-w-[160px]`}>Company</th>}
+            {isCol("title")             && <th className={`${PTH} min-w-[150px]`}>Title</th>}
             {isCol("email")             && <th className={`${PTH} min-w-[130px]`}>Email</th>}
-            {isCol("location")          && <SortTh label="Location"       sortKey="location"     className="min-w-[130px]" {...S} />}
+            {isCol("location")          && <th className={`${PTH} min-w-[130px]`}>Location</th>}
             {isCol("mobile")            && <th className={`${PTH} min-w-[120px]`}>Mobile</th>}
-            {isCol("person_country")    && <SortTh label="Country"        sortKey="country"      className="min-w-[100px]" {...S} />}
-            {isCol("person_city")       && <SortTh label="City"           sortKey="city"         className="min-w-[100px]" {...S} />}
-            {isCol("state")             && <SortTh label="State"          sortKey="state"        className="min-w-[100px]" {...S} />}
-            {isCol("department")        && <SortTh label="Department"     sortKey="department"   className="min-w-[120px]" {...S} />}
-            {isCol("seniority")         && <SortTh label="Seniority"      sortKey="seniority"    className="min-w-[100px]" {...S} />}
-            {isCol("job_started")       && <SortTh label="Job Started"    sortKey="job_started"  className="min-w-[100px]" {...S} />}
-            {isCol("time_in_role")      && <SortTh label="In Role"        sortKey="time_in_role" className="min-w-[80px]"  {...S} />}
-            {isCol("exp_years")         && <SortTh label="Exp."           sortKey="exp_years"    className="min-w-[70px]"  {...S} />}
+            {isCol("person_country")    && <th className={`${PTH} min-w-[100px]`}>Country</th>}
+            {isCol("person_city")       && <th className={`${PTH} min-w-[100px]`}>City</th>}
+            {isCol("state")             && <th className={`${PTH} min-w-[100px]`}>State</th>}
+            {isCol("department")        && <th className={`${PTH} min-w-[120px]`}>Department</th>}
+            {isCol("seniority")         && <th className={`${PTH} min-w-[100px]`}>Seniority</th>}
+            {isCol("job_started")       && <th className={`${PTH} min-w-[100px]`}>Job Started</th>}
+            {isCol("time_in_role")      && <th className={`${PTH} min-w-[80px]`}>In Role</th>}
+            {isCol("exp_years")         && <th className={`${PTH} min-w-[70px]`}>Exp.</th>}
             {isCol("headline")          && <th className={`${PTH} min-w-[180px]`}>Headline</th>}
             {isCol("skills")            && <th className={`${PTH} min-w-[150px]`}>Skills</th>}
             {isCol("awards_certs")      && <th className={`${PTH} min-w-[140px]`}>Awards & Certs</th>}
-            {isCol("connections")       && <SortTh label="Connections"    sortKey="connections"  className="min-w-[90px]"  {...S} />}
-            {isCol("followers")         && <SortTh label="Followers"      sortKey="followers"    className="min-w-[80px]"  {...S} />}
-            {isCol("salary")            && <SortTh label="Est. Salary"    sortKey="salary"       className="min-w-[90px]"  {...S} />}
+            {isCol("connections")       && <th className={`${PTH} min-w-[90px]`}>Connections</th>}
+            {isCol("followers")         && <th className={`${PTH} min-w-[80px]`}>Followers</th>}
+            {isCol("salary")            && <th className={`${PTH} min-w-[90px]`}>Est. Salary</th>}
             {isCol("linkedin")          && <th className={`${PTH} min-w-[80px]`}>LinkedIn</th>}
             {isCol("co_industry")       && <th className={`${PTH} min-w-[130px]`}>Co. Industry</th>}
-            {isCol("co_employees")      && <SortTh label="Employees"      sortKey="co_employees" className="min-w-[90px]"  {...S} />}
+            {isCol("co_employees")      && <th className={`${PTH} min-w-[90px]`}>Employees</th>}
             {isCol("co_type")           && <th className={`${PTH} min-w-[100px]`}>Co. Type</th>}
             {isCol("co_status")         && <th className={`${PTH} min-w-[90px]`}>Co. Status</th>}
-            {isCol("co_founded")        && <SortTh label="Founded"        sortKey="co_founded"   className="min-w-[80px]"  {...S} />}
-            {isCol("co_country")        && <SortTh label="Co. Country"    sortKey="country"      className="min-w-[100px]" {...S} />}
-            {isCol("co_city")           && <SortTh label="Co. City"       sortKey="city"         className="min-w-[100px]" {...S} />}
+            {isCol("co_founded")        && <th className={`${PTH} min-w-[80px]`}>Founded</th>}
+            {isCol("co_country")        && <th className={`${PTH} min-w-[100px]`}>Co. Country</th>}
+            {isCol("co_city")           && <th className={`${PTH} min-w-[100px]`}>Co. City</th>}
             {isCol("co_state")          && <th className={`${PTH} min-w-[100px]`}>Co. State</th>}
             {isCol("co_address")        && <th className={`${PTH} min-w-[160px]`}>Co. Address</th>}
             {isCol("co_keywords")       && <th className={`${PTH} min-w-[160px]`}>Keywords</th>}
@@ -344,7 +279,7 @@ export default function PeopleTable({
           </tr>
         </thead>
         <tbody>
-          {sortedData.map((person) => {
+          {data.map((person) => {
             const fullName = person.full_name || `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim();
             const name = fullName || "—";
             const checked = selected.has(person.id);

@@ -40,6 +40,8 @@ export default function PeopleSearchPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
+  const isAgenticRef = useRef(false);
+  const agenticPromptRef = useRef<string>("");
 
   // Column settings
   const { visible: visibleColumns, toggle, reset, cols } = useColumnSettings("b2b:col:people", PEOPLE_COLUMNS);
@@ -143,6 +145,8 @@ export default function PeopleSearchPage() {
 
   const clearState = () => {
     pageCacheRef.current = new Map();
+    isAgenticRef.current = false;
+    agenticPromptRef.current = "";
     setResults(null);
     setMeta(null);
     setHasSearched(false);
@@ -155,24 +159,58 @@ export default function PeopleSearchPage() {
 
   const startSearch = useCallback(() => {
     pageCacheRef.current = new Map();
+    isAgenticRef.current = false;
     setTokenHistory([]);
     setCurrentPage(1);
     runSearch(1, undefined);
   }, [runSearch, filters]);
 
+  const runAgenticPage = useCallback(async (page: number, scrollToken?: string) => {
+    const cached = pageCacheRef.current.get(page);
+    if (cached) {
+      setResults(cached);
+      setMeta(cached.meta ?? null);
+      setCurrentPage(page);
+      setSelected(new Set());
+      return;
+    }
+    setLoading(true);
+    setSelected(new Set());
+    try {
+      const res = await agenticSearch(agenticPromptRef.current, "employee", scrollToken);
+      setResults(res);
+      setMeta(res.meta ?? null);
+      setCurrentPage(page);
+      pageCacheRef.current.set(page, res);
+      setTokenHistory((prev) => {
+        const next = prev.slice(0, page - 1);
+        if (res.meta?.scroll_token) next.push(res.meta.scroll_token);
+        return next;
+      });
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const handleAgenticQuery = useCallback(async (prompt: string) => {
     pageCacheRef.current = new Map();
+    isAgenticRef.current = true;
+    agenticPromptRef.current = prompt;
     setTokenHistory([]);
     setCurrentPage(1);
     setLoading(true);
     setSelected(new Set());
     try {
-      const res = await agenticSearch(prompt, "employee", 20);
+      const res = await agenticSearch(prompt, "employee");
       setResults(res);
       setMeta(res.meta ?? null);
       setHasSearched(true);
+      setCurrentPage(1);
       pageCacheRef.current.set(1, res);
       if ((res.data?.length ?? 0) === 0) setNoDataDialog(true);
+      setTokenHistory(res.meta?.scroll_token ? [res.meta.scroll_token] : []);
     } catch (e: unknown) {
       toast.apiError(e);
     } finally {
@@ -301,12 +339,16 @@ export default function PeopleSearchPage() {
                       page={currentPage}
                       total={meta.total}
                       pageSize={PAGE_SIZE}
-                      maxReachable={tokenHistory.length + 1}
+                      maxReachable={0}
                       hasNext={!!meta.scroll_token}
                       onPage={(p) => {
                         if (p === currentPage) return;
                         const token = p === 1 ? undefined : tokenHistory[p - 2];
-                        runSearch(p, token);
+                        if (isAgenticRef.current) {
+                          runAgenticPage(p, token);
+                        } else {
+                          runSearch(p, token);
+                        }
                       }}
                     />
                   </div>
