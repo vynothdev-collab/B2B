@@ -1,13 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ArrowRight, Send } from "lucide-react";
-
-const SUGGESTIONS = [
-  { label: "CEOs and CTOs at SaaS startups", icon: "👥" },
-  { label: "Marketing managers in healthcare", icon: "✉️" },
-  { label: "Heads of Sales at fintech companies", icon: "📊" },
-  { label: "Founders at early-stage dev tools", icon: "💻" },
-];
+import { Send } from "lucide-react";
 
 interface Props {
   onQuery?: (q: string) => void;
@@ -109,24 +102,6 @@ export default function EmptyState({ onQuery, loading }: Props) {
         </div>
       </div>
 
-      <p className="mt-6 text-[10px] font-semibold uppercase tracking-wider text-gray-400 sm:mt-8 sm:text-xs">
-        Get started with an example below
-      </p>
-      <div className="mt-3 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
-        {SUGGESTIONS.map((s) => (
-          <button
-            key={s.label}
-            type="button"
-            disabled={loading}
-            onClick={() => { setQuery(s.label); if (onQuery && !loading) onQuery(s.label); }}
-            className="flex flex-col items-start rounded-lg border border-gray-200 bg-white p-2.5 text-left shadow-sm transition-all hover:border-red-300 hover:shadow-md disabled:opacity-50 sm:rounded-xl sm:p-3"
-          >
-            <span className="mb-1.5 text-base sm:mb-2 sm:text-lg">{s.icon}</span>
-            <span className="text-[11px] font-medium leading-snug text-gray-700 sm:text-xs">{s.label}</span>
-            <ArrowRight className="mt-2 h-3 w-3 text-gray-400" />
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
