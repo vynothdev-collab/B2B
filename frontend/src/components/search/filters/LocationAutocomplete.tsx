@@ -4,75 +4,106 @@ import { createPortal } from "react-dom";
 import { X, MapPin } from "lucide-react";
 import { Country, State, City } from "country-state-city";
 
+type LocKind = "country" | "state" | "city";
+
 interface Props {
+  kind: LocKind;
   placeholder?: string;
   values: string[];
   onChange: (v: string[]) => void;
+  filterCountries?: string[];
+  filterStates?: string[];
 }
 
 interface LocOption {
   display: string;
   stored: string;
-  kind: "country" | "state" | "city";
+  kind: LocKind;
+  countryStored?: string;
+  stateStored?: string;
 }
 
 const inputCls =
   "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none";
 const DROPDOWN_MAX_H = 260;
 
-const KIND_ORDER: Record<LocOption["kind"], number> = { country: 0, state: 1, city: 2 };
-
-const KIND_LABEL: Record<LocOption["kind"], string> = {
+const KIND_LABEL: Record<LocKind, string> = {
   country: "Country",
   state: "State",
   city: "City",
 };
 
-function buildIndex(): LocOption[] {
+const DEFAULT_PLACEHOLDER: Record<LocKind, string> = {
+  country: "Search country…",
+  state: "Search state / region…",
+  city: "Search city…",
+};
+
+function buildCountryIndex(): LocOption[] {
+  return Country.getAllCountries().map((c) => ({
+    display: c.name,
+    stored: c.name.toLowerCase(),
+    kind: "country" as const,
+  }));
+}
+
+function buildStateIndex(): LocOption[] {
   const out: LocOption[] = [];
-
-  const countryNameMap = new Map<string, string>(); // isoCode → display name
   for (const c of Country.getAllCountries()) {
-    countryNameMap.set(c.isoCode, c.name);
-    out.push({ display: c.name, stored: c.name.toLowerCase(), kind: "country" });
-  }
-
-  const stateNameMap = new Map<string, string>(); // `${cISO}-${sISO}` → display name
-  for (const c of Country.getAllCountries()) {
-    const countryName = countryNameMap.get(c.isoCode) ?? c.name;
-    const countryNameLc = countryName.toLowerCase();
     for (const s of State.getStatesOfCountry(c.isoCode)) {
-      stateNameMap.set(`${c.isoCode}-${s.isoCode}`, s.name);
       out.push({
-        display: `${s.name}, ${countryName}`,
-        stored: `${s.name.toLowerCase()}, ${countryNameLc}`,
-        kind: "state",
+        display: `${s.name}, ${c.name}`,
+        stored: s.name.toLowerCase(),
+        kind: "state" as const,
+        countryStored: c.name.toLowerCase(),
       });
     }
   }
-
-  for (const city of City.getAllCities()) {
-    const countryName = countryNameMap.get(city.countryCode) ?? city.countryCode;
-    const stateName = stateNameMap.get(`${city.countryCode}-${city.stateCode}`) ?? city.stateCode;
-    out.push({
-      display: `${city.name}, ${stateName}, ${countryName}`,
-      stored: `${city.name.toLowerCase()}, ${stateName.toLowerCase()}, ${countryName.toLowerCase()}`,
-      kind: "city",
-    });
-  }
-
   return out;
 }
 
-let LOCATION_INDEX: LocOption[] | null = null;
-function getIndex(): LocOption[] {
-  if (!LOCATION_INDEX) LOCATION_INDEX = buildIndex();
-  return LOCATION_INDEX;
+function buildCityIndex(): LocOption[] {
+  const countryMap = new Map(Country.getAllCountries().map((c) => [c.isoCode, c.name]));
+  const stateMap = new Map<string, string>();
+  for (const c of Country.getAllCountries()) {
+    for (const s of State.getStatesOfCountry(c.isoCode)) {
+      stateMap.set(`${c.isoCode}-${s.isoCode}`, s.name);
+    }
+  }
+  return City.getAllCities().map((city) => {
+    const countryName = countryMap.get(city.countryCode) ?? city.countryCode;
+    const stateName = stateMap.get(`${city.countryCode}-${city.stateCode}`) ?? city.stateCode;
+    return {
+      display: `${city.name}, ${stateName}, ${countryName}`,
+      stored: city.name.toLowerCase(),
+      kind: "city" as const,
+      countryStored: countryName.toLowerCase(),
+      stateStored: stateName.toLowerCase(),
+    };
+  });
 }
 
-export default function LocationAutocomplete({ placeholder, values, onChange }: Props) {
+const INDEXES: Partial<Record<LocKind, LocOption[]>> = {};
+function getIndex(kind: LocKind): LocOption[] {
+  if (!INDEXES[kind]) {
+    if (kind === "country") INDEXES[kind] = buildCountryIndex();
+    else if (kind === "state") INDEXES[kind] = buildStateIndex();
+    else INDEXES[kind] = buildCityIndex();
+  }
+  return INDEXES[kind]!;
+}
+
+export default function LocationAutocomplete({
+  kind,
+  placeholder,
+  values,
+  onChange,
+  filterCountries,
+  filterStates,
+}: Props) {
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
   const [activeIdx, setActiveIdx] = useState(-1);
 
@@ -92,6 +123,7 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
     const close = (e: Event) => {
       if (dropdownRef.current?.contains(e.target as Node)) return;
       setOpen(false);
+      setFocused(false);
     };
     window.addEventListener("scroll", close, true);
     window.addEventListener("resize", close);
@@ -101,37 +133,41 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
     };
   }, [open]);
 
+  const hasCountryFilter = filterCountries && filterCountries.length > 0;
+  const hasStateFilter = filterStates && filterStates.length > 0;
+
   const suggestions = useMemo<LocOption[]>(() => {
     const q = text.trim().toLowerCase();
-    if (q.length < 2) return [];
-    const index = getIndex();
+    const index = getIndex(kind);
     const out: LocOption[] = [];
     for (const item of index) {
       if (values.includes(item.stored)) continue;
-      if (item.stored.includes(q)) {
+      if (hasCountryFilter && item.countryStored && !filterCountries!.includes(item.countryStored)) continue;
+      if (hasStateFilter && item.stateStored && !filterStates!.includes(item.stateStored)) continue;
+      if (!q || item.display.toLowerCase().includes(q)) {
         out.push(item);
         if (out.length >= 60) break;
       }
     }
-    out.sort((a, b) => {
-      const aStarts = a.stored.startsWith(q) ? 0 : 1;
-      const bStarts = b.stored.startsWith(q) ? 0 : 1;
-      if (aStarts !== bStarts) return aStarts - bStarts;
-      if (a.kind !== b.kind) return KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
-      return a.display.localeCompare(b.display);
-    });
+    if (q) {
+      out.sort((a, b) => {
+        const aStarts = a.stored.startsWith(q) ? 0 : 1;
+        const bStarts = b.stored.startsWith(q) ? 0 : 1;
+        if (aStarts !== bStarts) return aStarts - bStarts;
+        return a.display.localeCompare(b.display);
+      });
+    }
     return out.slice(0, 20);
-  }, [text, values]);
+  }, [text, values, kind, filterCountries, filterStates, hasCountryFilter, hasStateFilter]);
 
   useEffect(() => {
-    const q = text.trim();
-    if (q.length >= 2 && suggestions.length > 0) {
+    if (focused) {
       reposition();
       setOpen(true);
     } else {
       setOpen(false);
     }
-  }, [suggestions, text, reposition]);
+  }, [focused, suggestions, reposition]);
 
   const add = (item: LocOption) => {
     if (values.includes(item.stored)) return;
@@ -178,6 +214,17 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
     if (e.key === "Backspace" && !text && values.length) onChange(values.slice(0, -1));
   };
 
+  const isDisabled =
+    (kind === "state" || kind === "city") &&
+    filterCountries !== undefined &&
+    filterCountries.length === 0;
+
+  const effectivePlaceholder =
+    placeholder ??
+    (isDisabled
+      ? "Select a country first…"
+      : DEFAULT_PLACEHOLDER[kind]);
+
   return (
     <div>
       {values.length > 0 && (
@@ -197,12 +244,14 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
         <input
           ref={inputRef}
           type="text"
-          placeholder={placeholder ?? "Type a city, state or country and press Enter…"}
+          placeholder={effectivePlaceholder}
           value={text}
-          onChange={(e) => { setText(e.target.value); setActiveIdx(-1); }}
+          onChange={(e) => { if (!isDisabled) { setText(e.target.value); setActiveIdx(-1); } }}
           onKeyDown={handleKey}
-          onFocus={() => { if (suggestions.length > 0) { reposition(); setOpen(true); } }}
-          className={inputCls}
+          onFocus={() => { if (!isDisabled) { setFocused(true); reposition(); setOpen(true); } }}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
+          className={`${inputCls} ${isDisabled ? "cursor-not-allowed bg-gray-50 text-gray-400 placeholder-gray-300" : ""}`}
+          disabled={isDisabled}
         />
       </div>
 
@@ -216,11 +265,16 @@ export default function LocationAutocomplete({ placeholder, values, onChange }: 
           >
             <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
               {suggestions.length === 0 ? (
-                <div className="px-3 py-2 text-[12px] text-gray-400">No matches</div>
+                <div className="px-3 py-2 text-[12px] text-gray-400">
+                  {kind === "state" && hasCountryFilter ? "No states for selected country" :
+                   kind === "city" && (hasCountryFilter || hasStateFilter) ? "No cities found" :
+                   kind !== "country" ? "Select a country to filter results" :
+                   "No matches"}
+                </div>
               ) : (
                 suggestions.map((s, i) => (
                   <button
-                    key={s.stored}
+                    key={s.display}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); add(s); }}
                     className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[12px] transition-colors ${

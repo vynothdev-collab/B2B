@@ -8,8 +8,12 @@ export interface PersonFilters {
   departments: string[];
   seniority: string[];
   companies: string[];
-  personLocations: string[];
-  companyHQLocations: string[];
+  personLocationCountries: string[];
+  personLocationStates: string[];
+  personLocationCities: string[];
+  companyHQCountries: string[];
+  companyHQStates: string[];
+  companyHQCities: string[];
   requireWorkEmail: boolean;
   companyStatus: string[];
   companyType: string[];
@@ -93,8 +97,12 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   departments: [],
   seniority: [],
   companies: [],
-  personLocations: [],
-  companyHQLocations: [],
+  personLocationCountries: [],
+  personLocationStates: [],
+  personLocationCities: [],
+  companyHQCountries: [],
+  companyHQStates: [],
+  companyHQCities: [],
   requireWorkEmail: false,
   companyStatus: [],
   companyType: [],
@@ -174,7 +182,9 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
 
 export interface CompanyFilters {
   companies: string[];
-  locations: string[];
+  locationCountries: string[];
+  locationStates: string[];
+  locationCities: string[];
   type: string[];
   employeeHeadcountMode: "predefined" | "custom";
   employeeHeadcountRanges: string[];
@@ -238,7 +248,9 @@ export interface CompanyFilters {
 
 export const DEFAULT_COMPANY_FILTERS: CompanyFilters = {
   companies: [],
-  locations: [],
+  locationCountries: [],
+  locationStates: [],
+  locationCities: [],
   type: [],
   employeeHeadcountMode: "predefined",
   employeeHeadcountRanges: [],
@@ -809,109 +821,206 @@ export const FUNDING_STAGE_OPTIONS = [
 ];
 
 export const INDUSTRY_OPTIONS: { value: string; label: string }[] = [
-  { value: "IT Services and IT Consulting", label: "IT Services and IT Consulting" },
-  { value: "Software Development", label: "Software Development" },
-  { value: "Technology, Information and Internet", label: "Technology, Information and Internet" },
-  { value: "Computer and Network Security", label: "Computer and Network Security" },
+  { value: "Accounting", label: "Accounting" },
+  { value: "Advertising Services", label: "Advertising Services" },
+  { value: "Agriculture", label: "Agriculture" },
+  { value: "Agriculture Machinery Manufacturing", label: "Agriculture Machinery Manufacturing" },
+  { value: "Airlines", label: "Airlines" },
+  { value: "Airports", label: "Airports" },
+  { value: "Alternative Medicine", label: "Alternative Medicine" },
+  { value: "Apparel & Fashion", label: "Apparel & Fashion" },
+  { value: "Architecture", label: "Architecture" },
+  { value: "Arts and Crafts", label: "Arts and Crafts" },
+  { value: "Artists and Writers", label: "Artists and Writers" },
+  { value: "Artificial Intelligence", label: "Artificial Intelligence" },
+  { value: "Automotive Manufacturing", label: "Automotive Manufacturing" },
+  { value: "Aviation", label: "Aviation" },
+  { value: "Banking", label: "Banking" },
+  { value: "Bars & Nightclubs", label: "Bars & Nightclubs" },
+  { value: "Beauty Services", label: "Beauty Services" },
+  { value: "Biotechnology", label: "Biotechnology" },
+  { value: "Biotechnology Research", label: "Biotechnology Research" },
+  { value: "Book and Periodical Publishing", label: "Book and Periodical Publishing" },
+  { value: "Branding", label: "Branding" },
+  { value: "Broadcast Media Production and Distribution", label: "Broadcast Media Production and Distribution" },
+  { value: "Building Materials", label: "Building Materials" },
+  { value: "Business Consulting and Services", label: "Business Consulting and Services" },
+  { value: "Business Process Outsourcing (BPO)", label: "Business Process Outsourcing (BPO)" },
+  { value: "Capital Markets", label: "Capital Markets" },
+  { value: "Car Rental", label: "Car Rental" },
+  { value: "Catering", label: "Catering" },
+  { value: "Charitable Organizations", label: "Charitable Organizations" },
+  { value: "Chemical Manufacturing", label: "Chemical Manufacturing" },
+  { value: "Cleaning Services", label: "Cleaning Services" },
+  { value: "Cloud Computing", label: "Cloud Computing" },
+  { value: "Coffee Shops", label: "Coffee Shops" },
+  { value: "Commercial Real Estate", label: "Commercial Real Estate" },
+  { value: "Community Services", label: "Community Services" },
+  { value: "Computer Games", label: "Computer Games" },
   { value: "Computer Hardware Manufacturing", label: "Computer Hardware Manufacturing" },
   { value: "Computer Networking Products", label: "Computer Networking Products" },
-  { value: "Data Infrastructure and Analytics", label: "Data Infrastructure and Analytics" },
-  { value: "Information Services", label: "Information Services" },
-  { value: "Internet Publishing", label: "Internet Publishing" },
-  { value: "Telecommunications", label: "Telecommunications" },
-  { value: "Semiconductor Manufacturing", label: "Semiconductor Manufacturing" },
-  { value: "Robotics Engineering", label: "Robotics Engineering" },
-  { value: "Artificial Intelligence", label: "Artificial Intelligence" },
-  { value: "Blockchain Services", label: "Blockchain Services" },
-  { value: "Cloud Computing", label: "Cloud Computing" },
+  { value: "Construction", label: "Construction" },
+  { value: "Consumer Electronics", label: "Consumer Electronics" },
+  { value: "Consumer Goods", label: "Consumer Goods" },
+  { value: "Consumer Services", label: "Consumer Services" },
+  { value: "Content Marketing", label: "Content Marketing" },
+  { value: "Courier Services", label: "Courier Services" },
+  { value: "Credit Services", label: "Credit Services" },
+  { value: "Cruise Lines", label: "Cruise Lines" },
   { value: "Cybersecurity", label: "Cybersecurity" },
-  { value: "Business Consulting and Services", label: "Business Consulting and Services" },
-  { value: "Management Consulting", label: "Management Consulting" },
-  { value: "Strategic Management Services", label: "Strategic Management Services" },
-  { value: "Human Resources Services", label: "Human Resources Services" },
-  { value: "Staffing and Recruiting", label: "Staffing and Recruiting" },
-  { value: "Outsourcing and Offshoring Consulting", label: "Outsourcing and Offshoring Consulting" },
-  { value: "Professional Services", label: "Professional Services" },
-  { value: "Research Services", label: "Research Services" },
-  { value: "Advertising Services", label: "Advertising Services" },
-  { value: "Marketing Services", label: "Marketing Services" },
-  { value: "Public Relations and Communications Services", label: "Public Relations and Communications Services" },
-  { value: "Market Research", label: "Market Research" },
+  { value: "Dairy", label: "Dairy" },
+  { value: "Data Analytics", label: "Data Analytics" },
+  { value: "Defense", label: "Defense" },
+  { value: "Defense Manufacturing", label: "Defense Manufacturing" },
+  { value: "Dental Services", label: "Dental Services" },
+  { value: "Design", label: "Design" },
   { value: "Design Services", label: "Design Services" },
-  { value: "Graphic Design", label: "Graphic Design" },
+  { value: "Digital Marketing", label: "Digital Marketing" },
+  { value: "E-commerce", label: "E-commerce" },
+  { value: "Education Administration Programs", label: "Education Administration Programs" },
+  { value: "Educational Technology", label: "Educational Technology" },
+  { value: "Electrical Manufacturing", label: "Electrical Manufacturing" },
+  { value: "Electronics Manufacturing", label: "Electronics Manufacturing" },
+  { value: "E-learning", label: "E-learning" },
+  { value: "Energy", label: "Energy" },
+  { value: "Engineering", label: "Engineering" },
+  { value: "Entertainment", label: "Entertainment" },
+  { value: "Entertainment Providers", label: "Entertainment Providers" },
+  { value: "Environmental Research", label: "Environmental Research" },
+  { value: "Environmental Services", label: "Environmental Services" },
+  { value: "Events Services", label: "Events Services" },
+  { value: "Executive Offices", label: "Executive Offices" },
+  { value: "Executive Search", label: "Executive Search" },
+  { value: "Facilities Services", label: "Facilities Services" },
+  { value: "Farming", label: "Farming" },
+  { value: "Film Production", label: "Film Production" },
   { value: "Financial Services", label: "Financial Services" },
-  { value: "Banking", label: "Banking" },
+  { value: "FinTech", label: "FinTech" },
+  { value: "Fine Art", label: "Fine Art" },
+  { value: "Fisheries", label: "Fisheries" },
+  { value: "Fitness", label: "Fitness" },
+  { value: "Food & Beverages", label: "Food & Beverages" },
+  { value: "Food and Beverage Services", label: "Food and Beverage Services" },
+  { value: "Food Manufacturing", label: "Food Manufacturing" },
+  { value: "Food Processing", label: "Food Processing" },
+  { value: "Food Production", label: "Food Production" },
+  { value: "Forestry", label: "Forestry" },
+  { value: "Foundations", label: "Foundations" },
+  { value: "Freight", label: "Freight" },
+  { value: "Furniture Manufacturing", label: "Furniture Manufacturing" },
+  { value: "Gaming", label: "Gaming" },
+  { value: "Glass Manufacturing", label: "Glass Manufacturing" },
+  { value: "Government Relations", label: "Government Relations" },
+  { value: "Graphic Design", label: "Graphic Design" },
+  { value: "Healthcare", label: "Healthcare" },
+  { value: "Home Health Care", label: "Home Health Care" },
+  { value: "Home Improvement", label: "Home Improvement" },
+  { value: "Hospitals and Health Care", label: "Hospitals and Health Care" },
+  { value: "Hospitality", label: "Hospitality" },
+  { value: "Hotels & Resorts", label: "Hotels & Resorts" },
+  { value: "Human Resources Services", label: "Human Resources Services" },
+  { value: "Industrial Machinery", label: "Industrial Machinery" },
+  { value: "Information Services", label: "Information Services" },
+  { value: "Information Technology & Services", label: "Information Technology & Services" },
+  { value: "Insurance", label: "Insurance" },
+  { value: "Interior Design", label: "Interior Design" },
+  { value: "International Affairs", label: "International Affairs" },
+  { value: "International Trade and Development", label: "International Trade and Development" },
+  { value: "Internet", label: "Internet" },
   { value: "Investment Banking", label: "Investment Banking" },
   { value: "Investment Management", label: "Investment Management" },
-  { value: "Insurance", label: "Insurance" },
-  { value: "Accounting", label: "Accounting" },
-  { value: "Venture Capital and Private Equity", label: "Venture Capital and Private Equity" },
-  { value: "Capital Markets", label: "Capital Markets" },
-  { value: "Real Estate", label: "Real Estate" },
-  { value: "Commercial Real Estate", label: "Commercial Real Estate" },
-  { value: "Hospitals and Health Care", label: "Hospitals and Health Care" },
-  { value: "Medical Practices", label: "Medical Practices" },
-  { value: "Mental Health Care", label: "Mental Health Care" },
-  { value: "Pharmaceutical Manufacturing", label: "Pharmaceutical Manufacturing" },
-  { value: "Biotechnology Research", label: "Biotechnology Research" },
-  { value: "Medical Equipment Manufacturing", label: "Medical Equipment Manufacturing" },
-  { value: "Wellness and Fitness Services", label: "Wellness and Fitness Services" },
-  { value: "Higher Education", label: "Higher Education" },
-  { value: "Primary and Secondary Education", label: "Primary and Secondary Education" },
-  { value: "Education Administration Programs", label: "Education Administration Programs" },
-  { value: "E-Learning Providers", label: "E-Learning Providers" },
-  { value: "Retail", label: "Retail" },
-  { value: "General Retail", label: "General Retail" },
-  { value: "Retail Apparel and Fashion", label: "Retail Apparel and Fashion" },
-  { value: "Retail Luxury Goods and Jewelry", label: "Retail Luxury Goods and Jewelry" },
-  { value: "Retail Groceries", label: "Retail Groceries" },
-  { value: "Wholesale", label: "Wholesale" },
-  { value: "Consumer Goods", label: "Consumer Goods" },
-  { value: "Food and Beverage Services", label: "Food and Beverage Services" },
-  { value: "Food and Beverage Manufacturing", label: "Food and Beverage Manufacturing" },
-  { value: "Restaurants", label: "Restaurants" },
-  { value: "Hospitality", label: "Hospitality" },
-  { value: "Travel Arrangements", label: "Travel Arrangements" },
-  { value: "Airlines and Aviation", label: "Airlines and Aviation" },
-  { value: "Automotive", label: "Automotive" },
-  { value: "Motor Vehicle Manufacturing", label: "Motor Vehicle Manufacturing" },
-  { value: "Transportation, Logistics and Supply Chain", label: "Transportation, Logistics and Supply Chain" },
-  { value: "Truck Transportation", label: "Truck Transportation" },
-  { value: "Warehousing and Storage", label: "Warehousing and Storage" },
-  { value: "Construction", label: "Construction" },
-  { value: "Architecture and Planning", label: "Architecture and Planning" },
-  { value: "Civil Engineering", label: "Civil Engineering" },
-  { value: "Industrial Machinery Manufacturing", label: "Industrial Machinery Manufacturing" },
-  { value: "Automation Machinery Manufacturing", label: "Automation Machinery Manufacturing" },
-  { value: "Electrical Equipment Manufacturing", label: "Electrical Equipment Manufacturing" },
-  { value: "Chemical Manufacturing", label: "Chemical Manufacturing" },
-  { value: "Textile Manufacturing", label: "Textile Manufacturing" },
-  { value: "Packaging and Containers Manufacturing", label: "Packaging and Containers Manufacturing" },
-  { value: "Oil and Gas", label: "Oil and Gas" },
-  { value: "Renewable Energy", label: "Renewable Energy" },
-  { value: "Utilities", label: "Utilities" },
-  { value: "Environmental Services", label: "Environmental Services" },
-  { value: "Mining", label: "Mining" },
-  { value: "Agriculture", label: "Agriculture" },
-  { value: "Farming", label: "Farming" },
-  { value: "Legal Services", label: "Legal Services" },
+  { value: "IT Services and IT Consulting", label: "IT Services and IT Consulting" },
+  { value: "Judiciary", label: "Judiciary" },
+  { value: "Laboratory Services", label: "Laboratory Services" },
+  { value: "Law Enforcement", label: "Law Enforcement" },
   { value: "Law Practice", label: "Law Practice" },
-  { value: "Government Administration", label: "Government Administration" },
-  { value: "Public Policy", label: "Public Policy" },
+  { value: "Legal Services", label: "Legal Services" },
+  { value: "Libraries", label: "Libraries" },
+  { value: "Logistics", label: "Logistics" },
+  { value: "Luxury Goods", label: "Luxury Goods" },
+  { value: "Machinery Manufacturing", label: "Machinery Manufacturing" },
+  { value: "Management Consulting", label: "Management Consulting" },
+  { value: "Manufacturing", label: "Manufacturing" },
+  { value: "Marine", label: "Marine" },
+  { value: "Marketing Services", label: "Marketing Services" },
+  { value: "Maritime", label: "Maritime" },
+  { value: "Medical Devices", label: "Medical Devices" },
+  { value: "Medical Equipment Manufacturing", label: "Medical Equipment Manufacturing" },
+  { value: "Medical Practice", label: "Medical Practice" },
+  { value: "Mental Health Care", label: "Mental Health Care" },
+  { value: "Mining", label: "Mining" },
+  { value: "Mining Equipment Manufacturing", label: "Mining Equipment Manufacturing" },
+  { value: "Mobile Applications", label: "Mobile Applications" },
+  { value: "Mortgage Lending", label: "Mortgage Lending" },
+  { value: "Music", label: "Music" },
+  { value: "Nanotechnology", label: "Nanotechnology" },
+  { value: "NGOs", label: "NGOs" },
   { value: "Non-profit Organizations", label: "Non-profit Organizations" },
-  { value: "Civic and Social Organizations", label: "Civic and Social Organizations" },
-  { value: "Media Production", label: "Media Production" },
-  { value: "Entertainment Providers", label: "Entertainment Providers" },
-  { value: "Broadcast Media Production", label: "Broadcast Media Production" },
-  { value: "Newspaper Publishing", label: "Newspaper Publishing" },
-  { value: "Book Publishing", label: "Book Publishing" },
-  { value: "Online Media", label: "Online Media" },
-  { value: "Gaming", label: "Gaming" },
+  { value: "Nursing Care", label: "Nursing Care" },
+  { value: "Oil and Gas", label: "Oil and Gas" },
+  { value: "Online Audio and Video Media", label: "Online Audio and Video Media" },
+  { value: "Outsourcing", label: "Outsourcing" },
+  { value: "Packaging & Containers", label: "Packaging & Containers" },
+  { value: "Paper Manufacturing", label: "Paper Manufacturing" },
+  { value: "Performing Arts", label: "Performing Arts" },
+  { value: "Personal Care", label: "Personal Care" },
+  { value: "Pharmaceuticals", label: "Pharmaceuticals" },
+  { value: "Photography", label: "Photography" },
+  { value: "Plastics Manufacturing", label: "Plastics Manufacturing" },
+  { value: "Primary & Secondary Education", label: "Primary & Secondary Education" },
+  { value: "Printing", label: "Printing" },
+  { value: "Professional Organizations", label: "Professional Organizations" },
+  { value: "Professional Training & Coaching", label: "Professional Training & Coaching" },
+  { value: "Property Management", label: "Property Management" },
+  { value: "Public Administration", label: "Public Administration" },
+  { value: "Public Policy", label: "Public Policy" },
+  { value: "Public Relations and Communications Services", label: "Public Relations and Communications Services" },
+  { value: "Publishing", label: "Publishing" },
+  { value: "Real Estate", label: "Real Estate" },
+  { value: "Recreation", label: "Recreation" },
+  { value: "Religious Institutions", label: "Religious Institutions" },
+  { value: "Renewables & Environment", label: "Renewables & Environment" },
+  { value: "Repair Services", label: "Repair Services" },
+  { value: "Research Services", label: "Research Services" },
+  { value: "Residential Real Estate", label: "Residential Real Estate" },
+  { value: "Restaurants", label: "Restaurants" },
+  { value: "Retail", label: "Retail" },
+  { value: "Retail Apparel and Fashion", label: "Retail Apparel and Fashion" },
+  { value: "Retail Art Supplies", label: "Retail Art Supplies" },
+  { value: "Scientific Research", label: "Scientific Research" },
+  { value: "SEO Services", label: "SEO Services" },
+  { value: "Semiconductor Manufacturing", label: "Semiconductor Manufacturing" },
+  { value: "Shipping", label: "Shipping" },
+  { value: "Social Media Marketing", label: "Social Media Marketing" },
+  { value: "Software Development", label: "Software Development" },
+  { value: "Solar Energy", label: "Solar Energy" },
+  { value: "Space Research", label: "Space Research" },
+  { value: "Sporting Goods", label: "Sporting Goods" },
   { value: "Sports", label: "Sports" },
-  { value: "Events Services", label: "Events Services" },
-  { value: "Security and Investigations", label: "Security and Investigations" },
-  { value: "Facilities Services", label: "Facilities Services" },
-  { value: "Consumer Services", label: "Consumer Services" },
+  { value: "Sports Teams", label: "Sports Teams" },
+  { value: "Staffing and Recruiting", label: "Staffing and Recruiting" },
+  { value: "Supermarkets", label: "Supermarkets" },
+  { value: "Supply Chain", label: "Supply Chain" },
+  { value: "Telecommunications", label: "Telecommunications" },
+  { value: "Television", label: "Television" },
+  { value: "Textile Manufacturing", label: "Textile Manufacturing" },
+  { value: "Technology, Information and Internet", label: "Technology, Information and Internet" },
+  { value: "Tourism", label: "Tourism" },
+  { value: "Transportation, Logistics, Supply Chain and Storage", label: "Transportation, Logistics, Supply Chain and Storage" },
+  { value: "Transportation/Trucking/Railroad", label: "Transportation/Trucking/Railroad" },
+  { value: "Travel Arrangements", label: "Travel Arrangements" },
+  { value: "Travel & Tourism", label: "Travel & Tourism" },
+  { value: "Utilities", label: "Utilities" },
+  { value: "Venture Capital and Private Equity", label: "Venture Capital and Private Equity" },
+  { value: "Veterinary Services", label: "Veterinary Services" },
+  { value: "Warehousing", label: "Warehousing" },
+  { value: "Waste Management", label: "Waste Management" },
+  { value: "Water Treatment", label: "Water Treatment" },
+  { value: "Wealth Management", label: "Wealth Management" },
+  { value: "Wellness and Fitness Services", label: "Wellness and Fitness Services" },
+  { value: "Wholesale", label: "Wholesale" },
+  { value: "Wholesale Import and Export", label: "Wholesale Import and Export" },
+  { value: "Wind Energy", label: "Wind Energy" },
 ];
 
 export const KEYWORDS_STATIC = [
@@ -1017,402 +1126,5 @@ export const BUSINESS_MODEL_STATIC = [
   { value: "ecommerce", label: "E-commerce" },
 ];
 
-export const INDUSTRY_OPTIONS_HIERARCHICAL: DepartmentOption[] = [
-  {
-    value: "Accommodation Services", label: "Accommodation Services", children: [
-      {
-        value: "Food and Beverage Services", label: "Food and Beverage Services", children: [
-          { value: "Bars, Taverns, and Nightclubs", label: "Bars, Taverns, and Nightclubs" },
-          { value: "Caterers", label: "Caterers" },
-          { value: "Mobile Food Services", label: "Mobile Food Services" },
-          { value: "Restaurants", label: "Restaurants" },
-        ],
-      },
-      {
-        value: "Hospitality", label: "Hospitality", children: [
-          { value: "Bed-and-Breakfasts, Hostels, Homestays", label: "Bed-and-Breakfasts, Hostels, Homestays" },
-          { value: "Hotels and Motels", label: "Hotels and Motels" },
-        ],
-      },
-    ],
-  },
-  {
-    value: "Administrative and Support Services", label: "Administrative and Support Services", children: [
-      { value: "Collection Agencies", label: "Collection Agencies" },
-      { value: "Events Services", label: "Events Services" },
-      {
-        value: "Facilities Services", label: "Facilities Services", children: [
-          { value: "Janitorial Services", label: "Janitorial Services" },
-          { value: "Landscaping Services", label: "Landscaping Services" },
-        ],
-      },
-      { value: "Fundraising", label: "Fundraising" },
-      { value: "Office Administration", label: "Office Administration" },
-      {
-        value: "Security and Investigations", label: "Security and Investigations", children: [
-          { value: "Security Guards and Patrol Services", label: "Security Guards and Patrol Services" },
-          { value: "Security Systems Services", label: "Security Systems Services" },
-        ],
-      },
-      {
-        value: "Staffing and Recruiting", label: "Staffing and Recruiting", children: [
-          { value: "Executive Search Services", label: "Executive Search Services" },
-          { value: "Temporary Help Services", label: "Temporary Help Services" },
-        ],
-      },
-      { value: "Telephone Call Centers", label: "Telephone Call Centers" },
-      { value: "Translation and Localization", label: "Translation and Localization" },
-      { value: "Travel Arrangements", label: "Travel Arrangements" },
-      { value: "Writing and Editing", label: "Writing and Editing" },
-    ],
-  },
-  {
-    value: "Construction", label: "Construction", children: [
-      {
-        value: "Building Construction", label: "Building Construction", children: [
-          { value: "Nonresidential Building Construction", label: "Nonresidential Building Construction" },
-          { value: "Residential Building Construction", label: "Residential Building Construction" },
-        ],
-      },
-      {
-        value: "Civil Engineering", label: "Civil Engineering", children: [
-          { value: "Highway, Street, and Bridge Construction", label: "Highway, Street, and Bridge Construction" },
-          { value: "Subdivision of Land", label: "Subdivision of Land" },
-          { value: "Utility System Construction", label: "Utility System Construction" },
-        ],
-      },
-      {
-        value: "Specialty Trade Contractors", label: "Specialty Trade Contractors", children: [
-          { value: "Building Equipment Contractors", label: "Building Equipment Contractors" },
-          { value: "Building Finishing Contractors", label: "Building Finishing Contractors" },
-          { value: "Building Structure and Exterior Contractors", label: "Building Structure and Exterior Contractors" },
-        ],
-      },
-    ],
-  },
-  {
-    value: "Consumer Services", label: "Consumer Services", children: [
-      {
-        value: "Civic and Social Organizations", label: "Civic and Social Organizations", children: [
-          { value: "Industry Associations", label: "Industry Associations" },
-          { value: "Political Organizations", label: "Political Organizations" },
-          { value: "Professional Organizations", label: "Professional Organizations" },
-        ],
-      },
-      { value: "Household Services", label: "Household Services" },
-      { value: "Non-profit Organizations", label: "Non-profit Organizations" },
-      {
-        value: "Personal and Laundry Services", label: "Personal and Laundry Services", children: [
-          { value: "Laundry and Drycleaning Services", label: "Laundry and Drycleaning Services" },
-          { value: "Personal Care Services", label: "Personal Care Services" },
-          { value: "Pet Services", label: "Pet Services" },
-        ],
-      },
-      { value: "Philanthropic Fundraising Services", label: "Philanthropic Fundraising Services" },
-      { value: "Religious Institutions", label: "Religious Institutions" },
-      {
-        value: "Repair and Maintenance", label: "Repair and Maintenance", children: [
-          { value: "Commercial and Industrial Machinery Maintenance", label: "Commercial and Industrial Machinery Maintenance" },
-          { value: "Electronic and Precision Equipment Maintenance", label: "Electronic and Precision Equipment Maintenance" },
-          { value: "Footwear and Leather Goods Repair", label: "Footwear and Leather Goods Repair" },
-          { value: "Reupholstery and Furniture Repair", label: "Reupholstery and Furniture Repair" },
-          { value: "Vehicle Repair and Maintenance", label: "Vehicle Repair and Maintenance" },
-        ],
-      },
-    ],
-  },
-  {
-    value: "Education", label: "Education", children: [
-      { value: "E-Learning Providers", label: "E-Learning Providers" },
-      { value: "Higher Education", label: "Higher Education" },
-      { value: "Primary and Secondary Education", label: "Primary and Secondary Education" },
-      { value: "Professional Training and Coaching", label: "Professional Training and Coaching" },
-      {
-        value: "Technical and Vocational Training", label: "Technical and Vocational Training", children: [
-          { value: "Cosmetology and Barber Schools", label: "Cosmetology and Barber Schools" },
-          { value: "Fine Arts Schools", label: "Fine Arts Schools" },
-          { value: "Flight Training", label: "Flight Training" },
-          { value: "Language Schools", label: "Language Schools" },
-          { value: "Secretarial Schools", label: "Secretarial Schools" },
-          { value: "Sports and Recreation Instruction", label: "Sports and Recreation Instruction" },
-        ],
-      },
-    ],
-  },
-  {
-    value: "Entertainment Providers", label: "Entertainment Providers", children: [
-      { value: "Artists and Writers", label: "Artists and Writers" },
-      {
-        value: "Museums, Historical Sites, and Zoos", label: "Museums, Historical Sites, and Zoos", children: [
-          { value: "Historical Sites", label: "Historical Sites" },
-          { value: "Museums", label: "Museums" },
-          { value: "Zoos and Botanical Gardens", label: "Zoos and Botanical Gardens" },
-        ],
-      },
-      { value: "Musicians", label: "Musicians" },
-      {
-        value: "Performing Arts and Spectator Sports", label: "Performing Arts and Spectator Sports", children: [
-          { value: "Circuses and Magic Shows", label: "Circuses and Magic Shows" },
-          { value: "Dance Companies", label: "Dance Companies" },
-          { value: "Performing Arts", label: "Performing Arts" },
-          {
-            value: "Spectator Sports", label: "Spectator Sports", children: [
-              { value: "Racetracks", label: "Racetracks" },
-              { value: "Sports Teams and Clubs", label: "Sports Teams and Clubs" },
-            ],
-          },
-          { value: "Theater Companies", label: "Theater Companies" },
-        ],
-      },
-      {
-        value: "Recreational Facilities", label: "Recreational Facilities", children: [
-          { value: "Amusement Parks and Arcades", label: "Amusement Parks and Arcades" },
-          { value: "Gambling Facilities and Casinos", label: "Gambling Facilities and Casinos" },
-          { value: "Golf Courses and Country Clubs", label: "Golf Courses and Country Clubs" },
-          { value: "Skiing Facilities", label: "Skiing Facilities" },
-          { value: "Wellness and Fitness Services", label: "Wellness and Fitness Services" },
-        ],
-      },
-    ],
-  },
-  {
-    value: "Farming, Ranching, Forestry", label: "Farming, Ranching, Forestry", children: [
-      {
-        value: "Farming", label: "Farming", children: [
-          { value: "Horticulture", label: "Horticulture" },
-        ],
-      },
-      { value: "Forestry and Logging", label: "Forestry and Logging" },
-      {
-        value: "Ranching and Fisheries", label: "Ranching and Fisheries", children: [
-          { value: "Fisheries", label: "Fisheries" },
-          { value: "Ranching", label: "Ranching" },
-        ],
-      },
-    ],
-  },
-  {
-    value: "Financial Services", label: "Financial Services", children: [
-      {
-        value: "Capital Markets", label: "Capital Markets", children: [
-          { value: "Investment Advice", label: "Investment Advice" },
-          { value: "Investment Banking", label: "Investment Banking" },
-          { value: "Investment Management", label: "Investment Management" },
-          { value: "Securities and Commodity Exchanges", label: "Securities and Commodity Exchanges" },
-          { value: "Venture Capital and Private Equity Principals", label: "Venture Capital and Private Equity Principals" },
-        ],
-      },
-      {
-        value: "Credit Intermediation", label: "Credit Intermediation", children: [
-          { value: "Banking", label: "Banking" },
-          { value: "International Trade and Development", label: "International Trade and Development" },
-          { value: "Loan Brokers", label: "Loan Brokers" },
-          { value: "Savings Institutions", label: "Savings Institutions" },
-        ],
-      },
-      {
-        value: "Funds and Trusts", label: "Funds and Trusts", children: [
-          { value: "Insurance and Employee Benefit Funds", label: "Insurance and Employee Benefit Funds" },
-          { value: "Pension Funds", label: "Pension Funds" },
-          { value: "Trusts and Estates", label: "Trusts and Estates" },
-        ],
-      },
-      {
-        value: "Insurance", label: "Insurance", children: [
-          { value: "Claims Adjusting, Actuarial Services", label: "Claims Adjusting, Actuarial Services" },
-          { value: "Insurance Agencies and Brokerages", label: "Insurance Agencies and Brokerages" },
-          { value: "Insurance Carriers", label: "Insurance Carriers" },
-        ],
-      },
-    ],
-  },
-  {
-    value: "Government Administration", label: "Government Administration", children: [
-      {
-        value: "Administration of Justice", label: "Administration of Justice", children: [
-          { value: "Correctional Institutions", label: "Correctional Institutions" },
-          { value: "Courts of Law", label: "Courts of Law" },
-          { value: "Fire Protection", label: "Fire Protection" },
-          { value: "Law Enforcement", label: "Law Enforcement" },
-          { value: "Public Safety", label: "Public Safety" },
-        ],
-      },
-      {
-        value: "Economic Programs", label: "Economic Programs", children: [
-          { value: "Transportation Programs", label: "Transportation Programs" },
-          { value: "Utilities Administration", label: "Utilities Administration" },
-        ],
-      },
-      {
-        value: "Environmental Quality Programs", label: "Environmental Quality Programs", children: [
-          { value: "Air, Water, and Waste Program Management", label: "Air, Water, and Waste Program Management" },
-          { value: "Conservation Programs", label: "Conservation Programs" },
-        ],
-      },
-      {
-        value: "Health and Human Services", label: "Health and Human Services", children: [
-          { value: "Education Administration Programs", label: "Education Administration Programs" },
-          { value: "Public Assistance Programs", label: "Public Assistance Programs" },
-          { value: "Public Health", label: "Public Health" },
-        ],
-      },
-      {
-        value: "Housing and Community Development", label: "Housing and Community Development", children: [
-          { value: "Community Development and Urban Planning", label: "Community Development and Urban Planning" },
-          { value: "Housing Programs", label: "Housing Programs" },
-        ],
-      },
-      {
-        value: "Military and International Affairs", label: "Military and International Affairs", children: [
-          { value: "Armed Forces", label: "Armed Forces" },
-          { value: "International Affairs", label: "International Affairs" },
-        ],
-      },
-      {
-        value: "Public Policy Offices", label: "Public Policy Offices", children: [
-          { value: "Executive Offices", label: "Executive Offices" },
-          { value: "Legislative Offices", label: "Legislative Offices" },
-        ],
-      },
-      { value: "Space Research and Technology", label: "Space Research and Technology" },
-    ],
-  },
-  { value: "Holding Companies", label: "Holding Companies" },
-  {
-    value: "Hospitals and Health Care", label: "Hospitals and Health Care", children: [
-      {
-        value: "Community Services", label: "Community Services", children: [
-          { value: "Services for the Elderly and Disabled", label: "Services for the Elderly and Disabled" },
-        ],
-      },
-      { value: "Hospitals", label: "Hospitals" },
-      {
-        value: "Individual and Family Services", label: "Individual and Family Services", children: [
-          { value: "Child Day Care Services", label: "Child Day Care Services" },
-          { value: "Emergency and Relief Services", label: "Emergency and Relief Services" },
-          { value: "Vocational Rehabilitation Services", label: "Vocational Rehabilitation Services" },
-        ],
-      },
-      {
-        value: "Medical Practices", label: "Medical Practices", children: [
-          { value: "Alternative Medicine", label: "Alternative Medicine" },
-          { value: "Ambulance Services", label: "Ambulance Services" },
-          { value: "Chiropractors", label: "Chiropractors" },
-          { value: "Dentists", label: "Dentists" },
-          { value: "Family Planning Centers", label: "Family Planning Centers" },
-          { value: "Home Health Care Services", label: "Home Health Care Services" },
-          { value: "Medical and Diagnostic Laboratories", label: "Medical and Diagnostic Laboratories" },
-          { value: "Mental Health Care", label: "Mental Health Care" },
-          { value: "Optometrists", label: "Optometrists" },
-          { value: "Outpatient Care Centers", label: "Outpatient Care Centers" },
-          { value: "Physical, Occupational and Speech Therapists", label: "Physical, Occupational and Speech Therapists" },
-          { value: "Physicians", label: "Physicians" },
-        ],
-      },
-      { value: "Nursing Homes and Residential Care Facilities", label: "Nursing Homes and Residential Care Facilities" },
-    ],
-  },
-  {
-    value: "Manufacturing", label: "Manufacturing", children: [
-      {
-        value: "Apparel Manufacturing", label: "Apparel Manufacturing", children: [
-          { value: "Fashion Accessories Manufacturing", label: "Fashion Accessories Manufacturing" },
-        ],
-      },
-      {
-        value: "Appliances, Electrical, and Electronics Manufacturing", label: "Appliances, Electrical, and Electronics Manufacturing", children: [
-          { value: "Electric Lighting Equipment Manufacturing", label: "Electric Lighting Equipment Manufacturing" },
-          {
-            value: "Electrical Equipment Manufacturing", label: "Electrical Equipment Manufacturing", children: [
-              { value: "Fuel Cell Manufacturing", label: "Fuel Cell Manufacturing" },
-            ],
-          },
-          { value: "Household Appliance Manufacturing", label: "Household Appliance Manufacturing" },
-        ],
-      },
-      {
-        value: "Chemical Manufacturing", label: "Chemical Manufacturing", children: [
-          { value: "Agricultural Chemical Manufacturing", label: "Agricultural Chemical Manufacturing" },
-          { value: "Artificial Rubber and Synthetic Fiber Manufacturing", label: "Artificial Rubber and Synthetic Fiber Manufacturing" },
-          { value: "Chemical Raw Materials Manufacturing", label: "Chemical Raw Materials Manufacturing" },
-        ],
-      },
-      {
-        value: "Climate Technology Products Manufacturing", label: "Climate Technology Products Manufacturing", children: [
-          { value: "Climate Technology Product Manufacturing", label: "Climate Technology Product Manufacturing" },
-        ],
-      },
-      {
-        value: "Computers and Electronics Manufacturing", label: "Computers and Electronics Manufacturing", children: [
-          { value: "Audio and Video Equipment Manufacturing", label: "Audio and Video Equipment Manufacturing" },
-          { value: "Communications Equipment Manufacturing", label: "Communications Equipment Manufacturing" },
-          {
-            value: "Computer Hardware Manufacturing", label: "Computer Hardware Manufacturing", children: [
-              { value: "Accessible Hardware Manufacturing", label: "Accessible Hardware Manufacturing" },
-            ],
-          },
-        ],
-      },
-      {
-        value: "Fabricated Metal Products", label: "Fabricated Metal Products", children: [
-          { value: "Architectural and Structural Metal Manufacturing", label: "Architectural and Structural Metal Manufacturing" },
-          { value: "Boilers, Tanks, and Shipping Container Manufacturing", label: "Boilers, Tanks, and Shipping Container Manufacturing" },
-          { value: "Construction Hardware Manufacturing", label: "Construction Hardware Manufacturing" },
-          { value: "Cutlery and Handtool Manufacturing", label: "Cutlery and Handtool Manufacturing" },
-        ],
-      },
-      {
-        value: "Food and Beverage Manufacturing", label: "Food and Beverage Manufacturing", children: [
-          { value: "Animal Feed Manufacturing", label: "Animal Feed Manufacturing" },
-          { value: "Baked Goods Manufacturing", label: "Baked Goods Manufacturing" },
-          {
-            value: "Beverage Manufacturing", label: "Beverage Manufacturing", children: [
-              { value: "Breweries", label: "Breweries" },
-              { value: "Distilleries", label: "Distilleries" },
-            ],
-          },
-          { value: "Dairy Product Manufacturing", label: "Dairy Product Manufacturing" },
-          { value: "Fruit and Vegetable Preserves Manufacturing", label: "Fruit and Vegetable Preserves Manufacturing" },
-        ],
-      },
-      {
-        value: "Furniture and Home Furnishings Manufacturing", label: "Furniture and Home Furnishings Manufacturing", children: [
-          { value: "Household and Institutional Furniture Manufacturing", label: "Household and Institutional Furniture Manufacturing" },
-        ],
-      },
-      {
-        value: "Glass, Ceramics and Concrete Manufacturing", label: "Glass, Ceramics and Concrete Manufacturing", children: [
-          { value: "Abrasives and Nonmetallic Minerals Manufacturing", label: "Abrasives and Nonmetallic Minerals Manufacturing" },
-          { value: "Clay and Refractory Products Manufacturing", label: "Clay and Refractory Products Manufacturing" },
-          { value: "Glass Product Manufacturing", label: "Glass Product Manufacturing" },
-        ],
-      },
-      {
-        value: "Leather Product Manufacturing", label: "Leather Product Manufacturing", children: [
-          { value: "Footwear Manufacturing", label: "Footwear Manufacturing" },
-        ],
-      },
-      {
-        value: "Machinery Manufacturing", label: "Machinery Manufacturing", children: [
-          { value: "Agriculture, Construction, Mining Machinery Manufacturing", label: "Agriculture, Construction, Mining Machinery Manufacturing" },
-          { value: "Automation Machinery Manufacturing", label: "Automation Machinery Manufacturing" },
-          { value: "Commercial and Service Industry Machinery Manufacturing", label: "Commercial and Service Industry Machinery Manufacturing" },
-          { value: "Engines and Power Transmission Equipment Manufacturing", label: "Engines and Power Transmission Equipment Manufacturing" },
-          { value: "HVAC and Refrigeration Equipment Manufacturing", label: "HVAC and Refrigeration Equipment Manufacturing" },
-          { value: "Industrial Machinery Manufacturing", label: "Industrial Machinery Manufacturing" },
-        ],
-      },
-      {
-        value: "Transportation Equipment Manufacturing", label: "Transportation Equipment Manufacturing", children: [
-          { value: "Aviation and Aerospace Component Manufacturing", label: "Aviation and Aerospace Component Manufacturing" },
-          { value: "Defense and Space Manufacturing", label: "Defense and Space Manufacturing" },
-          {
-            value: "Motor Vehicle Manufacturing", label: "Motor Vehicle Manufacturing", children: [
-              { value: "Alternative Fuel Vehicle Manufacturing", label: "Alternative Fuel Vehicle Manufacturing" },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-];
+export const INDUSTRY_OPTIONS_HIERARCHICAL: DepartmentOption[] = INDUSTRY_OPTIONS;
+

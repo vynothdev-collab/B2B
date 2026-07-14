@@ -112,8 +112,12 @@ export async function searchPersons(
     seniority: listOrUndef(filters.seniority),
     companies: listOrUndef(filters.companies),
 
-    person_locations: listOrUndef(filters.personLocations),
-    hq_locations: listOrUndef(filters.companyHQLocations),
+    person_location_countries: listOrUndef(filters.personLocationCountries),
+    person_location_states: listOrUndef(filters.personLocationStates),
+    person_location_cities: listOrUndef(filters.personLocationCities),
+    hq_countries: listOrUndef(filters.companyHQCountries),
+    hq_states: listOrUndef(filters.companyHQStates),
+    hq_cities: listOrUndef(filters.companyHQCities),
 
     require_work_email: filters.requireWorkEmail || undefined,
 
@@ -198,7 +202,9 @@ export async function searchCompanies(
 ): Promise<SearchResponse> {
   const body = {
     companies: listOrUndef(filters.companies),
-    locations: listOrUndef(filters.locations),
+    location_countries: listOrUndef(filters.locationCountries),
+    location_states: listOrUndef(filters.locationStates),
+    location_cities: listOrUndef(filters.locationCities),
 
     type: listOrUndef(filters.type),
 
