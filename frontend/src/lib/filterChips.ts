@@ -69,12 +69,24 @@ export function buildPersonChips(
     chips.push({ id: `co-${v}`, label: v, onRemove: () => onChange({ companies: filters.companies.filter((x) => x !== v) }) })
   );
 
-  filters.personLocations.forEach((v) =>
-    chips.push({ id: `loc-${v}`, label: capitalize(v), onRemove: () => onChange({ personLocations: filters.personLocations.filter((x) => x !== v) }) })
+  filters.personLocationCountries.forEach((v) =>
+    chips.push({ id: `loc-country-${v}`, label: capitalize(v), onRemove: () => onChange({ personLocationCountries: filters.personLocationCountries.filter((x) => x !== v) }) })
+  );
+  filters.personLocationStates.forEach((v) =>
+    chips.push({ id: `loc-state-${v}`, label: capitalize(v), onRemove: () => onChange({ personLocationStates: filters.personLocationStates.filter((x) => x !== v) }) })
+  );
+  filters.personLocationCities.forEach((v) =>
+    chips.push({ id: `loc-city-${v}`, label: capitalize(v), onRemove: () => onChange({ personLocationCities: filters.personLocationCities.filter((x) => x !== v) }) })
   );
 
-  filters.companyHQLocations.forEach((v) =>
-    chips.push({ id: `hq-${v}`, label: `HQ: ${capitalize(v)}`, onRemove: () => onChange({ companyHQLocations: filters.companyHQLocations.filter((x) => x !== v) }) })
+  filters.companyHQCountries.forEach((v) =>
+    chips.push({ id: `hq-country-${v}`, label: `HQ: ${capitalize(v)}`, onRemove: () => onChange({ companyHQCountries: filters.companyHQCountries.filter((x) => x !== v) }) })
+  );
+  filters.companyHQStates.forEach((v) =>
+    chips.push({ id: `hq-state-${v}`, label: `HQ: ${capitalize(v)}`, onRemove: () => onChange({ companyHQStates: filters.companyHQStates.filter((x) => x !== v) }) })
+  );
+  filters.companyHQCities.forEach((v) =>
+    chips.push({ id: `hq-city-${v}`, label: `HQ: ${capitalize(v)}`, onRemove: () => onChange({ companyHQCities: filters.companyHQCities.filter((x) => x !== v) }) })
   );
 
   if (filters.requireWorkEmail)
@@ -272,8 +284,14 @@ export function buildCompanyChips(
     chips.push({ id: `co-${v}`, label: v, onRemove: () => onChange({ companies: filters.companies.filter((x) => x !== v) }) })
   );
 
-  filters.locations.forEach((v) =>
-    chips.push({ id: `loc-${v}`, label: capitalize(v), onRemove: () => onChange({ locations: filters.locations.filter((x) => x !== v) }) })
+  filters.locationCountries.forEach((v) =>
+    chips.push({ id: `loc-country-${v}`, label: capitalize(v), onRemove: () => onChange({ locationCountries: filters.locationCountries.filter((x) => x !== v) }) })
+  );
+  filters.locationStates.forEach((v) =>
+    chips.push({ id: `loc-state-${v}`, label: capitalize(v), onRemove: () => onChange({ locationStates: filters.locationStates.filter((x) => x !== v) }) })
+  );
+  filters.locationCities.forEach((v) =>
+    chips.push({ id: `loc-city-${v}`, label: capitalize(v), onRemove: () => onChange({ locationCities: filters.locationCities.filter((x) => x !== v) }) })
   );
 
   filters.type.forEach((v) =>

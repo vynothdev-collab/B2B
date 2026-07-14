@@ -185,10 +185,18 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
 
       <FilterSection title="Location" icon={<MapPin className="h-4 w-4" />} isOpen={open === "location"} onToggle={() => toggle("location")}>
         <TabbedLocationFilter
-          personValues={filters.personLocations}
-          hqValues={filters.companyHQLocations}
-          onPersonChange={(v) => onChange({ personLocations: v })}
-          onHqChange={(v) => onChange({ companyHQLocations: v })}
+          personCountries={filters.personLocationCountries}
+          personStates={filters.personLocationStates}
+          personCities={filters.personLocationCities}
+          hqCountries={filters.companyHQCountries}
+          hqStates={filters.companyHQStates}
+          hqCities={filters.companyHQCities}
+          onPersonCountriesChange={(v) => onChange({ personLocationCountries: v })}
+          onPersonStatesChange={(v) => onChange({ personLocationStates: v })}
+          onPersonCitiesChange={(v) => onChange({ personLocationCities: v })}
+          onHqCountriesChange={(v) => onChange({ companyHQCountries: v })}
+          onHqStatesChange={(v) => onChange({ companyHQStates: v })}
+          onHqCitiesChange={(v) => onChange({ companyHQCities: v })}
         />
       </FilterSection>
 

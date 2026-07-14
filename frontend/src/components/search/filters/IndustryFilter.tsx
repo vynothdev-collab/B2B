@@ -24,11 +24,9 @@ export default function IndustryFilter({ values, onChange }: Props) {
 
   const q = query.toLowerCase().trim();
 
-  const suggestions = q
-    ? ALL_INDUSTRIES.filter(
-        (o) => o.label.toLowerCase().includes(q) && !values.includes(o.value)
-      ).slice(0, 30)
-    : [];
+  const suggestions = ALL_INDUSTRIES.filter(
+    (o) => (!q || o.label.toLowerCase().includes(q)) && !values.includes(o.value)
+  ).slice(0, 30);
 
   const add = (val: string) => {
     if (!values.includes(val)) onChange([...values, val]);
@@ -37,10 +35,10 @@ export default function IndustryFilter({ values, onChange }: Props) {
 
   const remove = (val: string) => onChange(values.filter((v) => v !== val));
 
-  const showList = focused && q.length > 0;
+  const showList = focused;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1">
       {/* Selected chips */}
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1">
@@ -80,16 +78,16 @@ export default function IndustryFilter({ values, onChange }: Props) {
       {showList && (
         <div className="max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           {suggestions.length === 0 ? (
-            <p className="px-3 py-3 text-[12px] text-gray-400">No results for &ldquo;{query}&rdquo;</p>
+            <p className="px-3 py-3 text-[12px] text-gray-400">{q ? `No results for "${query}"` : "All industries selected"}</p>
           ) : (
             <ul>
               {suggestions.map((opt) => (
-                <li key={opt.value} className="border-b border-gray-50 last:border-0">
+                <li key={opt.value}>
                   <button
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => add(opt.value)}
-                    className="w-full px-3 py-2 text-left text-[12px] text-gray-800 hover:bg-gray-50 transition-colors"
+                    className="w-full px-3 py-1 text-left text-[12px] text-gray-800 hover:bg-gray-50 transition-colors"
                   >
                     {opt.label}
                   </button>

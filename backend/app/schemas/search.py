@@ -13,8 +13,12 @@ class PersonSearchRequest(BaseModel):
     seniority: Optional[list[str]] = None
     companies: Optional[list[str]] = None
 
-    person_locations: Optional[list[str]] = None
-    hq_locations: Optional[list[str]] = None
+    person_location_countries: Optional[list[str]] = None
+    person_location_states: Optional[list[str]] = None
+    person_location_cities: Optional[list[str]] = None
+    hq_countries: Optional[list[str]] = None
+    hq_states: Optional[list[str]] = None
+    hq_cities: Optional[list[str]] = None
 
     require_work_email: bool = False
 
@@ -101,7 +105,9 @@ class PersonSearchRequest(BaseModel):
 
 class CompanySearchRequest(BaseModel):
     companies: Optional[list[str]] = None
-    locations: Optional[list[str]] = None
+    location_countries: Optional[list[str]] = None
+    location_states: Optional[list[str]] = None
+    location_cities: Optional[list[str]] = None
 
     type: Optional[list[str]] = None
 

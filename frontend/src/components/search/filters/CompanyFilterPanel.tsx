@@ -74,11 +74,20 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
       </FilterSection>
 
       <FilterSection title="Location" icon={<MapPin className="h-4 w-4" />} isOpen={open === "location"} onToggle={() => toggle("location")}>
-        <LocationAutocomplete
-          placeholder="City, state or country…"
-          values={filters.locations}
-          onChange={(v) => onChange({ locations: v })}
-        />
+        <div className="flex flex-col gap-3">
+          <div>
+            <p className="text-[11px] font-medium text-gray-500 mb-1">Country</p>
+            <LocationAutocomplete kind="country" values={filters.locationCountries} onChange={(v) => onChange({ locationCountries: v })} />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-gray-500 mb-1">State / Region</p>
+            <LocationAutocomplete kind="state" values={filters.locationStates} onChange={(v) => onChange({ locationStates: v })} filterCountries={filters.locationCountries} />
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-gray-500 mb-1">City</p>
+            <LocationAutocomplete kind="city" values={filters.locationCities} onChange={(v) => onChange({ locationCities: v })} filterCountries={filters.locationCountries} filterStates={filters.locationStates} />
+          </div>
+        </div>
       </FilterSection>
 
       <FilterSection title="Type & Business Model" icon={<Tag className="h-4 w-4" />} isOpen={open === "type"} onToggle={() => toggle("type")}>

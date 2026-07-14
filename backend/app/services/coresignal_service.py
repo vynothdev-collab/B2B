@@ -197,10 +197,12 @@ _REVENUE_BUCKET_TO_RANGE: dict[str, tuple[Optional[float], Optional[float]]] = {
 }
 
 # CoreSignal exposes two revenue source types with different field structures:
-#   Range sources (4, 6): annual_revenue_range_from / annual_revenue_range_to
-#   Point sources (5, 1): single annual_revenue value
+#   Range sources (4, 6): revenue_annual_range.{src}.annual_revenue_range_from/to
+#   Point sources (5, 1): revenue_annual.{src}.annual_revenue (different top-level key)
 _REVENUE_RANGE_SOURCES = ("source_4_annual_revenue_range", "source_6_annual_revenue_range")
+_REVENUE_RANGE_PARENT = "revenue_annual_range"
 _REVENUE_POINT_SOURCES = ("source_5_annual_revenue", "source_1_annual_revenue")
+_REVENUE_POINT_PARENT = "revenue_annual"
 
 _DESCRIPTION_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
 
@@ -389,9 +391,9 @@ def _add_revenue_bucket_filter(clauses: list[dict], buckets: Optional[list[str]]
         for src in _REVENUE_RANGE_SOURCES:
             sub: list[dict] = []
             if high is not None:
-                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_from": {"lte": high}}})
+                sub.append({"range": {f"{_REVENUE_RANGE_PARENT}.{src}.annual_revenue_range_from": {"lte": high}}})
             if low is not None:
-                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_to": {"gte": low}}})
+                sub.append({"range": {f"{_REVENUE_RANGE_PARENT}.{src}.annual_revenue_range_to": {"gte": low}}})
             if sub:
                 bucket_should.append({"bool": {"filter": sub}})
         for src in _REVENUE_POINT_SOURCES:
@@ -401,7 +403,7 @@ def _add_revenue_bucket_filter(clauses: list[dict], buckets: Optional[list[str]]
             if high is not None:
                 sub["lte"] = high
             if sub:
-                bucket_should.append({"range": {f"revenue_annual_range.{src}.annual_revenue": sub}})
+                bucket_should.append({"range": {f"{_REVENUE_POINT_PARENT}.{src}.annual_revenue": sub}})
     if bucket_should:
         clauses.append({"bool": {"should": bucket_should, "minimum_should_match": 1}})
 
@@ -433,9 +435,9 @@ def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) ->
 
 def _add_company_status_filter(clauses: list[dict], statuses: Optional[list[str]]) -> None:
     """CoreSignal uses two separate fields for company status:
-      is_public (boolean)          — ownership type (public / private)
-      type (keyword)               — "Nonprofit", "Government Agency", "Educational"
-      company_status (keyword)     — operational: "active", "acquired", "closed", "defunct", "ipo"
+      is_public (boolean)     — ownership type (public / private)
+      type (keyword)          — "Nonprofit", "Government Agency", "Educational"
+      status.value (keyword)  — operational status: "active", "acquired", "closed", "defunct", "ipo"
     """
     if not statuses:
         return
@@ -449,19 +451,19 @@ def _add_company_status_filter(clauses: list[dict], statuses: Optional[list[str]
         elif s_norm == "nonprofit":
             should.append({"term": {"type": "Nonprofit"}})
         elif s_norm == "active":
-            should.append({"term": {"company_status": "active"}})
+            should.append({"term": {"status.value": "active"}})
         elif s_norm == "acquired":
-            should.append({"term": {"company_status": "acquired"}})
+            should.append({"term": {"status.value": "acquired"}})
         elif s_norm in ("closed", "defunct"):
             # CoreSignal uses both "closed" and "defunct" for shut-down companies
             should.append({"bool": {"should": [
-                {"term": {"company_status": "closed"}},
-                {"term": {"company_status": "defunct"}},
+                {"term": {"status.value": "closed"}},
+                {"term": {"status.value": "defunct"}},
             ], "minimum_should_match": 1}})
         elif s_norm == "ipo":
             # IPO companies are public — match either status flag
             should.append({"bool": {"should": [
-                {"term": {"company_status": "ipo"}},
+                {"term": {"status.value": "ipo"}},
                 {"term": {"is_public": True}},
             ], "minimum_should_match": 1}})
     if should:
@@ -659,23 +661,15 @@ def build_person_query(f: PersonSearchRequest, *, use_company_id_filter: bool = 
     _add_multi_term(filters, "active_experience_management_level", f.seniority)
 
     if not use_company_id_filter:
-        _add_multi_match(must, "active_experience_company_name", f.companies, phrase=True)
-        _add_location_match_multi(
-            must,
-            [
-                "active_experience_company_hq_country",
-                "active_experience_company_hq_region",
-                "active_experience_company_hq_city",
-            ],
-            f.hq_locations,
-        )
+        _add_multi_match(must, "active_experience_company_shorthand_name", f.companies, phrase=True)
+        _add_location_match_multi(must, ["active_experience_company_hq_country"], f.hq_countries)
+        _add_location_match_multi(must, ["active_experience_company_hq_region"], f.hq_states)
+        _add_location_match_multi(must, ["active_experience_company_hq_city"], f.hq_cities)
         _add_multi_match(must, "active_experience_company_industry", f.industries, phrase=True)
 
-    _add_location_match_multi(
-        must,
-        ["location_country", "location_state", "location_city"],
-        f.person_locations,
-    )
+    _add_location_match_multi(must, ["location_country"], f.person_location_countries)
+    _add_location_match_multi(must, ["location_state"], f.person_location_states)
+    _add_location_match_multi(must, ["location_city"], f.person_location_cities)
 
     if f.require_work_email:
         filters.append({"exists": {"field": "primary_professional_email"}})
@@ -719,11 +713,9 @@ def build_company_query(f: CompanySearchRequest) -> dict:
 
     _add_multi_match(must, "company_name", f.companies, phrase=True)
 
-    _add_location_match_multi(
-        must,
-        ["hq_country", "hq_region", "hq_city", "hq_location"],
-        f.locations,
-    )
+    _add_location_match_multi(must, ["hq_country"], f.location_countries)
+    _add_location_match_multi(must, ["hq_state"], f.location_states)
+    _add_location_match_multi(must, ["hq_city"], f.location_cities)
 
     _add_company_type_filter(filters, f.type)
     _add_company_status_filter(filters, f.company_status)
@@ -750,9 +742,9 @@ def build_company_query(f: CompanySearchRequest) -> dict:
         for src in _REVENUE_RANGE_SOURCES:
             sub: list[dict] = []
             if f.revenue_min is not None:
-                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_to": {"gte": f.revenue_min}}})
+                sub.append({"range": {f"{_REVENUE_RANGE_PARENT}.{src}.annual_revenue_range_to": {"gte": f.revenue_min}}})
             if f.revenue_max is not None:
-                sub.append({"range": {f"revenue_annual_range.{src}.annual_revenue_range_from": {"lte": f.revenue_max}}})
+                sub.append({"range": {f"{_REVENUE_RANGE_PARENT}.{src}.annual_revenue_range_from": {"lte": f.revenue_max}}})
             if sub:
                 rev_should.append({"bool": {"filter": sub}})
         for src in _REVENUE_POINT_SOURCES:
@@ -762,7 +754,7 @@ def build_company_query(f: CompanySearchRequest) -> dict:
             if f.revenue_max is not None:
                 sub["lte"] = f.revenue_max
             if sub:
-                rev_should.append({"range": {f"revenue_annual_range.{src}.annual_revenue": sub}})
+                rev_should.append({"range": {f"{_REVENUE_POINT_PARENT}.{src}.annual_revenue": sub}})
         if rev_should:
             filters.append({"bool": {"should": rev_should, "minimum_should_match": 1}})
 
@@ -830,7 +822,7 @@ def build_company_query(f: CompanySearchRequest) -> dict:
             filters.append({
                 "nested": {
                     "path": "active_job_postings",
-                    "query": {"match": {"active_job_postings.job_posting_title": kw}},
+                    "query": {"match": {"active_job_postings.title": kw}},
                 }
             })
 
@@ -1053,7 +1045,7 @@ def _map_company(r: dict) -> dict:
         "industry": r.get("industry"),
         "type": r.get("type"),
         "is_public": r.get("is_public"),
-        "company_status": r.get("company_status"),
+        "company_status": (r.get("status") or {}).get("value") or r.get("company_status"),
         "founded": r.get("founded_year") or r.get("founded"),
         # ── Size ─────────────────────────────────────────────────────────────
         "employees_count": r.get("employees_count"),
@@ -1188,7 +1180,9 @@ def _person_has_non_name_company_filters(req: PersonSearchRequest) -> bool:
         bool(req.keywords_include),
         bool(req.keywords_exclude),
         bool(req.industries),
-        bool(req.hq_locations),
+        bool(req.hq_countries),
+        bool(req.hq_states),
+        bool(req.hq_cities),
     ])
     dept_active = bool(req.headcount_by_department) and (
         req.headcount_by_department_min is not None
@@ -1208,7 +1202,9 @@ def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
 async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int = 200) -> list[str]:
     co_req = CompanySearchRequest(
         companies=req.companies,
-        locations=req.hq_locations,
+        location_countries=req.hq_countries,
+        location_states=req.hq_states,
+        location_cities=req.hq_cities,
         industries=req.industries,
         type=req.company_type,
         revenue_buckets=req.revenue_buckets,
