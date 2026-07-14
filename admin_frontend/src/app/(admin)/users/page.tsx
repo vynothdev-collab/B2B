@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Search, UserPlus, ChevronLeft, ChevronRight, Send, X, Mail, ShieldCheck, CreditCard, List } from "lucide-react";
+import { Search, UserPlus, ChevronLeft, ChevronRight, Send, X, Mail, ShieldCheck, CreditCard, List, Users } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { USERS, INVITATIONS, type User } from "@/data/users";
 
-const TABS = ["All Users", "Invitations"];
+const TABS = ["Individual Users", "Invitations"];
 
 function UserDetail({ user }: { user: User }) {
   return (
     <div className="divide-y divide-slate-100">
-      {/* Personal Info */}
       <div className="px-6 py-5">
         <div className="flex items-center gap-4 mb-5">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
@@ -29,13 +28,12 @@ function UserDetail({ user }: { user: User }) {
         </div>
       </div>
 
-      {/* Plan & Usage */}
       <div className="px-6 py-5">
         <div className="flex items-center gap-2 mb-4">
           <CreditCard className="h-4 w-4 text-slate-400" />
           <h4 className="text-sm font-semibold text-slate-700">Plan & Usage</h4>
         </div>
-        <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+        <div className="grid grid-cols-2 gap-3 text-sm">
           <div><p className="text-xs text-slate-400 mb-0.5">Current Plan</p><p className="font-semibold text-slate-900">{user.plan}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Credits Remaining</p><p className="font-semibold text-slate-900">{user.credits}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Plan Start</p><p className="text-slate-700">{user.planStart}</p></div>
@@ -47,7 +45,6 @@ function UserDetail({ user }: { user: User }) {
         </div>
       </div>
 
-      {/* Lists */}
       <div className="px-6 py-5">
         <div className="flex items-center gap-2 mb-4">
           <List className="h-4 w-4 text-slate-400" />
@@ -66,7 +63,6 @@ function UserDetail({ user }: { user: User }) {
         </div>
       </div>
 
-      {/* Security */}
       <div className="px-6 py-5">
         <div className="flex items-center gap-2 mb-4">
           <ShieldCheck className="h-4 w-4 text-slate-400" />
@@ -82,7 +78,6 @@ function UserDetail({ user }: { user: User }) {
         </div>
       </div>
 
-      {/* Actions */}
       <div className="px-6 py-5">
         <h4 className="text-sm font-semibold text-slate-700 mb-3">Account Actions</h4>
         <div className="flex flex-wrap gap-2">
@@ -101,7 +96,7 @@ function UserDetail({ user }: { user: User }) {
 }
 
 export default function UsersPage() {
-  const [activeTab, setActiveTab] = useState("All Users");
+  const [activeTab, setActiveTab] = useState("Individual Users");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   return (
@@ -117,12 +112,22 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {activeTab === "All Users" && (
+      {/* ── Individual Users ─────────────────────────────────────────── */}
+      {activeTab === "Individual Users" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5 bg-blue-50/50">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600">
+              <Users className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-blue-800">Individual / Personal Accounts</p>
+              <p className="text-xs text-blue-500">Manage personal user accounts, plans and access</p>
+            </div>
+          </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search users..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+              <input placeholder="Search by name or email..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100" />
             </div>
             <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
               <option>All Statuses</option><option>Active</option><option>Inactive</option><option>Suspended</option>
@@ -177,7 +182,7 @@ export default function UsersPage() {
           <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5">
             <p className="text-sm text-slate-500">Showing 1–8 of 1,284 users</p>
             <div className="flex items-center gap-2">
-              <button type="button" className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 opacity-40" disabled>
+              <button type="button" disabled className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 opacity-40">
                 <ChevronLeft className="h-4 w-4" /> Prev
               </button>
               <button type="button" className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
@@ -188,10 +193,14 @@ export default function UsersPage() {
         </div>
       )}
 
+      {/* ── Invitations ──────────────────────────────────────────────── */}
       {activeTab === "Invitations" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <p className="text-sm text-slate-600">Manage pending and sent invitations.</p>
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Individual User Invitations</p>
+              <p className="text-xs text-slate-400 mt-0.5">Pending and sent invitations for personal accounts</p>
+            </div>
             <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
               <Send className="h-4 w-4" /> Send Invitation
             </button>

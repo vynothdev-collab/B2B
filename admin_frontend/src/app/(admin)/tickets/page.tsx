@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, Send } from "lucide-react";
+import { Search, Plus, Send, Users, Building2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { TICKETS, MY_TICKETS, CATEGORIES, REPORT_CARDS, CATEGORY_STATS, type Ticket } from "@/data/tickets";
 
-const TABS = ["All Tickets", "My Assigned", "Ticket Categories", "Reports"];
+const TABS = ["All Tickets", "Individual", "Enterprise", "My Assigned", "Ticket Categories", "Reports"];
+
+const INDIVIDUAL_TICKETS = TICKETS.filter((t) => t.type === "Individual");
+const ENTERPRISE_TICKETS = TICKETS.filter((t) => t.type === "Enterprise");
 
 function TicketDetail({ ticket }: { ticket: Ticket }) {
   return (
     <div className="flex flex-col h-full divide-y divide-slate-100">
-      {/* Header info */}
       <div className="px-6 py-5 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -34,14 +36,10 @@ function TicketDetail({ ticket }: { ticket: Ticket }) {
           <div><p className="text-xs text-slate-400 mb-0.5">Last Updated</p><p className="text-slate-600">{ticket.updated}</p></div>
         </div>
       </div>
-
-      {/* Description */}
       <div className="px-6 py-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Description</p>
         <p className="text-sm text-slate-700 leading-relaxed">{ticket.description}</p>
       </div>
-
-      {/* Reply thread */}
       <div className="px-6 py-4 flex-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Conversation</p>
         <div className="space-y-3">
@@ -59,20 +57,12 @@ function TicketDetail({ ticket }: { ticket: Ticket }) {
           ))}
         </div>
       </div>
-
-      {/* Reply box */}
       <div className="px-6 py-4">
-        <textarea
-          rows={3}
-          placeholder="Write a reply..."
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none"
-        />
+        <textarea rows={3} placeholder="Write a reply..." className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none" />
         <div className="flex items-center justify-between mt-2">
-          <div className="flex gap-2">
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-600 focus:border-blue-400 focus:outline-none">
-              <option>Mark as Open</option><option>Mark as In Progress</option><option>Mark as Resolved</option>
-            </select>
-          </div>
+          <select className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-600 focus:border-blue-400 focus:outline-none">
+            <option>Mark as Open</option><option>Mark as In Progress</option><option>Mark as Resolved</option>
+          </select>
           <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
             <Send className="h-3.5 w-3.5" /> Send Reply
           </button>
@@ -105,9 +95,7 @@ function TicketTable({ rows, onOpen }: { rows: Ticket[]; onOpen: (t: Ticket) => 
           {rows.map((t) => (
             <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => onOpen(t)}>
               <td className="px-5 py-3.5 font-mono text-sm font-semibold text-blue-600">{t.id}</td>
-              <td className="px-5 py-3.5 max-w-[200px]">
-                <p className="truncate font-medium text-slate-800">{t.subject}</p>
-              </td>
+              <td className="px-5 py-3.5 max-w-[200px]"><p className="truncate font-medium text-slate-800">{t.subject}</p></td>
               <td className="px-5 py-3.5 text-slate-600">{t.by}</td>
               <td className="px-5 py-3.5">
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${t.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
@@ -134,6 +122,38 @@ function TicketTable({ rows, onOpen }: { rows: Ticket[]; onOpen: (t: Ticket) => 
   );
 }
 
+function TypeBanner({ type }: { type: "Individual" | "Enterprise" }) {
+  return type === "Individual" ? (
+    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 bg-blue-50/40">
+      <Users className="h-4 w-4 text-blue-600" />
+      <span className="text-sm font-semibold text-blue-700">Individual / Personal Account Tickets</span>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 bg-violet-50/40">
+      <Building2 className="h-4 w-4 text-violet-600" />
+      <span className="text-sm font-semibold text-violet-700">Enterprise / Company Account Tickets</span>
+    </div>
+  );
+}
+
+const FILTER_HEADER = (
+  <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
+    <div className="relative flex-1 min-w-[200px]">
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <input placeholder="Search tickets..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+    </div>
+    <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+      <option>All Statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option>
+    </select>
+    <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+      <option>All Priorities</option><option>Urgent</option><option>Pending</option><option>Low</option>
+    </select>
+    <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+      <option>All Categories</option><option>Billing</option><option>Account</option><option>Technical</option>
+    </select>
+  </div>
+);
+
 export default function TicketsPage() {
   const [activeTab, setActiveTab] = useState("All Tickets");
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -143,14 +163,8 @@ export default function TicketsPage() {
       <div className="border-b border-slate-200">
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`shrink-0 px-5 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
+            <button key={tab} type="button" onClick={() => setActiveTab(tab)}
+              className={`shrink-0 px-5 py-3 text-sm font-medium transition-colors ${activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"}`}>
               {tab}
             </button>
           ))}
@@ -178,6 +192,22 @@ export default function TicketsPage() {
             </select>
           </div>
           <TicketTable rows={TICKETS} onOpen={setSelectedTicket} />
+        </div>
+      )}
+
+      {activeTab === "Individual" && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <TypeBanner type="Individual" />
+          {FILTER_HEADER}
+          <TicketTable rows={INDIVIDUAL_TICKETS} onOpen={setSelectedTicket} />
+        </div>
+      )}
+
+      {activeTab === "Enterprise" && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <TypeBanner type="Enterprise" />
+          {FILTER_HEADER}
+          <TicketTable rows={ENTERPRISE_TICKETS} onOpen={setSelectedTicket} />
         </div>
       )}
 
@@ -214,9 +244,7 @@ export default function TicketsPage() {
                     <td className="px-5 py-3.5 font-semibold text-slate-800">{cat.name}</td>
                     <td className="px-5 py-3.5 text-slate-500">{cat.description}</td>
                     <td className="px-5 py-3.5">
-                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${cat.open > 0 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
-                        {cat.open}
-                      </span>
+                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${cat.open > 0 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>{cat.open}</span>
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1.5">
@@ -236,16 +264,50 @@ export default function TicketsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {REPORT_CARDS.map((card) => (
-              <div
-                key={card.label}
-                className={`rounded-xl border p-5 shadow-sm ${card.highlight ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"}`}
-              >
+              <div key={card.label} className={`rounded-xl border p-5 shadow-sm ${card.highlight ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"}`}>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">{card.label}</p>
                 <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
               </div>
             ))}
           </div>
-
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {/* Individual Tickets breakdown */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="h-4 w-4 text-blue-500" />
+                <h3 className="text-sm font-semibold text-slate-800">Individual Tickets This Month</h3>
+              </div>
+              <div className="space-y-2">
+                {[{ label: "Open", count: 4, color: "bg-amber-500" }, { label: "In Progress", count: 2, color: "bg-blue-500" }, { label: "Resolved", count: 3, color: "bg-emerald-500" }].map((s) => (
+                  <div key={s.label} className="flex items-center gap-3">
+                    <span className="w-24 text-xs text-slate-600">{s.label}</span>
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full">
+                      <div className={`h-2 rounded-full ${s.color}`} style={{ width: `${(s.count / 9) * 100}%` }} />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-700 w-4 text-right">{s.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Enterprise Tickets breakdown */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 className="h-4 w-4 text-violet-500" />
+                <h3 className="text-sm font-semibold text-slate-800">Enterprise Tickets This Month</h3>
+              </div>
+              <div className="space-y-2">
+                {[{ label: "Open", count: 3, color: "bg-amber-500" }, { label: "In Progress", count: 2, color: "bg-blue-500" }, { label: "Resolved", count: 2, color: "bg-emerald-500" }].map((s) => (
+                  <div key={s.label} className="flex items-center gap-3">
+                    <span className="w-24 text-xs text-slate-600">{s.label}</span>
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full">
+                      <div className={`h-2 rounded-full ${s.color}`} style={{ width: `${(s.count / 7) * 100}%` }} />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-700 w-4 text-right">{s.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h3 className="text-sm font-semibold text-slate-900 mb-5">Tickets by Category — This Month</h3>
             <div className="space-y-4">
@@ -271,13 +333,7 @@ export default function TicketsPage() {
         </div>
       )}
 
-      <SlidePanel
-        isOpen={!!selectedTicket}
-        onClose={() => setSelectedTicket(null)}
-        title={selectedTicket?.id ?? ""}
-        subtitle={selectedTicket?.subject}
-        width="xl"
-      >
+      <SlidePanel isOpen={!!selectedTicket} onClose={() => setSelectedTicket(null)} title={selectedTicket?.id ?? ""} subtitle={selectedTicket?.subject} width="xl">
         {selectedTicket && <TicketDetail ticket={selectedTicket} />}
       </SlidePanel>
     </div>

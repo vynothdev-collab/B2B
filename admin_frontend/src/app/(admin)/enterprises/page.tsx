@@ -6,7 +6,7 @@ import Badge from "@/components/ui/Badge";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { ENTERPRISES, ENT_USERS, ENT_INVITATIONS, type Enterprise } from "@/data/enterprises";
 
-const TABS = ["Enterprise Accounts", "All Enterprise Users", "Invitations"];
+const TABS = ["Enterprise Admins", "Enterprise Users", "Invitations"];
 
 function EnterpriseDetail({ ent }: { ent: Enterprise }) {
   return (
@@ -93,7 +93,7 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
           <h4 className="text-sm font-semibold text-slate-700">Account Actions</h4>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors">Edit Profile</button>
+          <button type="button" className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-500 transition-colors">Edit Profile</button>
           <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Change Plan</button>
           <button type="button" className="rounded-lg border border-emerald-200 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Add Credits</button>
           {ent.status === "active"
@@ -108,7 +108,7 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
 }
 
 export default function EnterprisesPage() {
-  const [activeTab, setActiveTab] = useState("Enterprise Accounts");
+  const [activeTab, setActiveTab] = useState("Enterprise Admins");
   const [selectedEnterprise, setSelectedEnterprise] = useState<Enterprise | null>(null);
 
   return (
@@ -122,7 +122,7 @@ export default function EnterprisesPage() {
               onClick={() => setActiveTab(tab)}
               className={`px-5 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab
-                  ? "border-b-2 border-blue-600 text-blue-600"
+                  ? "border-b-2 border-violet-600 text-violet-600"
                   : "text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -132,20 +132,29 @@ export default function EnterprisesPage() {
         </div>
       </div>
 
-      {activeTab === "Enterprise Accounts" && (
+      {activeTab === "Enterprise Admins" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5 bg-violet-50/50">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600">
+              <Building2 className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-violet-800">Enterprise Admins</p>
+              <p className="text-xs text-violet-500">Company accounts and their designated admin contacts</p>
+            </div>
+          </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search enterprises..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+              <input placeholder="Search enterprises..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100" />
             </div>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
               <option>All Statuses</option><option>Active</option><option>Suspended</option><option>Inactive</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
               <option>All Plans</option><option>Pro</option><option>Business</option><option>Enterprise</option>
             </select>
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+            <button type="button" className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
               <Plus className="h-4 w-4" /> Add Enterprise
             </button>
           </div>
@@ -200,17 +209,29 @@ export default function EnterprisesPage() {
         </div>
       )}
 
-      {activeTab === "All Enterprise Users" && (
+      {activeTab === "Enterprise Users" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5 bg-violet-50/50">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600">
+              <Users className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-violet-800">Enterprise Users</p>
+              <p className="text-xs text-violet-500">All team members across enterprise accounts</p>
+            </div>
+          </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search users..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+              <input placeholder="Search users..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100" />
             </div>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
               <option>All Companies</option><option>Nexus Technologies</option><option>Acme Corp</option><option>Vantage Capital</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
+              <option>All Roles</option><option>Admin</option><option>Member</option>
+            </select>
+            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
               <option>All Statuses</option><option>Active</option><option>Suspended</option><option>Inactive</option>
             </select>
           </div>
@@ -262,8 +283,11 @@ export default function EnterprisesPage() {
       {activeTab === "Invitations" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <p className="text-sm text-slate-600">Enterprise team invitations</p>
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Enterprise Invitations</p>
+              <p className="text-xs text-slate-400 mt-0.5">Pending and sent invitations for enterprise team members</p>
+            </div>
+            <button type="button" className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
               <Send className="h-4 w-4" /> Send Invitation
             </button>
           </div>

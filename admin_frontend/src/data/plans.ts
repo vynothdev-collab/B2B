@@ -1,9 +1,13 @@
 export const PLANS = [
-  { name: "Free", price: "$0", period: "/mo", status: "active", color: "bg-slate-100", iconColor: "text-slate-600", limits: ["50 searches / month", "10 email reveals / month", "1 user seat", "Basic filters", "Email support"] },
-  { name: "Pro", price: "$49", period: "/mo", status: "active", color: "bg-blue-50", iconColor: "text-blue-600", limits: ["500 searches / month", "100 email reveals / month", "1 user seat", "Advanced filters", "Priority email support"] },
-  { name: "Business", price: "$149", period: "/mo", status: "active", color: "bg-violet-50", iconColor: "text-violet-600", limits: ["2,000 searches / month", "500 email reveals / month", "Up to 5 user seats", "Team management", "Live chat support"] },
-  { name: "Enterprise", price: "$399", period: "/mo", status: "active", color: "bg-emerald-50", iconColor: "text-emerald-600", limits: ["Unlimited searches", "2,000 email reveals / month", "Up to 25 user seats", "Dedicated account manager", "SLA & priority support"] },
+  { name: "Free", accountType: "Individual", price: "$0", period: "/mo", status: "active", color: "bg-slate-100", iconColor: "text-slate-600", limits: ["50 searches / month", "10 email reveals / month", "1 user seat", "Basic filters", "Email support"] },
+  { name: "Pro", accountType: "Individual", price: "$49", period: "/mo", status: "active", color: "bg-blue-50", iconColor: "text-blue-600", limits: ["500 searches / month", "100 email reveals / month", "1 user seat", "Advanced filters", "Priority email support"] },
+  { name: "Business", accountType: "Individual", price: "$149", period: "/mo", status: "active", color: "bg-violet-50", iconColor: "text-violet-600", limits: ["2,000 searches / month", "500 email reveals / month", "Up to 5 user seats", "Team management", "Live chat support"] },
+  { name: "Enterprise", accountType: "Enterprise", price: "$399", period: "/mo", status: "active", color: "bg-emerald-50", iconColor: "text-emerald-600", limits: ["Unlimited searches", "2,000 email reveals / month", "Up to 25 user seats", "Dedicated account manager", "SLA & priority support"] },
+  { name: "Enterprise Custom", accountType: "Enterprise", price: "Custom", period: "", status: "active", color: "bg-teal-50", iconColor: "text-teal-600", limits: ["Custom search volume", "Custom reveal limits", "Unlimited user seats", "Custom integrations & SSO", "Dedicated SLA & TAM"] },
 ];
+
+export const INDIVIDUAL_PLANS = PLANS.filter((p) => p.accountType === "Individual");
+export const ENTERPRISE_PLANS = PLANS.filter((p) => p.accountType === "Enterprise");
 
 export const ASSIGNMENT_HISTORY = [
   { account: "DataSync Ltd", type: "Enterprise", prev: "Pro", next: "Business", changedBy: "Super Admin", date: "Jul 10, 2025", reason: "Upgraded by request" },
@@ -15,3 +19,6 @@ export const ASSIGNMENT_HISTORY = [
   { account: "BrightPath EDU", type: "Enterprise", prev: "Pro", next: "Business", changedBy: "Super Admin", date: "Jun 10, 2025", reason: "Edu plan upgrade" },
   { account: "Ryan Nguyen", type: "Individual", prev: "Pro", next: "Free", changedBy: "Super Admin", date: "Jun 5, 2025", reason: "Non-renewal" },
 ];
+
+export const INDIVIDUAL_HISTORY = ASSIGNMENT_HISTORY.filter((h) => h.type === "Individual");
+export const ENTERPRISE_HISTORY = ASSIGNMENT_HISTORY.filter((h) => h.type === "Enterprise");

@@ -1,19 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Send } from "lucide-react";
+import { Plus, Send, Users, Building2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { CONVERSATIONS, UNREAD_CONVERSATIONS, TEMPLATES, type Conversation } from "@/data/live-chat";
 
-const TABS = ["All Conversations", "Unread / Waiting", "Quick Reply Templates"];
+const TABS = ["All Conversations", "Individual", "Enterprise", "Unread / Waiting", "Quick Reply Templates"];
+
+const INDIVIDUAL_CONVS = CONVERSATIONS.filter((c) => c.type === "Individual");
+const ENTERPRISE_CONVS = CONVERSATIONS.filter((c) => c.type === "Enterprise");
 
 function ChatDetail({ conv }: { conv: Conversation }) {
   return (
     <div className="flex h-full">
-      {/* Chat messages area */}
       <div className="flex flex-1 flex-col min-w-0">
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {conv.messages.map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.role === "admin" ? "flex-row-reverse" : ""}`}>
@@ -28,20 +29,12 @@ function ChatDetail({ conv }: { conv: Conversation }) {
             </div>
           ))}
         </div>
-
-        {/* Reply input */}
         <div className="border-t border-slate-200 px-5 py-4">
-          <textarea
-            rows={3}
-            placeholder="Type a message..."
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none"
-          />
+          <textarea rows={3} placeholder="Type a message..." className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none" />
           <div className="flex items-center justify-between mt-2">
             <select className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-600 focus:border-blue-400 focus:outline-none">
               <option>Quick Replies...</option>
-              {TEMPLATES.map((t) => (
-                <option key={t.name}>{t.name}</option>
-              ))}
+              {TEMPLATES.map((t) => <option key={t.name}>{t.name}</option>)}
             </select>
             <div className="flex items-center gap-2">
               <button type="button" className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Resolve</button>
@@ -52,16 +45,15 @@ function ChatDetail({ conv }: { conv: Conversation }) {
           </div>
         </div>
       </div>
-
-      {/* User info sidebar */}
       <div className="w-52 shrink-0 border-l border-slate-100 bg-slate-50 px-4 py-5 space-y-4 overflow-y-auto">
         <div className="flex flex-col items-center text-center gap-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-base font-bold text-blue-700">
-            {conv.initials}
-          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-base font-bold text-blue-700">{conv.initials}</div>
           <div>
             <p className="text-sm font-semibold text-slate-800">{conv.user}</p>
             {conv.company !== "—" && <p className="text-xs text-slate-400">{conv.company}</p>}
+          </div>
+          <div className="flex items-center gap-1">
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${conv.type === "Enterprise" ? "bg-violet-100 text-violet-700" : "bg-blue-100 text-blue-700"}`}>{conv.type}</span>
           </div>
           <Badge status={conv.status} />
         </div>
@@ -111,17 +103,13 @@ function ConversationTable({ rows, onOpen }: { rows: Conversation[]; onOpen: (c:
                   {row.type}
                 </span>
               </td>
-              <td className="px-5 py-3.5 max-w-[200px]">
-                <p className="truncate text-slate-700">{row.subject}</p>
-              </td>
+              <td className="px-5 py-3.5 max-w-[200px]"><p className="truncate text-slate-700">{row.subject}</p></td>
               <td className="px-5 py-3.5 text-slate-600">{row.assigned}</td>
               <td className="px-5 py-3.5"><Badge status={row.status} /></td>
               <td className="px-5 py-3.5">
-                {row.unread > 0 ? (
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{row.unread}</span>
-                ) : (
-                  <span className="text-slate-300">—</span>
-                )}
+                {row.unread > 0
+                  ? <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{row.unread}</span>
+                  : <span className="text-slate-300">—</span>}
               </td>
               <td className="px-5 py-3.5 text-slate-500 text-xs">{row.started}</td>
               <td className="px-5 py-3.5 text-slate-500">{row.last}</td>
@@ -139,6 +127,20 @@ function ConversationTable({ rows, onOpen }: { rows: Conversation[]; onOpen: (c:
   );
 }
 
+function TypeBanner({ type }: { type: "Individual" | "Enterprise" }) {
+  return type === "Individual" ? (
+    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 bg-blue-50/40">
+      <Users className="h-4 w-4 text-blue-600" />
+      <span className="text-sm font-semibold text-blue-700">Individual / Personal Account Conversations</span>
+    </div>
+  ) : (
+    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 bg-violet-50/40">
+      <Building2 className="h-4 w-4 text-violet-600" />
+      <span className="text-sm font-semibold text-violet-700">Enterprise / Company Account Conversations</span>
+    </div>
+  );
+}
+
 export default function LiveChatPage() {
   const [activeTab, setActiveTab] = useState("All Conversations");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -146,16 +148,10 @@ export default function LiveChatPage() {
   return (
     <div className="space-y-5">
       <div className="border-b border-slate-200">
-        <div className="flex gap-0">
+        <div className="flex gap-0 overflow-x-auto">
           {TABS.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 text-sm font-medium transition-colors ${
-                activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
+            <button key={tab} type="button" onClick={() => setActiveTab(tab)}
+              className={`shrink-0 px-5 py-3 text-sm font-medium transition-colors ${activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"}`}>
               {tab}
             </button>
           ))}
@@ -173,6 +169,33 @@ export default function LiveChatPage() {
             </select>
           </div>
           <ConversationTable rows={CONVERSATIONS} onOpen={setSelectedConversation} />
+        </div>
+      )}
+
+      {activeTab === "Individual" && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <TypeBanner type="Individual" />
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
+            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+              <option>All Statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option>
+            </select>
+          </div>
+          <ConversationTable rows={INDIVIDUAL_CONVS} onOpen={setSelectedConversation} />
+        </div>
+      )}
+
+      {activeTab === "Enterprise" && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <TypeBanner type="Enterprise" />
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
+            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+              <option>All Statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option>
+            </select>
+            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+              <option>All Companies</option><option>Nexus Technologies</option><option>Vantage Capital</option><option>BrightPath EDU</option>
+            </select>
+          </div>
+          <ConversationTable rows={ENTERPRISE_CONVS} onOpen={setSelectedConversation} />
         </div>
       )}
 
@@ -212,9 +235,7 @@ export default function LiveChatPage() {
                     <td className="px-5 py-3.5">
                       <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{t.category}</span>
                     </td>
-                    <td className="px-5 py-3.5 max-w-[280px]">
-                      <p className="truncate text-slate-500 text-xs">{t.content}</p>
-                    </td>
+                    <td className="px-5 py-3.5 max-w-[280px]"><p className="truncate text-slate-500 text-xs">{t.content}</p></td>
                     <td className="px-5 py-3.5 text-slate-600">{t.by}</td>
                     <td className="px-5 py-3.5 text-slate-500">{t.updated}</td>
                     <td className="px-5 py-3.5">
@@ -231,13 +252,7 @@ export default function LiveChatPage() {
         </div>
       )}
 
-      <SlidePanel
-        isOpen={!!selectedConversation}
-        onClose={() => setSelectedConversation(null)}
-        title={selectedConversation?.user ?? ""}
-        subtitle={selectedConversation?.subject}
-        width="xl"
-      >
+      <SlidePanel isOpen={!!selectedConversation} onClose={() => setSelectedConversation(null)} title={selectedConversation?.user ?? ""} subtitle={selectedConversation?.subject} width="xl">
         {selectedConversation && <ChatDetail conv={selectedConversation} />}
       </SlidePanel>
     </div>
