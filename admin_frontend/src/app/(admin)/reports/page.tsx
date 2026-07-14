@@ -65,7 +65,7 @@ export default function ReportsPage() {
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`shrink-0 px-5 py-3 text-sm font-medium transition-colors ${
+              className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -76,45 +76,45 @@ export default function ReportsPage() {
       </div>
 
       {activeTab === "Search Activity" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Time</option><option>Today</option><option>This Week</option><option>This Month</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Search Types</option><option>People Search</option><option>Company Search</option>
             </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">User</th>
-                  <th className="px-5 py-3 text-left font-semibold">Account Type</th>
-                  <th className="px-5 py-3 text-left font-semibold">Company</th>
-                  <th className="px-5 py-3 text-left font-semibold">Search Type</th>
-                  <th className="px-5 py-3 text-left font-semibold">Filters Applied</th>
-                  <th className="px-5 py-3 text-left font-semibold">Results</th>
-                  <th className="px-5 py-3 text-left font-semibold">Date & Time</th>
+                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+                  <th className="px-4 py-2.5 text-left">User</th>
+                  <th className="px-4 py-2.5 text-left">Account Type</th>
+                  <th className="px-4 py-2.5 text-left">Company</th>
+                  <th className="px-4 py-2.5 text-left">Search Type</th>
+                  <th className="px-4 py-2.5 text-left">Filters Applied</th>
+                  <th className="px-4 py-2.5 text-left">Results</th>
+                  <th className="px-4 py-2.5 text-left">Date & Time</th>
                 </tr>
               </thead>
               <tbody>
                 {SEARCH_ACTIVITY.map((row, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-5 py-3.5 font-medium text-slate-800">{row.user}</td>
-                    <td className="px-5 py-3.5">
+                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
+                    <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${row.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
                         {row.type}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-500">{row.company}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{row.searchType}</td>
-                    <td className="px-5 py-3.5 text-xs text-slate-500">{row.filters}</td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-700">{row.results}</td>
-                    <td className="px-5 py-3.5 text-slate-500 text-xs">{row.datetime}</td>
+                    <td className="px-4 py-3 text-slate-500">{row.company}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.searchType}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{row.filters}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{row.results}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">{row.datetime}</td>
                   </tr>
                 ))}
               </tbody>
@@ -124,38 +124,38 @@ export default function ReportsPage() {
       )}
 
       {activeTab === "Email Reveals" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Time</option><option>Today</option><option>This Week</option><option>This Month</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
             </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">User</th>
-                  <th className="px-5 py-3 text-left font-semibold">Account Type</th>
-                  <th className="px-5 py-3 text-left font-semibold">Company</th>
-                  <th className="px-5 py-3 text-left font-semibold">Contact Name</th>
-                  <th className="px-5 py-3 text-left font-semibold">Date & Time</th>
+                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+                  <th className="px-4 py-2.5 text-left">User</th>
+                  <th className="px-4 py-2.5 text-left">Account Type</th>
+                  <th className="px-4 py-2.5 text-left">Company</th>
+                  <th className="px-4 py-2.5 text-left">Contact Name</th>
+                  <th className="px-4 py-2.5 text-left">Date & Time</th>
                 </tr>
               </thead>
               <tbody>
                 {EMAIL_REVEALS.map((row, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-5 py-3.5 font-medium text-slate-800">{row.user}</td>
-                    <td className="px-5 py-3.5">
+                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
+                    <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${row.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
                         {row.type}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-500">{row.company}</td>
-                    <td className="px-5 py-3.5 font-medium text-slate-700">{row.contact}</td>
-                    <td className="px-5 py-3.5 text-slate-500 text-xs">{row.datetime}</td>
+                    <td className="px-4 py-3 text-slate-500">{row.company}</td>
+                    <td className="px-4 py-3 font-medium text-slate-700">{row.contact}</td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">{row.datetime}</td>
                   </tr>
                 ))}
               </tbody>
@@ -165,35 +165,35 @@ export default function ReportsPage() {
       )}
 
       {activeTab === "Login History" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Time</option><option>Today</option><option>This Week</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Account Types</option><option>Individual</option><option>Enterprise</option><option>Admin</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Statuses</option><option>Successful</option><option>Failed</option>
             </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">User</th>
-                  <th className="px-5 py-3 text-left font-semibold">Email</th>
-                  <th className="px-5 py-3 text-left font-semibold">Account Type</th>
-                  <th className="px-5 py-3 text-left font-semibold">Login Date & Time</th>
-                  <th className="px-5 py-3 text-left font-semibold">Status</th>
+                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+                  <th className="px-4 py-2.5 text-left">User</th>
+                  <th className="px-4 py-2.5 text-left">Email</th>
+                  <th className="px-4 py-2.5 text-left">Account Type</th>
+                  <th className="px-4 py-2.5 text-left">Login Date & Time</th>
+                  <th className="px-4 py-2.5 text-left">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {LOGIN_HISTORY.map((row, i) => (
-                  <tr key={i} className={`border-b border-slate-100 hover:bg-slate-50 ${row.status === "failed" ? "bg-red-50/30" : ""}`}>
-                    <td className="px-5 py-3.5 font-medium text-slate-800">{row.user}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{row.email}</td>
-                    <td className="px-5 py-3.5">
+                  <tr key={i} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${row.status === "failed" ? "bg-red-50/30" : ""}`}>
+                    <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.email}</td>
+                    <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
                         row.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200"
                           : row.type === "Admin" ? "bg-blue-50 text-blue-700 border border-blue-200"
@@ -203,8 +203,8 @@ export default function ReportsPage() {
                         {row.type}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-500 text-xs">{row.datetime}</td>
-                    <td className="px-5 py-3.5"><Badge status={row.status} /></td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">{row.datetime}</td>
+                    <td className="px-4 py-3"><Badge status={row.status} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -216,19 +216,19 @@ export default function ReportsPage() {
       {activeTab === "Exported Reports" && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {EXPORTED_REPORTS.map((report, i) => (
-            <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col gap-3">
+            <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3">
               <div>
                 <h3 className="font-semibold text-slate-900">{report.name}</h3>
                 <p className="text-sm text-slate-500 mt-1">{report.description}</p>
               </div>
               <div className="flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1.5">Contains</p>
+                <p className="text-xs font-medium text-slate-400 mb-1.5">Contains</p>
                 <p className="text-xs text-slate-600 leading-relaxed">{report.contents}</p>
               </div>
               <button
                 type="button"
                 disabled
-                className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400 cursor-not-allowed"
+                className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 cursor-not-allowed"
               >
                 <Download className="h-4 w-4" />
                 Download CSV

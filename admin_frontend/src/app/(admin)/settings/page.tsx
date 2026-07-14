@@ -44,7 +44,7 @@ export default function SettingsPage() {
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 text-sm font-medium transition-colors ${
+              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"
               }`}
             >
@@ -55,7 +55,7 @@ export default function SettingsPage() {
       </div>
 
       {activeTab === "General Settings" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+        <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
           {/* Platform Name */}
           <div className="flex items-center justify-between px-6 py-5">
             <div className="flex-1 max-w-sm">
@@ -64,7 +64,7 @@ export default function SettingsPage() {
             </div>
             <input
               defaultValue="LeadsBuddy"
-              className="w-64 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50"
             />
           </div>
 
@@ -77,7 +77,7 @@ export default function SettingsPage() {
             <input
               type="email"
               defaultValue="support@leadsbuddy.ai"
-              className="w-64 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50"
             />
           </div>
 
@@ -87,7 +87,7 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold text-slate-800">Default Plan for New Sign-ups</p>
               <p className="text-xs text-slate-500 mt-0.5">Plan assigned automatically on new registration.</p>
             </div>
-            <select className="w-64 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none">
+            <select className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>Free</option>
               <option>Pro</option>
               <option>Business</option>
@@ -114,7 +114,7 @@ export default function SettingsPage() {
 
           {/* Save */}
           <div className="flex justify-end px-6 py-4">
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
               <Save className="h-4 w-4" /> Save Settings
             </button>
           </div>
@@ -122,7 +122,7 @@ export default function SettingsPage() {
       )}
 
       {activeTab === "Email & Notifications" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+        <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
           {EMAIL_NOTIFICATIONS.map((notif, i) => (
             <div key={i} className="px-6 py-5">
               <div className="flex items-start justify-between gap-6">
@@ -134,7 +134,7 @@ export default function SettingsPage() {
                       <label className="text-xs text-slate-500">{notif.extra.label}:</label>
                       <input
                         defaultValue={notif.extra.value}
-                        className="w-20 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-800 focus:border-blue-400 focus:outline-none"
+                        className="w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50"
                       />
                     </div>
                   )}
@@ -144,7 +144,7 @@ export default function SettingsPage() {
             </div>
           ))}
           <div className="flex justify-end px-6 py-4">
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
               <Save className="h-4 w-4" /> Save Settings
             </button>
           </div>
@@ -152,33 +152,33 @@ export default function SettingsPage() {
       )}
 
       {activeTab === "Admin Accounts" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <p className="text-sm text-slate-600">Manage admin users and their access levels.</p>
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
               <Plus className="h-4 w-4" /> Add Admin
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">Name</th>
-                  <th className="px-5 py-3 text-left font-semibold">Email</th>
-                  <th className="px-5 py-3 text-left font-semibold">Access Level</th>
-                  <th className="px-5 py-3 text-left font-semibold">Status</th>
-                  <th className="px-5 py-3 text-left font-semibold">Date Added</th>
-                  <th className="px-5 py-3 text-left font-semibold">Last Login</th>
-                  <th className="px-5 py-3 text-left font-semibold">Actions</th>
+                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+                  <th className="px-4 py-2.5 text-left">Name</th>
+                  <th className="px-4 py-2.5 text-left">Email</th>
+                  <th className="px-4 py-2.5 text-left">Access Level</th>
+                  <th className="px-4 py-2.5 text-left">Status</th>
+                  <th className="px-4 py-2.5 text-left">Date Added</th>
+                  <th className="px-4 py-2.5 text-left">Last Login</th>
+                  <th className="px-4 py-2.5 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {ADMIN_ACCOUNTS.map((admin, i) => (
                   <tr
                     key={i}
-                    className={`border-b border-slate-100 hover:bg-slate-50 ${admin.isYou ? "bg-blue-50/40" : ""}`}
+                    className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${admin.isYou ? "bg-blue-50/40" : ""}`}
                   >
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                           {admin.initials}
@@ -191,8 +191,8 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-600">{admin.email}</td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-3 text-slate-600">{admin.email}</td>
+                    <td className="px-4 py-3">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${
                         admin.level === "Super Admin"
                           ? "bg-blue-50 text-blue-700 border-blue-200"
@@ -203,14 +203,14 @@ export default function SettingsPage() {
                         {admin.level}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5"><Badge status={admin.status} /></td>
-                    <td className="px-5 py-3.5 text-slate-500">{admin.added}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{admin.lastLogin}</td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-3"><Badge status={admin.status} /></td>
+                    <td className="px-4 py-3 text-slate-500">{admin.added}</td>
+                    <td className="px-4 py-3 text-slate-500">{admin.lastLogin}</td>
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Edit</button>
+                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Edit</button>
                         {!admin.isYou && (
-                          <button type="button" className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50">Deactivate</button>
+                          <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Deactivate</button>
                         )}
                       </div>
                     </td>

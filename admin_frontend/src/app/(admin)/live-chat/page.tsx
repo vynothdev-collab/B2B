@@ -30,15 +30,15 @@ function ChatDetail({ conv }: { conv: Conversation }) {
           ))}
         </div>
         <div className="border-t border-slate-200 px-5 py-4">
-          <textarea rows={3} placeholder="Type a message..." className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none" />
+          <textarea rows={3} placeholder="Type a message..." className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50 resize-none" />
           <div className="flex items-center justify-between mt-2">
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-600 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>Quick Replies...</option>
               {TEMPLATES.map((t) => <option key={t.name}>{t.name}</option>)}
             </select>
             <div className="flex items-center gap-2">
-              <button type="button" className="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Resolve</button>
-              <button type="button" className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 transition-colors">
+              <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Resolve</button>
+              <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
                 <Send className="h-3 w-3" /> Send
               </button>
             </div>
@@ -64,8 +64,8 @@ function ChatDetail({ conv }: { conv: Conversation }) {
           <div><p className="text-slate-400 mb-0.5">Assigned To</p><p className="font-medium text-slate-700">{conv.assigned}</p></div>
         </div>
         <div className="space-y-1.5">
-          <button type="button" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors">View Profile</button>
-          <button type="button" className="w-full rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 transition-colors">Transfer</button>
+          <button type="button" className="w-full rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">View Profile</button>
+          <button type="button" className="w-full rounded-md border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 transition-colors">Transfer</button>
         </div>
       </div>
     </div>
@@ -77,46 +77,46 @@ function ConversationTable({ rows, onOpen }: { rows: Conversation[]; onOpen: (c:
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-            <th className="px-5 py-3 text-left font-semibold">ID</th>
-            <th className="px-5 py-3 text-left font-semibold">User</th>
-            <th className="px-5 py-3 text-left font-semibold">Type</th>
-            <th className="px-5 py-3 text-left font-semibold">Subject</th>
-            <th className="px-5 py-3 text-left font-semibold">Assigned To</th>
-            <th className="px-5 py-3 text-left font-semibold">Status</th>
-            <th className="px-5 py-3 text-left font-semibold">Unread</th>
-            <th className="px-5 py-3 text-left font-semibold">Started</th>
-            <th className="px-5 py-3 text-left font-semibold">Last Msg</th>
-            <th className="px-5 py-3 text-left font-semibold">Actions</th>
+          <tr className="bg-slate-50 text-xs text-slate-500">
+            <th className="px-4 py-2.5 text-left font-medium">ID</th>
+            <th className="px-4 py-2.5 text-left font-medium">User</th>
+            <th className="px-4 py-2.5 text-left font-medium">Type</th>
+            <th className="px-4 py-2.5 text-left font-medium">Subject</th>
+            <th className="px-4 py-2.5 text-left font-medium">Assigned To</th>
+            <th className="px-4 py-2.5 text-left font-medium">Status</th>
+            <th className="px-4 py-2.5 text-left font-medium">Unread</th>
+            <th className="px-4 py-2.5 text-left font-medium">Started</th>
+            <th className="px-4 py-2.5 text-left font-medium">Last Msg</th>
+            <th className="px-4 py-2.5 text-left font-medium">Actions</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => onOpen(row)}>
-              <td className="px-5 py-3.5 text-xs font-mono text-slate-500">{row.id}</td>
-              <td className="px-5 py-3.5">
+            <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => onOpen(row)}>
+              <td className="px-4 py-3 text-xs font-mono text-slate-500">{row.id}</td>
+              <td className="px-4 py-3">
                 <p className="font-medium text-slate-800">{row.user}</p>
                 {row.company !== "—" && <p className="text-xs text-slate-400">{row.company}</p>}
               </td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3">
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${row.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
                   {row.type}
                 </span>
               </td>
-              <td className="px-5 py-3.5 max-w-[200px]"><p className="truncate text-slate-700">{row.subject}</p></td>
-              <td className="px-5 py-3.5 text-slate-600">{row.assigned}</td>
-              <td className="px-5 py-3.5"><Badge status={row.status} /></td>
-              <td className="px-5 py-3.5">
+              <td className="px-4 py-3 max-w-[200px]"><p className="truncate text-slate-700">{row.subject}</p></td>
+              <td className="px-4 py-3 text-slate-600">{row.assigned}</td>
+              <td className="px-4 py-3"><Badge status={row.status} /></td>
+              <td className="px-4 py-3">
                 {row.unread > 0
                   ? <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">{row.unread}</span>
                   : <span className="text-slate-300">—</span>}
               </td>
-              <td className="px-5 py-3.5 text-slate-500 text-xs">{row.started}</td>
-              <td className="px-5 py-3.5 text-slate-500">{row.last}</td>
-              <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+              <td className="px-4 py-3 text-slate-500 text-xs">{row.started}</td>
+              <td className="px-4 py-3 text-slate-500">{row.last}</td>
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-1.5">
-                  <button type="button" onClick={() => onOpen(row)} className="rounded-md border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50">Open</button>
-                  <button type="button" className="rounded-md border border-emerald-200 px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50">Resolve</button>
+                  <button type="button" onClick={() => onOpen(row)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Open</button>
+                  <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Resolve</button>
                 </div>
               </td>
             </tr>
@@ -129,14 +129,14 @@ function ConversationTable({ rows, onOpen }: { rows: Conversation[]; onOpen: (c:
 
 function TypeBanner({ type }: { type: "Individual" | "Enterprise" }) {
   return type === "Individual" ? (
-    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 bg-blue-50/40">
-      <Users className="h-4 w-4 text-blue-600" />
-      <span className="text-sm font-semibold text-blue-700">Individual / Personal Account Conversations</span>
+    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
+      <Users className="h-4 w-4 text-slate-400" />
+      <span className="text-sm text-slate-500">Individual / Personal Account Conversations</span>
     </div>
   ) : (
-    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 bg-violet-50/40">
-      <Building2 className="h-4 w-4 text-violet-600" />
-      <span className="text-sm font-semibold text-violet-700">Enterprise / Company Account Conversations</span>
+    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
+      <Building2 className="h-4 w-4 text-slate-400" />
+      <span className="text-sm text-slate-500">Enterprise / Company Account Conversations</span>
     </div>
   );
 }
@@ -151,7 +151,7 @@ export default function LiveChatPage() {
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map((tab) => (
             <button key={tab} type="button" onClick={() => setActiveTab(tab)}
-              className={`shrink-0 px-5 py-3 text-sm font-medium transition-colors ${activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"}`}>
+              className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"}`}>
               {tab}
             </button>
           ))}
@@ -159,12 +159,12 @@ export default function LiveChatPage() {
       </div>
 
       {activeTab === "All Conversations" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
             </select>
           </div>
@@ -173,10 +173,10 @@ export default function LiveChatPage() {
       )}
 
       {activeTab === "Individual" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <TypeBanner type="Individual" />
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option>
             </select>
           </div>
@@ -185,13 +185,13 @@ export default function LiveChatPage() {
       )}
 
       {activeTab === "Enterprise" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <TypeBanner type="Enterprise" />
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Companies</option><option>Nexus Technologies</option><option>Vantage Capital</option><option>BrightPath EDU</option>
             </select>
           </div>
@@ -200,7 +200,7 @@ export default function LiveChatPage() {
       )}
 
       {activeTab === "Unread / Waiting" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="border-b border-slate-100 px-5 py-4">
             <p className="text-sm text-slate-600">Conversations with unread messages waiting for a response.</p>
           </div>
@@ -209,39 +209,39 @@ export default function LiveChatPage() {
       )}
 
       {activeTab === "Quick Reply Templates" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <p className="text-sm text-slate-600">Saved quick reply templates for chat support.</p>
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
               <Plus className="h-4 w-4" /> Add Template
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">Template Name</th>
-                  <th className="px-5 py-3 text-left font-semibold">Category</th>
-                  <th className="px-5 py-3 text-left font-semibold">Message Preview</th>
-                  <th className="px-5 py-3 text-left font-semibold">Created By</th>
-                  <th className="px-5 py-3 text-left font-semibold">Last Updated</th>
-                  <th className="px-5 py-3 text-left font-semibold">Actions</th>
+                <tr className="bg-slate-50 text-xs text-slate-500">
+                  <th className="px-4 py-2.5 text-left font-medium">Template Name</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Category</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Message Preview</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Created By</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Last Updated</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {TEMPLATES.map((t, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-5 py-3.5 font-medium text-slate-800">{t.name}</td>
-                    <td className="px-5 py-3.5">
+                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-800">{t.name}</td>
+                    <td className="px-4 py-3">
                       <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">{t.category}</span>
                     </td>
-                    <td className="px-5 py-3.5 max-w-[280px]"><p className="truncate text-slate-500 text-xs">{t.content}</p></td>
-                    <td className="px-5 py-3.5 text-slate-600">{t.by}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{t.updated}</td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-3 max-w-[280px]"><p className="truncate text-slate-500 text-xs">{t.content}</p></td>
+                    <td className="px-4 py-3 text-slate-600">{t.by}</td>
+                    <td className="px-4 py-3 text-slate-500">{t.updated}</td>
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Edit</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50">Delete</button>
+                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Edit</button>
+                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Delete</button>
                       </div>
                     </td>
                   </tr>

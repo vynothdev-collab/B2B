@@ -12,7 +12,7 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
   return (
     <div className="divide-y divide-slate-100">
       {/* Company Info */}
-      <div className="px-6 py-5">
+      <div className="px-5 py-4">
         <div className="flex items-center gap-4 mb-5">
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-violet-100 text-lg font-bold text-violet-700">
             {ent.initials}
@@ -23,7 +23,7 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
             <div className="mt-1"><Badge status={ent.status} /></div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-2 gap-4 text-sm">
           <div><p className="text-xs text-slate-400 mb-0.5">Country</p><p className="text-slate-700 font-medium">{ent.country}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Company Size</p><p className="text-slate-700 font-medium">{ent.size}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Website</p><p className="text-slate-700 font-medium truncate">{ent.website}</p></div>
@@ -32,8 +32,8 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
       </div>
 
       {/* Admin Contact */}
-      <div className="px-6 py-5">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="px-5 py-4">
+        <div className="flex items-center gap-2 mb-3">
           <Users className="h-4 w-4 text-slate-400" />
           <h4 className="text-sm font-semibold text-slate-700">Admin Contact</h4>
         </div>
@@ -58,12 +58,12 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
       </div>
 
       {/* Plan & Usage */}
-      <div className="px-6 py-5">
-        <div className="flex items-center gap-2 mb-4">
+      <div className="px-5 py-4">
+        <div className="flex items-center gap-2 mb-3">
           <CreditCard className="h-4 w-4 text-slate-400" />
           <h4 className="text-sm font-semibold text-slate-700">Plan & Usage</h4>
         </div>
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-2 gap-4 text-sm">
           <div><p className="text-xs text-slate-400 mb-0.5">Current Plan</p><p className="font-semibold text-slate-900">{ent.plan}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Total Users</p><p className="font-semibold text-slate-900">{ent.users}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Plan Start</p><p className="text-slate-700">{ent.planStart}</p></div>
@@ -77,7 +77,7 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
 
       {/* Notes */}
       {ent.notes && (
-        <div className="px-6 py-5">
+        <div className="px-5 py-4">
           <div className="flex items-center gap-2 mb-3">
             <Building2 className="h-4 w-4 text-slate-400" />
             <h4 className="text-sm font-semibold text-slate-700">Notes</h4>
@@ -87,20 +87,20 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
       )}
 
       {/* Actions */}
-      <div className="px-6 py-5">
+      <div className="px-5 py-4">
         <div className="flex items-center gap-2 mb-3">
           <ShieldCheck className="h-4 w-4 text-slate-400" />
           <h4 className="text-sm font-semibold text-slate-700">Account Actions</h4>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-500 transition-colors">Edit Profile</button>
-          <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">Change Plan</button>
-          <button type="button" className="rounded-lg border border-emerald-200 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Add Credits</button>
+          <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors">Edit Profile</button>
+          <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Change Plan</button>
+          <button type="button" className="rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Add Credits</button>
           {ent.status === "active"
-            ? <button type="button" className="rounded-lg border border-amber-200 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50 transition-colors">Suspend</button>
-            : <button type="button" className="rounded-lg border border-emerald-200 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Activate</button>
+            ? <button type="button" className="rounded-md border border-amber-200 px-2.5 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 transition-colors">Suspend</button>
+            : <button type="button" className="rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Activate</button>
           }
-          <button type="button" className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">Delete Account</button>
+          <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Delete Account</button>
         </div>
       </div>
     </div>
@@ -120,7 +120,7 @@ export default function EnterprisesPage() {
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-3 text-sm font-medium transition-colors ${
+              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab
                   ? "border-b-2 border-violet-600 text-violet-600"
                   : "text-slate-500 hover:text-slate-700"
@@ -133,50 +133,44 @@ export default function EnterprisesPage() {
       </div>
 
       {activeTab === "Enterprise Admins" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5 bg-violet-50/50">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600">
-              <Building2 className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-violet-800">Enterprise Admins</p>
-              <p className="text-xs text-violet-500">Company accounts and their designated admin contacts</p>
-            </div>
+        <div className="bg-white rounded-xl border border-slate-200">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <p className="text-sm font-semibold text-slate-800">Enterprise Admins</p>
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors">
+              <Plus className="h-4 w-4" /> Add Enterprise
+            </button>
           </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search enterprises..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100" />
+              <input placeholder="Search enterprises..." className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50" />
             </div>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Statuses</option><option>Active</option><option>Suspended</option><option>Inactive</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Plans</option><option>Pro</option><option>Business</option><option>Enterprise</option>
             </select>
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
-              <Plus className="h-4 w-4" /> Add Enterprise
-            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">Company</th>
-                  <th className="px-5 py-3 text-left font-semibold">Admin</th>
-                  <th className="px-5 py-3 text-left font-semibold">Industry</th>
-                  <th className="px-5 py-3 text-left font-semibold">Status</th>
-                  <th className="px-5 py-3 text-left font-semibold">Plan</th>
-                  <th className="px-5 py-3 text-left font-semibold">Users</th>
-                  <th className="px-5 py-3 text-left font-semibold">Credits Used</th>
-                  <th className="px-5 py-3 text-left font-semibold">Created</th>
-                  <th className="px-5 py-3 text-left font-semibold">Actions</th>
+                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+                  <th className="px-4 py-2.5 text-left">Company</th>
+                  <th className="px-4 py-2.5 text-left">Admin</th>
+                  <th className="px-4 py-2.5 text-left">Industry</th>
+                  <th className="px-4 py-2.5 text-left">Status</th>
+                  <th className="px-4 py-2.5 text-left">Plan</th>
+                  <th className="px-4 py-2.5 text-left">Users</th>
+                  <th className="px-4 py-2.5 text-left">Credits Used</th>
+                  <th className="px-4 py-2.5 text-left">Created</th>
+                  <th className="px-4 py-2.5 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {ENTERPRISES.map((e) => (
-                  <tr key={e.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedEnterprise(e)}>
-                    <td className="px-5 py-3.5">
+                  <tr key={e.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedEnterprise(e)}>
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">
                           {e.initials}
@@ -187,18 +181,18 @@ export default function EnterprisesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-600">{e.admin}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{e.industry}</td>
-                    <td className="px-5 py-3.5"><Badge status={e.status} /></td>
-                    <td className="px-5 py-3.5 font-medium text-slate-700">{e.plan}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{e.users}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{e.credits.toLocaleString()}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{e.created}</td>
-                    <td className="px-5 py-3.5" onClick={(ev) => ev.stopPropagation()}>
+                    <td className="px-4 py-3 text-slate-600">{e.admin}</td>
+                    <td className="px-4 py-3 text-slate-500">{e.industry}</td>
+                    <td className="px-4 py-3"><Badge status={e.status} /></td>
+                    <td className="px-4 py-3 font-medium text-slate-700">{e.plan}</td>
+                    <td className="px-4 py-3 text-slate-600">{e.users}</td>
+                    <td className="px-4 py-3 text-slate-600">{e.credits.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-slate-500">{e.created}</td>
+                    <td className="px-4 py-3" onClick={(ev) => ev.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
-                        <button type="button" onClick={() => setSelectedEnterprise(e)} className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">View</button>
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Edit</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50">Suspend</button>
+                        <button type="button" onClick={() => setSelectedEnterprise(e)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">View</button>
+                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Edit</button>
+                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Suspend</button>
                       </div>
                     </td>
                   </tr>
@@ -210,66 +204,60 @@ export default function EnterprisesPage() {
       )}
 
       {activeTab === "Enterprise Users" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5 bg-violet-50/50">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-600">
-              <Users className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-violet-800">Enterprise Users</p>
-              <p className="text-xs text-violet-500">All team members across enterprise accounts</p>
-            </div>
+        <div className="bg-white rounded-xl border border-slate-200">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <p className="text-sm font-semibold text-slate-800">Enterprise Users</p>
           </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search users..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100" />
+              <input placeholder="Search users..." className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50" />
             </div>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Companies</option><option>Nexus Technologies</option><option>Acme Corp</option><option>Vantage Capital</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Roles</option><option>Admin</option><option>Member</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-violet-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Statuses</option><option>Active</option><option>Suspended</option><option>Inactive</option>
             </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">Name</th>
-                  <th className="px-5 py-3 text-left font-semibold">Email</th>
-                  <th className="px-5 py-3 text-left font-semibold">Company</th>
-                  <th className="px-5 py-3 text-left font-semibold">Status</th>
-                  <th className="px-5 py-3 text-left font-semibold">Date Added</th>
-                  <th className="px-5 py-3 text-left font-semibold">Last Login</th>
-                  <th className="px-5 py-3 text-left font-semibold">Searches</th>
-                  <th className="px-5 py-3 text-left font-semibold">Reveals</th>
-                  <th className="px-5 py-3 text-left font-semibold">Actions</th>
+                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+                  <th className="px-4 py-2.5 text-left">Name</th>
+                  <th className="px-4 py-2.5 text-left">Email</th>
+                  <th className="px-4 py-2.5 text-left">Company</th>
+                  <th className="px-4 py-2.5 text-left">Status</th>
+                  <th className="px-4 py-2.5 text-left">Date Added</th>
+                  <th className="px-4 py-2.5 text-left">Last Login</th>
+                  <th className="px-4 py-2.5 text-left">Searches</th>
+                  <th className="px-4 py-2.5 text-left">Reveals</th>
+                  <th className="px-4 py-2.5 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {ENT_USERS.map((u, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-5 py-3.5">
+                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{u.initials}</div>
                         <span className="font-medium text-slate-800">{u.name}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-600">{u.email}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{u.company}</td>
-                    <td className="px-5 py-3.5"><Badge status={u.status} /></td>
-                    <td className="px-5 py-3.5 text-slate-500">{u.added}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{u.lastLogin}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{u.searches}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{u.reveals}</td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-3 text-slate-600">{u.email}</td>
+                    <td className="px-4 py-3 text-slate-600">{u.company}</td>
+                    <td className="px-4 py-3"><Badge status={u.status} /></td>
+                    <td className="px-4 py-3 text-slate-500">{u.added}</td>
+                    <td className="px-4 py-3 text-slate-500">{u.lastLogin}</td>
+                    <td className="px-4 py-3 text-slate-600">{u.searches}</td>
+                    <td className="px-4 py-3 text-slate-600">{u.reveals}</td>
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">View</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50">Suspend</button>
+                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">View</button>
+                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Suspend</button>
                       </div>
                     </td>
                   </tr>
@@ -281,44 +269,44 @@ export default function EnterprisesPage() {
       )}
 
       {activeTab === "Invitations" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-slate-800">Enterprise Invitations</p>
               <p className="text-xs text-slate-400 mt-0.5">Pending and sent invitations for enterprise team members</p>
             </div>
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors">
               <Send className="h-4 w-4" /> Send Invitation
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">Invited Email</th>
-                  <th className="px-5 py-3 text-left font-semibold">Role</th>
-                  <th className="px-5 py-3 text-left font-semibold">Company</th>
-                  <th className="px-5 py-3 text-left font-semibold">Invited By</th>
-                  <th className="px-5 py-3 text-left font-semibold">Date Sent</th>
-                  <th className="px-5 py-3 text-left font-semibold">Expiry</th>
-                  <th className="px-5 py-3 text-left font-semibold">Status</th>
-                  <th className="px-5 py-3 text-left font-semibold">Actions</th>
+                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+                  <th className="px-4 py-2.5 text-left">Invited Email</th>
+                  <th className="px-4 py-2.5 text-left">Role</th>
+                  <th className="px-4 py-2.5 text-left">Company</th>
+                  <th className="px-4 py-2.5 text-left">Invited By</th>
+                  <th className="px-4 py-2.5 text-left">Date Sent</th>
+                  <th className="px-4 py-2.5 text-left">Expiry</th>
+                  <th className="px-4 py-2.5 text-left">Status</th>
+                  <th className="px-4 py-2.5 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {ENT_INVITATIONS.map((inv, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-5 py-3.5 font-medium text-slate-800">{inv.email}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{inv.role}</td>
-                    <td className="px-5 py-3.5 text-slate-600">{inv.company}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{inv.invitedBy}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{inv.sent}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{inv.expiry}</td>
-                    <td className="px-5 py-3.5"><Badge status={inv.status} /></td>
-                    <td className="px-5 py-3.5">
+                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-800">{inv.email}</td>
+                    <td className="px-4 py-3 text-slate-600">{inv.role}</td>
+                    <td className="px-4 py-3 text-slate-600">{inv.company}</td>
+                    <td className="px-4 py-3 text-slate-500">{inv.invitedBy}</td>
+                    <td className="px-4 py-3 text-slate-500">{inv.sent}</td>
+                    <td className="px-4 py-3 text-slate-500">{inv.expiry}</td>
+                    <td className="px-4 py-3"><Badge status={inv.status} /></td>
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Resend</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50">Cancel</button>
+                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Resend</button>
+                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Cancel</button>
                       </div>
                     </td>
                   </tr>

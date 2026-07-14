@@ -14,7 +14,7 @@ const ENTERPRISE_TICKETS = TICKETS.filter((t) => t.type === "Enterprise");
 function TicketDetail({ ticket }: { ticket: Ticket }) {
   return (
     <div className="flex flex-col h-full divide-y divide-slate-100">
-      <div className="px-6 py-5 space-y-3">
+      <div className="px-5 py-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-mono text-slate-400 mb-1">{ticket.id}</p>
@@ -36,12 +36,12 @@ function TicketDetail({ ticket }: { ticket: Ticket }) {
           <div><p className="text-xs text-slate-400 mb-0.5">Last Updated</p><p className="text-slate-600">{ticket.updated}</p></div>
         </div>
       </div>
-      <div className="px-6 py-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Description</p>
+      <div className="px-5 py-4">
+        <p className="text-xs font-medium text-slate-500 mb-2">Description</p>
         <p className="text-sm text-slate-700 leading-relaxed">{ticket.description}</p>
       </div>
-      <div className="px-6 py-4 flex-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Conversation</p>
+      <div className="px-5 py-4 flex-1">
+        <p className="text-xs font-medium text-slate-500 mb-3">Conversation</p>
         <div className="space-y-3">
           {ticket.replies.map((reply, i) => (
             <div key={i} className={`flex gap-3 ${reply.role === "admin" ? "flex-row-reverse" : ""}`}>
@@ -57,13 +57,13 @@ function TicketDetail({ ticket }: { ticket: Ticket }) {
           ))}
         </div>
       </div>
-      <div className="px-6 py-4">
-        <textarea rows={3} placeholder="Write a reply..." className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none" />
+      <div className="px-5 py-4">
+        <textarea rows={3} placeholder="Write a reply..." className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50 resize-none" />
         <div className="flex items-center justify-between mt-2">
-          <select className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-600 focus:border-blue-400 focus:outline-none">
+          <select className="h-9 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
             <option>Mark as Open</option><option>Mark as In Progress</option><option>Mark as Resolved</option>
           </select>
-          <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+          <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
             <Send className="h-3.5 w-3.5" /> Send Reply
           </button>
         </div>
@@ -77,41 +77,41 @@ function TicketTable({ rows, onOpen }: { rows: Ticket[]; onOpen: (t: Ticket) => 
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-            <th className="px-5 py-3 text-left font-semibold">Ticket #</th>
-            <th className="px-5 py-3 text-left font-semibold">Subject</th>
-            <th className="px-5 py-3 text-left font-semibold">Submitted By</th>
-            <th className="px-5 py-3 text-left font-semibold">Type</th>
-            <th className="px-5 py-3 text-left font-semibold">Category</th>
-            <th className="px-5 py-3 text-left font-semibold">Priority</th>
-            <th className="px-5 py-3 text-left font-semibold">Status</th>
-            <th className="px-5 py-3 text-left font-semibold">Assigned To</th>
-            <th className="px-5 py-3 text-left font-semibold">Submitted</th>
-            <th className="px-5 py-3 text-left font-semibold">Last Updated</th>
-            <th className="px-5 py-3 text-left font-semibold">Actions</th>
+          <tr className="bg-slate-50 text-xs text-slate-500">
+            <th className="px-4 py-2.5 text-left font-medium">Ticket #</th>
+            <th className="px-4 py-2.5 text-left font-medium">Subject</th>
+            <th className="px-4 py-2.5 text-left font-medium">Submitted By</th>
+            <th className="px-4 py-2.5 text-left font-medium">Type</th>
+            <th className="px-4 py-2.5 text-left font-medium">Category</th>
+            <th className="px-4 py-2.5 text-left font-medium">Priority</th>
+            <th className="px-4 py-2.5 text-left font-medium">Status</th>
+            <th className="px-4 py-2.5 text-left font-medium">Assigned To</th>
+            <th className="px-4 py-2.5 text-left font-medium">Submitted</th>
+            <th className="px-4 py-2.5 text-left font-medium">Last Updated</th>
+            <th className="px-4 py-2.5 text-left font-medium">Actions</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((t) => (
-            <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => onOpen(t)}>
-              <td className="px-5 py-3.5 font-mono text-sm font-semibold text-blue-600">{t.id}</td>
-              <td className="px-5 py-3.5 max-w-[200px]"><p className="truncate font-medium text-slate-800">{t.subject}</p></td>
-              <td className="px-5 py-3.5 text-slate-600">{t.by}</td>
-              <td className="px-5 py-3.5">
+            <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => onOpen(t)}>
+              <td className="px-4 py-3 font-mono text-sm font-semibold text-blue-600">{t.id}</td>
+              <td className="px-4 py-3 max-w-[200px]"><p className="truncate font-medium text-slate-800">{t.subject}</p></td>
+              <td className="px-4 py-3 text-slate-600">{t.by}</td>
+              <td className="px-4 py-3">
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${t.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
                   {t.type}
                 </span>
               </td>
-              <td className="px-5 py-3.5 text-slate-500">{t.category}</td>
-              <td className="px-5 py-3.5"><Badge status={t.priority} /></td>
-              <td className="px-5 py-3.5"><Badge status={t.status} /></td>
-              <td className="px-5 py-3.5 text-slate-600">{t.assigned}</td>
-              <td className="px-5 py-3.5 text-slate-500 text-xs">{t.submitted}</td>
-              <td className="px-5 py-3.5 text-slate-500">{t.updated}</td>
-              <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+              <td className="px-4 py-3 text-slate-500">{t.category}</td>
+              <td className="px-4 py-3"><Badge status={t.priority} /></td>
+              <td className="px-4 py-3"><Badge status={t.status} /></td>
+              <td className="px-4 py-3 text-slate-600">{t.assigned}</td>
+              <td className="px-4 py-3 text-slate-500 text-xs">{t.submitted}</td>
+              <td className="px-4 py-3 text-slate-500">{t.updated}</td>
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-1.5">
-                  <button type="button" onClick={() => onOpen(t)} className="rounded-md border border-blue-200 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50">Open</button>
-                  <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Assign</button>
+                  <button type="button" onClick={() => onOpen(t)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Open</button>
+                  <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Assign</button>
                 </div>
               </td>
             </tr>
@@ -124,14 +124,14 @@ function TicketTable({ rows, onOpen }: { rows: Ticket[]; onOpen: (t: Ticket) => 
 
 function TypeBanner({ type }: { type: "Individual" | "Enterprise" }) {
   return type === "Individual" ? (
-    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 bg-blue-50/40">
-      <Users className="h-4 w-4 text-blue-600" />
-      <span className="text-sm font-semibold text-blue-700">Individual / Personal Account Tickets</span>
+    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
+      <Users className="h-4 w-4 text-slate-400" />
+      <span className="text-sm text-slate-500">Individual / Personal Account Tickets</span>
     </div>
   ) : (
-    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3 bg-violet-50/40">
-      <Building2 className="h-4 w-4 text-violet-600" />
-      <span className="text-sm font-semibold text-violet-700">Enterprise / Company Account Tickets</span>
+    <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
+      <Building2 className="h-4 w-4 text-slate-400" />
+      <span className="text-sm text-slate-500">Enterprise / Company Account Tickets</span>
     </div>
   );
 }
@@ -140,15 +140,15 @@ const FILTER_HEADER = (
   <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
     <div className="relative flex-1 min-w-[200px]">
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-      <input placeholder="Search tickets..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+      <input placeholder="Search tickets..." className="h-9 w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50" />
     </div>
-    <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+    <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
       <option>All Statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option>
     </select>
-    <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+    <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
       <option>All Priorities</option><option>Urgent</option><option>Pending</option><option>Low</option>
     </select>
-    <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+    <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
       <option>All Categories</option><option>Billing</option><option>Account</option><option>Technical</option>
     </select>
   </div>
@@ -164,7 +164,7 @@ export default function TicketsPage() {
         <div className="flex gap-0 overflow-x-auto">
           {TABS.map((tab) => (
             <button key={tab} type="button" onClick={() => setActiveTab(tab)}
-              className={`shrink-0 px-5 py-3 text-sm font-medium transition-colors ${activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"}`}>
+              className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"}`}>
               {tab}
             </button>
           ))}
@@ -172,22 +172,22 @@ export default function TicketsPage() {
       </div>
 
       {activeTab === "All Tickets" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search tickets..." className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+              <input placeholder="Search tickets..." className="h-9 w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50" />
             </div>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Statuses</option><option>Open</option><option>In Progress</option><option>Resolved</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Priorities</option><option>Urgent</option><option>Pending</option><option>Low</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Categories</option><option>Billing</option><option>Account</option><option>Technical</option>
             </select>
-            <select className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
               <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
             </select>
           </div>
@@ -196,7 +196,7 @@ export default function TicketsPage() {
       )}
 
       {activeTab === "Individual" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <TypeBanner type="Individual" />
           {FILTER_HEADER}
           <TicketTable rows={INDIVIDUAL_TICKETS} onOpen={setSelectedTicket} />
@@ -204,7 +204,7 @@ export default function TicketsPage() {
       )}
 
       {activeTab === "Enterprise" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <TypeBanner type="Enterprise" />
           {FILTER_HEADER}
           <TicketTable rows={ENTERPRISE_TICKETS} onOpen={setSelectedTicket} />
@@ -212,7 +212,7 @@ export default function TicketsPage() {
       )}
 
       {activeTab === "My Assigned" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="border-b border-slate-100 px-5 py-4">
             <p className="text-sm text-slate-600">Tickets currently assigned to you (Super Admin).</p>
           </div>
@@ -221,35 +221,35 @@ export default function TicketsPage() {
       )}
 
       {activeTab === "Ticket Categories" && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <p className="text-sm text-slate-600">Manage support ticket categories.</p>
-            <button type="button" className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
               <Plus className="h-4 w-4" /> Add Category
             </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-5 py-3 text-left font-semibold">Category Name</th>
-                  <th className="px-5 py-3 text-left font-semibold">Description</th>
-                  <th className="px-5 py-3 text-left font-semibold">Open Tickets</th>
-                  <th className="px-5 py-3 text-left font-semibold">Actions</th>
+                <tr className="bg-slate-50 text-xs text-slate-500">
+                  <th className="px-4 py-2.5 text-left font-medium">Category Name</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Description</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Open Tickets</th>
+                  <th className="px-4 py-2.5 text-left font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {CATEGORIES.map((cat, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-5 py-3.5 font-semibold text-slate-800">{cat.name}</td>
-                    <td className="px-5 py-3.5 text-slate-500">{cat.description}</td>
-                    <td className="px-5 py-3.5">
+                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-800">{cat.name}</td>
+                    <td className="px-4 py-3 text-slate-500">{cat.description}</td>
+                    <td className="px-4 py-3">
                       <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${cat.open > 0 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>{cat.open}</span>
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50">Edit</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50">Delete</button>
+                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Edit</button>
+                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Delete</button>
                       </div>
                     </td>
                   </tr>
@@ -264,15 +264,15 @@ export default function TicketsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {REPORT_CARDS.map((card) => (
-              <div key={card.label} className={`rounded-xl border p-5 shadow-sm ${card.highlight ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"}`}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">{card.label}</p>
+              <div key={card.label} className={`rounded-xl border p-5 ${card.highlight ? "border-red-200 bg-red-50" : "border-slate-200 bg-white"}`}>
+                <p className="text-xs font-medium text-slate-500 mb-2">{card.label}</p>
                 <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
               </div>
             ))}
           </div>
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             {/* Individual Tickets breakdown */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Users className="h-4 w-4 text-blue-500" />
                 <h3 className="text-sm font-semibold text-slate-800">Individual Tickets This Month</h3>
@@ -290,7 +290,7 @@ export default function TicketsPage() {
               </div>
             </div>
             {/* Enterprise Tickets breakdown */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Building2 className="h-4 w-4 text-violet-500" />
                 <h3 className="text-sm font-semibold text-slate-800">Enterprise Tickets This Month</h3>
@@ -308,7 +308,7 @@ export default function TicketsPage() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
             <h3 className="text-sm font-semibold text-slate-900 mb-5">Tickets by Category — This Month</h3>
             <div className="space-y-4">
               {CATEGORY_STATS.map((cat) => {
