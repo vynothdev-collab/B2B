@@ -48,30 +48,39 @@ frontend/out/
 frontend/build/
 frontend/.cache/
 frontend/.turbo/
-
-# Next.js static export
 frontend/dist/
-
-# Vercel
 frontend/.vercel/
-
-# TypeScript build info
 frontend/*.tsbuildinfo
 frontend/.tsbuildinfo
 frontend/next-env.d.ts
-
-# Package managers
 frontend/.pnp
 frontend/.pnp.js
 frontend/.yarn/install-state.gz
 frontend/package-lock.json
-
-# Testing
 frontend/coverage/
 frontend/.nyc_output/
-
-# Storybook
 frontend/storybook-static/
+
+# =============================================================================
+# ADMIN FRONTEND — Next.js / Node.js
+# =============================================================================
+admin_frontend/node_modules/
+admin_frontend/.next/
+admin_frontend/out/
+admin_frontend/build/
+admin_frontend/.cache/
+admin_frontend/.turbo/
+admin_frontend/dist/
+admin_frontend/.vercel/
+admin_frontend/*.tsbuildinfo
+admin_frontend/.tsbuildinfo
+admin_frontend/next-env.d.ts
+admin_frontend/.pnp
+admin_frontend/.pnp.js
+admin_frontend/.yarn/install-state.gz
+admin_frontend/package-lock.json
+admin_frontend/coverage/
+admin_frontend/.nyc_output/
 
 # =============================================================================
 # BACKEND — Python / FastAPI
