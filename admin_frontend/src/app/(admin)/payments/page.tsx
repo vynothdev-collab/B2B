@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import Pagination from "@/components/ui/Pagination";
 import { INDIVIDUAL_TXN, ENTERPRISE_TXN, REVENUE_PLANS, REVENUE_CARDS } from "@/data/payments";
 
 const TABS = ["Individual", "Enterprise", "Revenue Summary"] as const;
@@ -30,19 +31,19 @@ function TransactionTable({ rows }: { rows: typeof INDIVIDUAL_TXN }) {
         <tbody>
           {rows.map((row, i) => (
             <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-              <td className="px-4 py-3 text-xs font-mono text-slate-600">{row.inv}</td>
-              <td className="px-4 py-3 font-medium text-slate-800">{row.account}</td>
+              <td className="px-4 py-3 text-xs font-mono" style={{color:"var(--ink-dim)"}}>{row.inv}</td>
+              <td className="px-4 py-3 font-medium" style={{color:"var(--ink)"}}>{row.account}</td>
               <td className="px-4 py-3">
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${row.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
                   {row.type}
                 </span>
               </td>
-              <td className="px-4 py-3 text-slate-700">{row.plan}</td>
-              <td className="px-4 py-3 text-slate-600">{row.amount}</td>
-              <td className="px-4 py-3 text-emerald-600">{row.discount !== "$0" ? row.discount : <span className="text-slate-400">—</span>}</td>
-              <td className="px-4 py-3 font-semibold text-slate-900">{row.final}</td>
-              <td className="px-4 py-3 text-slate-500">{row.method}</td>
-              <td className="px-4 py-3 text-slate-500">{row.date}</td>
+              <td className="px-4 py-3" style={{color:"var(--ink-dim)"}}>{row.plan}</td>
+              <td className="px-4 py-3 font-mono text-sm" style={{color:"var(--ink-dim)"}}>{row.amount}</td>
+              <td className="px-4 py-3 font-mono text-sm text-sage-dark">{row.discount !== "$0" ? row.discount : <span style={{color:"var(--ink-faint)"}}>—</span>}</td>
+              <td className="px-4 py-3 font-mono font-semibold text-sm" style={{color:"var(--ink)"}}>{row.final}</td>
+              <td className="px-4 py-3 text-sm" style={{color:"var(--ink-faint)"}}>{row.method}</td>
+              <td className="px-4 py-3 font-mono text-xs" style={{color:"var(--ink-faint)"}}>{row.date}</td>
               <td className="px-4 py-3"><Badge status={row.status} /></td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1.5">
@@ -60,6 +61,8 @@ function TransactionTable({ rows }: { rows: typeof INDIVIDUAL_TXN }) {
 
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("Individual");
+  const TXN_PER_PAGE = 8;
+  const [txnPage, setTxnPage] = useState(1);
   const isIndividual = activeTab === "Individual";
 
   return (
@@ -70,7 +73,7 @@ export default function PaymentsPage() {
             <button
               key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
+              onClick={() => { setActiveTab(tab); setTxnPage(1); }}
               className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab
                   ? `border-b-2 ${tab === "Enterprise" ? "border-violet-600 text-violet-600" : "border-blue-600 text-blue-600"}`
@@ -100,7 +103,16 @@ export default function PaymentsPage() {
               <option>All Time</option><option>This Month</option><option>Last Month</option><option>This Year</option>
             </select>
           </div>
-          <TransactionTable rows={isIndividual ? INDIVIDUAL_TXN : ENTERPRISE_TXN} />
+          {(() => {
+            const txnRows = isIndividual ? INDIVIDUAL_TXN : ENTERPRISE_TXN;
+            const pageRows = txnRows.slice((txnPage-1)*TXN_PER_PAGE, txnPage*TXN_PER_PAGE);
+            return (
+              <>
+                <TransactionTable rows={pageRows} />
+                <Pagination total={txnRows.length} perPage={TXN_PER_PAGE} page={txnPage} onChange={setTxnPage} itemLabel="transactions" />
+              </>
+            );
+          })()}
         </div>
       )}
 
@@ -109,9 +121,9 @@ export default function PaymentsPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {REVENUE_CARDS.map((card) => (
               <div key={card.label} className="bg-white rounded-xl border border-slate-200 p-5">
-                <p className="text-xs font-medium text-slate-500 mb-2">{card.label}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{color:"var(--ink-faint)", fontFamily:"var(--font-mono)"}}>{card.label}</p>
                 <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
-                <p className="text-xs text-slate-400 mt-1">{card.sub}</p>
+                <p className="text-xs mt-1" style={{color:"var(--ink-faint)"}}>{card.sub}</p>
               </div>
             ))}
           </div>
@@ -129,7 +141,7 @@ export default function PaymentsPage() {
                         <span className="text-sm font-medium text-slate-700">{plan.plan}</span>
                         <span className="text-xs text-slate-400">({plan.count} accounts)</span>
                       </div>
-                      <span className="text-sm font-semibold text-slate-900">${plan.revenue.toLocaleString()}</span>
+                      <span className="font-mono font-semibold text-sm" style={{color:"var(--ink)"}}>${plan.revenue.toLocaleString()}</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-slate-100">
                       <div className={`h-2 rounded-full ${plan.color}`} style={{ width: `${pct}%` }} />

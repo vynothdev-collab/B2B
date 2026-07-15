@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Globe, UserCheck } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import Pagination from "@/components/ui/Pagination";
 import {
   INDIVIDUAL_PLAN_DISCOUNTS,
   INDIVIDUAL_USER_DISCOUNTS,
@@ -62,7 +63,7 @@ function CombinedTable({ rows, accent }: { rows: MergedRow[]; accent: "blue" | "
 
               <td className="px-4 py-3 text-slate-600">{row.discountType}</td>
 
-              <td className="px-4 py-3 font-semibold text-emerald-700">{row.value}</td>
+              <td className="px-4 py-3 font-mono font-semibold text-emerald-700">{row.value}</td>
 
               <td className="px-4 py-3">
                 {row.scope === "plan" ? (
@@ -98,6 +99,8 @@ function CombinedTable({ rows, accent }: { rows: MergedRow[]; accent: "blue" | "
 
 export default function OffersPage() {
   const [activeTab, setActiveTab] = useState<Tab>("Individual Offers");
+  const OFF_PER_PAGE = 8;
+  const [offPage, setOffPage] = useState(1);
 
   const isIndividual = activeTab === "Individual Offers";
   const accent = isIndividual ? "blue" : "violet";
@@ -105,6 +108,7 @@ export default function OffersPage() {
   const planDiscounts = isIndividual ? INDIVIDUAL_PLAN_DISCOUNTS : ENTERPRISE_PLAN_DISCOUNTS;
   const userDiscounts = isIndividual ? INDIVIDUAL_USER_DISCOUNTS : ENTERPRISE_USER_DISCOUNTS;
   const rows = merge(planDiscounts, userDiscounts);
+  const pageRows = rows.slice((offPage-1)*OFF_PER_PAGE, offPage*OFF_PER_PAGE);
 
   const activePlan  = planDiscounts.filter((o) => o.status === "active").length;
   const activeUser  = userDiscounts.filter((o) => o.status === "active").length;
@@ -119,7 +123,7 @@ export default function OffersPage() {
             <button
               key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
+              onClick={() => { setActiveTab(tab); setOffPage(1); }}
               className={`px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab
                   ? `border-b-2 ${tab === "Enterprise Offers" ? "border-violet-600 text-violet-600" : "border-blue-600 text-blue-600"}`
@@ -139,7 +143,7 @@ export default function OffersPage() {
             <Globe className={`h-5 w-5 ${isIndividual ? "text-blue-600" : "text-violet-600"}`} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Plan Discounts</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Plan Discounts</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{planDiscounts.length}</p>
           </div>
         </div>
@@ -149,7 +153,7 @@ export default function OffersPage() {
             <UserCheck className="h-5 w-5 text-amber-600" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">User Discounts</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>User Discounts</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{userDiscounts.length}</p>
           </div>
         </div>
@@ -159,7 +163,7 @@ export default function OffersPage() {
             <span className="text-emerald-600 text-base font-bold">✓</span>
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Active Plan Offers</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Active Plan Offers</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{activePlan}</p>
           </div>
         </div>
@@ -169,7 +173,7 @@ export default function OffersPage() {
             <span className="text-emerald-600 text-base font-bold">✓</span>
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Active User Offers</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Active User Offers</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{activeUser}</p>
           </div>
         </div>
@@ -197,7 +201,8 @@ export default function OffersPage() {
             </button>
           </div>
         </div>
-        <CombinedTable rows={rows} accent={accent} />
+        <CombinedTable rows={pageRows} accent={accent} />
+        <Pagination total={rows.length} perPage={OFF_PER_PAGE} page={offPage} onChange={setOffPage} itemLabel="offers" />
       </div>
 
     </div>

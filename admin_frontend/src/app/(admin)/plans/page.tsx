@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Plus, Pencil, Ban, Search, Users, Building2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import Pagination from "@/components/ui/Pagination";
 import { PLANS, INDIVIDUAL_PLANS, ENTERPRISE_PLANS } from "@/data/plans";
 
 const TABS = ["Individual Plans", "Enterprise Plans"] as const;
@@ -11,12 +12,15 @@ type Tab = typeof TABS[number];
 function PlansTable({ plans }: { plans: typeof PLANS }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [planPage, setPlanPage] = useState(1);
+  const PER_PAGE = 6;
 
   const filtered = plans.filter((p) => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "All Status" || p.status === statusFilter.toLowerCase();
     return matchSearch && matchStatus;
   });
+  const paginated = filtered.slice((planPage-1)*PER_PAGE, planPage*PER_PAGE);
 
   return (
     <>
@@ -64,7 +68,7 @@ function PlansTable({ plans }: { plans: typeof PLANS }) {
                 <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">No plans found.</td>
               </tr>
             )}
-            {filtered.map((plan) => {
+            {paginated.map((plan) => {
               const searches = plan.limits.find((l) => l.toLowerCase().includes("search")) ?? "—";
               const reveals = plan.limits.find((l) => l.toLowerCase().includes("reveal")) ?? "—";
               const seats = plan.limits.find((l) => l.toLowerCase().includes("seat") || l.toLowerCase().includes("user seat")) ?? "—";
@@ -102,6 +106,7 @@ function PlansTable({ plans }: { plans: typeof PLANS }) {
           </tbody>
         </table>
       </div>
+      <Pagination total={filtered.length} perPage={PER_PAGE} page={planPage} onChange={setPlanPage} itemLabel="plans" />
     </>
   );
 }
@@ -152,7 +157,7 @@ export default function PlansPage() {
               : <Building2 className="h-5 w-5 text-violet-600" />}
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{isIndividual ? "Individual Plans" : "Enterprise Plans"}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>{isIndividual ? "Individual Plans" : "Enterprise Plans"}</p>
             <p className={`text-2xl font-bold mt-0.5 ${isIndividual ? "text-blue-600" : "text-violet-600"}`}>{plans.length}</p>
             <p className="text-xs text-slate-400">{isIndividual ? "Personal account plans" : "Company account plans"}</p>
           </div>
@@ -162,7 +167,7 @@ export default function PlansPage() {
             <span className="text-emerald-600 text-lg font-bold">✓</span>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Active Plans</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Active Plans</p>
             <p className="text-2xl font-bold text-emerald-600 mt-0.5">{activePlans}</p>
             <p className="text-xs text-slate-400">{activePlans === plans.length ? "100% active" : `${Math.round((activePlans / plans.length) * 100)}% active`}</p>
           </div>
@@ -172,7 +177,7 @@ export default function PlansPage() {
             <span className="text-slate-500 text-lg font-bold">—</span>
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Inactive Plans</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Inactive Plans</p>
             <p className="text-2xl font-bold text-slate-700 mt-0.5">{inactivePlans}</p>
             <p className="text-xs text-slate-400">Hidden from users</p>
           </div>

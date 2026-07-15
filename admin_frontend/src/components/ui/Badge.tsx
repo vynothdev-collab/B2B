@@ -5,41 +5,43 @@ type BadgeProps = {
   label?: string;
 };
 
+// Warm-palette badge map (matches Meridian / leadsbuddy design language)
 const STATUS_MAP: Record<string, string> = {
-  // green
-  active: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-  paid: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-  healthy: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-  resolved: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-  strong: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-  successful: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-  good: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-  added: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
-  // slate
-  inactive: "bg-slate-100 text-slate-600 ring-1 ring-slate-500/20",
-  draft: "bg-slate-100 text-slate-600 ring-1 ring-slate-500/20",
-  closed: "bg-slate-100 text-slate-600 ring-1 ring-slate-500/20",
-  // red
-  suspended: "bg-red-50 text-red-700 ring-1 ring-red-600/20",
-  failed: "bg-red-50 text-red-700 ring-1 ring-red-600/20",
-  exceeded: "bg-red-50 text-red-700 ring-1 ring-red-600/20",
-  urgent: "bg-red-50 text-red-700 ring-1 ring-red-600/20",
-  expired: "bg-red-50 text-red-700 ring-1 ring-red-600/20",
-  deducted: "bg-red-50 text-red-700 ring-1 ring-red-600/20",
-  // amber
-  pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
-  low: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
-  open: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
-  weak: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
-  scheduled: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
-  refunded: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
-  // blue
+  // sage — positive / active
+  active:     "bg-[#E3EEE0] text-[#3E6A44] ring-1 ring-[#5C8A61]/20",
+  paid:       "bg-[#E3EEE0] text-[#3E6A44] ring-1 ring-[#5C8A61]/20",
+  healthy:    "bg-[#E3EEE0] text-[#3E6A44] ring-1 ring-[#5C8A61]/20",
+  resolved:   "bg-[#E3EEE0] text-[#3E6A44] ring-1 ring-[#5C8A61]/20",
+  strong:     "bg-[#E3EEE0] text-[#3E6A44] ring-1 ring-[#5C8A61]/20",
+  successful: "bg-[#E3EEE0] text-[#3E6A44] ring-1 ring-[#5C8A61]/20",
+  good:       "bg-[#E3EEE0] text-[#3E6A44] ring-1 ring-[#5C8A61]/20",
+  added:      "bg-[#E3EEE0] text-[#3E6A44] ring-1 ring-[#5C8A61]/20",
+  // ink-soft — neutral / inactive
+  inactive:   "bg-[#F0E9D8] text-[#736C58] ring-1 ring-[#A79F89]/25",
+  draft:      "bg-[#F0E9D8] text-[#736C58] ring-1 ring-[#A79F89]/25",
+  closed:     "bg-[#F0E9D8] text-[#736C58] ring-1 ring-[#A79F89]/25",
+  // rose — error / expired / suspended
+  suspended:  "bg-[#F5E1E6] text-[#B15169] ring-1 ring-[#B15169]/20",
+  failed:     "bg-[#F5E1E6] text-[#B15169] ring-1 ring-[#B15169]/20",
+  exceeded:   "bg-[#F5E1E6] text-[#B15169] ring-1 ring-[#B15169]/20",
+  expired:    "bg-[#F5E1E6] text-[#B15169] ring-1 ring-[#B15169]/20",
+  deducted:   "bg-[#F5E1E6] text-[#B15169] ring-1 ring-[#B15169]/20",
+  // rust — urgent / warning
+  urgent:     "bg-[#F5E1D5] text-[#BC5A34] ring-1 ring-[#BC5A34]/20",
+  // gold — pending / low / open
+  pending:    "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
+  low:        "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
+  open:       "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
+  weak:       "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
+  scheduled:  "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
+  refunded:   "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
+  // blue — in progress (kept for Individual accent)
   in_progress: "bg-blue-50 text-blue-700 ring-1 ring-blue-600/20",
 };
 
 export default function Badge({ status, label }: BadgeProps) {
   const key = status.toLowerCase().replace(/\s+/g, "_");
-  const cls = STATUS_MAP[key] ?? "bg-slate-100 text-slate-600 ring-1 ring-slate-500/20";
+  const cls = STATUS_MAP[key] ?? "bg-[#F0E9D8] text-[#736C58] ring-1 ring-[#A79F89]/25";
   const display = label ?? status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (

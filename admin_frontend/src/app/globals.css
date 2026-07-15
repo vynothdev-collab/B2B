@@ -2,31 +2,180 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ════════════════════════════════════════════════════════════
+   Design tokens  (mirrors frontend/index.html)
+════════════════════════════════════════════════════════════ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper:       #FAF6EE;
+  --card:        #FFFFFF;
+  --line:        #E7DFCD;
+  --line-soft:   #F0E9D8;
+  --ink:         #2B2A23;
+  --ink-dim:     #736C58;
+  --ink-faint:   #A79F89;
+
+  --forest:      #173229;
+  --forest-2:    #1F3F32;
+  --forest-line: #2C5344;
+  --forest-text: #EFEAD9;
+  --forest-dim:  #A9BBAE;
+  --forest-faint:#6E8478;
+
+  --gold:        #CE9A3E;
+  --gold-dim:    #F6ECD4;
+  --gold-dark:   #93691F;
+  --rust:        #BC5A34;
+  --rust-dim:    #F5E1D5;
+  --sage:        #5C8A61;
+  --sage-dim:    #E3EEE0;
+  --sage-dark:   #3E6A44;
+  --rose:        #B15169;
+  --rose-dim:    #F5E1E6;
 }
 
+/* ════════════════════════════════════════════════════════════
+   Base
+════════════════════════════════════════════════════════════ */
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color:      var(--ink);
+  background: var(--paper);
+  font-size:  14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+/* ════════════════════════════════════════════════════════════
+   Warm palette — override cold-slate Tailwind utilities
+════════════════════════════════════════════════════════════ */
+.bg-slate-50  { background-color: var(--paper); }
+.bg-slate-100 { background-color: var(--line-soft); }
+
+.border-slate-100 { border-color: var(--line-soft); }
+.border-slate-200 { border-color: var(--line); }
+
+.text-slate-900 { color: var(--ink); }
+.text-slate-800 { color: var(--ink); }
+.text-slate-700 { color: #3D3A30; }
+.text-slate-600 { color: var(--ink-dim); }
+.text-slate-500 { color: var(--ink-dim); }
+.text-slate-400 { color: var(--ink-faint); }
+
+tr:hover td { background-color: var(--paper); }
+
+/* ════════════════════════════════════════════════════════════
+   Typography — Fraunces (display) for numbers & titles
+════════════════════════════════════════════════════════════ */
+
+/*
+  KPI / stat numbers  (text-2xl font-bold  or text-3xl font-bold)
+  Fraunces at large size gives the premium editorial feel of the reference.
+*/
+.text-2xl.font-bold,
+.text-3xl.font-bold,
+.text-xl.font-bold {
+  font-family: var(--font-fraunces);
+  letter-spacing: -0.01em;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+/*
+  Section / card titles  (h2 or p with font-semibold)
+  Catches SectionHeader h2, card header p elements, etc.
+*/
+h1.font-semibold,
+h2.font-semibold,
+h3.font-semibold,
+p.text-sm.font-semibold,
+p.text-base.font-semibold,
+p.text-lg.font-semibold {
+  font-family: var(--font-fraunces);
+  letter-spacing: -0.005em;
 }
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 9999px;
+
+/*
+  Bold section headings that use font-bold rather than font-semibold
+*/
+h2.font-bold,
+h3.font-bold {
+  font-family: var(--font-fraunces);
+  letter-spacing: -0.01em;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+
+/* ════════════════════════════════════════════════════════════
+   Table structural styles (matches index1.html reference)
+════════════════════════════════════════════════════════════ */
+
+/* Body rows — warm-soft dividers, no border on last row */
+tbody tr {
+  border-bottom: 1px solid var(--line-soft);
 }
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #d1d5db transparent;
+tbody tr:last-child {
+  border-bottom: none;
 }
+tbody tr:hover td { background-color: var(--paper); }
+
+/* Cell padding matches template: 13px 14px */
+tbody td {
+  padding: 13px 14px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+/* Override hover that was catching all tr */
+tr:hover td { background-color: transparent; }
+
+/* ════════════════════════════════════════════════════════════
+   Typography — IBM Plex Mono for tables, codes, amounts
+════════════════════════════════════════════════════════════ */
+
+/*
+  Table column headers — mono uppercase, tight tracking
+  !important required to override Tailwind inline classes.
+*/
+table thead th,
+table th {
+  font-family: var(--font-mono) !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase !important;
+}
+
+/* Inline code blocks */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--line-soft);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   Eyebrow utility (rust mono small-caps with leader line)
+   Usage: <span className="eyebrow">Label</span>
+════════════════════════════════════════════════════════════ */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rust);
+}
+.eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 1px;
+  background: var(--rust);
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   Scrollbar
+════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, Plus, Send, Building2, CreditCard, Users, Globe, Phone, Mail, ShieldCheck } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { ENTERPRISES, ENT_USERS, ENT_INVITATIONS, type Enterprise } from "@/data/enterprises";
 
@@ -110,6 +111,10 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
 export default function EnterprisesPage() {
   const [activeTab, setActiveTab] = useState("Enterprise Admins");
   const [selectedEnterprise, setSelectedEnterprise] = useState<Enterprise | null>(null);
+  const ENT_PER_PAGE = 8;
+  const [entPage, setEntPage] = useState(1);
+  const [euPage, setEuPage] = useState(1);
+  const [invPage2, setInvPage2] = useState(1);
 
   return (
     <div className="space-y-5">
@@ -168,7 +173,7 @@ export default function EnterprisesPage() {
                 </tr>
               </thead>
               <tbody>
-                {ENTERPRISES.map((e) => (
+                {ENTERPRISES.slice((entPage-1)*ENT_PER_PAGE, entPage*ENT_PER_PAGE).map((e) => (
                   <tr key={e.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedEnterprise(e)}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -200,6 +205,7 @@ export default function EnterprisesPage() {
               </tbody>
             </table>
           </div>
+          <Pagination total={ENTERPRISES.length} perPage={ENT_PER_PAGE} page={entPage} onChange={setEntPage} itemLabel="enterprises" />
         </div>
       )}
 
@@ -239,7 +245,7 @@ export default function EnterprisesPage() {
                 </tr>
               </thead>
               <tbody>
-                {ENT_USERS.map((u, i) => (
+                {ENT_USERS.slice((euPage-1)*ENT_PER_PAGE, euPage*ENT_PER_PAGE).map((u, i) => (
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -265,6 +271,7 @@ export default function EnterprisesPage() {
               </tbody>
             </table>
           </div>
+          <Pagination total={ENT_USERS.length} perPage={ENT_PER_PAGE} page={euPage} onChange={setEuPage} itemLabel="users" />
         </div>
       )}
 
@@ -294,7 +301,7 @@ export default function EnterprisesPage() {
                 </tr>
               </thead>
               <tbody>
-                {ENT_INVITATIONS.map((inv, i) => (
+                {ENT_INVITATIONS.slice((invPage2-1)*ENT_PER_PAGE, invPage2*ENT_PER_PAGE).map((inv, i) => (
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-800">{inv.email}</td>
                     <td className="px-4 py-3 text-slate-600">{inv.role}</td>
@@ -314,6 +321,7 @@ export default function EnterprisesPage() {
               </tbody>
             </table>
           </div>
+          <Pagination total={ENT_INVITATIONS.length} perPage={ENT_PER_PAGE} page={invPage2} onChange={setInvPage2} itemLabel="invitations" />
         </div>
       )}
 

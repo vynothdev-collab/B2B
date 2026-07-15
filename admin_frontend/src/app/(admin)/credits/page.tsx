@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search, Link2, TrendingUp, Coins, BarChart3 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import Pagination from "@/components/ui/Pagination";
 import { INDIVIDUAL_CREDITS, ENTERPRISE_CREDITS } from "@/data/credits";
 
 const TABS = ["Individual Credits", "Enterprise Credits"] as const;
@@ -10,6 +11,8 @@ type Tab = typeof TABS[number];
 
 export default function CreditsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("Individual Credits");
+  const CR_PER_PAGE = 8;
+  const [page, setPage] = useState(1);
 
   const isIndividual = activeTab === "Individual Credits";
 
@@ -38,7 +41,7 @@ export default function CreditsPage() {
             <button
               key={tab}
               type="button"
-              onClick={() => setActiveTab(tab)}
+              onClick={() => { setActiveTab(tab); setPage(1); }}
               className={`px-4 py-2.5 text-sm font-medium transition-colors ${
                 activeTab === tab
                   ? `border-b-2 ${isIndividual ? "border-blue-600 text-blue-600" : "border-violet-600 text-violet-600"}`
@@ -58,7 +61,7 @@ export default function CreditsPage() {
             <Link2 className={`h-5 w-5 ${accent === "blue" ? "text-blue-600" : "text-violet-600"}`} />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Outstanding Balance</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Outstanding Balance</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{outstanding.toLocaleString()}</p>
           </div>
         </div>
@@ -68,7 +71,7 @@ export default function CreditsPage() {
             <TrendingUp className="h-5 w-5 text-violet-600" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Lifetime Used</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Lifetime Used</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{used.toLocaleString()}</p>
           </div>
         </div>
@@ -78,7 +81,7 @@ export default function CreditsPage() {
             <Coins className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total Allocated</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Total Allocated</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{limit.toLocaleString()}</p>
           </div>
         </div>
@@ -88,7 +91,7 @@ export default function CreditsPage() {
             <BarChart3 className="h-5 w-5 text-amber-600" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Usage Rate</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{fontFamily:"var(--font-mono)",color:"var(--ink-faint)"}}>Usage Rate</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{usageRate}%</p>
           </div>
         </div>
@@ -129,7 +132,7 @@ export default function CreditsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {INDIVIDUAL_CREDITS.map((u, i) => (
+                  {INDIVIDUAL_CREDITS.slice((page-1)*CR_PER_PAGE, page*CR_PER_PAGE).map((u, i) => (
                     <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -156,6 +159,7 @@ export default function CreditsPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination total={INDIVIDUAL_CREDITS.length} perPage={CR_PER_PAGE} page={page} onChange={setPage} itemLabel="users" />
           </>
         )}
 
@@ -188,7 +192,7 @@ export default function CreditsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ENTERPRISE_CREDITS.map((e, i) => (
+                  {ENTERPRISE_CREDITS.slice((page-1)*CR_PER_PAGE, page*CR_PER_PAGE).map((e, i) => (
                     <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -212,6 +216,7 @@ export default function CreditsPage() {
                 </tbody>
               </table>
             </div>
+            <Pagination total={ENTERPRISE_CREDITS.length} perPage={CR_PER_PAGE} page={page} onChange={setPage} itemLabel="enterprises" />
           </>
         )}
       </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Search, UserPlus, ChevronLeft, ChevronRight, Send, X, Mail, ShieldCheck, CreditCard, List } from "lucide-react";
+import { Search, UserPlus, Send, X, Mail, ShieldCheck, CreditCard, List } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { USERS, INVITATIONS, type User } from "@/data/users";
 
@@ -100,6 +101,9 @@ function UserDetail({ user }: { user: User }) {
 export default function UsersPage() {
   const [activeTab, setActiveTab] = useState("Individual Users");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const USER_PER_PAGE = 8;
+  const [userPage, setUserPage] = useState(1);
+  const [invPage, setInvPage] = useState(1);
 
   return (
     <div className="space-y-5">
@@ -150,7 +154,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {USERS.map((u) => (
+                {USERS.slice((userPage-1)*USER_PER_PAGE, userPage*USER_PER_PAGE).map((u) => (
                   <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedUser(u)}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -175,17 +179,7 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5">
-            <p className="text-sm text-slate-500">Showing 1–8 of 1,284 users</p>
-            <div className="flex items-center gap-2">
-              <button type="button" disabled className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 opacity-40">
-                <ChevronLeft className="h-4 w-4" /> Prev
-              </button>
-              <button type="button" className="flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50">
-                Next <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+          <Pagination total={USERS.length} perPage={USER_PER_PAGE} page={userPage} onChange={setUserPage} itemLabel="users" />
         </div>
       )}
 
@@ -214,7 +208,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {INVITATIONS.map((inv, i) => (
+                {INVITATIONS.slice((invPage-1)*USER_PER_PAGE, invPage*USER_PER_PAGE).map((inv, i) => (
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-800">{inv.email}</td>
                     <td className="px-4 py-3 text-slate-600">{inv.invitedBy}</td>
@@ -232,6 +226,7 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+          <Pagination total={INVITATIONS.length} perPage={USER_PER_PAGE} page={invPage} onChange={setInvPage} itemLabel="invitations" />
         </div>
       )}
 
