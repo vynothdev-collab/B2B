@@ -20,6 +20,20 @@ export interface ListCustomersParams {
   q?: string;
 }
 
+export interface CreateCustomerPayload {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  role?: CustomerRole;
+  enterprise_id?: string;
+}
+
+export async function createCustomer(payload: CreateCustomerPayload): Promise<Customer> {
+  const { data } = await api.post<Customer>("/admin/customers", payload);
+  return data;
+}
+
 export async function listCustomers(
   params: ListCustomersParams = {},
   signal?: AbortSignal,

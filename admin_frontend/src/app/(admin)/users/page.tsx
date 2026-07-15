@@ -10,13 +10,15 @@ import {
   CheckCircle2,
   UserCog,
   Building2,
-  Loader2,
+  Plus,
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { useToast } from "@/components/ui/Toast";
+import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import ConvertUserModal from "@/components/modals/ConvertUserModal";
+import CreateCustomerModal from "@/components/modals/CreateCustomerModal";
 import {
   listCustomers,
   updateCustomerStatus,
@@ -141,6 +143,7 @@ export default function UsersPage() {
   const [selected, setSelected] = useState<Customer | null>(null);
   const [page, setPage] = useState(1);
   const [convertOpen, setConvertOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal) => {
@@ -221,41 +224,54 @@ export default function UsersPage() {
     <div className="space-y-5">
       {/* ── Stat Cards ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          label="Total Individual Users"
-          value={totalUsers}
-          hint="Self-signed-up accounts"
-          icon={<Users className="h-5 w-5" style={{ color: "var(--forest)" }} />}
-          bg="rgba(23,50,41,.08)"
-          color="var(--forest)"
-        />
-        <StatCard
-          label="Active Users"
-          value={activeUsers}
-          hint="Currently active"
-          icon={<CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />}
-          bg="var(--sage-dim)"
-          color="var(--sage-dark, #3E6A44)"
-        />
-        <StatCard
-          label="With Phone"
-          value={withPhone}
-          hint="Users who added a phone"
-          icon={<Mail className="h-5 w-5" style={{ color: "var(--rust)" }} />}
-          bg="var(--rust-dim)"
-          color="var(--rust)"
-        />
+        {loading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard
+              label="Total Individual Users"
+              value={totalUsers}
+              hint="Individual user accounts"
+              icon={<Users className="h-5 w-5" style={{ color: "var(--forest)" }} />}
+              bg="rgba(23,50,41,.08)"
+              color="var(--forest)"
+            />
+            <StatCard
+              label="Active Users"
+              value={activeUsers}
+              hint="Currently active"
+              icon={<CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />}
+              bg="var(--sage-dim)"
+              color="var(--sage-dark, #3E6A44)"
+            />
+            <StatCard
+              label="With Phone"
+              value={withPhone}
+              hint="Users who added a phone"
+              icon={<Mail className="h-5 w-5" style={{ color: "var(--rust)" }} />}
+              bg="var(--rust-dim)"
+              color="var(--rust)"
+            />
+          </>
+        )}
       </div>
 
       {/* ── Individual Users ─────────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-slate-200">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <p className="text-sm font-semibold text-slate-800">Individual Users</p>
-          {loading && (
-            <span className="flex items-center gap-2 text-xs text-slate-400">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> loading…
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+            style={{ background: "var(--forest)", color: "#EFEAD9" }}
+          >
+            <Plus className="h-4 w-4" /> Add User
+          </button>
         </div>
         <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
           <div className="relative flex-1 min-w-[200px]">
@@ -300,7 +316,11 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {paged.map((u) => (
+              {loading &&
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRowSkeleton key={`sk-${i}`} columns={6} />
+                ))}
+              {!loading && paged.map((u) => (
                 <tr
                   key={u.id}
                   className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
@@ -391,6 +411,12 @@ export default function UsersPage() {
         onClose={() => setConvertOpen(false)}
         customer={selected}
         onConverted={patchLocal}
+      />
+
+      <CreateCustomerModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(user) => setCustomers((prev) => [user, ...prev])}
       />
     </div>
   );

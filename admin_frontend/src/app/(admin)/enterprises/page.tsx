@@ -14,12 +14,12 @@ import {
   Mail,
   ShieldCheck,
   CheckCircle2,
-  Loader2,
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { useToast } from "@/components/ui/Toast";
+import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import CreateEnterpriseModal from "@/components/modals/CreateEnterpriseModal";
 import CreateEnterpriseAdminModal from "@/components/modals/CreateEnterpriseAdminModal";
 import { listEnterprises, updateEnterprise, type Enterprise } from "@/services/enterprises";
@@ -356,10 +356,21 @@ export default function EnterprisesPage() {
 
       {/* ── Stat Cards ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Enterprises" value={totalEnterprises} hint="All company accounts" icon={<Building2 className="h-5 w-5" style={{ color: "#8A6222" }} />} bg="var(--gold-dim)" color="#8A6222" />
-        <StatCard label="Active Enterprises" value={activeEnterprises} hint="Currently active" icon={<CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />} bg="var(--sage-dim)" color="var(--sage-dark, #3E6A44)" />
-        <StatCard label="Enterprise Users" value={totalEntUsers} hint="Across all companies" icon={<Users className="h-5 w-5" style={{ color: "var(--rust)" }} />} bg="var(--rust-dim)" color="var(--rust)" />
-        <StatCard label="Total Credits" value={totalCredits} hint="Provisioned to enterprises" icon={<CreditCard className="h-5 w-5" style={{ color: "var(--forest)" }} />} bg="rgba(23,50,41,.08)" color="var(--forest)" />
+        {entLoading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <StatCard label="Total Enterprises" value={totalEnterprises} hint="All company accounts" icon={<Building2 className="h-5 w-5" style={{ color: "#8A6222" }} />} bg="var(--gold-dim)" color="#8A6222" />
+            <StatCard label="Active Enterprises" value={activeEnterprises} hint="Currently active" icon={<CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />} bg="var(--sage-dim)" color="var(--sage-dark, #3E6A44)" />
+            <StatCard label="Enterprise Users" value={totalEntUsers} hint="Across all companies" icon={<Users className="h-5 w-5" style={{ color: "var(--rust)" }} />} bg="var(--rust-dim)" color="var(--rust)" />
+            <StatCard label="Total Credits" value={totalCredits} hint="Provisioned to enterprises" icon={<CreditCard className="h-5 w-5" style={{ color: "var(--forest)" }} />} bg="rgba(23,50,41,.08)" color="var(--forest)" />
+          </>
+        )}
       </div>
 
       {/* ── Enterprise Admins Tab ─────────────────────────────────────── */}
@@ -368,11 +379,6 @@ export default function EnterprisesPage() {
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div className="flex items-center gap-3">
               <p className="text-sm font-semibold text-slate-800">Enterprises</p>
-              {entLoading && (
-                <span className="flex items-center gap-2 text-xs text-slate-400">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> loading…
-                </span>
-              )}
             </div>
             <button
               type="button"
@@ -420,7 +426,11 @@ export default function EnterprisesPage() {
                 </tr>
               </thead>
               <tbody>
-                {pagedEnterprises.map((e) => (
+                {entLoading &&
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRowSkeleton key={`sk-ent-${i}`} columns={9} />
+                  ))}
+                {!entLoading && pagedEnterprises.map((e) => (
                   <tr
                     key={e.id}
                     className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
@@ -503,11 +513,6 @@ export default function EnterprisesPage() {
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <div className="flex items-center gap-3">
               <p className="text-sm font-semibold text-slate-800">Enterprise Users & Admins</p>
-              {euLoading && (
-                <span className="flex items-center gap-2 text-xs text-slate-400">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> loading…
-                </span>
-              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
@@ -547,7 +552,11 @@ export default function EnterprisesPage() {
                 </tr>
               </thead>
               <tbody>
-                {pagedEntUsers.map((u) => (
+                {euLoading &&
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRowSkeleton key={`sk-eu-${i}`} columns={7} />
+                  ))}
+                {!euLoading && pagedEntUsers.map((u) => (
                   <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">

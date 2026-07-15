@@ -1,12 +1,13 @@
+import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.security import require_super_admin
+from app.core.security import hash_password, require_super_admin
 from app.models.enterprise import Enterprise
 from app.models.user import User, UserRole
 
@@ -43,6 +44,36 @@ class UpdateStatusRequest(BaseModel):
     is_active: bool
 
 
+class CreateCustomerRequest(BaseModel):
+    name:          str
+    email:         EmailStr
+    password:      str
+    phone:         str | None = None
+    role:          str = UserRole.INDIVIDUAL
+    enterprise_id: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Name cannot be empty")
+        return v.strip()
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
+
+    @field_validator("role")
+    @classmethod
+    def role_valid(cls, v: str) -> str:
+        if v not in UserRole.ALL:
+            raise ValueError(f"Role must be one of: {', '.join(sorted(UserRole.ALL))}")
+        return v
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _load_user(db: AsyncSession, user_id: str) -> User:
@@ -75,6 +106,52 @@ async def _serialize(db: AsyncSession, user: User) -> CustomerResponse:
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+
+@router.post("", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
+async def create_customer(
+    payload: CreateCustomerRequest,
+    db: AsyncSession = Depends(get_db),
+) -> CustomerResponse:
+    existing = (
+        await db.execute(select(User).where(User.email == payload.email))
+    ).scalar_one_or_none()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists",
+        )
+
+    enterprise_id: str | None = None
+    if payload.role in {UserRole.ENTERPRISE_ADMIN, UserRole.ENTERPRISE_USER}:
+        if not payload.enterprise_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="enterprise_id is required when creating an enterprise user.",
+            )
+        ent = (
+            await db.execute(select(Enterprise).where(Enterprise.id == payload.enterprise_id))
+        ).scalar_one_or_none()
+        if not ent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Enterprise not found",
+            )
+        enterprise_id = ent.id
+
+    user = User(
+        id=str(uuid.uuid4()),
+        email=payload.email,
+        name=payload.name,
+        hashed_password=hash_password(payload.password),
+        role=payload.role,
+        phone=payload.phone,
+        enterprise_id=enterprise_id,
+    )
+    db.add(user)
+    await db.flush()
+    await db.refresh(user)
+    return await _serialize(db, user)
+
 
 @router.get("", response_model=list[CustomerResponse])
 async def list_customers(
