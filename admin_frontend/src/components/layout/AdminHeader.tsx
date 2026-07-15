@@ -38,7 +38,7 @@ export default function AdminHeader() {
 
   return (
     <header
-      className="flex h-14 shrink-0 items-center justify-between border-b px-6 gap-4 bg-card"
+      className="flex h-16 shrink-0 items-center justify-between border-b px-6 gap-4 bg-card"
       style={{ borderColor: "var(--line)" }}
     >
       {/* Page title */}
