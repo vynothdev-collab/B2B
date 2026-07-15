@@ -13,6 +13,7 @@ from app.core.database import get_db
 
 if TYPE_CHECKING:
     from app.models.user import User
+    from app.models.admin_user import AdminUser
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -46,6 +47,69 @@ def decode_token(token: str) -> dict:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return {}
+
+
+# ── Admin token functions (separate secret key) ───────────────────────────────
+
+def create_admin_access_token(subject: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=settings.ADMIN_ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+    payload = {"sub": subject, "exp": expire, "type": "admin_access"}
+    return jwt.encode(payload, settings.ADMIN_SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def create_admin_refresh_token(subject: str) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=settings.ADMIN_REFRESH_TOKEN_EXPIRE_DAYS
+    )
+    payload = {"sub": subject, "exp": expire, "type": "admin_refresh"}
+    return jwt.encode(payload, settings.ADMIN_SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def decode_admin_token(token: str) -> dict:
+    try:
+        return jwt.decode(token, settings.ADMIN_SECRET_KEY, algorithms=[settings.ALGORITHM])
+    except JWTError:
+        return {}
+
+
+async def get_current_admin(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> "AdminUser":
+    from app.models.admin_user import AdminUser
+
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    payload = decode_admin_token(credentials.credentials)
+    if not payload or payload.get("type") != "admin_access":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired admin token",
+        )
+
+    admin_id: str | None = payload.get("sub")
+    if not admin_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    result = await db.execute(select(AdminUser).where(AdminUser.id == admin_id))
+    admin = result.scalar_one_or_none()
+    if not admin or not admin.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin not found or inactive",
+        )
+
+    return admin
 
 
 async def get_current_user(

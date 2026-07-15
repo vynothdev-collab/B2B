@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Eye, EyeOff, ShieldCheck, BarChart3, Users, Building2, MessageSquare } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/Toast";
 
 const FEATURES = [
   { icon: <Users className="h-4 w-4" />,        text: "Manage individual users & enterprise accounts" },
@@ -13,11 +15,44 @@ export default function AdminLoginPage() {
   const [email, setEmail]             = useState("");
   const [password, setPassword]       = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError]             = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted]     = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailMissing  = submitted && !email.trim();
+  const emailBadFormat = submitted && !!email.trim() && !EMAIL_RE.test(email.trim());
+  const emailError    = emailMissing || emailBadFormat;
+  const emailMessage  = emailMissing ? "Email address is required." : emailBadFormat ? "Please enter a valid email address." : "";
+  const passwordError = submitted && !password;
+
+  const { login } = useAuth();
+  const toast = useToast();
+
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
+    setSubmitted(true);
+    if (!email.trim() || !EMAIL_RE.test(email.trim()) || !password) return;
+    setIsSubmitting(true);
+    try {
+      await login(email, password);
+      toast.success("Welcome back!", "Signed in successfully.");
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { detail?: string } } };
+      const status   = axiosErr?.response?.status;
+      const detail   = axiosErr?.response?.data?.detail;
+
+      if (status === 401) {
+        toast.warning("Wrong credentials", detail ?? "The email or password you entered is incorrect.");
+      } else if (status === 403) {
+        toast.error("Access denied", detail ?? "Your account doesn't have admin privileges.");
+      } else if (!axiosErr?.response) {
+        toast.error("Network error", "Unable to reach the server. Check your connection and try again.");
+      } else {
+        toast.error("Sign in failed", detail ?? (err instanceof Error ? err.message : "Something went wrong. Please try again."));
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -123,34 +158,30 @@ export default function AdminLoginPage() {
             <p className="mt-1.5 text-sm" style={{ color: "#6E9480" }}>Sign in to access the admin portal</p>
           </div>
 
-          {/* Error */}
-          {error && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl px-4 py-3" style={{ background: "#F5E1E6", border: "1px solid #E0C0C8" }}>
-              <div className="mt-0.5 h-4 w-4 shrink-0 rounded-full flex items-center justify-center" style={{ background: "#B15169" }}>
-                <span className="text-white text-[10px] font-bold">!</span>
-              </div>
-              <p className="text-xs" style={{ color: "#B15169" }}>{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {/* Email */}
             <div>
               <label className="mb-1.5 block text-xs font-semibold" style={{ color: "#173229" }}>
                 Admin email address
               </label>
               <input
-                type="email"
+                type="text"
+                inputMode="email"
                 autoComplete="email"
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@leadsbuddy.ai"
                 className="w-full rounded-xl px-4 py-3 text-sm placeholder-slate-400 focus:outline-none transition-all"
-                style={{ border: "1px solid #D6CEBA", background: "#F5F0E8", color: "#173229" }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = "#CE9A3E"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(206,154,62,.15)"; e.currentTarget.style.background = "#FFFDF6"; }}
-                onBlur={(e)  => { e.currentTarget.style.borderColor = "#D6CEBA"; e.currentTarget.style.boxShadow = ""; e.currentTarget.style.background = "#F5F0E8"; }}
+                style={{
+                  border: emailError ? "1px solid #B15169" : "1px solid #D6CEBA",
+                  boxShadow: emailError ? "0 0 0 3px rgba(177,81,105,.12)" : "",
+                  background: "#F5F0E8",
+                  color: "#173229",
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = emailError ? "#B15169" : "#CE9A3E"; e.currentTarget.style.boxShadow = emailError ? "0 0 0 3px rgba(177,81,105,.12)" : "0 0 0 3px rgba(206,154,62,.15)"; e.currentTarget.style.background = "#FFFDF6"; }}
+                onBlur={(e)  => { e.currentTarget.style.borderColor = emailError ? "#B15169" : "#D6CEBA"; e.currentTarget.style.boxShadow = emailError ? "0 0 0 3px rgba(177,81,105,.12)" : ""; e.currentTarget.style.background = "#F5F0E8"; }}
               />
+              {emailError && <p className="mt-1.5 text-xs" style={{ color: "#B15169" }}>{emailMessage}</p>}
             </div>
 
             {/* Password */}
@@ -165,14 +196,18 @@ export default function AdminLoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="w-full rounded-xl px-4 py-3 pr-11 text-sm placeholder-slate-400 focus:outline-none transition-all"
-                  style={{ border: "1px solid #D6CEBA", background: "#F5F0E8", color: "#173229" }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = "#CE9A3E"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(206,154,62,.15)"; e.currentTarget.style.background = "#FFFDF6"; }}
-                  onBlur={(e)  => { e.currentTarget.style.borderColor = "#D6CEBA"; e.currentTarget.style.boxShadow = ""; e.currentTarget.style.background = "#F5F0E8"; }}
+                  style={{
+                    border: passwordError ? "1px solid #B15169" : "1px solid #D6CEBA",
+                    boxShadow: passwordError ? "0 0 0 3px rgba(177,81,105,.12)" : "",
+                    background: "#F5F0E8",
+                    color: "#173229",
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = passwordError ? "#B15169" : "#CE9A3E"; e.currentTarget.style.boxShadow = passwordError ? "0 0 0 3px rgba(177,81,105,.12)" : "0 0 0 3px rgba(206,154,62,.15)"; e.currentTarget.style.background = "#FFFDF6"; }}
+                  onBlur={(e)  => { e.currentTarget.style.borderColor = passwordError ? "#B15169" : "#D6CEBA"; e.currentTarget.style.boxShadow = passwordError ? "0 0 0 3px rgba(177,81,105,.12)" : ""; e.currentTarget.style.background = "#F5F0E8"; }}
                 />
                 <button
                   type="button"
@@ -186,17 +221,19 @@ export default function AdminLoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {passwordError && <p className="mt-1.5 text-xs" style={{ color: "#B15169" }}>Password is required.</p>}
             </div>
 
             {/* Submit */}
             <button
               type="submit"
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all active:scale-[0.98]"
+              disabled={isSubmitting}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ background: "#173229", color: "#EFEAD9", boxShadow: "0 4px 14px -4px rgba(23,50,41,.35)" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
+              onMouseEnter={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
             >
-              Sign in to Admin Portal
+              {isSubmitting ? "Signing in…" : "Sign in to Admin Portal"}
             </button>
           </form>
 

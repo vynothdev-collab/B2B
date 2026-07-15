@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # Admin JWT — separate secret so admin tokens can't be used as user tokens
+    ADMIN_SECRET_KEY: str = ""
+    ADMIN_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ADMIN_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # Static API key required in X-Admin-Api-Key header to create admin accounts
+    ADMIN_CREATE_API_KEY: str = ""
+
     REDIS_URL: str = ""
 
     CORESIGNAL_API_KEY: str = ""

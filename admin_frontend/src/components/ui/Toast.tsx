@@ -169,7 +169,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const show = useCallback(
     (opts: Omit<ToastItem, "id">) => {
       const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const duration = opts.duration ?? 6000;
+      const duration = opts.duration ?? 3000;
       setToasts((prev) => [...prev, { ...opts, id, duration }]);
       if (duration > 0) {
         timers.current[id] = setTimeout(() => dismiss(id), duration);
@@ -179,7 +179,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 
   const success = useCallback((title: string, message?: string) => show({ variant: "success", title, message }), [show]);
-  const error   = useCallback((title: string, message?: string) => show({ variant: "error",   title, message, duration: 0 }), [show]);
+  const error   = useCallback((title: string, message?: string) => show({ variant: "error",   title, message }), [show]);
   const warning = useCallback((title: string, message?: string) => show({ variant: "warning", title, message }), [show]);
   const info    = useCallback((title: string, message?: string) => show({ variant: "info",    title, message }), [show]);
 

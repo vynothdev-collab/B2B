@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,7 +36,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${fraunces.variable} ${ibmPlexMono.variable} font-sans antialiased`}>
-        <ToastProvider>{children}</ToastProvider>
+        <AuthProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );
