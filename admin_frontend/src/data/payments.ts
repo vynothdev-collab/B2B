@@ -22,17 +22,17 @@ export const REFUNDS = [
 ];
 
 export const REVENUE_PLANS = [
-  { plan: "Pro", count: 412, revenue: 20188, max: 25000, color: "bg-blue-500" },
-  { plan: "Business", count: 148, revenue: 22052, max: 25000, color: "bg-violet-500" },
-  { plan: "Enterprise", count: 48, revenue: 19152, max: 25000, color: "bg-emerald-500" },
-  { plan: "Free", count: 680, revenue: 0, max: 25000, color: "bg-slate-300" },
+  { plan: "Pro", count: 412, revenue: 20188, max: 25000, color: "var(--forest)" },
+  { plan: "Business", count: 148, revenue: 22052, max: 25000, color: "var(--gold)" },
+  { plan: "Enterprise", count: 48, revenue: 19152, max: 25000, color: "var(--sage-dark, #3E6A44)" },
+  { plan: "Free", count: 680, revenue: 0, max: 25000, color: "var(--line)" },
 ];
 
 export const REVENUE_CARDS = [
-  { label: "Revenue This Month", value: "$18,420", sub: "As of today", color: "text-emerald-700" },
-  { label: "Revenue Last Month", value: "$16,800", sub: "June 2025", color: "text-slate-900" },
-  { label: "Revenue This Year", value: "$142,300", sub: "Jan–Jul 2025", color: "text-slate-900" },
-  { label: "Active Paid Subscriptions", value: "608", sub: "Pro + Business + Enterprise", color: "text-blue-700" },
-  { label: "Failed Payments This Month", value: "7", sub: "Requires attention", color: "text-red-700" },
-  { label: "Total Refunds This Month", value: "$1,240", sub: "3 transactions", color: "text-amber-700" },
+  { label: "Revenue This Month", value: "$18,420", sub: "As of today", color: "var(--sage-dark, #3E6A44)" },
+  { label: "Revenue Last Month", value: "$16,800", sub: "June 2025", color: "var(--ink)" },
+  { label: "Revenue This Year", value: "$142,300", sub: "Jan–Jul 2025", color: "var(--ink)" },
+  { label: "Active Paid Subscriptions", value: "608", sub: "Pro + Business + Enterprise", color: "var(--forest)" },
+  { label: "Failed Payments This Month", value: "7", sub: "Requires attention", color: "var(--rose)" },
+  { label: "Total Refunds This Month", value: "$1,240", sub: "3 transactions", color: "#8A6222" },
 ];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, UserPlus, Send, X, Mail, ShieldCheck, CreditCard, List } from "lucide-react";
+import { Search, UserPlus, Send, X, Mail, ShieldCheck, CreditCard, List, Users, CheckCircle2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
@@ -9,12 +9,20 @@ import { USERS, INVITATIONS, type User } from "@/data/users";
 
 const TABS = ["Individual Users", "Invitations"];
 
+const totalUsers   = USERS.length;
+const activeUsers  = USERS.filter((u) => u.status === "active").length;
+const paidUsers    = USERS.filter((u) => u.plan !== "Free").length;
+const pendingInvs  = INVITATIONS.filter((i) => i.status === "pending").length;
+
 function UserDetail({ user }: { user: User }) {
   return (
     <div className="divide-y divide-slate-100">
       <div className="px-5 py-4">
         <div className="flex items-center gap-4 mb-5">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-blue-700">
+          <div
+            className="flex h-14 w-14 items-center justify-center rounded-full text-lg font-bold"
+            style={{ background: "rgba(23,50,41,.08)", color: "var(--forest)" }}
+          >
             {user.initials}
           </div>
           <div>
@@ -70,10 +78,22 @@ function UserDetail({ user }: { user: User }) {
           <h4 className="text-sm font-semibold text-slate-700">Password & Security</h4>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5">
+          <button
+            type="button"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5"
+            style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
             <Mail className="h-3.5 w-3.5" /> Send Password Reset
           </button>
-          <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">
+          <button
+            type="button"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
             Force Logout
           </button>
         </div>
@@ -84,14 +104,63 @@ function UserDetail({ user }: { user: User }) {
           <h4 className="text-sm font-semibold text-slate-700">Account Actions</h4>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">Edit Profile</button>
-          <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Change Plan</button>
-          <button type="button" className="rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Add Credits</button>
-          {user.status === "active"
-            ? <button type="button" className="rounded-md border border-amber-200 px-2.5 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 transition-colors">Suspend</button>
-            : <button type="button" className="rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Activate</button>
-          }
-          <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Delete Account</button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+            style={{ background: "var(--forest)", color: "#EFEAD9" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+          >
+            Edit Profile
+          </button>
+          <button
+            type="button"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
+            Change Plan
+          </button>
+          <button
+            type="button"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
+            Add Credits
+          </button>
+          {user.status === "active" ? (
+            <button
+              type="button"
+              className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={{ borderColor: "var(--gold)", color: "#8A6222", background: "transparent" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--gold-dim)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+            >
+              Suspend
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+            >
+              Activate
+            </button>
+          )}
+          <button
+            type="button"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
+            Delete Account
+          </button>
         </div>
       </div>
     </div>
@@ -107,14 +176,69 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-5">
+
+      {/* ── Tabs ─────────────────────────────────────────────────────── */}
       <div className="border-b border-slate-200">
         <div className="flex gap-0">
           {TABS.map((tab) => (
-            <button key={tab} type="button" onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors ${activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"}`}>
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className="px-4 py-2.5 text-sm font-medium transition-colors"
+              style={
+                activeTab === tab
+                  ? { borderBottom: "2px solid var(--forest)", color: "var(--forest)" }
+                  : { color: "var(--ink-faint)" }
+              }
+            >
               {tab}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* ── Stat Cards ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(23,50,41,.08)" }}>
+            <Users className="h-5 w-5" style={{ color: "var(--forest)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Total Users</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--forest)" }}>{totalUsers}</p>
+            <p className="text-xs text-slate-400 mt-0.5">All registered accounts</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--sage-dim)" }}>
+            <CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Active Users</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--sage-dark, #3E6A44)" }}>{activeUsers}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Currently active accounts</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--rust-dim)" }}>
+            <CreditCard className="h-5 w-5" style={{ color: "var(--rust)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Paid Users</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--rust)" }}>{paidUsers}</p>
+            <p className="text-xs text-slate-400 mt-0.5">On Pro or Business plan</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--gold-dim)" }}>
+            <Send className="h-5 w-5" style={{ color: "#8A6222" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Pending Invitations</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "#8A6222" }}>{pendingInvs}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Awaiting acceptance</p>
+          </div>
         </div>
       </div>
 
@@ -123,19 +247,38 @@ export default function UsersPage() {
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <p className="text-sm font-semibold text-slate-800">Individual Users</p>
-            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+              style={{ background: "var(--forest)", color: "#EFEAD9" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            >
               <UserPlus className="h-4 w-4" /> Invite User
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search by name or email..." className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50" />
+              <input
+                placeholder="Search by name or email..."
+                className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none transition-colors"
+                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--forest)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(23,50,41,.10)"; }}
+                onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+              />
             </div>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--forest)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(23,50,41,.10)"; }}
+              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+            >
               <option>All Statuses</option><option>Active</option><option>Inactive</option><option>Suspended</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--forest)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(23,50,41,.10)"; }}
+              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+            >
               <option>All Plans</option><option>Free</option><option>Pro</option><option>Business</option>
             </select>
           </div>
@@ -154,11 +297,16 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {USERS.slice((userPage-1)*USER_PER_PAGE, userPage*USER_PER_PAGE).map((u) => (
+                {USERS.slice((userPage - 1) * USER_PER_PAGE, userPage * USER_PER_PAGE).map((u) => (
                   <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedUser(u)}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">{u.initials}</div>
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                          style={{ background: "rgba(23,50,41,.08)", color: "var(--forest)" }}
+                        >
+                          {u.initials}
+                        </div>
                         <span className="font-medium text-slate-800">{u.name}</span>
                       </div>
                     </td>
@@ -170,8 +318,25 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-slate-500">{u.lastLogin}</td>
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => setSelectedUser(u)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">View</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Suspend</button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUser(u)}
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Suspend
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -191,7 +356,13 @@ export default function UsersPage() {
               <p className="text-sm font-semibold text-slate-800">Individual User Invitations</p>
               <p className="text-xs text-slate-400 mt-0.5">Pending and sent invitations for personal accounts</p>
             </div>
-            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+              style={{ background: "var(--forest)", color: "#EFEAD9" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            >
               <Send className="h-4 w-4" /> Send Invitation
             </button>
           </div>
@@ -208,7 +379,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {INVITATIONS.slice((invPage-1)*USER_PER_PAGE, invPage*USER_PER_PAGE).map((inv, i) => (
+                {INVITATIONS.slice((invPage - 1) * USER_PER_PAGE, invPage * USER_PER_PAGE).map((inv, i) => (
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-800">{inv.email}</td>
                     <td className="px-4 py-3 text-slate-600">{inv.invitedBy}</td>
@@ -217,8 +388,24 @@ export default function UsersPage() {
                     <td className="px-4 py-3"><Badge status={inv.status} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Resend</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"><X className="h-3 w-3" /></button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Resend
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </div>
                     </td>
                   </tr>

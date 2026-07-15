@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, Send, Building2, CreditCard, Users, Globe, Phone, Mail, ShieldCheck } from "lucide-react";
+import { Search, Plus, Send, Building2, CreditCard, Users, Globe, Phone, Mail, ShieldCheck, CheckCircle2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
@@ -9,13 +9,20 @@ import { ENTERPRISES, ENT_USERS, ENT_INVITATIONS, type Enterprise } from "@/data
 
 const TABS = ["Enterprise Admins", "Enterprise Users", "Invitations"];
 
+const totalEnterprises  = ENTERPRISES.length;
+const activeEnterprises = ENTERPRISES.filter((e) => e.status === "active").length;
+const totalEntUsers     = ENTERPRISES.reduce((sum, e) => sum + e.users, 0);
+const pendingEntInvs    = ENT_INVITATIONS.filter((i) => i.status === "pending").length;
+
 function EnterpriseDetail({ ent }: { ent: Enterprise }) {
   return (
     <div className="divide-y divide-slate-100">
-      {/* Company Info */}
       <div className="px-5 py-4">
         <div className="flex items-center gap-4 mb-5">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-violet-100 text-lg font-bold text-violet-700">
+          <div
+            className="flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold"
+            style={{ background: "var(--gold-dim)", color: "#8A6222" }}
+          >
             {ent.initials}
           </div>
           <div>
@@ -32,7 +39,6 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
         </div>
       </div>
 
-      {/* Admin Contact */}
       <div className="px-5 py-4">
         <div className="flex items-center gap-2 mb-3">
           <Users className="h-4 w-4 text-slate-400" />
@@ -58,7 +64,6 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
         </div>
       </div>
 
-      {/* Plan & Usage */}
       <div className="px-5 py-4">
         <div className="flex items-center gap-2 mb-3">
           <CreditCard className="h-4 w-4 text-slate-400" />
@@ -76,7 +81,6 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
         </div>
       </div>
 
-      {/* Notes */}
       {ent.notes && (
         <div className="px-5 py-4">
           <div className="flex items-center gap-2 mb-3">
@@ -87,21 +91,69 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
         </div>
       )}
 
-      {/* Actions */}
       <div className="px-5 py-4">
         <div className="flex items-center gap-2 mb-3">
           <ShieldCheck className="h-4 w-4 text-slate-400" />
           <h4 className="text-sm font-semibold text-slate-700">Account Actions</h4>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors">Edit Profile</button>
-          <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Change Plan</button>
-          <button type="button" className="rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Add Credits</button>
-          {ent.status === "active"
-            ? <button type="button" className="rounded-md border border-amber-200 px-2.5 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 transition-colors">Suspend</button>
-            : <button type="button" className="rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">Activate</button>
-          }
-          <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Delete Account</button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+            style={{ background: "var(--gold)", color: "#3C2400" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+          >
+            Edit Profile
+          </button>
+          <button
+            type="button"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
+            Change Plan
+          </button>
+          <button
+            type="button"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
+            Add Credits
+          </button>
+          {ent.status === "active" ? (
+            <button
+              type="button"
+              className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={{ borderColor: "var(--gold)", color: "#8A6222", background: "transparent" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--gold-dim)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+            >
+              Suspend
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+            >
+              Activate
+            </button>
+          )}
+          <button
+            type="button"
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+          >
+            Delete Account
+          </button>
         </div>
       </div>
     </div>
@@ -118,6 +170,8 @@ export default function EnterprisesPage() {
 
   return (
     <div className="space-y-5">
+
+      {/* ── Tabs ─────────────────────────────────────────────────────── */}
       <div className="border-b border-slate-200">
         <div className="flex gap-0">
           {TABS.map((tab) => (
@@ -125,11 +179,12 @@ export default function EnterprisesPage() {
               key={tab}
               type="button"
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+              className="px-4 py-2.5 text-sm font-medium transition-colors"
+              style={
                 activeTab === tab
-                  ? "border-b-2 border-violet-600 text-violet-600"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
+                  ? { borderBottom: "2px solid var(--gold)", color: "#8A6222" }
+                  : { color: "var(--ink-faint)" }
+              }
             >
               {tab}
             </button>
@@ -137,23 +192,87 @@ export default function EnterprisesPage() {
         </div>
       </div>
 
+      {/* ── Stat Cards ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--gold-dim)" }}>
+            <Building2 className="h-5 w-5" style={{ color: "#8A6222" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Total Enterprises</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "#8A6222" }}>{totalEnterprises}</p>
+            <p className="text-xs text-slate-400 mt-0.5">All company accounts</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--sage-dim)" }}>
+            <CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Active Enterprises</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--sage-dark, #3E6A44)" }}>{activeEnterprises}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Currently active accounts</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--rust-dim)" }}>
+            <Users className="h-5 w-5" style={{ color: "var(--rust)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Enterprise Users</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--rust)" }}>{totalEntUsers}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Across all companies</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(23,50,41,.08)" }}>
+            <Send className="h-5 w-5" style={{ color: "var(--forest)" }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Pending Invitations</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--forest)" }}>{pendingEntInvs}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Awaiting acceptance</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Enterprise Admins ─────────────────────────────────────────── */}
       {activeTab === "Enterprise Admins" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <p className="text-sm font-semibold text-slate-800">Enterprise Admins</p>
-            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+              style={{ background: "var(--gold)", color: "#3C2400" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            >
               <Plus className="h-4 w-4" /> Add Enterprise
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search enterprises..." className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50" />
+              <input
+                placeholder="Search enterprises..."
+                className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:outline-none transition-colors"
+                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
+                onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+              />
             </div>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
+              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+            >
               <option>All Statuses</option><option>Active</option><option>Suspended</option><option>Inactive</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
+              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+            >
               <option>All Plans</option><option>Pro</option><option>Business</option><option>Enterprise</option>
             </select>
           </div>
@@ -173,11 +292,14 @@ export default function EnterprisesPage() {
                 </tr>
               </thead>
               <tbody>
-                {ENTERPRISES.slice((entPage-1)*ENT_PER_PAGE, entPage*ENT_PER_PAGE).map((e) => (
+                {ENTERPRISES.slice((entPage - 1) * ENT_PER_PAGE, entPage * ENT_PER_PAGE).map((e) => (
                   <tr key={e.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedEnterprise(e)}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
+                          style={{ background: "var(--gold-dim)", color: "#8A6222" }}
+                        >
                           {e.initials}
                         </div>
                         <div>
@@ -195,9 +317,34 @@ export default function EnterprisesPage() {
                     <td className="px-4 py-3 text-slate-500">{e.created}</td>
                     <td className="px-4 py-3" onClick={(ev) => ev.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
-                        <button type="button" onClick={() => setSelectedEnterprise(e)} className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">View</button>
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Edit</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Suspend</button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedEnterprise(e)}
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+                          onMouseLeave={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+                          onMouseLeave={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
+                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
+                          onMouseLeave={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Suspend
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -209,6 +356,7 @@ export default function EnterprisesPage() {
         </div>
       )}
 
+      {/* ── Enterprise Users ──────────────────────────────────────────── */}
       {activeTab === "Enterprise Users" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -217,15 +365,32 @@ export default function EnterprisesPage() {
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search users..." className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50" />
+              <input
+                placeholder="Search users..."
+                className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:outline-none transition-colors"
+                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
+                onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+              />
             </div>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
+              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+            >
               <option>All Companies</option><option>Nexus Technologies</option><option>Acme Corp</option><option>Vantage Capital</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
+              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+            >
               <option>All Roles</option><option>Admin</option><option>Member</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select
+              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
+              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
+              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+            >
               <option>All Statuses</option><option>Active</option><option>Suspended</option><option>Inactive</option>
             </select>
           </div>
@@ -245,11 +410,16 @@ export default function EnterprisesPage() {
                 </tr>
               </thead>
               <tbody>
-                {ENT_USERS.slice((euPage-1)*ENT_PER_PAGE, euPage*ENT_PER_PAGE).map((u, i) => (
+                {ENT_USERS.slice((euPage - 1) * ENT_PER_PAGE, euPage * ENT_PER_PAGE).map((u, i) => (
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">{u.initials}</div>
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                          style={{ background: "var(--gold-dim)", color: "#8A6222" }}
+                        >
+                          {u.initials}
+                        </div>
                         <span className="font-medium text-slate-800">{u.name}</span>
                       </div>
                     </td>
@@ -262,8 +432,24 @@ export default function EnterprisesPage() {
                     <td className="px-4 py-3 text-slate-600">{u.reveals}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">View</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Suspend</button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          View
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Suspend
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -275,6 +461,7 @@ export default function EnterprisesPage() {
         </div>
       )}
 
+      {/* ── Invitations ──────────────────────────────────────────────── */}
       {activeTab === "Invitations" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -282,7 +469,13 @@ export default function EnterprisesPage() {
               <p className="text-sm font-semibold text-slate-800">Enterprise Invitations</p>
               <p className="text-xs text-slate-400 mt-0.5">Pending and sent invitations for enterprise team members</p>
             </div>
-            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-violet-700 transition-colors">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+              style={{ background: "var(--gold)", color: "#3C2400" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
+            >
               <Send className="h-4 w-4" /> Send Invitation
             </button>
           </div>
@@ -301,7 +494,7 @@ export default function EnterprisesPage() {
                 </tr>
               </thead>
               <tbody>
-                {ENT_INVITATIONS.slice((invPage2-1)*ENT_PER_PAGE, invPage2*ENT_PER_PAGE).map((inv, i) => (
+                {ENT_INVITATIONS.slice((invPage2 - 1) * ENT_PER_PAGE, invPage2 * ENT_PER_PAGE).map((inv, i) => (
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-800">{inv.email}</td>
                     <td className="px-4 py-3 text-slate-600">{inv.role}</td>
@@ -312,8 +505,24 @@ export default function EnterprisesPage() {
                     <td className="px-4 py-3"><Badge status={inv.status} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
-                        <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Resend</button>
-                        <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Cancel</button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Resend
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Cancel
+                        </button>
                       </div>
                     </td>
                   </tr>

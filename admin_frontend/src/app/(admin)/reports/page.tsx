@@ -66,8 +66,9 @@ export default function ReportsPage() {
               type="button"
               onClick={() => setActiveTab(tab)}
               className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"
+                activeTab === tab ? "border-b-2 text-[#173229]" : "text-slate-500 hover:text-slate-700"
               }`}
+              style={activeTab === tab ? { borderColor: "#173229" } : {}}
             >
               {tab}
             </button>
@@ -78,13 +79,13 @@ export default function ReportsPage() {
       {activeTab === "Search Activity" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>All Time</option><option>Today</option><option>This Week</option><option>This Month</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>All Search Types</option><option>People Search</option><option>Company Search</option>
             </select>
           </div>
@@ -106,7 +107,12 @@ export default function ReportsPage() {
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${row.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
+                        style={row.type === "Enterprise"
+                          ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
+                          : { background: "rgba(23,50,41,.07)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }}
+                      >
                         {row.type}
                       </span>
                     </td>
@@ -126,10 +132,10 @@ export default function ReportsPage() {
       {activeTab === "Email Reveals" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>All Time</option><option>Today</option><option>This Week</option><option>This Month</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
             </select>
           </div>
@@ -149,7 +155,12 @@ export default function ReportsPage() {
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${row.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
+                        style={row.type === "Enterprise"
+                          ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
+                          : { background: "rgba(23,50,41,.07)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }}
+                      >
                         {row.type}
                       </span>
                     </td>
@@ -167,13 +178,13 @@ export default function ReportsPage() {
       {activeTab === "Login History" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>All Time</option><option>Today</option><option>This Week</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>All Account Types</option><option>Individual</option><option>Enterprise</option><option>Admin</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>All Statuses</option><option>Successful</option><option>Failed</option>
             </select>
           </div>
@@ -190,16 +201,26 @@ export default function ReportsPage() {
               </thead>
               <tbody>
                 {LOGIN_HISTORY.map((row, i) => (
-                  <tr key={i} className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${row.status === "failed" ? "bg-red-50/30" : ""}`}>
+                  <tr
+                    key={i}
+                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                    style={row.status === "failed" ? { background: "rgba(177,81,105,.04)" } : {}}
+                  >
                     <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
                     <td className="px-4 py-3 text-slate-600">{row.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        row.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200"
-                          : row.type === "Admin" ? "bg-blue-50 text-blue-700 border border-blue-200"
-                          : row.type === "—" ? "bg-red-50 text-red-700 border border-red-200"
-                          : "bg-slate-100 text-slate-600 border border-slate-200"
-                      }`}>
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
+                        style={
+                          row.type === "Enterprise"
+                            ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
+                            : row.type === "Admin"
+                            ? { background: "rgba(23,50,41,.07)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }
+                            : row.type === "—"
+                            ? { background: "#F5E1E6", color: "#B15169", borderColor: "#E0C0C8" }
+                            : { background: "#F1F5F9", color: "#64748B", borderColor: "#CBD5E1" }
+                        }
+                      >
                         {row.type}
                       </span>
                     </td>

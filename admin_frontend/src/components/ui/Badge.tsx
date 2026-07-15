@@ -35,8 +35,8 @@ const STATUS_MAP: Record<string, string> = {
   weak:       "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
   scheduled:  "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
   refunded:   "bg-[#F6ECD4] text-[#93691F] ring-1 ring-[#CE9A3E]/25",
-  // blue — in progress (kept for Individual accent)
-  in_progress: "bg-blue-50 text-blue-700 ring-1 ring-blue-600/20",
+  // forest — in progress
+  in_progress: "bg-[rgba(23,50,41,.07)] text-[#173229] ring-1 ring-[rgba(23,50,41,.20)]",
 };
 
 export default function Badge({ status, label }: BadgeProps) {

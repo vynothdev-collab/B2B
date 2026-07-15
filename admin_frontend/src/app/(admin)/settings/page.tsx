@@ -8,7 +8,10 @@ const TABS = ["General Settings", "Email & Notifications", "Admin Accounts"];
 
 function Toggle({ on = false }: { on?: boolean }) {
   return (
-    <div className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${on ? "bg-blue-600" : "bg-slate-200"}`}>
+    <div
+      className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors"
+      style={{ background: on ? "#173229" : "#CBD5E1" }}
+    >
       <span className={`inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : "translate-x-0.5"}`} />
     </div>
   );
@@ -45,8 +48,9 @@ export default function SettingsPage() {
               type="button"
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"
+                activeTab === tab ? "border-b-2 text-[#173229]" : "text-slate-500 hover:text-slate-700"
               }`}
+              style={activeTab === tab ? { borderColor: "#173229" } : {}}
             >
               {tab}
             </button>
@@ -64,7 +68,7 @@ export default function SettingsPage() {
             </div>
             <input
               defaultValue="LeadsBuddy"
-              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50"
+              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
             />
           </div>
 
@@ -77,7 +81,7 @@ export default function SettingsPage() {
             <input
               type="email"
               defaultValue="support@leadsbuddy.ai"
-              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50"
+              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
             />
           </div>
 
@@ -87,7 +91,7 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold text-slate-800">Default Plan for New Sign-ups</p>
               <p className="text-xs text-slate-500 mt-0.5">Plan assigned automatically on new registration.</p>
             </div>
-            <select className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
               <option>Free</option>
               <option>Pro</option>
               <option>Business</option>
@@ -114,7 +118,7 @@ export default function SettingsPage() {
 
           {/* Save */}
           <div className="flex justify-end px-6 py-4">
-            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors" style={{ background: "#173229", color: "#EFEAD9" }}>
               <Save className="h-4 w-4" /> Save Settings
             </button>
           </div>
@@ -134,7 +138,7 @@ export default function SettingsPage() {
                       <label className="text-xs text-slate-500">{notif.extra.label}:</label>
                       <input
                         defaultValue={notif.extra.value}
-                        className="w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50"
+                        className="w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-800 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
                       />
                     </div>
                   )}
@@ -144,7 +148,7 @@ export default function SettingsPage() {
             </div>
           ))}
           <div className="flex justify-end px-6 py-4">
-            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors" style={{ background: "#173229", color: "#EFEAD9" }}>
               <Save className="h-4 w-4" /> Save Settings
             </button>
           </div>
@@ -155,7 +159,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <p className="text-sm text-slate-600">Manage admin users and their access levels.</p>
-            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors" style={{ background: "#173229", color: "#EFEAD9" }}>
               <Plus className="h-4 w-4" /> Add Admin
             </button>
           </div>
@@ -176,30 +180,34 @@ export default function SettingsPage() {
                 {ADMIN_ACCOUNTS.map((admin, i) => (
                   <tr
                     key={i}
-                    className={`border-b border-slate-100 hover:bg-slate-50 transition-colors ${admin.isYou ? "bg-blue-50/40" : ""}`}
+                    className={`border-b border-slate-100 hover:bg-slate-50 transition-colors`}
+                    style={admin.isYou ? { background: "rgba(23,50,41,.04)" } : {}}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ background: "rgba(23,50,41,.10)", color: "#173229" }}>
                           {admin.initials}
                         </div>
                         <div>
                           <p className="font-medium text-slate-800">{admin.name}</p>
                           {admin.isYou && (
-                            <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-600">You</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "#173229" }}>You</span>
                           )}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-600">{admin.email}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border ${
-                        admin.level === "Super Admin"
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
-                          : admin.level === "Admin"
-                          ? "bg-violet-50 text-violet-700 border-violet-200"
-                          : "bg-slate-100 text-slate-600 border-slate-200"
-                      }`}>
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
+                        style={
+                          admin.level === "Super Admin"
+                            ? { background: "rgba(23,50,41,.08)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }
+                            : admin.level === "Admin"
+                            ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
+                            : { background: "#F1F5F9", color: "#64748B", borderColor: "#CBD5E1" }
+                        }
+                      >
                         {admin.level}
                       </span>
                     </td>
@@ -210,7 +218,7 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-1.5">
                         <button type="button" className="rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">Edit</button>
                         {!admin.isYou && (
-                          <button type="button" className="rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">Deactivate</button>
+                          <button type="button" className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors" style={{ borderColor: "#E0C0C8", color: "#B15169" }} onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(177,81,105,.07)"} onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ""}>Deactivate</button>
                         )}
                       </div>
                     </td>

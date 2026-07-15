@@ -39,19 +39,19 @@ export const CATEGORIES = [
 ];
 
 export const REPORT_CARDS = [
-  { label: "Submitted This Month", value: "89", color: "text-slate-900" },
-  { label: "Resolved This Month", value: "71", color: "text-emerald-700" },
-  { label: "Avg First Response", value: "2.4h", color: "text-blue-700" },
-  { label: "Avg Resolution Time", value: "18h", color: "text-slate-900" },
-  { label: "Currently Open", value: "14", color: "text-amber-700" },
-  { label: "Urgent & Unresolved", value: "3", color: "text-red-700", highlight: true },
+  { label: "Submitted This Month", value: "89", color: "var(--ink)" },
+  { label: "Resolved This Month", value: "71", color: "var(--sage-dark, #3E6A44)" },
+  { label: "Avg First Response", value: "2.4h", color: "var(--forest)" },
+  { label: "Avg Resolution Time", value: "18h", color: "var(--ink)" },
+  { label: "Currently Open", value: "14", color: "#8A6222" },
+  { label: "Urgent & Unresolved", value: "3", color: "var(--rose)", highlight: true },
 ];
 
 export const CATEGORY_STATS = [
-  { name: "Technical", count: 31, color: "bg-red-500" },
-  { name: "Billing", count: 24, color: "bg-amber-500" },
-  { name: "Account", count: 14, color: "bg-blue-500" },
-  { name: "Plans & Credits", count: 10, color: "bg-violet-500" },
-  { name: "Feature Request", count: 7, color: "bg-emerald-500" },
-  { name: "Other", count: 3, color: "bg-slate-400" },
+  { name: "Technical", count: 31, color: "var(--rose)" },
+  { name: "Billing", count: 24, color: "var(--gold)" },
+  { name: "Account", count: 14, color: "var(--forest)" },
+  { name: "Plans & Credits", count: 10, color: "#8A6222" },
+  { name: "Feature Request", count: 7, color: "var(--sage-dark, #3E6A44)" },
+  { name: "Other", count: 3, color: "var(--ink-faint)" },
 ];
