@@ -4,11 +4,14 @@ import { clearTokens, storeTokens, updateAccessToken } from "./tokens";
 export type { };
 export { storeTokens, updateAccessToken, clearTokens };
 
+export type UserRole = "individual" | "enterprise_admin" | "enterprise_user" | string;
+
 export interface UserInfo {
   id: string;
   email: string;
   name: string;
-  role: string;
+  role: UserRole;
+  enterprise_id?: string | null;
 }
 
 export interface AuthResponse {

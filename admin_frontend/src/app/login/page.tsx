@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { Eye, EyeOff, ShieldCheck, BarChart3, Users, Building2, MessageSquare } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, ShieldCheck, BarChart3, Users, Building2, MessageSquare, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/components/ui/Toast";
 
@@ -25,8 +26,13 @@ export default function AdminLoginPage() {
   const emailMessage  = emailMissing ? "Email address is required." : emailBadFormat ? "Please enter a valid email address." : "";
   const passwordError = submitted && !password;
 
-  const { login } = useAuth();
+  const { login, user, isLoading } = useAuth();
   const toast = useToast();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && user) router.replace("/dashboard");
+  }, [isLoading, user, router]);
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,6 +60,19 @@ export default function AdminLoginPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center" style={{ background: "#FFFDF6" }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: "#CE9A3E" }} />
+          <p className="text-xs font-medium" style={{ color: "#6E9480" }}>
+            {user ? "Redirecting…" : "Checking session…"}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -233,7 +252,14 @@ export default function AdminLoginPage() {
               onMouseEnter={(e) => { if (!isSubmitting) (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
             >
-              {isSubmitting ? "Signing in…" : "Sign in to Admin Portal"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Signing in…</span>
+                </>
+              ) : (
+                "Sign in to Admin Portal"
+              )}
             </button>
           </form>
 

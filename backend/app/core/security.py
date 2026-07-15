@@ -148,3 +148,45 @@ async def get_current_user(
         )
 
     return user
+
+
+# ── Role-based guards ─────────────────────────────────────────────────────────
+
+SUPER_ADMIN_ROLES = {"super_admin", "SUPER_ADMIN"}
+
+
+async def require_super_admin(
+    admin: "AdminUser" = Depends(get_current_admin),
+) -> "AdminUser":
+    if admin.role not in SUPER_ADMIN_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin privileges required",
+        )
+    return admin
+
+
+async def require_enterprise_admin(
+    user: "User" = Depends(get_current_user),
+) -> "User":
+    from app.models.user import UserRole
+
+    if user.role != UserRole.ENTERPRISE_ADMIN or not user.enterprise_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Enterprise admin privileges required",
+        )
+    return user
+
+
+async def require_enterprise_member(
+    user: "User" = Depends(get_current_user),
+) -> "User":
+    from app.models.user import UserRole
+
+    if user.role not in {UserRole.ENTERPRISE_ADMIN, UserRole.ENTERPRISE_USER} or not user.enterprise_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Enterprise membership required",
+        )
+    return user

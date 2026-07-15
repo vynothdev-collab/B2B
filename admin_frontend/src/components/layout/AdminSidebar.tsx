@@ -6,6 +6,11 @@ import {
   LayoutDashboard, Users, Building2, CreditCard, Coins,
   Tag, Receipt, MessageSquare, Ticket, BarChart3, Settings, LogOut, Activity,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+
+function initials(name: string): string {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((s) => s[0]!.toUpperCase()).join("") || "SA";
+}
 
 const NAV_GROUPS = [
   {
@@ -43,6 +48,9 @@ const NAV_GROUPS = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const displayName = user?.name ?? "Super Admin";
+  const displayRole = (user?.role ?? "SUPER_ADMIN").toUpperCase();
 
   return (
     <aside
@@ -178,17 +186,18 @@ export default function AdminSidebar() {
               fontFamily: "var(--font-fraunces)",
             }}
           >
-            SA
+            {initials(displayName)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="truncate text-[12.5px] font-semibold leading-tight" style={{ color: "#FFFDF6" }}>Super Admin</p>
+            <p className="truncate text-[12.5px] font-semibold leading-tight" style={{ color: "#FFFDF6" }}>{displayName}</p>
             <p className="truncate text-[10px] leading-tight mt-0.5" style={{ color: "#4E7060", fontFamily: "var(--font-mono)" }}>
-              SUPER_ADMIN
+              {displayRole}
             </p>
           </div>
           <button
             type="button"
             title="Logout"
+            onClick={() => { void logout(); }}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] transition-colors"
             style={{ color: "#4E7060" }}
             onMouseEnter={(e) => {

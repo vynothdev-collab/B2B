@@ -47,6 +47,14 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(
             _add_column_if_missing, "list_items", "added_at", "TIMESTAMPTZ NOT NULL DEFAULT NOW()"
         )
+        # users table — enterprise multi-tenancy
+        await conn.run_sync(
+            _add_column_if_missing, "users", "phone", "VARCHAR(50)"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "enterprise_id", "VARCHAR(36) REFERENCES enterprises(id)"
+        )
+        await conn.execute(text("UPDATE users SET role='individual' WHERE role='user'"))
     yield
 
 

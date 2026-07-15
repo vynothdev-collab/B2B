@@ -15,6 +15,7 @@ class UserResponse(BaseModel):
     name: str
     role: str
     is_active: bool
+    enterprise_id: str | None = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -37,6 +38,7 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse
         name=current_user.name,
         role=current_user.role,
         is_active=current_user.is_active,
+        enterprise_id=current_user.enterprise_id,
     )
 
 

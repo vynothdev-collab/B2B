@@ -1,20 +1,61 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Plus, Send, Building2, CreditCard, Users, Globe, Phone, Mail, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import {
+  Search,
+  Plus,
+  UserPlus,
+  Building2,
+  CreditCard,
+  Users,
+  Globe,
+  Phone,
+  Mail,
+  ShieldCheck,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
-import { ENTERPRISES, ENT_USERS, ENT_INVITATIONS, type Enterprise } from "@/data/enterprises";
+import { useToast } from "@/components/ui/Toast";
+import CreateEnterpriseModal from "@/components/modals/CreateEnterpriseModal";
+import CreateEnterpriseAdminModal from "@/components/modals/CreateEnterpriseAdminModal";
+import { listEnterprises, updateEnterprise, type Enterprise } from "@/services/enterprises";
+import { listCustomers, updateCustomerStatus, type Customer } from "@/services/customers";
 
-const TABS = ["Enterprise Admins", "Enterprise Users", "Invitations"];
+const TABS = ["Enterprise Admins", "Enterprise Users"] as const;
+type Tab = (typeof TABS)[number];
 
-const totalEnterprises  = ENTERPRISES.length;
-const activeEnterprises = ENTERPRISES.filter((e) => e.status === "active").length;
-const totalEntUsers     = ENTERPRISES.reduce((sum, e) => sum + e.users, 0);
-const pendingEntInvs    = ENT_INVITATIONS.filter((i) => i.status === "pending").length;
+const PER_PAGE = 8;
 
-function EnterpriseDetail({ ent }: { ent: Enterprise }) {
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]!.toUpperCase())
+    .join("");
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function EnterpriseDetail({
+  ent,
+  onAddAdmin,
+  onToggleStatus,
+  busy,
+}: {
+  ent: Enterprise;
+  onAddAdmin: () => void;
+  onToggleStatus: () => void;
+  busy: boolean;
+}) {
   return (
     <div className="divide-y divide-slate-100">
       <div className="px-5 py-4">
@@ -23,45 +64,53 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
             className="flex h-14 w-14 items-center justify-center rounded-xl text-lg font-bold"
             style={{ background: "var(--gold-dim)", color: "#8A6222" }}
           >
-            {ent.initials}
+            {initials(ent.name)}
           </div>
           <div>
             <h3 className="text-base font-semibold text-slate-900">{ent.name}</h3>
-            <p className="text-sm text-slate-500">{ent.industry}</p>
+            <p className="text-sm text-slate-500">{ent.industry ?? "—"}</p>
             <div className="mt-1"><Badge status={ent.status} /></div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
-          <div><p className="text-xs text-slate-400 mb-0.5">Country</p><p className="text-slate-700 font-medium">{ent.country}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Company Size</p><p className="text-slate-700 font-medium">{ent.size}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Website</p><p className="text-slate-700 font-medium truncate">{ent.website}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Created</p><p className="text-slate-700 font-medium">{ent.created}</p></div>
+          <div><p className="text-xs text-slate-400 mb-0.5">Country</p><p className="text-slate-700 font-medium">{ent.country ?? "—"}</p></div>
+          <div><p className="text-xs text-slate-400 mb-0.5">Company Size</p><p className="text-slate-700 font-medium">{ent.size ?? "—"}</p></div>
+          <div><p className="text-xs text-slate-400 mb-0.5">Website</p><p className="text-slate-700 font-medium truncate">{ent.website ?? "—"}</p></div>
+          <div><p className="text-xs text-slate-400 mb-0.5">Created</p><p className="text-slate-700 font-medium">{formatDate(ent.created_at)}</p></div>
         </div>
       </div>
 
       <div className="px-5 py-4">
         <div className="flex items-center gap-2 mb-3">
           <Users className="h-4 w-4 text-slate-400" />
-          <h4 className="text-sm font-semibold text-slate-700">Admin Contact</h4>
+          <h4 className="text-sm font-semibold text-slate-700">Primary Admin</h4>
         </div>
-        <div className="grid grid-cols-1 gap-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-slate-300" />
-            <span className="font-medium text-slate-800">{ent.admin}</span>
+        {ent.admin_name ? (
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <Users className="h-3.5 w-3.5 text-slate-300" />
+              <span className="font-medium text-slate-800">{ent.admin_name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Mail className="h-3.5 w-3.5 text-slate-300" />
+              <span className="text-slate-600">{ent.admin_email}</span>
+            </div>
+            {ent.phone && (
+              <div className="flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5 text-slate-300" />
+                <span className="text-slate-600">{ent.phone}</span>
+              </div>
+            )}
+            {ent.website && (
+              <div className="flex items-center gap-2">
+                <Globe className="h-3.5 w-3.5 text-slate-300" />
+                <span className="text-slate-600">{ent.website}</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <Mail className="h-3.5 w-3.5 text-slate-300" />
-            <span className="text-slate-600">{ent.email}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Phone className="h-3.5 w-3.5 text-slate-300" />
-            <span className="text-slate-600">{ent.phone}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Globe className="h-3.5 w-3.5 text-slate-300" />
-            <span className="text-slate-600">{ent.website}</span>
-          </div>
-        </div>
+        ) : (
+          <p className="text-sm text-slate-400">No enterprise admin assigned yet.</p>
+        )}
       </div>
 
       <div className="px-5 py-4">
@@ -71,13 +120,9 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div><p className="text-xs text-slate-400 mb-0.5">Current Plan</p><p className="font-semibold text-slate-900">{ent.plan}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Total Users</p><p className="font-semibold text-slate-900">{ent.users}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Plan Start</p><p className="text-slate-700">{ent.planStart}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Plan Expiry</p><p className="text-slate-700">{ent.planExpiry}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Monthly Limit</p><p className="text-slate-700">{ent.monthlyLimit.toLocaleString()}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Credits Used</p><p className="text-slate-700">{ent.credits.toLocaleString()}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Searches This Month</p><p className="text-slate-700">{ent.searchesThisMonth.toLocaleString()}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Reveals This Month</p><p className="text-slate-700">{ent.revealsThisMonth.toLocaleString()}</p></div>
+          <div><p className="text-xs text-slate-400 mb-0.5">Total Users</p><p className="font-semibold text-slate-900">{ent.user_count}</p></div>
+          <div><p className="text-xs text-slate-400 mb-0.5">Credits</p><p className="text-slate-700">{ent.credits.toLocaleString()}</p></div>
+          <div><p className="text-xs text-slate-400 mb-0.5">Monthly Limit</p><p className="text-slate-700">{ent.monthly_limit.toLocaleString()}</p></div>
         </div>
       </div>
 
@@ -99,60 +144,25 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+            onClick={onAddAdmin}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60"
             style={{ background: "var(--gold)", color: "#3C2400" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
           >
-            Edit Profile
+            <UserPlus className="h-4 w-4" /> Add Admin
           </button>
           <button
             type="button"
-            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-            style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+            onClick={onToggleStatus}
+            disabled={busy}
+            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
+            style={
+              ent.status === "active"
+                ? { borderColor: "var(--gold)", color: "#8A6222" }
+                : { borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)" }
+            }
           >
-            Change Plan
-          </button>
-          <button
-            type="button"
-            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-            style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-          >
-            Add Credits
-          </button>
-          {ent.status === "active" ? (
-            <button
-              type="button"
-              className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-              style={{ borderColor: "var(--gold)", color: "#8A6222", background: "transparent" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--gold-dim)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-            >
-              Suspend
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-              style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-            >
-              Activate
-            </button>
-          )}
-          <button
-            type="button"
-            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-            style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-          >
-            Delete Account
+            {ent.status === "active" ? "Suspend" : "Activate"}
           </button>
         </div>
       </div>
@@ -161,16 +171,169 @@ function EnterpriseDetail({ ent }: { ent: Enterprise }) {
 }
 
 export default function EnterprisesPage() {
-  const [activeTab, setActiveTab] = useState("Enterprise Admins");
-  const [selectedEnterprise, setSelectedEnterprise] = useState<Enterprise | null>(null);
-  const ENT_PER_PAGE = 8;
+  const toast = useToast();
+  const [activeTab, setActiveTab] = useState<Tab>("Enterprise Admins");
+
+  const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
+  const [entLoading, setEntLoading] = useState(true);
+  const [entQuery, setEntQuery] = useState("");
+  const [entStatus, setEntStatus] = useState<"all" | "active" | "suspended" | "inactive">("all");
+  const [selected, setSelected] = useState<Enterprise | null>(null);
   const [entPage, setEntPage] = useState(1);
+
+  const [entUsers, setEntUsers] = useState<Customer[]>([]);
+  const [euLoading, setEuLoading] = useState(false);
+  const [euQuery, setEuQuery] = useState("");
+  const [euEnterpriseFilter, setEuEnterpriseFilter] = useState<string>("all");
   const [euPage, setEuPage] = useState(1);
-  const [invPage2, setInvPage2] = useState(1);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [busyEntId, setBusyEntId] = useState<string | null>(null);
+
+  const loadEnterprises = useCallback(async (signal?: AbortSignal) => {
+    setEntLoading(true);
+    try {
+      const list = await listEnterprises(signal);
+      setEnterprises(list);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+      const msg =
+        axios.isAxiosError(err) && typeof err.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Could not load enterprises.";
+      toast.error("Load failed", msg);
+    } finally {
+      if (!signal?.aborted) setEntLoading(false);
+    }
+  }, [toast]);
+
+  const loadEnterpriseUsers = useCallback(async (signal?: AbortSignal) => {
+    setEuLoading(true);
+    try {
+      const [users, admins] = await Promise.all([
+        listCustomers({ role: "enterprise_user" }, signal),
+        listCustomers({ role: "enterprise_admin" }, signal),
+      ]);
+      setEntUsers([...admins, ...users]);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+      const msg =
+        axios.isAxiosError(err) && typeof err.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Could not load enterprise users.";
+      toast.error("Load failed", msg);
+    } finally {
+      if (!signal?.aborted) setEuLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadEnterprises(controller.signal);
+    return () => controller.abort();
+  }, [loadEnterprises]);
+
+  useEffect(() => {
+    if (activeTab !== "Enterprise Users") return;
+    const controller = new AbortController();
+    void loadEnterpriseUsers(controller.signal);
+    return () => controller.abort();
+  }, [activeTab, loadEnterpriseUsers]);
+
+  const filteredEnterprises = useMemo(() => {
+    const q = entQuery.trim().toLowerCase();
+    return enterprises.filter((e) => {
+      if (entStatus !== "all" && e.status !== entStatus) return false;
+      if (!q) return true;
+      return (
+        e.name.toLowerCase().includes(q) ||
+        (e.industry ?? "").toLowerCase().includes(q) ||
+        (e.admin_email ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [enterprises, entQuery, entStatus]);
+
+  const filteredEntUsers = useMemo(() => {
+    const q = euQuery.trim().toLowerCase();
+    return entUsers.filter((u) => {
+      if (euEnterpriseFilter !== "all" && u.enterprise_id !== euEnterpriseFilter) return false;
+      if (!q) return true;
+      return (
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.enterprise_name ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [entUsers, euQuery, euEnterpriseFilter]);
+
+  useEffect(() => {
+    setEntPage(1);
+  }, [entQuery, entStatus]);
+  useEffect(() => {
+    setEuPage(1);
+  }, [euQuery, euEnterpriseFilter]);
+
+  const totalEnterprises = enterprises.length;
+  const activeEnterprises = enterprises.filter((e) => e.status === "active").length;
+  const totalEntUsers = enterprises.reduce((sum, e) => sum + e.user_count, 0);
+  const totalCredits = enterprises.reduce((sum, e) => sum + e.credits, 0);
+
+  const patchEnterprise = (updated: Enterprise) => {
+    setEnterprises((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+    setSelected((cur) => (cur && cur.id === updated.id ? updated : cur));
+  };
+
+  const handleToggleEntStatus = async (e: Enterprise) => {
+    const next = e.status === "active" ? "suspended" : "active";
+    setBusyEntId(e.id);
+    try {
+      const updated = await updateEnterprise(e.id, { status: next });
+      patchEnterprise(updated);
+      toast.success(
+        next === "active" ? "Enterprise activated" : "Enterprise suspended",
+        `${updated.name} is now ${next}.`,
+      );
+    } catch (err: unknown) {
+      const msg =
+        axios.isAxiosError(err) && typeof err.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Could not update enterprise.";
+      toast.error("Update failed", msg);
+    } finally {
+      setBusyEntId(null);
+    }
+  };
+
+  const [euBusyId, setEuBusyId] = useState<string | null>(null);
+  const handleToggleEuStatus = async (u: Customer) => {
+    setEuBusyId(u.id);
+    try {
+      const updated = await updateCustomerStatus(u.id, !u.is_active);
+      setEntUsers((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+      toast.success(
+        updated.is_active ? "User activated" : "User suspended",
+        `${updated.name} is now ${updated.is_active ? "active" : "suspended"}.`,
+      );
+    } catch (err: unknown) {
+      const msg =
+        axios.isAxiosError(err) && typeof err.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Could not update user status.";
+      toast.error("Update failed", msg);
+    } finally {
+      setEuBusyId(null);
+    }
+  };
+
+  const pagedEnterprises = filteredEnterprises.slice(
+    (entPage - 1) * PER_PAGE,
+    entPage * PER_PAGE,
+  );
+  const pagedEntUsers = filteredEntUsers.slice((euPage - 1) * PER_PAGE, euPage * PER_PAGE);
 
   return (
     <div className="space-y-5">
-
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
       <div className="border-b border-slate-200">
         <div className="flex gap-0">
@@ -194,59 +357,29 @@ export default function EnterprisesPage() {
 
       {/* ── Stat Cards ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--gold-dim)" }}>
-            <Building2 className="h-5 w-5" style={{ color: "#8A6222" }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Total Enterprises</p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "#8A6222" }}>{totalEnterprises}</p>
-            <p className="text-xs text-slate-400 mt-0.5">All company accounts</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--sage-dim)" }}>
-            <CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Active Enterprises</p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--sage-dark, #3E6A44)" }}>{activeEnterprises}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Currently active accounts</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--rust-dim)" }}>
-            <Users className="h-5 w-5" style={{ color: "var(--rust)" }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Enterprise Users</p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--rust)" }}>{totalEntUsers}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Across all companies</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "rgba(23,50,41,.08)" }}>
-            <Send className="h-5 w-5" style={{ color: "var(--forest)" }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Pending Invitations</p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--forest)" }}>{pendingEntInvs}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Awaiting acceptance</p>
-          </div>
-        </div>
+        <StatCard label="Total Enterprises" value={totalEnterprises} hint="All company accounts" icon={<Building2 className="h-5 w-5" style={{ color: "#8A6222" }} />} bg="var(--gold-dim)" color="#8A6222" />
+        <StatCard label="Active Enterprises" value={activeEnterprises} hint="Currently active" icon={<CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />} bg="var(--sage-dim)" color="var(--sage-dark, #3E6A44)" />
+        <StatCard label="Enterprise Users" value={totalEntUsers} hint="Across all companies" icon={<Users className="h-5 w-5" style={{ color: "var(--rust)" }} />} bg="var(--rust-dim)" color="var(--rust)" />
+        <StatCard label="Total Credits" value={totalCredits} hint="Provisioned to enterprises" icon={<CreditCard className="h-5 w-5" style={{ color: "var(--forest)" }} />} bg="rgba(23,50,41,.08)" color="var(--forest)" />
       </div>
 
-      {/* ── Enterprise Admins ─────────────────────────────────────────── */}
+      {/* ── Enterprise Admins Tab ─────────────────────────────────────── */}
       {activeTab === "Enterprise Admins" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <p className="text-sm font-semibold text-slate-800">Enterprise Admins</p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-semibold text-slate-800">Enterprises</p>
+              {entLoading && (
+                <span className="flex items-center gap-2 text-xs text-slate-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> loading…
+                </span>
+              )}
+            </div>
             <button
               type="button"
+              onClick={() => setCreateOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
               style={{ background: "var(--gold)", color: "#3C2400" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
             >
               <Plus className="h-4 w-4" /> Add Enterprise
             </button>
@@ -255,25 +388,21 @@ export default function EnterprisesPage() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
+                value={entQuery}
+                onChange={(e) => setEntQuery(e.target.value)}
                 placeholder="Search enterprises..."
                 className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:outline-none transition-colors"
-                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
-                onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
               />
             </div>
             <select
+              value={entStatus}
+              onChange={(e) => setEntStatus(e.target.value as typeof entStatus)}
               className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
-              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
-              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
             >
-              <option>All Statuses</option><option>Active</option><option>Suspended</option><option>Inactive</option>
-            </select>
-            <select
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
-              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
-              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
-            >
-              <option>All Plans</option><option>Pro</option><option>Business</option><option>Enterprise</option>
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
           <div className="overflow-x-auto">
@@ -286,112 +415,123 @@ export default function EnterprisesPage() {
                   <th className="px-4 py-2.5 text-left">Status</th>
                   <th className="px-4 py-2.5 text-left">Plan</th>
                   <th className="px-4 py-2.5 text-left">Users</th>
-                  <th className="px-4 py-2.5 text-left">Credits Used</th>
+                  <th className="px-4 py-2.5 text-left">Credits</th>
                   <th className="px-4 py-2.5 text-left">Created</th>
                   <th className="px-4 py-2.5 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {ENTERPRISES.slice((entPage - 1) * ENT_PER_PAGE, entPage * ENT_PER_PAGE).map((e) => (
-                  <tr key={e.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => setSelectedEnterprise(e)}>
+                {pagedEnterprises.map((e) => (
+                  <tr
+                    key={e.id}
+                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+                    onClick={() => setSelected(e)}
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div
                           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
                           style={{ background: "var(--gold-dim)", color: "#8A6222" }}
                         >
-                          {e.initials}
+                          {initials(e.name)}
                         </div>
                         <div>
                           <p className="font-medium text-slate-800">{e.name}</p>
-                          <p className="text-xs text-slate-400">{e.email}</p>
+                          <p className="text-xs text-slate-400">{e.admin_email ?? "—"}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{e.admin}</td>
-                    <td className="px-4 py-3 text-slate-500">{e.industry}</td>
+                    <td className="px-4 py-3 text-slate-600">{e.admin_name ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-500">{e.industry ?? "—"}</td>
                     <td className="px-4 py-3"><Badge status={e.status} /></td>
                     <td className="px-4 py-3 font-medium text-slate-700">{e.plan}</td>
-                    <td className="px-4 py-3 text-slate-600">{e.users}</td>
+                    <td className="px-4 py-3 text-slate-600">{e.user_count}</td>
                     <td className="px-4 py-3 text-slate-600">{e.credits.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-slate-500">{e.created}</td>
+                    <td className="px-4 py-3 text-slate-500">{formatDate(e.created_at)}</td>
                     <td className="px-4 py-3" onClick={(ev) => ev.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => setSelectedEnterprise(e)}
+                          onClick={() => {
+                            setSelected(e);
+                            setAdminModalOpen(true);
+                          }}
                           className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
                           style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
-                          onMouseLeave={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                         >
-                          View
+                          Add Admin
                         </button>
                         <button
                           type="button"
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
-                          onMouseLeave={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                          onClick={() => handleToggleEntStatus(e)}
+                          disabled={busyEntId === e.id}
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
+                          style={
+                            e.status === "active"
+                              ? { borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }
+                              : { borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }
+                          }
                         >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                          style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
-                          onMouseEnter={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
-                          onMouseLeave={(ev) => { (ev.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                        >
-                          Suspend
+                          {e.status === "active" ? "Suspend" : "Activate"}
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {!entLoading && pagedEnterprises.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-10 text-center text-sm text-slate-400">
+                      No enterprises yet — click <span className="font-semibold">Add Enterprise</span> to create one.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-          <Pagination total={ENTERPRISES.length} perPage={ENT_PER_PAGE} page={entPage} onChange={setEntPage} itemLabel="enterprises" />
+          <Pagination
+            total={filteredEnterprises.length}
+            perPage={PER_PAGE}
+            page={entPage}
+            onChange={setEntPage}
+            itemLabel="enterprises"
+          />
         </div>
       )}
 
-      {/* ── Enterprise Users ──────────────────────────────────────────── */}
+      {/* ── Enterprise Users Tab ──────────────────────────────────────── */}
       {activeTab === "Enterprise Users" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <p className="text-sm font-semibold text-slate-800">Enterprise Users</p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-semibold text-slate-800">Enterprise Users & Admins</p>
+              {euLoading && (
+                <span className="flex items-center gap-2 text-xs text-slate-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> loading…
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
+                value={euQuery}
+                onChange={(e) => setEuQuery(e.target.value)}
                 placeholder="Search users..."
                 className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:outline-none transition-colors"
-                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
-                onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
               />
             </div>
             <select
+              value={euEnterpriseFilter}
+              onChange={(e) => setEuEnterpriseFilter(e.target.value)}
               className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
-              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
-              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
             >
-              <option>All Companies</option><option>Nexus Technologies</option><option>Acme Corp</option><option>Vantage Capital</option>
-            </select>
-            <select
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
-              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
-              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
-            >
-              <option>All Roles</option><option>Admin</option><option>Member</option>
-            </select>
-            <select
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
-              onFocus={(e) => { e.currentTarget.style.borderColor = "var(--gold)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--gold-dim)"; }}
-              onBlur={(e)  => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
-            >
-              <option>All Statuses</option><option>Active</option><option>Suspended</option><option>Inactive</option>
+              <option value="all">All Enterprises</option>
+              {enterprises.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.name}
+                </option>
+              ))}
             </select>
           </div>
           <div className="overflow-x-auto">
@@ -400,149 +540,153 @@ export default function EnterprisesPage() {
                 <tr className="bg-slate-50 text-xs font-medium text-slate-500">
                   <th className="px-4 py-2.5 text-left">Name</th>
                   <th className="px-4 py-2.5 text-left">Email</th>
-                  <th className="px-4 py-2.5 text-left">Company</th>
+                  <th className="px-4 py-2.5 text-left">Enterprise</th>
+                  <th className="px-4 py-2.5 text-left">Role</th>
                   <th className="px-4 py-2.5 text-left">Status</th>
                   <th className="px-4 py-2.5 text-left">Date Added</th>
-                  <th className="px-4 py-2.5 text-left">Last Login</th>
-                  <th className="px-4 py-2.5 text-left">Searches</th>
-                  <th className="px-4 py-2.5 text-left">Reveals</th>
                   <th className="px-4 py-2.5 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {ENT_USERS.slice((euPage - 1) * ENT_PER_PAGE, euPage * ENT_PER_PAGE).map((u, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                {pagedEntUsers.map((u) => (
+                  <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div
                           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
                           style={{ background: "var(--gold-dim)", color: "#8A6222" }}
                         >
-                          {u.initials}
+                          {initials(u.name)}
                         </div>
                         <span className="font-medium text-slate-800">{u.name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                    <td className="px-4 py-3 text-slate-600">{u.company}</td>
-                    <td className="px-4 py-3"><Badge status={u.status} /></td>
-                    <td className="px-4 py-3 text-slate-500">{u.added}</td>
-                    <td className="px-4 py-3 text-slate-500">{u.lastLogin}</td>
-                    <td className="px-4 py-3 text-slate-600">{u.searches}</td>
-                    <td className="px-4 py-3 text-slate-600">{u.reveals}</td>
+                    <td className="px-4 py-3 text-slate-600">{u.enterprise_name ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+                        style={
+                          u.role === "enterprise_admin"
+                            ? { background: "var(--gold-dim)", color: "#8A6222" }
+                            : { background: "rgba(23,50,41,.08)", color: "var(--forest)" }
+                        }
+                      >
+                        {u.role === "enterprise_admin" ? "Admin" : "Member"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge status={u.is_active ? "active" : "suspended"} />
+                    </td>
+                    <td className="px-4 py-3 text-slate-500">{formatDate(u.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                          onClick={() => handleToggleEuStatus(u)}
+                          disabled={euBusyId === u.id}
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
+                          style={
+                            u.is_active
+                              ? { borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }
+                              : { borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }
+                          }
                         >
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                          style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                        >
-                          Suspend
+                          {u.is_active ? "Suspend" : "Activate"}
                         </button>
                       </div>
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination total={ENT_USERS.length} perPage={ENT_PER_PAGE} page={euPage} onChange={setEuPage} itemLabel="users" />
-        </div>
-      )}
-
-      {/* ── Invitations ──────────────────────────────────────────────── */}
-      {activeTab === "Invitations" && (
-        <div className="bg-white rounded-xl border border-slate-200">
-          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Enterprise Invitations</p>
-              <p className="text-xs text-slate-400 mt-0.5">Pending and sent invitations for enterprise team members</p>
-            </div>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
-              style={{ background: "var(--gold)", color: "#3C2400" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-            >
-              <Send className="h-4 w-4" /> Send Invitation
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
-                  <th className="px-4 py-2.5 text-left">Invited Email</th>
-                  <th className="px-4 py-2.5 text-left">Role</th>
-                  <th className="px-4 py-2.5 text-left">Company</th>
-                  <th className="px-4 py-2.5 text-left">Invited By</th>
-                  <th className="px-4 py-2.5 text-left">Date Sent</th>
-                  <th className="px-4 py-2.5 text-left">Expiry</th>
-                  <th className="px-4 py-2.5 text-left">Status</th>
-                  <th className="px-4 py-2.5 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ENT_INVITATIONS.slice((invPage2 - 1) * ENT_PER_PAGE, invPage2 * ENT_PER_PAGE).map((inv, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-800">{inv.email}</td>
-                    <td className="px-4 py-3 text-slate-600">{inv.role}</td>
-                    <td className="px-4 py-3 text-slate-600">{inv.company}</td>
-                    <td className="px-4 py-3 text-slate-500">{inv.invitedBy}</td>
-                    <td className="px-4 py-3 text-slate-500">{inv.sent}</td>
-                    <td className="px-4 py-3 text-slate-500">{inv.expiry}</td>
-                    <td className="px-4 py-3"><Badge status={inv.status} /></td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                        >
-                          Resend
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                          style={{ borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--rose-dim)"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                {!euLoading && pagedEntUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-400">
+                      No enterprise members yet.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
-          <Pagination total={ENT_INVITATIONS.length} perPage={ENT_PER_PAGE} page={invPage2} onChange={setInvPage2} itemLabel="invitations" />
+          <Pagination
+            total={filteredEntUsers.length}
+            perPage={PER_PAGE}
+            page={euPage}
+            onChange={setEuPage}
+            itemLabel="users"
+          />
         </div>
       )}
 
       <SlidePanel
-        isOpen={!!selectedEnterprise}
-        onClose={() => setSelectedEnterprise(null)}
-        title={selectedEnterprise?.name ?? ""}
-        subtitle={selectedEnterprise?.industry}
+        isOpen={!!selected && !adminModalOpen}
+        onClose={() => setSelected(null)}
+        title={selected?.name ?? ""}
+        subtitle={selected?.industry ?? undefined}
         width="xl"
       >
-        {selectedEnterprise && <EnterpriseDetail ent={selectedEnterprise} />}
+        {selected && (
+          <EnterpriseDetail
+            ent={selected}
+            busy={busyEntId === selected.id}
+            onAddAdmin={() => setAdminModalOpen(true)}
+            onToggleStatus={() => handleToggleEntStatus(selected)}
+          />
+        )}
       </SlidePanel>
+
+      <CreateEnterpriseModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(ent) => setEnterprises((prev) => [ent, ...prev])}
+      />
+
+      <CreateEnterpriseAdminModal
+        open={adminModalOpen}
+        onClose={() => setAdminModalOpen(false)}
+        enterpriseId={selected?.id ?? null}
+        enterpriseName={selected?.name ?? null}
+        onCreated={() => {
+          void loadEnterprises();
+          if (activeTab === "Enterprise Users") void loadEnterpriseUsers();
+        }}
+      />
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+  bg,
+  color,
+}: {
+  label: string;
+  value: number;
+  hint: string;
+  icon: React.ReactNode;
+  bg: string;
+  color: string;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: bg }}>
+        {icon}
+      </div>
+      <div>
+        <p
+          className="text-[10px] font-semibold uppercase tracking-wider"
+          style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}
+        >
+          {label}
+        </p>
+        <p className="text-2xl font-bold mt-0.5" style={{ color }}>
+          {value.toLocaleString()}
+        </p>
+        <p className="text-xs text-slate-400 mt-0.5">{hint}</p>
+      </div>
     </div>
   );
 }
