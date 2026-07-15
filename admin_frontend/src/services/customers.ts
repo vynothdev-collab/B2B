@@ -15,9 +15,26 @@ export interface Customer {
 }
 
 export interface ListCustomersParams {
+  page?: number;
+  page_size?: number;
   role?: CustomerRole;
+  roles?: CustomerRole[];
   enterprise_id?: string;
   q?: string;
+  status?: "active" | "suspended";
+}
+
+export interface PagedCustomers {
+  items: Customer[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface CustomerStats {
+  total: number;
+  active: number;
+  suspended: number;
 }
 
 export interface CreateCustomerPayload {
@@ -37,8 +54,16 @@ export async function createCustomer(payload: CreateCustomerPayload): Promise<Cu
 export async function listCustomers(
   params: ListCustomersParams = {},
   signal?: AbortSignal,
-): Promise<Customer[]> {
-  const { data } = await api.get<Customer[]>("/admin/customers", { params, signal });
+): Promise<PagedCustomers> {
+  const { data } = await api.get<PagedCustomers>("/admin/customers", { params, signal });
+  return data;
+}
+
+export async function getCustomerStats(
+  params: { role?: CustomerRole; roles?: CustomerRole[] } = {},
+  signal?: AbortSignal,
+): Promise<CustomerStats> {
+  const { data } = await api.get<CustomerStats>("/admin/customers/stats", { params, signal });
   return data;
 }
 

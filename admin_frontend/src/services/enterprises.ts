@@ -51,8 +51,37 @@ export interface EnterpriseAdmin {
   enterprise_id: string;
 }
 
-export async function listEnterprises(signal?: AbortSignal): Promise<Enterprise[]> {
-  const { data } = await api.get<Enterprise[]>("/admin/enterprises", { signal });
+export interface ListEnterprisesParams {
+  page?: number;
+  page_size?: number;
+  q?: string;
+  status?: "active" | "suspended" | "inactive";
+}
+
+export interface PagedEnterprises {
+  items: Enterprise[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface EnterpriseStats {
+  total: number;
+  active: number;
+  total_users: number;
+  total_credits: number;
+}
+
+export async function listEnterprises(
+  params: ListEnterprisesParams = {},
+  signal?: AbortSignal,
+): Promise<PagedEnterprises> {
+  const { data } = await api.get<PagedEnterprises>("/admin/enterprises", { params, signal });
+  return data;
+}
+
+export async function getEnterpriseStats(signal?: AbortSignal): Promise<EnterpriseStats> {
+  const { data } = await api.get<EnterpriseStats>("/admin/enterprises/stats", { signal });
   return data;
 }
 

@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, field_validator
-from sqlalchemy import func, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -116,6 +116,20 @@ class EnterpriseAdminResponse(BaseModel):
     enterprise_id: str
 
 
+class PagedEnterprises(BaseModel):
+    items:     list[EnterpriseResponse]
+    total:     int
+    page:      int
+    page_size: int
+
+
+class EnterpriseStats(BaseModel):
+    total:         int
+    active:        int
+    total_users:   int
+    total_credits: int
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _load_enterprise(db: AsyncSession, enterprise_id: str) -> Enterprise:
@@ -155,6 +169,59 @@ async def _serialize(db: AsyncSession, ent: Enterprise) -> EnterpriseResponse:
     )
 
 
+async def _serialize_many(
+    db: AsyncSession, ents: list[Enterprise]
+) -> list[EnterpriseResponse]:
+    if not ents:
+        return []
+    ent_ids = [e.id for e in ents]
+
+    count_rows = (
+        await db.execute(
+            select(User.enterprise_id, func.count(User.id))
+            .where(User.enterprise_id.in_(ent_ids))
+            .group_by(User.enterprise_id)
+        )
+    ).all()
+    counts: dict[str, int] = {row[0]: row[1] for row in count_rows}
+
+    admin_rows = (
+        await db.execute(
+            select(User)
+            .where(
+                User.enterprise_id.in_(ent_ids),
+                User.role == UserRole.ENTERPRISE_ADMIN,
+            )
+            .order_by(User.created_at.asc())
+        )
+    ).scalars().all()
+    admins: dict[str, User] = {}
+    for u in admin_rows:
+        if u.enterprise_id and u.enterprise_id not in admins:
+            admins[u.enterprise_id] = u
+
+    return [
+        EnterpriseResponse(
+            id=e.id,
+            name=e.name,
+            industry=e.industry,
+            website=e.website,
+            country=e.country,
+            size=e.size,
+            phone=e.phone,
+            plan=e.plan,
+            credits=e.credits,
+            status=e.status,
+            notes=e.notes,
+            created_at=e.created_at,
+            user_count=counts.get(e.id, 0),
+            admin_name=admins[e.id].name if e.id in admins else None,
+            admin_email=admins[e.id].email if e.id in admins else None,
+        )
+        for e in ents
+    ]
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=EnterpriseResponse, status_code=status.HTTP_201_CREATED)
@@ -187,11 +254,81 @@ async def create_enterprise(
     return await _serialize(db, ent)
 
 
-@router.get("", response_model=list[EnterpriseResponse])
-async def list_enterprises(db: AsyncSession = Depends(get_db)) -> list[EnterpriseResponse]:
-    result = await db.execute(select(Enterprise).order_by(Enterprise.created_at.desc()))
-    enterprises = result.scalars().all()
-    return [await _serialize(db, ent) for ent in enterprises]
+@router.get("", response_model=PagedEnterprises)
+async def list_enterprises(
+    page:      int = Query(default=1, ge=1),
+    page_size: int = Query(default=8, ge=1, le=100),
+    q:         str | None = Query(default=None),
+    status_:   str | None = Query(default=None, alias="status"),
+    db: AsyncSession = Depends(get_db),
+) -> PagedEnterprises:
+    stmt = select(Enterprise)
+    count_stmt = select(func.count(Enterprise.id))
+
+    if status_ and status_ != "all":
+        if status_ not in EnterpriseStatus.ALL:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Status must be one of: {', '.join(sorted(EnterpriseStatus.ALL))}",
+            )
+        stmt = stmt.where(Enterprise.status == status_)
+        count_stmt = count_stmt.where(Enterprise.status == status_)
+
+    if q:
+        like = f"%{q.strip()}%"
+        pred = or_(
+            Enterprise.name.ilike(like),
+            Enterprise.industry.ilike(like),
+            Enterprise.country.ilike(like),
+        )
+        stmt = stmt.where(pred)
+        count_stmt = count_stmt.where(pred)
+
+    total = (await db.execute(count_stmt)).scalar_one()
+
+    stmt = (
+        stmt.order_by(Enterprise.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    enterprises = (await db.execute(stmt)).scalars().all()
+
+    return PagedEnterprises(
+        items=await _serialize_many(db, list(enterprises)),
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/stats", response_model=EnterpriseStats)
+async def enterprise_stats(db: AsyncSession = Depends(get_db)) -> EnterpriseStats:
+    row = (
+        await db.execute(
+            select(
+                func.count(Enterprise.id),
+                func.coalesce(
+                    func.sum(
+                        case((Enterprise.status == EnterpriseStatus.ACTIVE, 1), else_=0)
+                    ),
+                    0,
+                ),
+                func.coalesce(func.sum(Enterprise.credits), 0),
+            )
+        )
+    ).one()
+    total_users = (
+        await db.execute(
+            select(func.count(User.id)).where(User.enterprise_id.is_not(None))
+        )
+    ).scalar_one()
+
+    return EnterpriseStats(
+        total=int(row[0]),
+        active=int(row[1]),
+        total_users=int(total_users),
+        total_credits=int(row[2]),
+    )
 
 
 @router.get("/{enterprise_id}", response_model=EnterpriseResponse)

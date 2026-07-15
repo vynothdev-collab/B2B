@@ -27,8 +27,8 @@ export default function ConvertUserModal({ open, onClose, customer, onConverted 
     setRole((customer?.role as CustomerRole) === "individual" ? "enterprise_user" : "individual");
     setEnterpriseId(customer?.enterprise_id ?? "");
     setLoading(true);
-    listEnterprises()
-      .then(setEnterprises)
+    listEnterprises({ page: 1, page_size: 100 })
+      .then((paged) => setEnterprises(paged.items))
       .catch(() => toast.error("Load failed", "Could not load enterprises."))
       .finally(() => setLoading(false));
   }, [open, customer, toast]);

@@ -1,31 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import {
   Search,
-  Mail,
   ShieldCheck,
   Users,
   CheckCircle2,
   UserCog,
   Building2,
   Plus,
+  UserX,
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { useToast } from "@/components/ui/Toast";
 import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
 import ConvertUserModal from "@/components/modals/ConvertUserModal";
 import CreateCustomerModal from "@/components/modals/CreateCustomerModal";
 import {
+  getCustomerStats,
   listCustomers,
   updateCustomerStatus,
   type Customer,
+  type CustomerStats,
 } from "@/services/customers";
 
-const USERS_PER_PAGE = 8;
+const USERS_PER_PAGE = 10;
 
 function initials(name: string): string {
   return name
@@ -134,11 +137,17 @@ function UserDetail({
   );
 }
 
+const EMPTY_STATS: CustomerStats = { total: 0, active: 0, suspended: 0 };
+
 export default function UsersPage() {
   const toast = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<CustomerStats>(EMPTY_STATS);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 300);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
   const [selected, setSelected] = useState<Customer | null>(null);
   const [page, setPage] = useState(1);
@@ -146,11 +155,25 @@ export default function UsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const load = useCallback(async (signal?: AbortSignal) => {
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, statusFilter]);
+
+  const loadList = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
-      const list = await listCustomers({ role: "individual" }, signal);
-      setCustomers(list);
+      const paged = await listCustomers(
+        {
+          role: "individual",
+          page,
+          page_size: USERS_PER_PAGE,
+          q: debouncedQuery.trim() || undefined,
+          status: statusFilter === "all" ? undefined : statusFilter,
+        },
+        signal,
+      );
+      setCustomers(paged.items);
+      setTotal(paged.total);
     } catch (err: unknown) {
       if (axios.isCancel(err)) return;
       const msg =
@@ -161,41 +184,39 @@ export default function UsersPage() {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [toast]);
+  }, [toast, page, debouncedQuery, statusFilter]);
+
+  const loadStats = useCallback(async (signal?: AbortSignal) => {
+    setStatsLoading(true);
+    try {
+      const s = await getCustomerStats({ role: "individual" }, signal);
+      setStats(s);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+    } finally {
+      if (!signal?.aborted) setStatsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal);
+    void loadList(controller.signal);
     return () => controller.abort();
-  }, [load]);
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return customers.filter((u) => {
-      if (statusFilter === "active" && !u.is_active) return false;
-      if (statusFilter === "suspended" && u.is_active) return false;
-      if (!q) return true;
-      return (
-        u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-      );
-    });
-  }, [customers, query, statusFilter]);
+  }, [loadList]);
 
   useEffect(() => {
-    setPage(1);
-  }, [query, statusFilter]);
-
-  const totalUsers = customers.length;
-  const activeUsers = customers.filter((u) => u.is_active).length;
-  const withPhone = customers.filter((u) => u.phone).length;
+    const controller = new AbortController();
+    void loadStats(controller.signal);
+    return () => controller.abort();
+  }, [loadStats]);
 
   const patchLocal = (updated: Customer) => {
     setCustomers((prev) => {
-      // if role changed away from individual, drop it from this list
       if (updated.role !== "individual") return prev.filter((u) => u.id !== updated.id);
       return prev.map((u) => (u.id === updated.id ? updated : u));
     });
     setSelected((cur) => (cur && cur.id === updated.id ? updated : cur));
+    void loadStats();
   };
 
   const handleToggleStatus = async (u: Customer) => {
@@ -218,13 +239,11 @@ export default function UsersPage() {
     }
   };
 
-  const paged = filtered.slice((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE);
-
   return (
     <div className="space-y-5">
       {/* ── Stat Cards ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
+        {statsLoading ? (
           <>
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -234,7 +253,7 @@ export default function UsersPage() {
           <>
             <StatCard
               label="Total Individual Users"
-              value={totalUsers}
+              value={stats.total}
               hint="Individual user accounts"
               icon={<Users className="h-5 w-5" style={{ color: "var(--forest)" }} />}
               bg="rgba(23,50,41,.08)"
@@ -242,17 +261,17 @@ export default function UsersPage() {
             />
             <StatCard
               label="Active Users"
-              value={activeUsers}
+              value={stats.active}
               hint="Currently active"
               icon={<CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />}
               bg="var(--sage-dim)"
               color="var(--sage-dark, #3E6A44)"
             />
             <StatCard
-              label="With Phone"
-              value={withPhone}
-              hint="Users who added a phone"
-              icon={<Mail className="h-5 w-5" style={{ color: "var(--rust)" }} />}
+              label="Suspended Users"
+              value={stats.suspended}
+              hint="Blocked from signing in"
+              icon={<UserX className="h-5 w-5" style={{ color: "var(--rust)" }} />}
               bg="var(--rust-dim)"
               color="var(--rust)"
             />
@@ -320,7 +339,7 @@ export default function UsersPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRowSkeleton key={`sk-${i}`} columns={6} />
                 ))}
-              {!loading && paged.map((u) => (
+              {!loading && customers.map((u) => (
                 <tr
                   key={u.id}
                   className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
@@ -371,10 +390,12 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ))}
-              {!loading && paged.length === 0 && (
+              {!loading && customers.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-400">
-                    No individual users match your filters.
+                    {total === 0
+                      ? "No individual users yet."
+                      : "No individual users match your filters."}
                   </td>
                 </tr>
               )}
@@ -382,7 +403,7 @@ export default function UsersPage() {
           </table>
         </div>
         <Pagination
-          total={filtered.length}
+          total={total}
           perPage={USERS_PER_PAGE}
           page={page}
           onChange={setPage}

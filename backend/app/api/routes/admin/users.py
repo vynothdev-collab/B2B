@@ -3,7 +3,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, field_validator
-from sqlalchemy import or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -74,6 +74,19 @@ class CreateCustomerRequest(BaseModel):
         return v
 
 
+class PagedCustomers(BaseModel):
+    items:     list[CustomerResponse]
+    total:     int
+    page:      int
+    page_size: int
+
+
+class CustomerStats(BaseModel):
+    total:     int
+    active:    int
+    suspended: int
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _load_user(db: AsyncSession, user_id: str) -> User:
@@ -82,6 +95,34 @@ async def _load_user(db: AsyncSession, user_id: str) -> User:
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
     return user
+
+
+async def _serialize_many(db: AsyncSession, users: list[User]) -> list[CustomerResponse]:
+    if not users:
+        return []
+    ent_ids = {u.enterprise_id for u in users if u.enterprise_id}
+    ent_names: dict[str, str] = {}
+    if ent_ids:
+        rows = (
+            await db.execute(
+                select(Enterprise.id, Enterprise.name).where(Enterprise.id.in_(ent_ids))
+            )
+        ).all()
+        ent_names = {row[0]: row[1] for row in rows}
+    return [
+        CustomerResponse(
+            id=u.id,
+            name=u.name,
+            email=u.email,
+            role=u.role,
+            phone=u.phone,
+            is_active=u.is_active,
+            enterprise_id=u.enterprise_id,
+            enterprise_name=ent_names.get(u.enterprise_id) if u.enterprise_id else None,
+            created_at=u.created_at,
+        )
+        for u in users
+    ]
 
 
 async def _serialize(db: AsyncSession, user: User) -> CustomerResponse:
@@ -153,15 +194,15 @@ async def create_customer(
     return await _serialize(db, user)
 
 
-@router.get("", response_model=list[CustomerResponse])
-async def list_customers(
-    role:          str | None = Query(default=None),
-    enterprise_id: str | None = Query(default=None),
-    q:             str | None = Query(default=None),
-    db: AsyncSession = Depends(get_db),
-) -> list[CustomerResponse]:
-    stmt = select(User)
-
+def _apply_customer_filters(
+    stmt,
+    *,
+    role: str | None,
+    roles: list[str] | None,
+    enterprise_id: str | None,
+    q: str | None,
+    status_: str | None,
+):
     if role is not None:
         if role not in UserRole.ALL:
             raise HTTPException(
@@ -169,17 +210,79 @@ async def list_customers(
                 detail=f"Role must be one of: {', '.join(sorted(UserRole.ALL))}",
             )
         stmt = stmt.where(User.role == role)
-
-    if enterprise_id is not None:
+    if roles:
+        invalid = [r for r in roles if r not in UserRole.ALL]
+        if invalid:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid roles: {', '.join(invalid)}",
+            )
+        stmt = stmt.where(User.role.in_(roles))
+    if enterprise_id is not None and enterprise_id != "all":
         stmt = stmt.where(User.enterprise_id == enterprise_id)
-
     if q:
         like = f"%{q.strip()}%"
         stmt = stmt.where(or_(User.name.ilike(like), User.email.ilike(like)))
+    if status_ == "active":
+        stmt = stmt.where(User.is_active.is_(True))
+    elif status_ == "suspended":
+        stmt = stmt.where(User.is_active.is_(False))
+    return stmt
 
-    stmt = stmt.order_by(User.created_at.desc())
+
+@router.get("", response_model=PagedCustomers)
+async def list_customers(
+    page:          int = Query(default=1, ge=1),
+    page_size:     int = Query(default=8, ge=1, le=100),
+    role:          str | None = Query(default=None),
+    roles:         list[str] | None = Query(default=None),
+    enterprise_id: str | None = Query(default=None),
+    q:             str | None = Query(default=None),
+    status_:       str | None = Query(default=None, alias="status"),
+    db: AsyncSession = Depends(get_db),
+) -> PagedCustomers:
+    stmt = select(User)
+    count_stmt = select(func.count(User.id))
+    stmt = _apply_customer_filters(
+        stmt, role=role, roles=roles, enterprise_id=enterprise_id, q=q, status_=status_
+    )
+    count_stmt = _apply_customer_filters(
+        count_stmt, role=role, roles=roles, enterprise_id=enterprise_id, q=q, status_=status_
+    )
+
+    total = (await db.execute(count_stmt)).scalar_one()
+    stmt = (
+        stmt.order_by(User.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
     users = (await db.execute(stmt)).scalars().all()
-    return [await _serialize(db, u) for u in users]
+
+    return PagedCustomers(
+        items=await _serialize_many(db, list(users)),
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/stats", response_model=CustomerStats)
+async def customer_stats(
+    role:  str | None = Query(default=None),
+    roles: list[str] | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> CustomerStats:
+    stmt = select(
+        func.count(User.id),
+        func.coalesce(func.sum(case((User.is_active.is_(True), 1), else_=0)), 0),
+    )
+    stmt = _apply_customer_filters(
+        stmt, role=role, roles=roles, enterprise_id=None, q=None, status_=None
+    )
+    row = (await db.execute(stmt)).one()
+    total = int(row[0])
+    active = int(row[1])
+    return CustomerStats(total=total, active=active, suspended=total - active)
 
 
 @router.get("/{user_id}", response_model=CustomerResponse)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import {
   Search,
@@ -20,15 +20,22 @@ import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
 import { useToast } from "@/components/ui/Toast";
 import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
 import CreateEnterpriseModal from "@/components/modals/CreateEnterpriseModal";
 import CreateEnterpriseAdminModal from "@/components/modals/CreateEnterpriseAdminModal";
-import { listEnterprises, updateEnterprise, type Enterprise } from "@/services/enterprises";
+import {
+  getEnterpriseStats,
+  listEnterprises,
+  updateEnterprise,
+  type Enterprise,
+  type EnterpriseStats,
+} from "@/services/enterprises";
 import { listCustomers, updateCustomerStatus, type Customer } from "@/services/customers";
 
 const TABS = ["Enterprise Admins", "Enterprise Users"] as const;
 type Tab = (typeof TABS)[number];
 
-const PER_PAGE = 8;
+const PER_PAGE = 10;
 
 function initials(name: string): string {
   return name
@@ -169,32 +176,59 @@ function EnterpriseDetail({
   );
 }
 
+const EMPTY_STATS: EnterpriseStats = { total: 0, active: 0, total_users: 0, total_credits: 0 };
+
 export default function EnterprisesPage() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<Tab>("Enterprise Admins");
 
   const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
+  const [entTotal, setEntTotal] = useState(0);
   const [entLoading, setEntLoading] = useState(true);
   const [entQuery, setEntQuery] = useState("");
+  const debouncedEntQuery = useDebounce(entQuery, 300);
   const [entStatus, setEntStatus] = useState<"all" | "active" | "suspended" | "inactive">("all");
   const [selected, setSelected] = useState<Enterprise | null>(null);
   const [entPage, setEntPage] = useState(1);
 
+  const [stats, setStats] = useState<EnterpriseStats>(EMPTY_STATS);
+  const [statsLoading, setStatsLoading] = useState(true);
+
   const [entUsers, setEntUsers] = useState<Customer[]>([]);
+  const [euTotal, setEuTotal] = useState(0);
   const [euLoading, setEuLoading] = useState(false);
   const [euQuery, setEuQuery] = useState("");
+  const debouncedEuQuery = useDebounce(euQuery, 300);
   const [euEnterpriseFilter, setEuEnterpriseFilter] = useState<string>("all");
   const [euPage, setEuPage] = useState(1);
+
+  const [enterpriseOptions, setEnterpriseOptions] = useState<Enterprise[]>([]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [busyEntId, setBusyEntId] = useState<string | null>(null);
 
+  useEffect(() => {
+    setEntPage(1);
+  }, [debouncedEntQuery, entStatus]);
+  useEffect(() => {
+    setEuPage(1);
+  }, [debouncedEuQuery, euEnterpriseFilter]);
+
   const loadEnterprises = useCallback(async (signal?: AbortSignal) => {
     setEntLoading(true);
     try {
-      const list = await listEnterprises(signal);
-      setEnterprises(list);
+      const paged = await listEnterprises(
+        {
+          page: entPage,
+          page_size: PER_PAGE,
+          q: debouncedEntQuery.trim() || undefined,
+          status: entStatus === "all" ? undefined : entStatus,
+        },
+        signal,
+      );
+      setEnterprises(paged.items);
+      setEntTotal(paged.total);
     } catch (err: unknown) {
       if (axios.isCancel(err)) return;
       const msg =
@@ -205,16 +239,44 @@ export default function EnterprisesPage() {
     } finally {
       if (!signal?.aborted) setEntLoading(false);
     }
-  }, [toast]);
+  }, [toast, entPage, debouncedEntQuery, entStatus]);
+
+  const loadStats = useCallback(async (signal?: AbortSignal) => {
+    setStatsLoading(true);
+    try {
+      const s = await getEnterpriseStats(signal);
+      setStats(s);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+    } finally {
+      if (!signal?.aborted) setStatsLoading(false);
+    }
+  }, []);
+
+  const loadEnterpriseOptions = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const paged = await listEnterprises({ page: 1, page_size: 100 }, signal);
+      setEnterpriseOptions(paged.items);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+    }
+  }, []);
 
   const loadEnterpriseUsers = useCallback(async (signal?: AbortSignal) => {
     setEuLoading(true);
     try {
-      const [users, admins] = await Promise.all([
-        listCustomers({ role: "enterprise_user" }, signal),
-        listCustomers({ role: "enterprise_admin" }, signal),
-      ]);
-      setEntUsers([...admins, ...users]);
+      const paged = await listCustomers(
+        {
+          roles: ["enterprise_admin", "enterprise_user"],
+          enterprise_id: euEnterpriseFilter === "all" ? undefined : euEnterpriseFilter,
+          q: debouncedEuQuery.trim() || undefined,
+          page: euPage,
+          page_size: PER_PAGE,
+        },
+        signal,
+      );
+      setEntUsers(paged.items);
+      setEuTotal(paged.total);
     } catch (err: unknown) {
       if (axios.isCancel(err)) return;
       const msg =
@@ -225,7 +287,7 @@ export default function EnterprisesPage() {
     } finally {
       if (!signal?.aborted) setEuLoading(false);
     }
-  }, [toast]);
+  }, [toast, euPage, debouncedEuQuery, euEnterpriseFilter]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -234,53 +296,28 @@ export default function EnterprisesPage() {
   }, [loadEnterprises]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    void loadStats(controller.signal);
+    return () => controller.abort();
+  }, [loadStats]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadEnterpriseOptions(controller.signal);
+    return () => controller.abort();
+  }, [loadEnterpriseOptions]);
+
+  useEffect(() => {
     if (activeTab !== "Enterprise Users") return;
     const controller = new AbortController();
     void loadEnterpriseUsers(controller.signal);
     return () => controller.abort();
   }, [activeTab, loadEnterpriseUsers]);
 
-  const filteredEnterprises = useMemo(() => {
-    const q = entQuery.trim().toLowerCase();
-    return enterprises.filter((e) => {
-      if (entStatus !== "all" && e.status !== entStatus) return false;
-      if (!q) return true;
-      return (
-        e.name.toLowerCase().includes(q) ||
-        (e.industry ?? "").toLowerCase().includes(q) ||
-        (e.admin_email ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [enterprises, entQuery, entStatus]);
-
-  const filteredEntUsers = useMemo(() => {
-    const q = euQuery.trim().toLowerCase();
-    return entUsers.filter((u) => {
-      if (euEnterpriseFilter !== "all" && u.enterprise_id !== euEnterpriseFilter) return false;
-      if (!q) return true;
-      return (
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        (u.enterprise_name ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [entUsers, euQuery, euEnterpriseFilter]);
-
-  useEffect(() => {
-    setEntPage(1);
-  }, [entQuery, entStatus]);
-  useEffect(() => {
-    setEuPage(1);
-  }, [euQuery, euEnterpriseFilter]);
-
-  const totalEnterprises = enterprises.length;
-  const activeEnterprises = enterprises.filter((e) => e.status === "active").length;
-  const totalEntUsers = enterprises.reduce((sum, e) => sum + e.user_count, 0);
-  const totalCredits = enterprises.reduce((sum, e) => sum + e.credits, 0);
-
   const patchEnterprise = (updated: Enterprise) => {
     setEnterprises((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
     setSelected((cur) => (cur && cur.id === updated.id ? updated : cur));
+    void loadStats();
   };
 
   const handleToggleEntStatus = async (e: Enterprise) => {
@@ -325,12 +362,6 @@ export default function EnterprisesPage() {
     }
   };
 
-  const pagedEnterprises = filteredEnterprises.slice(
-    (entPage - 1) * PER_PAGE,
-    entPage * PER_PAGE,
-  );
-  const pagedEntUsers = filteredEntUsers.slice((euPage - 1) * PER_PAGE, euPage * PER_PAGE);
-
   return (
     <div className="space-y-5">
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
@@ -356,7 +387,7 @@ export default function EnterprisesPage() {
 
       {/* ── Stat Cards ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {entLoading ? (
+        {statsLoading ? (
           <>
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -365,10 +396,10 @@ export default function EnterprisesPage() {
           </>
         ) : (
           <>
-            <StatCard label="Total Enterprises" value={totalEnterprises} hint="All company accounts" icon={<Building2 className="h-5 w-5" style={{ color: "#8A6222" }} />} bg="var(--gold-dim)" color="#8A6222" />
-            <StatCard label="Active Enterprises" value={activeEnterprises} hint="Currently active" icon={<CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />} bg="var(--sage-dim)" color="var(--sage-dark, #3E6A44)" />
-            <StatCard label="Enterprise Users" value={totalEntUsers} hint="Across all companies" icon={<Users className="h-5 w-5" style={{ color: "var(--rust)" }} />} bg="var(--rust-dim)" color="var(--rust)" />
-            <StatCard label="Total Credits" value={totalCredits} hint="Provisioned to enterprises" icon={<CreditCard className="h-5 w-5" style={{ color: "var(--forest)" }} />} bg="rgba(23,50,41,.08)" color="var(--forest)" />
+            <StatCard label="Total Enterprises" value={stats.total} hint="All company accounts" icon={<Building2 className="h-5 w-5" style={{ color: "#8A6222" }} />} bg="var(--gold-dim)" color="#8A6222" />
+            <StatCard label="Active Enterprises" value={stats.active} hint="Currently active" icon={<CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />} bg="var(--sage-dim)" color="var(--sage-dark, #3E6A44)" />
+            <StatCard label="Enterprise Users" value={stats.total_users} hint="Across all companies" icon={<Users className="h-5 w-5" style={{ color: "var(--rust)" }} />} bg="var(--rust-dim)" color="var(--rust)" />
+            <StatCard label="Total Credits" value={stats.total_credits} hint="Provisioned to enterprises" icon={<CreditCard className="h-5 w-5" style={{ color: "var(--forest)" }} />} bg="rgba(23,50,41,.08)" color="var(--forest)" />
           </>
         )}
       </div>
@@ -430,7 +461,7 @@ export default function EnterprisesPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRowSkeleton key={`sk-ent-${i}`} columns={9} />
                   ))}
-                {!entLoading && pagedEnterprises.map((e) => (
+                {!entLoading && enterprises.map((e) => (
                   <tr
                     key={e.id}
                     className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
@@ -487,10 +518,12 @@ export default function EnterprisesPage() {
                     </td>
                   </tr>
                 ))}
-                {!entLoading && pagedEnterprises.length === 0 && (
+                {!entLoading && enterprises.length === 0 && (
                   <tr>
                     <td colSpan={9} className="px-4 py-10 text-center text-sm text-slate-400">
-                      No enterprises yet — click <span className="font-semibold">Add Enterprise</span> to create one.
+                      {entTotal === 0
+                        ? <>No enterprises yet — click <span className="font-semibold">Add Enterprise</span> to create one.</>
+                        : "No enterprises match your filters."}
                     </td>
                   </tr>
                 )}
@@ -498,7 +531,7 @@ export default function EnterprisesPage() {
             </table>
           </div>
           <Pagination
-            total={filteredEnterprises.length}
+            total={entTotal}
             perPage={PER_PAGE}
             page={entPage}
             onChange={setEntPage}
@@ -531,7 +564,7 @@ export default function EnterprisesPage() {
               className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none transition-colors"
             >
               <option value="all">All Enterprises</option>
-              {enterprises.map((e) => (
+              {enterpriseOptions.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.name}
                 </option>
@@ -556,7 +589,7 @@ export default function EnterprisesPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRowSkeleton key={`sk-eu-${i}`} columns={7} />
                   ))}
-                {!euLoading && pagedEntUsers.map((u) => (
+                {!euLoading && entUsers.map((u) => (
                   <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -606,10 +639,12 @@ export default function EnterprisesPage() {
                     </td>
                   </tr>
                 ))}
-                {!euLoading && pagedEntUsers.length === 0 && (
+                {!euLoading && entUsers.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-10 text-center text-sm text-slate-400">
-                      No enterprise members yet.
+                      {euTotal === 0
+                        ? "No enterprise members yet."
+                        : "No enterprise members match your filters."}
                     </td>
                   </tr>
                 )}
@@ -617,7 +652,7 @@ export default function EnterprisesPage() {
             </table>
           </div>
           <Pagination
-            total={filteredEntUsers.length}
+            total={euTotal}
             perPage={PER_PAGE}
             page={euPage}
             onChange={setEuPage}
@@ -646,7 +681,11 @@ export default function EnterprisesPage() {
       <CreateEnterpriseModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={(ent) => setEnterprises((prev) => [ent, ...prev])}
+        onCreated={() => {
+          void loadEnterprises();
+          void loadEnterpriseOptions();
+          void loadStats();
+        }}
       />
 
       <CreateEnterpriseAdminModal
@@ -656,6 +695,7 @@ export default function EnterprisesPage() {
         enterpriseName={selected?.name ?? null}
         onCreated={() => {
           void loadEnterprises();
+          void loadStats();
           if (activeTab === "Enterprise Users") void loadEnterpriseUsers();
         }}
       />
