@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import Badge from "@/components/ui/Badge";
-import { ALL_TRANSACTIONS, INDIVIDUAL_TXN, ENTERPRISE_TXN, REFUNDS, REVENUE_PLANS, REVENUE_CARDS } from "@/data/payments";
+import { INDIVIDUAL_TXN, ENTERPRISE_TXN, REVENUE_PLANS, REVENUE_CARDS } from "@/data/payments";
 
-const TABS = ["All Transactions", "Individual", "Enterprise", "Refunds", "Revenue Summary"];
+const TABS = ["Individual", "Enterprise", "Revenue Summary"] as const;
+type Tab = typeof TABS[number];
 
-function TransactionTable({ rows }: { rows: typeof ALL_TRANSACTIONS }) {
+function TransactionTable({ rows }: { rows: typeof INDIVIDUAL_TXN }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -58,7 +59,8 @@ function TransactionTable({ rows }: { rows: typeof ALL_TRANSACTIONS }) {
 }
 
 export default function PaymentsPage() {
-  const [activeTab, setActiveTab] = useState("All Transactions");
+  const [activeTab, setActiveTab] = useState<Tab>("Individual");
+  const isIndividual = activeTab === "Individual";
 
   return (
     <div className="space-y-5">
@@ -70,7 +72,9 @@ export default function PaymentsPage() {
               type="button"
               onClick={() => setActiveTab(tab)}
               className={`shrink-0 px-4 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === tab ? "border-b-2 border-blue-600 text-blue-600" : "text-slate-500 hover:text-slate-700"
+                activeTab === tab
+                  ? `border-b-2 ${tab === "Enterprise" ? "border-violet-600 text-violet-600" : "border-blue-600 text-blue-600"}`
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               {tab}
@@ -79,75 +83,24 @@ export default function PaymentsPage() {
         </div>
       </div>
 
-      {(activeTab === "All Transactions" || activeTab === "Individual" || activeTab === "Enterprise") && (
+      {(activeTab === "Individual" || activeTab === "Enterprise") && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input placeholder="Search by account or invoice..." className="w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50" />
+              <input
+                placeholder={`Search by account or invoice...`}
+                className={`w-full h-9 rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 ${isIndividual ? "focus:border-blue-500 focus:ring-blue-50" : "focus:border-violet-500 focus:ring-violet-50"}`}
+              />
             </div>
-            {activeTab === "All Transactions" && (
-              <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
-                <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
-              </select>
-            )}
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className={`h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 ${isIndividual ? "focus:border-blue-500 focus:ring-blue-50" : "focus:border-violet-500 focus:ring-violet-50"}`}>
               <option>All Statuses</option><option>Paid</option><option>Pending</option><option>Failed</option>
             </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-50">
+            <select className={`h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 ${isIndividual ? "focus:border-blue-500 focus:ring-blue-50" : "focus:border-violet-500 focus:ring-violet-50"}`}>
               <option>All Time</option><option>This Month</option><option>Last Month</option><option>This Year</option>
             </select>
           </div>
-          <TransactionTable
-            rows={
-              activeTab === "Individual"
-                ? INDIVIDUAL_TXN
-                : activeTab === "Enterprise"
-                ? ENTERPRISE_TXN
-                : ALL_TRANSACTIONS
-            }
-          />
-        </div>
-      )}
-
-      {activeTab === "Refunds" && (
-        <div className="bg-white rounded-xl border border-slate-200">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
-                  <th className="px-4 py-2.5 text-left">Refund Ref</th>
-                  <th className="px-4 py-2.5 text-left">Original Invoice</th>
-                  <th className="px-4 py-2.5 text-left">Account</th>
-                  <th className="px-4 py-2.5 text-left">Type</th>
-                  <th className="px-4 py-2.5 text-left">Amount</th>
-                  <th className="px-4 py-2.5 text-left">Reason</th>
-                  <th className="px-4 py-2.5 text-left">Refunded By</th>
-                  <th className="px-4 py-2.5 text-left">Date</th>
-                  <th className="px-4 py-2.5 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {REFUNDS.map((r, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 text-xs font-mono text-slate-600">{r.ref}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-slate-500">{r.invoice}</td>
-                    <td className="px-4 py-3 font-medium text-slate-800">{r.account}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${r.type === "Enterprise" ? "bg-violet-50 text-violet-700 border border-violet-200" : "bg-blue-50 text-blue-700 border border-blue-200"}`}>
-                        {r.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-slate-800">{r.amount}</td>
-                    <td className="px-4 py-3 text-slate-500">{r.reason}</td>
-                    <td className="px-4 py-3 text-slate-600">{r.by}</td>
-                    <td className="px-4 py-3 text-slate-500">{r.date}</td>
-                    <td className="px-4 py-3"><Badge status={r.status} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <TransactionTable rows={isIndividual ? INDIVIDUAL_TXN : ENTERPRISE_TXN} />
         </div>
       )}
 
