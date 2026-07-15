@@ -13,7 +13,6 @@ import {
   Plus,
   Search,
   ShieldCheck,
-  Users,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -166,11 +165,6 @@ export default function EnterpriseClient() {
               </div>
             </div>
             <InfoTile label="Plan" value={enterprise.plan} icon={<CreditCard className="h-4 w-4" />} />
-            <InfoTile
-              label="Monthly Limit"
-              value={enterprise.monthly_limit.toLocaleString()}
-              icon={<Users className="h-4 w-4" />}
-            />
             <InfoTile
               label="Credits"
               value={enterprise.credits.toLocaleString()}

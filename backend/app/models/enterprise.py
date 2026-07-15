@@ -27,10 +27,9 @@ class Enterprise(Base):
     size:     Mapped[str | None]  = mapped_column(String(50),  nullable=True)
     phone:    Mapped[str | None]  = mapped_column(String(50),  nullable=True)
 
-    plan:          Mapped[str] = mapped_column(String(50), default="Business", nullable=False)
-    credits:       Mapped[int] = mapped_column(Integer,    default=0,          nullable=False)
-    monthly_limit: Mapped[int] = mapped_column(Integer,    default=20000,      nullable=False)
-    status:        Mapped[str] = mapped_column(String(20), default=EnterpriseStatus.ACTIVE, nullable=False)
+    plan:    Mapped[str] = mapped_column(String(50), default="Free",                   nullable=False)
+    credits: Mapped[int] = mapped_column(Integer,    default=0,                        nullable=False)
+    status:  Mapped[str] = mapped_column(String(20), default=EnterpriseStatus.ACTIVE, nullable=False)
 
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 

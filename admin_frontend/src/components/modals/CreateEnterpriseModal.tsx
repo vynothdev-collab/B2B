@@ -19,22 +19,41 @@ const initialState = {
   country: "",
   size: "",
   phone: "",
-  plan: "Business",
   credits: "0",
-  monthly_limit: "20000",
-  status: "active",
   notes: "",
 };
+
+const REQUIRED_FIELDS = ["name", "industry", "country", "website", "phone", "size"] as const;
+type RequiredField = typeof REQUIRED_FIELDS[number];
+
+function ErrorText({ show, children }: { show: boolean; children: React.ReactNode }) {
+  if (!show) return null;
+  return (
+    <p style={{ marginTop: 4, fontSize: 11.5, color: "var(--rose, #B15169)" }}>{children}</p>
+  );
+}
+
+function RequiredLabel({ label }: { label: string }) {
+  return (
+    <>
+      {label} <span style={{ color: "var(--rose, #B15169)" }}>*</span>
+    </>
+  );
+}
 
 export default function CreateEnterpriseModal({ open, onClose, onCreated }: Props) {
   const toast = useToast();
   const [form, setForm] = useState(initialState);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const update = <K extends keyof typeof form>(k: K, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const reset = () => setForm(initialState);
+  const reset = () => {
+    setForm(initialState);
+    setSubmitted(false);
+  };
 
   const handleClose = () => {
     if (submitting) return;
@@ -42,24 +61,25 @@ export default function CreateEnterpriseModal({ open, onClose, onCreated }: Prop
     onClose();
   };
 
+  const missing = (f: RequiredField) => !form[f].trim();
+  const hasErrors = REQUIRED_FIELDS.some(missing);
+
   const handleSubmit = async () => {
-    if (!form.name.trim()) {
-      toast.warning("Missing name", "Enterprise name is required.");
+    setSubmitted(true);
+    if (hasErrors) {
+      toast.warning("Missing information", "Please fill in all required fields.");
       return;
     }
     setSubmitting(true);
     try {
       const ent = await createEnterprise({
         name: form.name.trim(),
-        industry: form.industry.trim() || undefined,
-        website: form.website.trim() || undefined,
-        country: form.country.trim() || undefined,
-        size: form.size.trim() || undefined,
-        phone: form.phone.trim() || undefined,
-        plan: form.plan,
+        industry: form.industry.trim(),
+        website: form.website.trim(),
+        country: form.country.trim(),
+        size: form.size.trim(),
+        phone: form.phone.trim(),
         credits: Number(form.credits) || 0,
-        monthly_limit: Number(form.monthly_limit) || 0,
-        status: form.status as "active" | "suspended" | "inactive",
         notes: form.notes.trim() || undefined,
       });
       toast.success("Enterprise created", `${ent.name} is ready.`);
@@ -86,48 +106,53 @@ export default function CreateEnterpriseModal({ open, onClose, onCreated }: Prop
       submitLabel={submitting ? "Creating..." : "Create Enterprise"}
       onSubmit={handleSubmit}
     >
-      <Field label="Company name">
+      <Field label={<RequiredLabel label="Company name" />}>
         <FieldInput
           value={form.name}
           onChange={(e) => update("name", e.target.value)}
           placeholder="Acme Corp"
           autoFocus
         />
+        <ErrorText show={submitted && missing("name")}>Company name is required.</ErrorText>
       </Field>
       <FieldRow>
-        <Field label="Industry">
+        <Field label={<RequiredLabel label="Industry" />}>
           <FieldInput
             value={form.industry}
             onChange={(e) => update("industry", e.target.value)}
             placeholder="Manufacturing"
           />
+          <ErrorText show={submitted && missing("industry")}>Industry is required.</ErrorText>
         </Field>
-        <Field label="Country">
+        <Field label={<RequiredLabel label="Country" />}>
           <FieldInput
             value={form.country}
             onChange={(e) => update("country", e.target.value)}
             placeholder="United States"
           />
+          <ErrorText show={submitted && missing("country")}>Country is required.</ErrorText>
         </Field>
       </FieldRow>
       <FieldRow>
-        <Field label="Website">
+        <Field label={<RequiredLabel label="Website" />}>
           <FieldInput
             value={form.website}
             onChange={(e) => update("website", e.target.value)}
             placeholder="acme.com"
           />
+          <ErrorText show={submitted && missing("website")}>Website is required.</ErrorText>
         </Field>
-        <Field label="Phone">
+        <Field label={<RequiredLabel label="Phone" />}>
           <FieldInput
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
             placeholder="+1 555-0100"
           />
+          <ErrorText show={submitted && missing("phone")}>Phone is required.</ErrorText>
         </Field>
       </FieldRow>
       <FieldRow>
-        <Field label="Company size">
+        <Field label={<RequiredLabel label="Company size" />}>
           <FieldSelect value={form.size} onChange={(e) => update("size", e.target.value)}>
             <option value="">Select…</option>
             <option value="1-10">1-10</option>
@@ -136,16 +161,8 @@ export default function CreateEnterpriseModal({ open, onClose, onCreated }: Prop
             <option value="201-500">201-500</option>
             <option value="500+">500+</option>
           </FieldSelect>
+          <ErrorText show={submitted && missing("size")}>Company size is required.</ErrorText>
         </Field>
-        <Field label="Plan">
-          <FieldSelect value={form.plan} onChange={(e) => update("plan", e.target.value)}>
-            <option>Business</option>
-            <option>Pro</option>
-            <option>Enterprise</option>
-          </FieldSelect>
-        </Field>
-      </FieldRow>
-      <FieldRow>
         <Field label="Starting credits">
           <FieldInput
             type="number"
@@ -154,22 +171,7 @@ export default function CreateEnterpriseModal({ open, onClose, onCreated }: Prop
             onChange={(e) => update("credits", e.target.value)}
           />
         </Field>
-        <Field label="Monthly limit">
-          <FieldInput
-            type="number"
-            min={0}
-            value={form.monthly_limit}
-            onChange={(e) => update("monthly_limit", e.target.value)}
-          />
-        </Field>
       </FieldRow>
-      <Field label="Status">
-        <FieldSelect value={form.status} onChange={(e) => update("status", e.target.value)}>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
-          <option value="inactive">Inactive</option>
-        </FieldSelect>
-      </Field>
       <Field label="Notes" hint="optional">
         <FieldTextarea
           value={form.notes}

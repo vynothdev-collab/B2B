@@ -122,7 +122,6 @@ function EnterpriseDetail({
           <div><p className="text-xs text-slate-400 mb-0.5">Current Plan</p><p className="font-semibold text-slate-900">{ent.plan}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Total Users</p><p className="font-semibold text-slate-900">{ent.user_count}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Credits</p><p className="text-slate-700">{ent.credits.toLocaleString()}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Monthly Limit</p><p className="text-slate-700">{ent.monthly_limit.toLocaleString()}</p></div>
         </div>
       </div>
 

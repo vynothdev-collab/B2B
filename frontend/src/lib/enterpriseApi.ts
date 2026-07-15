@@ -10,7 +10,6 @@ export interface EnterpriseMe {
   phone: string | null;
   plan: string;
   credits: number;
-  monthly_limit: number;
   status: string;
   notes: string | null;
   created_at: string;

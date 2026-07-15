@@ -18,17 +18,16 @@ router = APIRouter(dependencies=[Depends(require_super_admin)])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class EnterpriseBase(BaseModel):
-    name:          str
-    industry:      str | None = None
-    website:       str | None = None
-    country:       str | None = None
-    size:          str | None = None
-    phone:         str | None = None
-    plan:          str        = "Business"
-    credits:       int        = 0
-    monthly_limit: int        = 20000
-    status:        str        = EnterpriseStatus.ACTIVE
-    notes:         str | None = None
+    name:     str
+    industry: str | None = None
+    website:  str | None = None
+    country:  str | None = None
+    size:     str | None = None
+    phone:    str | None = None
+    plan:     str        = "Free"
+    credits:  int        = 0
+    status:   str        = EnterpriseStatus.ACTIVE
+    notes:    str | None = None
 
     @field_validator("name")
     @classmethod
@@ -50,17 +49,16 @@ class CreateEnterpriseRequest(EnterpriseBase):
 
 
 class UpdateEnterpriseRequest(BaseModel):
-    name:          str | None = None
-    industry:      str | None = None
-    website:       str | None = None
-    country:       str | None = None
-    size:          str | None = None
-    phone:         str | None = None
-    plan:          str | None = None
-    credits:       int | None = None
-    monthly_limit: int | None = None
-    status:        str | None = None
-    notes:         str | None = None
+    name:     str | None = None
+    industry: str | None = None
+    website:  str | None = None
+    country:  str | None = None
+    size:     str | None = None
+    phone:    str | None = None
+    plan:     str | None = None
+    credits:  int | None = None
+    status:   str | None = None
+    notes:    str | None = None
 
     @field_validator("status")
     @classmethod
@@ -71,22 +69,21 @@ class UpdateEnterpriseRequest(BaseModel):
 
 
 class EnterpriseResponse(BaseModel):
-    id:            str
-    name:          str
-    industry:      str | None
-    website:       str | None
-    country:       str | None
-    size:          str | None
-    phone:         str | None
-    plan:          str
-    credits:       int
-    monthly_limit: int
-    status:        str
-    notes:         str | None
-    created_at:    datetime
-    user_count:    int  = 0
-    admin_name:    str | None = None
-    admin_email:   str | None = None
+    id:          str
+    name:        str
+    industry:    str | None
+    website:     str | None
+    country:     str | None
+    size:        str | None
+    phone:       str | None
+    plan:        str
+    credits:     int
+    status:      str
+    notes:       str | None
+    created_at:  datetime
+    user_count:  int  = 0
+    admin_name:  str | None = None
+    admin_email: str | None = None
 
 
 class CreateEnterpriseAdminRequest(BaseModel):
@@ -149,7 +146,6 @@ async def _serialize(db: AsyncSession, ent: Enterprise) -> EnterpriseResponse:
         phone=ent.phone,
         plan=ent.plan,
         credits=ent.credits,
-        monthly_limit=ent.monthly_limit,
         status=ent.status,
         notes=ent.notes,
         created_at=ent.created_at,
@@ -176,7 +172,6 @@ async def create_enterprise(
         phone=payload.phone,
         plan=payload.plan,
         credits=payload.credits,
-        monthly_limit=payload.monthly_limit,
         status=payload.status,
         notes=payload.notes,
     )

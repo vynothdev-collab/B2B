@@ -17,19 +17,18 @@ router = APIRouter()
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class EnterpriseMeResponse(BaseModel):
-    id:            str
-    name:          str
-    industry:      str | None
-    website:       str | None
-    country:       str | None
-    size:          str | None
-    phone:         str | None
-    plan:          str
-    credits:       int
-    monthly_limit: int
-    status:        str
-    notes:         str | None
-    created_at:    datetime
+    id:         str
+    name:       str
+    industry:   str | None
+    website:    str | None
+    country:    str | None
+    size:       str | None
+    phone:      str | None
+    plan:       str
+    credits:    int
+    status:     str
+    notes:      str | None
+    created_at: datetime
 
 
 class EnterpriseMemberResponse(BaseModel):
@@ -106,7 +105,6 @@ async def get_my_enterprise(
         phone=ent.phone,
         plan=ent.plan,
         credits=ent.credits,
-        monthly_limit=ent.monthly_limit,
         status=ent.status,
         notes=ent.notes,
         created_at=ent.created_at,

@@ -12,7 +12,6 @@ export interface Enterprise {
   phone: string | null;
   plan: string;
   credits: number;
-  monthly_limit: number;
   status: string;
   notes: string | null;
   created_at: string;
@@ -30,7 +29,6 @@ export interface CreateEnterprisePayload {
   phone?: string;
   plan?: string;
   credits?: number;
-  monthly_limit?: number;
   status?: EnterpriseStatus;
   notes?: string;
 }
