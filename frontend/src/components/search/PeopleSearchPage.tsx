@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Eye, ListPlus, SearchX, Settings, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
@@ -7,13 +7,11 @@ import PeopleFilterPanel from "./filters/PeopleFilterPanel";
 import PeopleTable, { PeopleTableSkeleton } from "./PeopleTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
-import ActiveFilterChips from "./ActiveFilterChips";
 import AddToListModal from "./AddToListModal";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { searchPersons, agenticSearch, revealPersonEmail } from "@/lib/searchApi";
 import type { PersonExclusions } from "@/lib/searchApi";
-import { buildPersonChips } from "@/lib/filterChips";
 import { toast } from "@/lib/toast";
 import { getLists, getListItems } from "@/lib/listsApi";
 import type { ListItemPayload } from "@/lib/listsApi";
@@ -124,7 +122,7 @@ export default function PeopleSearchPage() {
     setSelected(new Set());
     try {
       const exclusions = await resolveExclusions();
-      const res = await searchPersons(filters, scrollToken, exclusions);
+      const res = await searchPersons(filters, scrollToken, exclusions, PAGE_SIZE);
       setResults(res);
       setMeta(res.meta ?? null);
       setHasSearched(true);
@@ -177,7 +175,7 @@ export default function PeopleSearchPage() {
     setLoading(true);
     setSelected(new Set());
     try {
-      const res = await agenticSearch(agenticPromptRef.current, "employee", scrollToken);
+      const res = await agenticSearch(agenticPromptRef.current, "employee", scrollToken, PAGE_SIZE);
       setResults(res);
       setMeta(res.meta ?? null);
       setCurrentPage(page);
@@ -203,7 +201,7 @@ export default function PeopleSearchPage() {
     setLoading(true);
     setSelected(new Set());
     try {
-      const res = await agenticSearch(prompt, "employee");
+      const res = await agenticSearch(prompt, "employee", undefined, PAGE_SIZE);
       setResults(res);
       setMeta(res.meta ?? null);
       setHasSearched(true);
@@ -245,15 +243,6 @@ export default function PeopleSearchPage() {
   const totalLabel = hasSearched ? totalCount.toLocaleString() : "0";
   const showTable = hasSearched && !loading && results && (results.data?.length ?? 0) > 0;
   const showEmpty = !hasSearched || (!loading && (results?.data?.length ?? 0) === 0);
-
-  const removeFilter = useCallback((patch: Partial<PersonFilters>) => {
-    setFilters((current) => ({ ...current, ...patch }));
-  }, []);
-
-  const chips = useMemo(
-    () => buildPersonChips(filters, removeFilter),
-    [filters, removeFilter]
-  );
 
   const selectedPeople = results
     ? ((results.data ?? []) as PersonResult[]).filter((r) => selected.has(r.id))
@@ -309,7 +298,6 @@ export default function PeopleSearchPage() {
                 </button>
               </div>
             </div>
-            <ActiveFilterChips chips={chips} />
 
             {loading && !showEmpty && (
               <div className="flex-1 overflow-y-auto">
@@ -339,7 +327,8 @@ export default function PeopleSearchPage() {
                       page={currentPage}
                       total={meta.total}
                       pageSize={PAGE_SIZE}
-                      maxReachable={0}
+                      count={results!.data?.length ?? 0}
+                      totalPages={meta.total_pages}
                       hasNext={!!meta.scroll_token}
                       onPage={(p) => {
                         if (p === currentPage) return;

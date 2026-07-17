@@ -103,9 +103,10 @@ export async function searchPersons(
   filters: PersonFilters,
   scrollToken?: string,
   exclusions?: PersonExclusions,
+  pageSize = 10,
 ): Promise<SearchResponse> {
   const body = {
-    name: cleanStr(filters.name),
+    name: filters.name.length ? filters.name : undefined,
     job_title: listOrUndef(filters.jobTitle),
     job_title_match_type: filters.jobTitleMatchType,
     departments: listOrUndef(filters.departments),
@@ -190,6 +191,7 @@ export async function searchPersons(
     other_compliance: listOrUndef(filters.otherCompliance),
 
     scroll_token: scrollToken,
+    page_size: pageSize,
   };
 
   const { data } = await apiClient.post<SearchResponse>("/search/persons", body);
@@ -198,7 +200,8 @@ export async function searchPersons(
 
 export async function searchCompanies(
   filters: CompanyFilters,
-  scrollToken?: string
+  scrollToken?: string,
+  pageSize = 10,
 ): Promise<SearchResponse> {
   const body = {
     companies: listOrUndef(filters.companies),
@@ -267,6 +270,7 @@ export async function searchCompanies(
     company_news_timeframe: filters.companyNewsTimeframe || undefined,
 
     scroll_token: scrollToken,
+    page_size: pageSize,
   };
 
   const { data } = await apiClient.post<SearchResponse>("/search/companies", body);
@@ -277,11 +281,13 @@ export async function agenticSearch(
   prompt: string,
   entity: "employee" | "company",
   scrollToken?: string,
+  pageSize = 10,
 ): Promise<SearchResponse> {
   const { data } = await apiClient.post<SearchResponse>("/search/agentic", {
     prompt,
     entity,
     scroll_token: scrollToken,
+    page_size: pageSize,
   });
   return data;
 }
@@ -297,4 +303,17 @@ export async function revealPersonEmail(recordId: string): Promise<EmailRevealRe
     `/search/persons/${encodeURIComponent(recordId)}/email`,
   );
   return data;
+}
+
+export async function fetchTitleSuggestions(text: string): Promise<string[]> {
+  if (text.trim().length < 2) return [];
+  try {
+    const { data } = await apiClient.get<{ suggestions: string[] }>(
+      "/search/autocomplete/titles",
+      { params: { text: text.trim(), size: 10 } },
+    );
+    return data.suggestions ?? [];
+  } catch {
+    return [];
+  }
 }

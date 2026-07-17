@@ -72,20 +72,8 @@ export default function EmptyState({ onQuery, loading }: Props) {
             className="min-w-0 flex-1 bg-transparent text-[11px] text-gray-700 placeholder-gray-400 focus:outline-none sm:text-sm"
           />
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-3 py-1.5 sm:px-4 sm:py-2">
-          <button type="button" className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-700 sm:text-xs">
-            <span>↑↓</span>
-            <span>Relevance</span>
-          </button>
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-100 px-3 py-1.5 sm:px-4 sm:py-2">
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1.5 text-[11px] text-gray-500 sm:text-xs">
-              <span className="relative inline-flex h-4 w-7 cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <span className="absolute inset-0 rounded-full bg-red-600 peer-checked:bg-red-600" />
-                <span className="absolute left-0.5 top-0.5 h-3 w-3 rounded-full bg-white transition-transform peer-checked:translate-x-3" />
-              </span>
-              Verified only
-            </label>
             <button
               type="button"
               onClick={submit}

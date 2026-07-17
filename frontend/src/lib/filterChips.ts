@@ -1,7 +1,7 @@
 import type { FilterChip } from "@/components/search/ActiveFilterChips";
 import type { PersonFilters, CompanyFilters } from "@/types/search";
 import {
-  SENIORITY_OPTIONS, DEPARTMENT_OPTIONS, COMPANY_TYPE_OPTIONS,
+  SENIORITY_OPTIONS, DEPARTMENT_OPTIONS, INDUSTRY_OPTIONS,
   COMPANY_STATUS_OPTIONS, COMPANY_HOW_THEY_SELL_OPTIONS,
   COMPANY_MORE_FLAGS_OPTIONS, COMPANY_REVENUE_MODEL_OPTIONS,
   COMPANY_NEWS_CATEGORIES, COMPANY_NEWS_TIMEFRAMES,
@@ -50,8 +50,9 @@ export function buildPersonChips(
 ): FilterChip[] {
   const chips: FilterChip[] = [];
 
-  if (filters.name)
-    chips.push({ id: "name", label: `Name: ${filters.name}`, onRemove: () => onChange({ name: "" }) });
+  filters.name.forEach((v) =>
+    chips.push({ id: `name-${v}`, label: v, onRemove: () => onChange({ name: filters.name.filter((x) => x !== v) }) })
+  );
 
   filters.jobTitle.forEach((v) =>
     chips.push({ id: `title-${v}`, label: v, onRemove: () => onChange({ jobTitle: filters.jobTitle.filter((x) => x !== v) }) })
@@ -97,7 +98,7 @@ export function buildPersonChips(
   );
 
   filters.companyType.forEach((v) =>
-    chips.push({ id: `type-${v}`, label: labelOf(COMPANY_TYPE_OPTIONS, v), onRemove: () => onChange({ companyType: filters.companyType.filter((x) => x !== v) }) })
+    chips.push({ id: `type-${v}`, label: labelOf(INDUSTRY_OPTIONS, v), onRemove: () => onChange({ companyType: filters.companyType.filter((x) => x !== v) }) })
   );
 
   filters.companyHowTheySell.forEach((v) =>
@@ -295,7 +296,7 @@ export function buildCompanyChips(
   );
 
   filters.type.forEach((v) =>
-    chips.push({ id: `type-${v}`, label: labelOf(COMPANY_TYPE_OPTIONS, v), onRemove: () => onChange({ type: filters.type.filter((x) => x !== v) }) })
+    chips.push({ id: `type-${v}`, label: labelOf(INDUSTRY_OPTIONS, v), onRemove: () => onChange({ type: filters.type.filter((x) => x !== v) }) })
   );
 
   filters.companyStatus.forEach((v) =>

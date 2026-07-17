@@ -2,12 +2,14 @@
 import { useState } from "react";
 import {
   Sparkles, User, Users, Briefcase, Building2, MapPin, Phone, Tag,
-  Type, TrendingUp, Cpu, DollarSign, Banknote, Activity, Calendar, ChevronDown, Globe, Award, Mail, CopyX,
+  Type, TrendingUp, Cpu, DollarSign, Banknote, Activity, Calendar, ChevronDown, Globe, Award,
   Clock, Briefcase as BriefcaseJob, BarChart2,
 } from "lucide-react";
-import FilterSection from "../FilterSection";
+import FilterSection, { FilterPreviewChips } from "../FilterSection";
+import type { ChipItem } from "../FilterSection";
 import CountrySelect from "./CountrySelect";
 import MultiChipAutocomplete from "../MultiChipAutocomplete";
+import JobTitleAutocomplete from "./JobTitleAutocomplete";
 import MultiChipSelect from "../MultiChipSelect";
 import BulkCompanyInput from "./BulkCompanyInput";
 import InlineDepartmentSelect from "./InlineDepartmentSelect";
@@ -16,8 +18,6 @@ import EmployeeHeadcountFilter from "./EmployeeHeadcountFilter";
 import InlineCompanyNewsFilter from "./InlineCompanyNewsFilter";
 import WebsiteTrafficFilter from "./WebsiteTrafficFilter";
 import AwardsCertsFilter from "./AwardsCertsFilter";
-import EmailProviderFilter from "./EmailProviderFilter";
-import DuplicateControlFilter from "./DuplicateControlFilter";
 import TimeInRoleFilter from "./TimeInRoleFilter";
 import TotalExperienceFilter from "./TotalExperienceFilter";
 import JobChangeFilter from "./JobChangeFilter";
@@ -39,6 +39,7 @@ import {
   GROWTH_PRESETS,
   FOUNDED_YEAR_PRESETS,
   HEADCOUNT_RANGE_OPTIONS,
+  COMPANY_STATUS_OPTIONS,
 } from "@/types/search";
 
 
@@ -46,10 +47,6 @@ interface Props {
   filters: PersonFilters;
   onChange: (patch: Partial<PersonFilters>) => void;
 }
-
-const inputCls =
-  "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none";
-const labelCls = "mb-1 block text-[12px] text-gray-500";
 
 const SECTIONS = [
   "lookalikes", "people", "title", "company", "location",
@@ -60,11 +57,88 @@ const SECTIONS = [
 ] as const;
 type Section = typeof SECTIONS[number];
 
+function chips(items: string[], onRemove: (v: string) => void): ChipItem[] {
+  return items.map((v) => ({ label: v, onRemove: () => onRemove(v) }));
+}
+
 export default function PeopleFilterPanel({ filters, onChange }: Props) {
   const [open, setOpen] = useState<Section | "">("people");
   const toggle = (s: Section) => setOpen((p) => (p === s ? "" : s));
   const [titleSub, setTitleSub] = useState<"departments" | "seniority" | "">("");
   const toggleTitleSub = (s: "departments" | "seniority") => setTitleSub((p) => (p === s ? "" : s));
+
+  // ── section counts ──────────────────────────────────────────────────────────
+  const nameCount = filters.name.length;
+  const titleCount = filters.jobTitle.length + filters.departments.length + filters.seniority.length;
+  const companyCount = filters.companies.length;
+  const locationCount =
+    filters.personLocationCountries.length + filters.personLocationStates.length +
+    filters.personLocationCities.length + filters.companyHQCountries.length +
+    filters.companyHQStates.length + filters.companyHQCities.length;
+  const contactCount = filters.requireWorkEmail ? 1 : 0;
+  const typeCount = filters.companyStatus.length + filters.companyType.length;
+  const keywordCount = filters.keywordsInclude.length + filters.keywordsExclude.length;
+  const headcountCount =
+    filters.employeeHeadcountRanges.length + (filters.employeeCountMin || filters.employeeCountMax ? 1 : 0);
+  const industryCount = filters.industries.length;
+  const techCount = filters.technologies.length;
+  const revenueCount =
+    filters.revenueBuckets.length + (filters.revenueMin || filters.revenueMax ? 1 : 0);
+  const fundingCount =
+    filters.fundingPresets.length + (filters.fundingMin || filters.fundingMax ? 1 : 0);
+  const growthCount =
+    filters.headcountGrowthPresets.length + (filters.headcountGrowthMin || filters.headcountGrowthMax ? 1 : 0);
+  const deptCount = (filters.headcountByDepartment ? 1 : 0) +
+    filters.headcountByDepartmentPresets.length +
+    (filters.headcountByDepartmentMin || filters.headcountByDepartmentMax ? 1 : 0);
+  const locationByCount = (filters.headcountByLocationCountry ? 1 : 0) +
+    filters.headcountByLocationPresets.length +
+    (filters.headcountByLocationMin || filters.headcountByLocationMax ? 1 : 0);
+  const foundedCount =
+    filters.foundedPresets.length + (filters.foundedMin || filters.foundedMax ? 1 : 0);
+  const timeRoleCount =
+    filters.timeInRoleMinYears || filters.timeInRoleMinMonths ||
+    filters.timeInRoleMaxYears || filters.timeInRoleMaxMonths ? 1 : 0;
+  const timeCompanyCount =
+    filters.timeInCompanyMinYears || filters.timeInCompanyMinMonths ||
+    filters.timeInCompanyMaxYears || filters.timeInCompanyMaxMonths ? 1 : 0;
+  const expCount = filters.experienceYearsMin || filters.experienceYearsMax ? 1 : 0;
+  const jobChangeCount = filters.jobChangeTimeframe ? 1 : 0;
+  const jobPostingCount = filters.jobPostingKeywords.length;
+  const certsCount = filters.awards.length + filters.certifications.length + filters.otherCompliance.length;
+  const trafficCount =
+    filters.websiteVisitsMin || filters.websiteVisitsMax ||
+    filters.visitChangeMin || filters.visitChangeMax ? 1 : 0;
+  const newsCount =
+    filters.companyNewsKeywords.length + filters.companyNewsCategories.length +
+    (filters.companyNewsTimeframe ? 1 : 0);
+
+  // ── preview chip lists ──────────────────────────────────────────────────────
+  const namePreview = chips(filters.name, (v) => onChange({ name: filters.name.filter((x) => x !== v) }));
+  const titlePreview: ChipItem[] = [
+    ...filters.jobTitle.map((v) => ({ label: v, onRemove: () => onChange({ jobTitle: filters.jobTitle.filter((x) => x !== v) }) })),
+    ...filters.departments.map((v) => ({ label: DEPARTMENT_OPTIONS.find((o) => o.value === v)?.label ?? v, onRemove: () => onChange({ departments: filters.departments.filter((x) => x !== v) }) })),
+    ...filters.seniority.map((v) => ({ label: SENIORITY_OPTIONS.find((o) => o.value === v)?.label ?? v, onRemove: () => onChange({ seniority: filters.seniority.filter((x) => x !== v) }) })),
+  ];
+  const companyPreview = chips(filters.companies, (v) => onChange({ companies: filters.companies.filter((x) => x !== v) }));
+  const locationPreview: ChipItem[] = [
+    ...chips(filters.personLocationCountries, (v) => onChange({ personLocationCountries: filters.personLocationCountries.filter((x) => x !== v) })),
+    ...chips(filters.personLocationStates, (v) => onChange({ personLocationStates: filters.personLocationStates.filter((x) => x !== v) })),
+    ...chips(filters.personLocationCities, (v) => onChange({ personLocationCities: filters.personLocationCities.filter((x) => x !== v) })),
+    ...chips(filters.companyHQCountries, (v) => onChange({ companyHQCountries: filters.companyHQCountries.filter((x) => x !== v) })),
+    ...chips(filters.companyHQStates, (v) => onChange({ companyHQStates: filters.companyHQStates.filter((x) => x !== v) })),
+    ...chips(filters.companyHQCities, (v) => onChange({ companyHQCities: filters.companyHQCities.filter((x) => x !== v) })),
+  ];
+  const typePreview: ChipItem[] = [
+    ...filters.companyStatus.map((v) => ({ label: COMPANY_STATUS_OPTIONS.find((o) => o.value === v)?.label ?? v, onRemove: () => onChange({ companyStatus: filters.companyStatus.filter((x) => x !== v) }) })),
+    ...filters.companyType.map((v) => ({ label: v, onRemove: () => onChange({ companyType: filters.companyType.filter((x) => x !== v) }) })),
+  ];
+  const industryPreview = chips(filters.industries, (v) => onChange({ industries: filters.industries.filter((x) => x !== v) }));
+  const techPreview = chips(filters.technologies, (v) => onChange({ technologies: filters.technologies.filter((x) => x !== v) }));
+  const keywordPreview: ChipItem[] = [
+    ...filters.keywordsInclude.map((v) => ({ label: v, onRemove: () => onChange({ keywordsInclude: filters.keywordsInclude.filter((x) => x !== v) }) })),
+    ...filters.keywordsExclude.map((v) => ({ label: `−${v}`, onRemove: () => onChange({ keywordsExclude: filters.keywordsExclude.filter((x) => x !== v) }) })),
+  ];
 
   return (
     <>
@@ -75,24 +149,35 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         </div>
       </FilterSection>
 
-      <FilterSection title="People" icon={<User className="h-4 w-4" />} isOpen={open === "people"} onToggle={() => toggle("people")}>
-        <div>
-          <span className={labelCls}>Name</span>
-          <input
-            type="text"
-            placeholder="Search by full name"
-            value={filters.name}
-            onChange={(e) => onChange({ name: e.target.value })}
-            className={inputCls}
-          />
-        </div>
+      <FilterSection
+        title="People"
+        icon={<User className="h-4 w-4" />}
+        isOpen={open === "people"}
+        onToggle={() => toggle("people")}
+        count={nameCount}
+        onClear={() => onChange({ name: [] })}
+        preview={<FilterPreviewChips items={namePreview} />}
+      >
+        <BulkCompanyInput
+          label="Name"
+          placeholder="Type a name and press Enter…"
+          values={filters.name}
+          onChange={(v) => onChange({ name: v })}
+        />
       </FilterSection>
 
-      <FilterSection title="Job Title" icon={<Briefcase className="h-4 w-4" />} isOpen={open === "title"} onToggle={() => toggle("title")}>
-        <MultiChipAutocomplete
+      <FilterSection
+        title="Job Title"
+        icon={<Briefcase className="h-4 w-4" />}
+        isOpen={open === "title"}
+        onToggle={() => toggle("title")}
+        count={titleCount}
+        onClear={() => onChange({ jobTitle: [], departments: [], seniority: [] })}
+        preview={<FilterPreviewChips items={titlePreview} />}
+      >
+        <JobTitleAutocomplete
           label="Job title"
           placeholder={filters.jobTitleMatchType === "exact" ? "e.g. Chief Executive Officer" : "e.g. Software Engineer"}
-          field="title"
           values={filters.jobTitle}
           onChange={(v) => onChange({ jobTitle: v })}
         />
@@ -102,11 +187,10 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
               key={mode}
               type="button"
               onClick={() => onChange({ jobTitleMatchType: mode })}
-              className={`flex-1 rounded-md py-1 text-[12px] font-medium capitalize transition-colors ${
-                filters.jobTitleMatchType === mode
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`flex-1 rounded-md py-1 text-[12px] font-medium capitalize transition-colors ${filters.jobTitleMatchType === mode
+                ? "bg-red-600 text-white shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
             >
               {mode.charAt(0).toUpperCase() + mode.slice(1)}
             </button>
@@ -175,7 +259,15 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         </div>
       </FilterSection>
 
-      <FilterSection title="Company" icon={<Building2 className="h-4 w-4" />} isOpen={open === "company"} onToggle={() => toggle("company")}>
+      <FilterSection
+        title="Company"
+        icon={<Building2 className="h-4 w-4" />}
+        isOpen={open === "company"}
+        onToggle={() => toggle("company")}
+        count={companyCount}
+        onClear={() => onChange({ companies: [] })}
+        preview={<FilterPreviewChips items={companyPreview} />}
+      >
         <BulkCompanyInput
           label="Company name"
           values={filters.companies}
@@ -183,7 +275,15 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Location" icon={<MapPin className="h-4 w-4" />} isOpen={open === "location"} onToggle={() => toggle("location")}>
+      <FilterSection
+        title="Location"
+        icon={<MapPin className="h-4 w-4" />}
+        isOpen={open === "location"}
+        onToggle={() => toggle("location")}
+        count={locationCount}
+        onClear={() => onChange({ personLocationCountries: [], personLocationStates: [], personLocationCities: [], companyHQCountries: [], companyHQStates: [], companyHQCities: [] })}
+        preview={<FilterPreviewChips items={locationPreview} />}
+      >
         <TabbedLocationFilter
           personCountries={filters.personLocationCountries}
           personStates={filters.personLocationStates}
@@ -200,18 +300,41 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Contact Details" icon={<Phone className="h-4 w-4" />} isOpen={open === "contact"} onToggle={() => toggle("contact")}>
+      <FilterSection
+        title="Contact Details"
+        icon={<Phone className="h-4 w-4" />}
+        isOpen={open === "contact"}
+        onToggle={() => toggle("contact")}
+        count={contactCount}
+        onClear={() => onChange({ requireWorkEmail: false })}
+      >
         <ContactDetailsFilter
           requireWorkEmail={filters.requireWorkEmail}
           onChange={onChange}
         />
       </FilterSection>
 
-      <FilterSection title="Type & Business Model" icon={<Tag className="h-4 w-4" />} isOpen={open === "type"} onToggle={() => toggle("type")}>
+      <FilterSection
+        title="Type & Business Model"
+        icon={<Tag className="h-4 w-4" />}
+        isOpen={open === "type"}
+        onToggle={() => toggle("type")}
+        count={typeCount}
+        onClear={() => onChange({ companyStatus: [], companyType: [], companyHowTheySell: [], companyMoreFlags: [], companyRevenueModel: [] })}
+        preview={<FilterPreviewChips items={typePreview} />}
+      >
         <InlineTypeBusinessFilter filters={filters} onChange={onChange} />
       </FilterSection>
 
-      <FilterSection title="Keywords" icon={<Type className="h-4 w-4" />} isOpen={open === "keywords"} onToggle={() => toggle("keywords")}>
+      <FilterSection
+        title="Keywords"
+        icon={<Type className="h-4 w-4" />}
+        isOpen={open === "keywords"}
+        onToggle={() => toggle("keywords")}
+        count={keywordCount}
+        onClear={() => onChange({ keywordsInclude: [], keywordsExclude: [], keywordsScope: [] })}
+        preview={<FilterPreviewChips items={keywordPreview} />}
+      >
         <KeywordsFilter
           include={filters.keywordsInclude}
           matchMode={filters.keywordsMatchMode}
@@ -224,7 +347,14 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Employee Headcount" icon={<Users className="h-4 w-4" />} isOpen={open === "employeeHeadcount"} onToggle={() => toggle("employeeHeadcount")}>
+      <FilterSection
+        title="Employee Headcount"
+        icon={<Users className="h-4 w-4" />}
+        isOpen={open === "employeeHeadcount"}
+        onToggle={() => toggle("employeeHeadcount")}
+        count={headcountCount}
+        onClear={() => onChange({ employeeHeadcountRanges: [], employeeCountMin: "", employeeCountMax: "", employeeHeadcountMode: "predefined" })}
+      >
         <EmployeeHeadcountFilter
           mode={filters.employeeHeadcountMode}
           ranges={filters.employeeHeadcountRanges}
@@ -237,7 +367,15 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Industry" icon={<Tag className="h-4 w-4" />} isOpen={open === "industry"} onToggle={() => toggle("industry")}>
+      <FilterSection
+        title="Industry"
+        icon={<Tag className="h-4 w-4" />}
+        isOpen={open === "industry"}
+        onToggle={() => toggle("industry")}
+        count={industryCount}
+        onClear={() => onChange({ industries: [] })}
+        preview={<FilterPreviewChips items={industryPreview} />}
+      >
         <IndustryFilter values={filters.industries} onChange={(v) => onChange({ industries: v })} />
       </FilterSection>
 
@@ -248,7 +386,15 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Technologies" icon={<Cpu className="h-4 w-4" />} isOpen={open === "technologies"} onToggle={() => toggle("technologies")}>
+      <FilterSection
+        title="Technologies"
+        icon={<Cpu className="h-4 w-4" />}
+        isOpen={open === "technologies"}
+        onToggle={() => toggle("technologies")}
+        count={techCount}
+        onClear={() => onChange({ technologies: [] })}
+        preview={<FilterPreviewChips items={techPreview} />}
+      >
         <MultiChipAutocomplete
           label="Skills / Technologies"
           placeholder="e.g. React, AWS, Python…"
@@ -261,7 +407,14 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         </p>
       </FilterSection>
 
-      <FilterSection title="Revenue" icon={<DollarSign className="h-4 w-4" />} isOpen={open === "revenue"} onToggle={() => toggle("revenue")}>
+      <FilterSection
+        title="Revenue"
+        icon={<DollarSign className="h-4 w-4" />}
+        isOpen={open === "revenue"}
+        onToggle={() => toggle("revenue")}
+        count={revenueCount}
+        onClear={() => onChange({ revenueBuckets: [], revenueMin: "", revenueMax: "", revenueMode: "predefined" })}
+      >
         <RevenueFilter
           mode={filters.revenueMode}
           buckets={filters.revenueBuckets}
@@ -274,7 +427,14 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Funding" icon={<Banknote className="h-4 w-4" />} isOpen={open === "funding"} onToggle={() => toggle("funding")}>
+      <FilterSection
+        title="Funding"
+        icon={<Banknote className="h-4 w-4" />}
+        isOpen={open === "funding"}
+        onToggle={() => toggle("funding")}
+        count={fundingCount}
+        onClear={() => onChange({ fundingPresets: [], fundingMin: "", fundingMax: "", fundingMode: "predefined" })}
+      >
         <FundingFilter
           mode={filters.fundingMode}
           presets={filters.fundingPresets}
@@ -287,7 +447,15 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Headcount Growth" icon={<Activity className="h-4 w-4" />} info="Filters companies by 12-month growth" isOpen={open === "headcountGrowth"} onToggle={() => toggle("headcountGrowth")}>
+      <FilterSection
+        title="Headcount Growth"
+        icon={<Activity className="h-4 w-4" />}
+        info="Filters companies by 12-month growth"
+        isOpen={open === "headcountGrowth"}
+        onToggle={() => toggle("headcountGrowth")}
+        count={growthCount}
+        onClear={() => onChange({ headcountGrowthPresets: [], headcountGrowthMin: "", headcountGrowthMax: "", headcountGrowthMode: "predefined" })}
+      >
         <PresetRangeFilter
           options={GROWTH_PRESETS}
           mode={filters.headcountGrowthMode}
@@ -303,7 +471,15 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Headcount by Department" icon={<Activity className="h-4 w-4" />} info="Filters by company headcount in a role" isOpen={open === "headcountByDept"} onToggle={() => toggle("headcountByDept")}>
+      <FilterSection
+        title="Headcount by Department"
+        icon={<Activity className="h-4 w-4" />}
+        info="Filters by company headcount in a role"
+        isOpen={open === "headcountByDept"}
+        onToggle={() => toggle("headcountByDept")}
+        count={deptCount}
+        onClear={() => onChange({ headcountByDepartment: "", headcountByDepartmentPresets: [], headcountByDepartmentMin: "", headcountByDepartmentMax: "", headcountByDepartmentMode: "predefined" })}
+      >
         <MultiChipSelect
           label="Department"
           placeholder="Select department"
@@ -326,7 +502,15 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Headcount by Location" icon={<MapPin className="h-4 w-4" />} info="Filters by company headcount in a country" isOpen={open === "headcountByLocation"} onToggle={() => toggle("headcountByLocation")}>
+      <FilterSection
+        title="Headcount by Location"
+        icon={<MapPin className="h-4 w-4" />}
+        info="Filters by company headcount in a country"
+        isOpen={open === "headcountByLocation"}
+        onToggle={() => toggle("headcountByLocation")}
+        count={locationByCount}
+        onClear={() => onChange({ headcountByLocationCountry: "", headcountByLocationPresets: [], headcountByLocationMin: "", headcountByLocationMax: "", headcountByLocationMode: "predefined" })}
+      >
         <CountrySelect
           label="Country"
           placeholder="Search country…"
@@ -348,7 +532,14 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Founded Year" icon={<Calendar className="h-4 w-4" />} isOpen={open === "founded"} onToggle={() => toggle("founded")}>
+      <FilterSection
+        title="Founded Year"
+        icon={<Calendar className="h-4 w-4" />}
+        isOpen={open === "founded"}
+        onToggle={() => toggle("founded")}
+        count={foundedCount}
+        onClear={() => onChange({ foundedPresets: [], foundedMin: "", foundedMax: "", foundedMode: "predefined" })}
+      >
         <PresetRangeFilter
           options={FOUNDED_YEAR_PRESETS}
           mode={filters.foundedMode}
@@ -364,43 +555,91 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         />
       </FilterSection>
 
-      <FilterSection title="Time in Current Role" icon={<Clock className="h-4 w-4" />} isOpen={open === "timeInRole"} onToggle={() => toggle("timeInRole")}>
+      <FilterSection
+        title="Time in Current Role"
+        icon={<Clock className="h-4 w-4" />}
+        isOpen={open === "timeInRole"}
+        onToggle={() => toggle("timeInRole")}
+        count={timeRoleCount}
+        onClear={() => onChange({ timeInRoleMinYears: "", timeInRoleMinMonths: "", timeInRoleMaxYears: "", timeInRoleMaxMonths: "" })}
+      >
         <TimeInRoleFilter mode="role" filters={filters} onChange={onChange} />
       </FilterSection>
 
-      <FilterSection title="Time in Current Company" icon={<Clock className="h-4 w-4" />} isOpen={open === "timeInCompany"} onToggle={() => toggle("timeInCompany")}>
+      <FilterSection
+        title="Time in Current Company"
+        icon={<Clock className="h-4 w-4" />}
+        isOpen={open === "timeInCompany"}
+        onToggle={() => toggle("timeInCompany")}
+        count={timeCompanyCount}
+        onClear={() => onChange({ timeInCompanyMinYears: "", timeInCompanyMinMonths: "", timeInCompanyMaxYears: "", timeInCompanyMaxMonths: "" })}
+      >
         <TimeInRoleFilter mode="company" filters={filters} onChange={onChange} />
       </FilterSection>
 
-      <FilterSection title="Total Years of Experience" icon={<BarChart2 className="h-4 w-4" />} isOpen={open === "totalExperience"} onToggle={() => toggle("totalExperience")}>
+      <FilterSection
+        title="Total Years of Experience"
+        icon={<BarChart2 className="h-4 w-4" />}
+        isOpen={open === "totalExperience"}
+        onToggle={() => toggle("totalExperience")}
+        count={expCount}
+        onClear={() => onChange({ experienceYearsMin: "", experienceYearsMax: "" })}
+      >
         <TotalExperienceFilter filters={filters} onChange={onChange} />
       </FilterSection>
 
-      <FilterSection title="Job Change" icon={<BriefcaseJob className="h-4 w-4" />} isOpen={open === "jobChange"} onToggle={() => toggle("jobChange")}>
+      <FilterSection
+        title="Job Change"
+        icon={<BriefcaseJob className="h-4 w-4" />}
+        isOpen={open === "jobChange"}
+        onToggle={() => toggle("jobChange")}
+        count={jobChangeCount}
+        onClear={() => onChange({ jobChangeTimeframe: "" })}
+      >
         <JobChangeFilter filters={filters} onChange={onChange} />
       </FilterSection>
 
-      <FilterSection title="Job Posting" icon={<BriefcaseJob className="h-4 w-4" />} isOpen={open === "jobPosting"} onToggle={() => toggle("jobPosting")}>
+      <FilterSection
+        title="Job Posting"
+        icon={<BriefcaseJob className="h-4 w-4" />}
+        isOpen={open === "jobPosting"}
+        onToggle={() => toggle("jobPosting")}
+        count={jobPostingCount}
+        onClear={() => onChange({ jobPostingKeywords: [] })}
+      >
         <JobPostingFilter filters={filters} onChange={onChange} />
       </FilterSection>
 
-      <FilterSection title="Duplicate Control" icon={<CopyX className="h-4 w-4" />} isOpen={open === "duplicateControl"} onToggle={() => toggle("duplicateControl")}>
-        <DuplicateControlFilter filters={filters} onChange={onChange} />
-      </FilterSection>
-
-      <FilterSection title="Company Email Provider" icon={<Mail className="h-4 w-4" />} isOpen={open === "emailProvider"} onToggle={() => toggle("emailProvider")}>
-        <EmailProviderFilter filters={filters} onChange={onChange} />
-      </FilterSection>
-
-      <FilterSection title="Awards & Certifications" icon={<Award className="h-4 w-4" />} isOpen={open === "awardsCerts"} onToggle={() => toggle("awardsCerts")}>
+      <FilterSection
+        title="Awards & Certifications"
+        icon={<Award className="h-4 w-4" />}
+        isOpen={open === "awardsCerts"}
+        onToggle={() => toggle("awardsCerts")}
+        count={certsCount}
+        onClear={() => onChange({ awards: [], certifications: [], otherCompliance: [] })}
+      >
         <AwardsCertsFilter filters={filters} onChange={onChange} />
       </FilterSection>
 
-      <FilterSection title="Website Traffic" icon={<Globe className="h-4 w-4" />} isOpen={open === "websiteTraffic"} onToggle={() => toggle("websiteTraffic")}>
+      <FilterSection
+        title="Website Traffic"
+        icon={<Globe className="h-4 w-4" />}
+        isOpen={open === "websiteTraffic"}
+        onToggle={() => toggle("websiteTraffic")}
+        count={trafficCount}
+        onClear={() => onChange({ websiteVisitsMin: "", websiteVisitsMax: "", visitChangeMin: "", visitChangeMax: "", visitChangeTimeframe: "monthly" })}
+      >
         <WebsiteTrafficFilter filters={filters} onChange={onChange} />
       </FilterSection>
 
-      <FilterSection title="Company News" icon={<Banknote className="h-4 w-4" />} isOpen={open === "companyNews"} onToggle={() => toggle("companyNews")}>
+      <FilterSection
+        title="Company News"
+        icon={<Banknote className="h-4 w-4" />}
+        isOpen={open === "companyNews"}
+        onToggle={() => toggle("companyNews")}
+        count={newsCount}
+        onClear={() => onChange({ companyNewsKeywords: [], companyNewsCategories: [], companyNewsTimeframe: "" })}
+      >
         <InlineCompanyNewsFilter filters={filters} onChange={onChange} />
       </FilterSection>
     </>
