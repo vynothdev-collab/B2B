@@ -1,12 +1,12 @@
 from typing import Any, Literal, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 PAGE_SIZE = 10
 
 
 class PersonSearchRequest(BaseModel):
-    name: Optional[str] = None
+    name: Optional[list[str]] = None
     job_title: Optional[list[str]] = None
     job_title_match_type: Literal["contains", "exact"] = "contains"
     departments: Optional[list[str]] = None
@@ -101,6 +101,7 @@ class PersonSearchRequest(BaseModel):
     job_posting_keywords: Optional[list[str]] = None
 
     scroll_token: Optional[str] = None
+    page_size: int = Field(default=10, ge=1, le=1000)
 
 
 class CompanySearchRequest(BaseModel):
@@ -175,10 +176,12 @@ class CompanySearchRequest(BaseModel):
     company_news_timeframe: Optional[str] = None
 
     scroll_token: Optional[str] = None
+    page_size: int = Field(default=10, ge=1, le=1000)
 
 
 class SearchMeta(BaseModel):
     total: int
+    total_pages: Optional[int] = None
     scroll_token: Optional[str] = None
 
 
@@ -191,9 +194,14 @@ class AgenticSearchRequest(BaseModel):
     prompt: str
     entity: Literal["employee", "company"] = "employee"
     scroll_token: Optional[str] = None
+    page_size: int = Field(default=10, ge=1, le=1000)
 
 
 class EmailRevealResponse(BaseModel):
     record_id: str
     email: Optional[str] = None
     has_email: bool
+
+
+class TitleAutocompleteResponse(BaseModel):
+    suggestions: list[str]

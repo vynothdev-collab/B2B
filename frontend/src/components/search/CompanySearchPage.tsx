@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ListPlus, SearchX, Settings, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
@@ -7,12 +7,10 @@ import CompanyFilterPanel from "./filters/CompanyFilterPanel";
 import CompanyTable, { CompanyTableSkeleton } from "./CompanyTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
-import ActiveFilterChips from "./ActiveFilterChips";
 import AddToListModal from "./AddToListModal";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { searchCompanies, agenticSearch } from "@/lib/searchApi";
-import { buildCompanyChips } from "@/lib/filterChips";
 import { useColumnSettings, COMPANY_COLUMNS } from "@/hooks/useColumnSettings";
 import { toast } from "@/lib/toast";
 import type { ListItemPayload } from "@/lib/listsApi";
@@ -57,7 +55,7 @@ export default function CompanySearchPage() {
     setLoading(true);
     setSelected(new Set());
     try {
-      const res = await searchCompanies(filters, scrollToken);
+      const res = await searchCompanies(filters, scrollToken, PAGE_SIZE);
       setResults(res);
       setMeta(res.meta ?? null);
       setHasSearched(true);
@@ -109,7 +107,7 @@ export default function CompanySearchPage() {
     setLoading(true);
     setSelected(new Set());
     try {
-      const res = await agenticSearch(agenticPromptRef.current, "company", scrollToken);
+      const res = await agenticSearch(agenticPromptRef.current, "company", scrollToken, PAGE_SIZE);
       setResults(res);
       setMeta(res.meta ?? null);
       setCurrentPage(page);
@@ -135,7 +133,7 @@ export default function CompanySearchPage() {
     setLoading(true);
     setSelected(new Set());
     try {
-      const res = await agenticSearch(prompt, "company");
+      const res = await agenticSearch(prompt, "company", undefined, PAGE_SIZE);
       setResults(res);
       setMeta(res.meta ?? null);
       setHasSearched(true);
@@ -177,15 +175,6 @@ export default function CompanySearchPage() {
   const totalLabel = hasSearched ? totalCount.toLocaleString() : "0";
   const showTable = hasSearched && !loading && results && (results.data?.length ?? 0) > 0;
   const showEmpty = !hasSearched || (!loading && (results?.data?.length ?? 0) === 0);
-
-  const removeFilter = useCallback((patch: Partial<CompanyFilters>) => {
-    setFilters((current) => ({ ...current, ...patch }));
-  }, []);
-
-  const chips = useMemo(
-    () => buildCompanyChips(filters, removeFilter),
-    [filters, removeFilter]
-  );
 
   const selectedCompanies = results
     ? ((results.data ?? []) as CompanyResult[]).filter((r) => selected.has(r.id))
@@ -241,7 +230,6 @@ export default function CompanySearchPage() {
                 </button>
               </div>
             </div>
-            <ActiveFilterChips chips={chips} />
 
             {loading && !showEmpty && (
               <div className="flex-1 overflow-y-auto">
@@ -268,7 +256,8 @@ export default function CompanySearchPage() {
                       page={currentPage}
                       total={meta.total}
                       pageSize={PAGE_SIZE}
-                      maxReachable={0}
+                      count={results!.data?.length ?? 0}
+                      totalPages={meta.total_pages}
                       hasNext={!!meta.scroll_token}
                       onPage={(p) => {
                         if (p === currentPage) return;

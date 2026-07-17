@@ -8,6 +8,7 @@ Endpoints hit:
 from __future__ import annotations
 
 import asyncio
+import math
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any, NoReturn, Optional
 
@@ -74,7 +75,7 @@ def _add_location_match_multi(
     """OR each location value across all listed fields."""
     if not values:
         return
-    cleaned = [v.lower().strip() for v in values if v and v.strip()]
+    cleaned = [v.strip().title() for v in values if v and v.strip()]
     if not cleaned:
         return
     should: list[dict] = []
@@ -433,41 +434,16 @@ def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) ->
         clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
 
 
-def _add_company_status_filter(clauses: list[dict], statuses: Optional[list[str]]) -> None:
-    """CoreSignal uses two separate fields for company status:
-      is_public (boolean)     — ownership type (public / private)
-      type (keyword)          — "Nonprofit", "Government Agency", "Educational"
-      status.value (keyword)  — operational status: "active", "acquired", "closed", "defunct", "ipo"
-    """
-    if not statuses:
+def _add_company_status_filter(
+    clauses: list[dict],
+    company_types: Optional[list[str]],
+) -> None:
+    """Matches CoreSignal's `type` field against org-type values
+    (e.g. "Privately Held", "Public Company", "Nonprofit")."""
+    if not company_types:
         return
-    should: list[dict] = []
-    for s in statuses:
-        s_norm = (s or "").lower().strip()
-        if s_norm == "public":
-            should.append({"term": {"is_public": True}})
-        elif s_norm == "private":
-            should.append({"term": {"is_public": False}})
-        elif s_norm == "nonprofit":
-            should.append({"term": {"type": "Nonprofit"}})
-        elif s_norm == "active":
-            should.append({"term": {"status.value": "active"}})
-        elif s_norm == "acquired":
-            should.append({"term": {"status.value": "acquired"}})
-        elif s_norm in ("closed", "defunct"):
-            # CoreSignal uses both "closed" and "defunct" for shut-down companies
-            should.append({"bool": {"should": [
-                {"term": {"status.value": "closed"}},
-                {"term": {"status.value": "defunct"}},
-            ], "minimum_should_match": 1}})
-        elif s_norm == "ipo":
-            # IPO companies are public — match either status flag
-            should.append({"bool": {"should": [
-                {"term": {"status.value": "ipo"}},
-                {"term": {"is_public": True}},
-            ], "minimum_should_match": 1}})
-    if should:
-        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+    should = [{"match_phrase": {"type": ct}} for ct in company_types]
+    clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
 
 
 def _add_email_provider_filter(clauses: list[dict], providers: Optional[list[str]]) -> None:
@@ -654,7 +630,8 @@ def build_person_query(f: PersonSearchRequest, *, use_company_id_filter: bool = 
     must_not: list[dict] = []
 
     if f.name:
-        must.append({"match": {"full_name": f.name.lower()}})
+        should = [{"match": {"full_name": n.lower()}} for n in f.name]
+        must.append({"bool": {"should": should, "minimum_should_match": 1}})
 
     _add_multi_match(must, "active_experience_title", f.job_title, phrase=(f.job_title_match_type == "exact"))
     _add_multi_term(filters, "active_experience_department", f.departments)
@@ -972,6 +949,7 @@ def _map_person(r: dict) -> dict:
         "headline": r.get("headline"),
         "picture_url": r.get("picture_url"),
         "linkedin_url": r.get("linkedin_url"),
+        "linkedin_canonical_shorthand_name": r.get("linkedin_canonical_shorthand_name"),
         # ── Location ─────────────────────────────────────────────────────────
         "location_country": r.get("location_country"),
         "location_city": r.get("location_city"),
@@ -1000,6 +978,7 @@ def _map_person(r: dict) -> dict:
             or r.get("active_experience_company_shorthand_name")
         ),
         "active_experience_company_website": r.get("active_experience_company_website") or exp.get("company_website"),
+        "active_experience_company_linkedin_url": exp.get("company_linkedin_url"),
         "active_experience_company_industry": exp.get("company_industry"),
         "active_experience_company_employees_count": exp.get("company_employees_count"),
         "active_experience_company_size": exp.get("company_size_range"),
@@ -1259,6 +1238,7 @@ async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int 
         resp = await client.post(
             _search_url("company_multi_source"),
             headers=_headers(),
+            params={"items_per_page": limit},
             json=body,
         )
 
@@ -1283,31 +1263,62 @@ def _require_api_key() -> None:
         raise HTTPException(status_code=500, detail="CORESIGNAL_API_KEY is not configured")
 
 
-def _paginate_ids(ids: list, scroll_token: Optional[str]) -> tuple[list, Optional[str]]:
+def _paginate_ids(
+    ids: list,
+    scroll_token: Optional[str],
+    page_size: Optional[int] = None,
+) -> tuple[list, Optional[str]]:
     try:
         offset = int(scroll_token) if scroll_token else 0
     except ValueError:
         offset = 0
-    page_size = settings.CORESIGNAL_PAGE_SIZE
+    page_size = page_size or settings.CORESIGNAL_PAGE_SIZE
     page = ids[offset : offset + page_size]
     next_token = str(offset + page_size) if offset + page_size < len(ids) else None
     return page, next_token
 
 
-async def _search_ids(client: httpx.AsyncClient, dataset: str, query: dict) -> list:
+def _safe_int(val: str | None) -> int:
+    try:
+        return int(val or 0)
+    except (ValueError, TypeError):
+        return 0
+
+
+async def _search_ids(
+    client: httpx.AsyncClient,
+    dataset: str,
+    query: dict,
+    scroll_token: str | None = None,
+    page_size: int = 10,
+) -> dict[str, Any]:
+    params: dict[str, Any] = {"items_per_page": page_size}
+    if scroll_token:
+        params["after"] = scroll_token
+
     resp = await client.post(
         _search_url(dataset),
         headers=_headers(),
+        params=params,
         json=_make_search_body(query),
     )
+
     if resp.status_code == 200:
         body = resp.json()
-        return body if isinstance(body, list) else []
+        return {
+            "ids": body if isinstance(body, list) else [],
+            "total": _safe_int(resp.headers.get("x-total-results")),
+            "total_pages": _safe_int(resp.headers.get("x-total-pages")),
+            "next_token": resp.headers.get("x-next-page-after"),
+        }
+
     try:
         err_body = resp.json()
     except Exception:
         err_body = {}
+
     _raise_provider_error(resp.status_code, err_body)
+    raise AssertionError("unreachable")
 
 
 async def search_persons(req: PersonSearchRequest, db: Optional["AsyncSession"] = None) -> SearchResponse:
@@ -1343,8 +1354,14 @@ async def search_persons(req: PersonSearchRequest, db: Optional["AsyncSession"] 
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            all_ids = await _search_ids(client, "employee_multi_source", query)
-            page_ids, next_token = _paginate_ids(all_ids, req.scroll_token)
+            search_result = await _search_ids(
+                client,
+                "employee_multi_source",
+                query,
+                scroll_token=req.scroll_token,
+                page_size=req.page_size,
+            )
+            page_ids = search_result["ids"]
             records = await _collect_records(client, "employee_multi_source", page_ids)
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
@@ -1359,7 +1376,11 @@ async def search_persons(req: PersonSearchRequest, db: Optional["AsyncSession"] 
 
     return SearchResponse(
         data=[_map_person(r) for r in records],
-        meta=SearchMeta(total=len(all_ids), scroll_token=next_token),
+        meta=SearchMeta(
+            total=search_result["total"],
+            total_pages=search_result["total_pages"] or None,
+            scroll_token=search_result["next_token"],
+        ),
     )
 
 
@@ -1369,8 +1390,14 @@ async def search_companies(req: CompanySearchRequest, db: Optional["AsyncSession
     query = build_company_query(req)
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
-            all_ids = await _search_ids(client, "company_multi_source", query)
-            page_ids, next_token = _paginate_ids(all_ids, req.scroll_token)
+            search_result = await _search_ids(
+                client,
+                "company_multi_source",
+                query,
+                scroll_token=req.scroll_token,
+                page_size=req.page_size,
+            )
+            page_ids = search_result["ids"]
             records = await _collect_records(client, "company_multi_source", page_ids)
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
@@ -1385,7 +1412,11 @@ async def search_companies(req: CompanySearchRequest, db: Optional["AsyncSession
 
     return SearchResponse(
         data=[_map_company(r) for r in records],
-        meta=SearchMeta(total=len(all_ids), scroll_token=next_token),
+        meta=SearchMeta(
+            total=search_result["total"],
+            total_pages=search_result["total_pages"] or None,
+            scroll_token=search_result["next_token"],
+        ),
     )
 
 
@@ -1488,7 +1519,7 @@ async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
             resp = await client.post(
                 _AGENTIC_URL,
                 headers=_headers(),
-                json={"prompt": req.prompt, "entity": req.entity, "return_data": True, "limit": 100},
+                json={"prompt": req.prompt, "entity": req.entity, "return_data": True, "limit": 10},
             )
 
         if resp.status_code != 200:
@@ -1513,8 +1544,13 @@ async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
 
     mapper = _map_agentic_company if req.entity == "company" else _map_agentic_person
     all_records = [mapper(r) for r in body]
-    page_records, next_token = _paginate_ids(all_records, req.scroll_token)
+    page_records, next_token = _paginate_ids(
+        all_records,
+        req.scroll_token,
+        page_size=req.page_size,
+    )
+    total_pages = math.ceil(len(all_records) / req.page_size) if all_records else 1
     return SearchResponse(
         data=page_records,
-        meta=SearchMeta(total=len(all_records), scroll_token=next_token),
+        meta=SearchMeta(total=len(all_records), total_pages=total_pages, scroll_token=next_token),
     )
