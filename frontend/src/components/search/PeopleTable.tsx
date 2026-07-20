@@ -1,95 +1,428 @@
 "use client";
-import { useState } from "react";
 import { Globe, Mail, Phone } from "lucide-react";
 import type { PersonResult } from "@/types/search";
-import { PEOPLE_COLUMNS } from "@/hooks/useColumnSettings";
+import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
+import {
+  Avatar,
+  avatarColor,
+  Dash,
+  flag,
+  fmtDate,
+  fmtDuration,
+  toStringArr,
+} from "@/components/common/tableHelpers";
 
-const AVATAR_COLORS = [
-  "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500",
-  "bg-violet-500", "bg-pink-500", "bg-indigo-500", "bg-orange-500",
-  "bg-teal-500", "bg-cyan-500",
-];
-
-function avatarColor(name = ""): string {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+interface BuildColsArgs {
+  visibleColumns: Record<string, boolean>;
+  revealedEmails: Map<string, string | null>;
+  onRevealEmail: (recordId: string) => void;
+  revealingIds: Set<string>;
 }
 
-function initials(name = ""): string {
-  return name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
+function buildPeopleColumns({
+  visibleColumns,
+  revealedEmails,
+  onRevealEmail,
+  revealingIds,
+}: BuildColsArgs): DataTableColumn<PersonResult>[] {
+  const isCol = (key: string) => visibleColumns[key] !== false;
+
+  const rawCols: DataTableColumn<PersonResult>[] = [
+    {
+      key: "name",
+      label: "Name",
+      minWidth: 200,
+      render: (person) => {
+        const fullName = person.full_name || `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim();
+        const name = fullName || "—";
+        return (
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <Avatar name={name} pictureUrl={person.picture_url} size="md" />
+            <div className="min-w-0 overflow-hidden">
+              <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
+              {!isCol("linkedin") && person.linkedin_url ? (
+                <a
+                  href={`https://${person.linkedin_url.replace(/^https?:\/\//, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-0.5 text-xs text-blue-500 hover:underline"
+                >
+                  <Globe className="h-2.5 w-2.5" />
+                  LinkedIn
+                </a>
+              ) : person.headline ? (
+                <p className="truncate text-xs text-gray-500 max-w-[160px]">{person.headline}</p>
+              ) : null}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: "company",
+      label: "Company",
+      minWidth: 160,
+      render: (person) => {
+        const companyName = person.active_experience_company_name;
+        return companyName ? (
+          <div className="flex items-center gap-2">
+            <div className={`h-6 w-6 shrink-0 flex items-center justify-center rounded text-xs font-bold text-white ${avatarColor(companyName)}`}>
+              {companyName[0]?.toUpperCase()}
+            </div>
+            <p className="truncate text-[13px] font-medium text-gray-800 max-w-[130px]">{companyName}</p>
+          </div>
+        ) : <Dash />;
+      },
+    },
+    {
+      key: "title",
+      label: "Title",
+      minWidth: 150,
+      render: (person) => {
+        const jobTitle = person.active_experience_title;
+        const jobDepartment = person.active_experience_department;
+        return jobTitle ? (
+          <div>
+            <p className="truncate text-[13px] text-gray-800 max-w-[140px]" title={jobTitle}>{jobTitle}</p>
+            {!isCol("department") && jobDepartment && (
+              <span className="mt-0.5 inline-block rounded-full bg-red-50 px-1.5 py-0.5 text-xs font-medium capitalize text-red-600">
+                {jobDepartment}
+              </span>
+            )}
+          </div>
+        ) : <Dash />;
+      },
+    },
+    {
+      key: "email",
+      label: "Email",
+      minWidth: 130,
+      render: (person) => {
+        const revealedEmail = revealedEmails.get(person.id);
+        const isRevealing = revealingIds.has(person.id);
+        return revealedEmails.has(person.id) ? (
+          revealedEmail
+            ? <span className="block max-w-[160px] truncate text-[13px] font-medium text-gray-800">{revealedEmail}</span>
+            : <span className="text-xs text-gray-500">No email</span>
+        ) : person.has_email ? (
+          <button
+            type="button"
+            disabled={isRevealing}
+            onClick={() => onRevealEmail(person.id)}
+            className="flex items-center gap-1 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:cursor-wait disabled:opacity-50"
+          >
+            <Mail className="h-3 w-3" />
+            {isRevealing ? "Revealing…" : "Reveal"}
+          </button>
+        ) : <Dash />;
+      },
+    },
+    {
+      key: "location",
+      label: "Location",
+      minWidth: 130,
+      render: (person) => (
+        <div className="flex items-center gap-1.5">
+          <span className="text-base leading-none">{flag(person.location_country)}</span>
+          <div className="min-w-0">
+            <p className="truncate text-[13px] text-gray-800">{person.location_country ?? "—"}</p>
+            {person.location_city && (
+              <p className="truncate text-xs text-gray-500">{person.location_city}</p>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "mobile",
+      label: "Mobile",
+      minWidth: 120,
+      render: (person) => person.mobile_phone
+        ? <span className="flex items-center gap-1 text-[13px] text-gray-800 whitespace-nowrap"><Phone className="h-3 w-3 shrink-0 text-gray-400" />{person.mobile_phone}</span>
+        : <Dash />,
+    },
+    {
+      key: "person_country",
+      label: "Country",
+      minWidth: 100,
+      render: (person) => (
+        <div className="flex items-center gap-1">
+          <span className="text-base leading-none">{flag(person.location_country)}</span>
+          <span className="text-[13px] capitalize text-gray-700">{person.location_country ?? "—"}</span>
+        </div>
+      ),
+    },
+    {
+      key: "person_city",
+      label: "City",
+      minWidth: 100,
+      render: (person) => (
+        <span className="text-[13px] capitalize text-gray-700">{person.location_city ?? "—"}</span>
+      ),
+    },
+    {
+      key: "state",
+      label: "State",
+      minWidth: 100,
+      render: (person) => (
+        <span className="text-[13px] text-gray-800">{person.location_state ?? "—"}</span>
+      ),
+    },
+    {
+      key: "department",
+      label: "Department",
+      minWidth: 120,
+      render: (person) => {
+        const jobDepartment = person.active_experience_department;
+        return jobDepartment
+          ? <span className="inline-block rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium capitalize text-red-600 whitespace-nowrap">{jobDepartment}</span>
+          : <Dash />;
+      },
+    },
+    {
+      key: "seniority",
+      label: "Seniority",
+      minWidth: 100,
+      render: (person) => person.active_experience_management_level
+        ? <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">{String(person.active_experience_management_level)}</span>
+        : <Dash />,
+    },
+    {
+      key: "job_started",
+      label: "Job Started",
+      minWidth: 100,
+      render: (person) => (
+        <span className="text-[13px] text-gray-800 whitespace-nowrap">{fmtDate(person.active_experience_start_date)}</span>
+      ),
+    },
+    {
+      key: "time_in_role",
+      label: "In Role",
+      minWidth: 80,
+      render: (person) => (
+        <span className="text-[13px] font-medium text-gray-700">{fmtDuration(person.active_experience_start_date)}</span>
+      ),
+    },
+    {
+      key: "exp_years",
+      label: "Exp.",
+      minWidth: 70,
+      render: (person) => person.total_experience_duration_months != null
+        ? <span className="text-[13px] font-medium text-gray-700">{Math.floor(person.total_experience_duration_months / 12)} yrs</span>
+        : <Dash />,
+    },
+    {
+      key: "headline",
+      label: "Headline",
+      minWidth: 180,
+      render: (person) => person.headline
+        ? <span className="block max-w-[180px] truncate text-[13px] text-gray-600" title={person.headline}>{person.headline}</span>
+        : <Dash />,
+    },
+    {
+      key: "skills",
+      label: "Skills",
+      minWidth: 150,
+      render: (person) => person.inferred_skills && person.inferred_skills.length > 0 ? (
+        <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+          {person.inferred_skills.slice(0, 2).map((s) => (
+            <span key={s} className="shrink-0 inline-block rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-600">{s}</span>
+          ))}
+          {person.inferred_skills.length > 2 && (
+            <span className="shrink-0 text-xs text-gray-500">+{person.inferred_skills.length - 2}</span>
+          )}
+        </div>
+      ) : <Dash />,
+    },
+    {
+      key: "awards_certs",
+      label: "Awards & Certs",
+      minWidth: 140,
+      render: (person) => {
+        const awardsList = toStringArr(person.awards_certifications);
+        return awardsList.length > 0 ? (
+          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+            {awardsList.slice(0, 2).map((a) => (
+              <span key={a} className="shrink-0 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">{a}</span>
+            ))}
+            {awardsList.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{awardsList.length - 2}</span>}
+          </div>
+        ) : <Dash />;
+      },
+    },
+    {
+      key: "connections",
+      label: "Connections",
+      minWidth: 90,
+      render: (person) => person.connections_count != null
+        ? <span className="text-[13px] text-gray-800">{person.connections_count.toLocaleString()}</span>
+        : <Dash />,
+    },
+    {
+      key: "followers",
+      label: "Followers",
+      minWidth: 80,
+      render: (person) => person.followers_count != null
+        ? <span className="text-[13px] text-gray-800">{person.followers_count.toLocaleString()}</span>
+        : <Dash />,
+    },
+    {
+      key: "salary",
+      label: "Est. Salary",
+      minWidth: 90,
+      render: (person) => person.projected_base_salary_median != null
+        ? <span className="text-[13px] font-semibold text-gray-700">{(person.projected_base_salary_currency ?? "USD") === "USD" ? "$" : ""}{Math.round(person.projected_base_salary_median / 1000)}K</span>
+        : <Dash />,
+    },
+    {
+      key: "linkedin",
+      label: "LinkedIn",
+      minWidth: 80,
+      render: (person) => person.linkedin_url ? (
+        <a
+          href={`https://${person.linkedin_url.replace(/^https?:\/\//, "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-[13px] text-blue-500 hover:underline whitespace-nowrap"
+        >
+          <Globe className="h-3 w-3 shrink-0" />
+          LinkedIn
+        </a>
+      ) : <Dash />,
+    },
+    {
+      key: "co_industry",
+      label: "Co. Industry",
+      minWidth: 130,
+      render: (person) => person.active_experience_company_industry
+        ? <span className="inline-block max-w-[120px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">{String(person.active_experience_company_industry)}</span>
+        : <Dash />,
+    },
+    {
+      key: "co_employees",
+      label: "Employees",
+      minWidth: 90,
+      render: (person) => {
+        const coEmployees = person.active_experience_company_employees_count;
+        const coSize = person.active_experience_company_size;
+        return coEmployees != null
+          ? <span className="text-[13px] text-gray-800">{coEmployees.toLocaleString()}</span>
+          : coSize
+            ? <span className="text-[13px] text-gray-800">{coSize}</span>
+            : <Dash />;
+      },
+    },
+    {
+      key: "co_type",
+      label: "Co. Type",
+      minWidth: 100,
+      render: (person) => person.active_experience_company_type
+        ? <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">{String(person.active_experience_company_type)}</span>
+        : <Dash />,
+    },
+    {
+      key: "co_status",
+      label: "Co. Status",
+      minWidth: 90,
+      render: (person) => person.active_experience_company_status
+        ? <span className="inline-block rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium capitalize text-green-700 whitespace-nowrap">{String(person.active_experience_company_status)}</span>
+        : <Dash />,
+    },
+    {
+      key: "co_founded",
+      label: "Founded",
+      minWidth: 80,
+      render: (person) => {
+        const coFounded = person.active_experience_company_founded ?? person.active_experience_company_founded_year;
+        return coFounded != null
+          ? <span className="text-[13px] text-gray-800">{coFounded}</span>
+          : <Dash />;
+      },
+    },
+    {
+      key: "co_country",
+      label: "Co. Country",
+      minWidth: 100,
+      render: (person) => (
+        <div className="flex items-center gap-1">
+          {person.active_experience_company_hq_country && (
+            <span className="text-base leading-none">{flag(person.active_experience_company_hq_country)}</span>
+          )}
+          <span className="text-[13px] capitalize text-gray-700">{person.active_experience_company_hq_country ?? "—"}</span>
+        </div>
+      ),
+    },
+    {
+      key: "co_city",
+      label: "Co. City",
+      minWidth: 100,
+      render: (person) => (
+        <span className="text-[13px] capitalize text-gray-700">{person.active_experience_company_hq_city ?? "—"}</span>
+      ),
+    },
+    {
+      key: "co_state",
+      label: "Co. State",
+      minWidth: 100,
+      render: (person) => (
+        <span className="text-[13px] text-gray-800">{person.active_experience_company_hq_region ?? "—"}</span>
+      ),
+    },
+    {
+      key: "co_address",
+      label: "Co. Address",
+      minWidth: 160,
+      render: (person) => person.active_experience_company_hq_location
+        ? <span className="block max-w-[160px] truncate text-[13px] text-gray-800" title={String(person.active_experience_company_hq_location)}>{String(person.active_experience_company_hq_location)}</span>
+        : <Dash />,
+    },
+    {
+      key: "co_keywords",
+      label: "Keywords",
+      minWidth: 160,
+      render: (person) => {
+        const coKeywords = toStringArr(person.active_experience_company_categories_and_keywords);
+        return coKeywords.length > 0 ? (
+          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+            {coKeywords.slice(0, 2).map((k) => (
+              <span key={k} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{k}</span>
+            ))}
+            {coKeywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{coKeywords.length - 2}</span>}
+          </div>
+        ) : <Dash />;
+      },
+    },
+    {
+      key: "products_services",
+      label: "Products & Services",
+      minWidth: 160,
+      render: (person) => {
+        const coKeywords = toStringArr(person.active_experience_company_categories_and_keywords);
+        return coKeywords.length > 0 ? (
+          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+            {coKeywords.slice(0, 2).map((k) => (
+              <span key={k} className="shrink-0 inline-block rounded bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-700">{k}</span>
+            ))}
+            {coKeywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{coKeywords.length - 2}</span>}
+          </div>
+        ) : <Dash />;
+      },
+    },
+    {
+      key: "co_revenue",
+      label: "Revenue",
+      minWidth: 100,
+      render: (person) => person.active_experience_company_annual_revenue != null
+        ? <span className="text-[13px] text-gray-800">{String(person.active_experience_company_annual_revenue)}</span>
+        : <Dash />,
+    },
+  ];
+
+  return rawCols.map((col) => ({
+    ...col,
+    visible: col.key === "name" ? true : visibleColumns[col.key] !== false,
+  }));
 }
-
-// Shows picture_url when available; falls back to colour + initials on error or absence.
-function Avatar({ name, pictureUrl, size = "md" }: { name: string; pictureUrl?: string; size?: "sm" | "md" }) {
-  const [imgError, setImgError] = useState(false);
-  const dim = size === "sm" ? "h-6 w-6 text-xs" : "h-8 w-8 text-xs";
-  if (pictureUrl && !imgError) {
-    return (
-      <img
-        src={pictureUrl}
-        alt={name}
-        onError={() => setImgError(true)}
-        className={`${dim} shrink-0 rounded-full object-cover`}
-      />
-    );
-  }
-  return (
-    <div className={`${dim} shrink-0 flex items-center justify-center rounded-full font-semibold text-white ${avatarColor(name)}`}>
-      {initials(name)}
-    </div>
-  );
-}
-
-const FLAG: Record<string, string> = {
-  "united states": "🇺🇸", "united kingdom": "🇬🇧", canada: "🇨🇦",
-  france: "🇫🇷", germany: "🇩🇪", india: "🇮🇳", portugal: "🇵🇹",
-  ireland: "🇮🇪", australia: "🇦🇺", singapore: "🇸🇬", brazil: "🇧🇷",
-  netherlands: "🇳🇱", spain: "🇪🇸", italy: "🇮🇹", sweden: "🇸🇪",
-  "sri lanka": "🇱🇰", indonesia: "🇮🇩", malaysia: "🇲🇾",
-  "united arab emirates": "🇦🇪", pakistan: "🇵🇰", philippines: "🇵🇭",
-};
-const flag = (c = "") => FLAG[c.toLowerCase()] ?? "🌍";
-
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-function fmtDate(iso?: string): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return "—";
-  return `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-function fmtDuration(iso?: string): string {
-  if (!iso) return "—";
-  const start = new Date(iso);
-  if (isNaN(start.getTime())) return "—";
-  const now = new Date();
-  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-  if (months < 1) return "<1m";
-  const yrs = Math.floor(months / 12);
-  const mo = months % 12;
-  return [yrs > 0 ? `${yrs}y` : "", mo > 0 ? `${mo}m` : ""].filter(Boolean).join(" ");
-}
-
-function toStringArr(v: string | string[] | undefined | null): string[] {
-  if (!v) return [];
-  return Array.isArray(v) ? v : [v];
-}
-
-function Dash() {
-  return <span className="text-gray-400">—</span>;
-}
-
-function Cell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return (
-    <td className={`px-4 py-0 align-middle ${className}`}>
-      <div className="flex h-[64px] items-center overflow-hidden">{children}</div>
-    </td>
-  );
-}
-
-const PTH = "border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap";
 
 // ---------------------------------------------------------------------------
 // Skeleton
@@ -102,103 +435,21 @@ export function PeopleTableSkeleton({
   rows?: number;
   visibleColumns?: Record<string, boolean>;
 }) {
-  const isCol = (key: string) => {
-    if (visibleColumns) return visibleColumns[key] !== false;
-    return PEOPLE_COLUMNS.find((c) => c.key === key)?.defaultVisible !== false;
-  };
-
+  const cols = buildPeopleColumns({
+    visibleColumns: visibleColumns ?? {},
+    revealedEmails: new Map(),
+    onRevealEmail: () => {},
+    revealingIds: new Set(),
+  });
   return (
-    <div className="max-w-full overflow-x-auto">
-      <table className="w-full min-w-[640px] border-separate border-spacing-0 text-xs">
-        <thead>
-          <tr className="bg-gray-50">
-            <th className="w-9 border-b border-gray-100 px-3 py-2.5" />
-            <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[200px]">Name</th>
-            {isCol("company")        && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[160px]">Company</th>}
-            {isCol("title")          && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[150px]">Title</th>}
-            {isCol("email")          && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[130px]">Email</th>}
-            {isCol("location")       && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[130px]">Location</th>}
-            {isCol("mobile")         && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[120px]">Mobile</th>}
-            {isCol("person_country") && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">Country</th>}
-            {isCol("person_city")    && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">City</th>}
-            {isCol("state")          && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">State</th>}
-            {isCol("department")     && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[120px]">Department</th>}
-            {isCol("seniority")      && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">Seniority</th>}
-            {isCol("job_started")    && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">Job Started</th>}
-            {isCol("time_in_role")   && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[80px]">In Role</th>}
-            {isCol("exp_years")      && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[70px]">Exp.</th>}
-            {isCol("headline")       && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[180px]">Headline</th>}
-            {isCol("skills")         && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[150px]">Skills</th>}
-            {isCol("awards_certs")   && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[140px]">Awards & Certs</th>}
-            {isCol("connections")    && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[90px]">Connections</th>}
-            {isCol("followers")      && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[80px]">Followers</th>}
-            {isCol("salary")         && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[90px]">Est. Salary</th>}
-            {isCol("linkedin")       && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[80px]">LinkedIn</th>}
-            {isCol("co_industry")    && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[130px]">Co. Industry</th>}
-            {isCol("co_employees")   && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[90px]">Employees</th>}
-            {isCol("co_type")        && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">Co. Type</th>}
-            {isCol("co_status")      && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[90px]">Co. Status</th>}
-            {isCol("co_founded")     && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[80px]">Founded</th>}
-            {isCol("co_country")     && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">Co. Country</th>}
-            {isCol("co_city")        && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">Co. City</th>}
-            {isCol("co_state")       && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">Co. State</th>}
-            {isCol("co_address")     && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[160px]">Co. Address</th>}
-            {isCol("co_keywords")    && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[160px]">Keywords</th>}
-            {isCol("products_services") && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[160px]">Products & Services</th>}
-            {isCol("co_revenue")     && <th className="border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 min-w-[100px]">Revenue</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: rows }).map((_, i) => (
-            <tr key={i} className="animate-pulse">
-              <td className="px-3 py-2.5"><div className="mx-auto h-3.5 w-3.5 rounded bg-gray-200" /></td>
-              <td className="px-3 py-2.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200" />
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="h-3 w-28 rounded bg-gray-200" />
-                    <div className="h-2 w-16 rounded bg-gray-100" />
-                  </div>
-                </div>
-              </td>
-              {isCol("company")        && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("title")          && <td className="px-3 py-2.5"><div className="h-3 w-28 rounded bg-gray-200" /></td>}
-              {isCol("email")          && <td className="px-3 py-2.5"><div className="h-3 w-32 rounded bg-gray-200" /></td>}
-              {isCol("location")       && <td className="px-3 py-2.5"><div className="h-3 w-20 rounded bg-gray-200" /></td>}
-              {isCol("mobile")         && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("person_country") && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("person_city")    && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("state")          && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("department")     && <td className="px-3 py-2.5"><div className="h-3 w-20 rounded bg-gray-200" /></td>}
-              {isCol("seniority")      && <td className="px-3 py-2.5"><div className="h-3 w-20 rounded bg-gray-200" /></td>}
-              {isCol("job_started")    && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("time_in_role")   && <td className="px-3 py-2.5"><div className="h-3 w-14 rounded bg-gray-200" /></td>}
-              {isCol("exp_years")      && <td className="px-3 py-2.5"><div className="h-3 w-10 rounded bg-gray-200" /></td>}
-              {isCol("headline")       && <td className="px-3 py-2.5"><div className="h-3 w-32 rounded bg-gray-200" /></td>}
-              {isCol("skills")         && <td className="px-3 py-2.5"><div className="h-3 w-28 rounded bg-gray-200" /></td>}
-              {isCol("awards_certs")   && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("connections")    && <td className="px-3 py-2.5"><div className="h-3 w-12 rounded bg-gray-200" /></td>}
-              {isCol("followers")      && <td className="px-3 py-2.5"><div className="h-3 w-12 rounded bg-gray-200" /></td>}
-              {isCol("salary")         && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("linkedin")       && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("co_industry")    && <td className="px-3 py-2.5"><div className="h-3 w-20 rounded bg-gray-200" /></td>}
-              {isCol("co_employees")   && <td className="px-3 py-2.5"><div className="h-3 w-14 rounded bg-gray-200" /></td>}
-              {isCol("co_type")        && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("co_status")      && <td className="px-3 py-2.5"><div className="h-3 w-14 rounded bg-gray-200" /></td>}
-              {isCol("co_founded")     && <td className="px-3 py-2.5"><div className="h-3 w-10 rounded bg-gray-200" /></td>}
-              {isCol("co_country")     && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("co_city")        && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              {isCol("co_state")       && <td className="px-3 py-2.5"><div className="h-3 w-14 rounded bg-gray-200" /></td>}
-              {isCol("co_address")     && <td className="px-3 py-2.5"><div className="h-3 w-28 rounded bg-gray-200" /></td>}
-              {isCol("co_keywords")    && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("products_services") && <td className="px-3 py-2.5"><div className="h-3 w-24 rounded bg-gray-200" /></td>}
-              {isCol("co_revenue")     && <td className="px-3 py-2.5"><div className="h-3 w-16 rounded bg-gray-200" /></td>}
-              <td className="px-3 py-2.5"><div className="mx-auto h-6 w-6 rounded bg-gray-200" /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={cols}
+      data={[]}
+      rowKey={(p: PersonResult) => p.id}
+      minTableWidth={640}
+      loading
+      loadingRows={rows}
+    />
   );
 }
 
@@ -215,6 +466,7 @@ interface Props {
   revealedEmails: Map<string, string | null>;
   onRevealEmail: (recordId: string) => void;
   revealingIds: Set<string>;
+  onOpenColumnSettings?: () => void;
 }
 
 export default function PeopleTable({
@@ -226,460 +478,17 @@ export default function PeopleTable({
   revealedEmails,
   onRevealEmail,
   revealingIds,
+  onOpenColumnSettings,
 }: Props) {
-  const allSelected = data.length > 0 && data.every((r) => selected.has(r.id));
-  const isCol = (key: string) => visibleColumns[key] !== false;
-
+  const cols = buildPeopleColumns({ visibleColumns, revealedEmails, onRevealEmail, revealingIds });
   return (
-    <div className="max-w-full overflow-x-auto">
-      <table className="w-full min-w-[640px] border-separate border-spacing-0 text-xs">
-        <thead>
-          <tr className="bg-gray-50">
-            <th className="w-9 border-b border-gray-100 px-3 py-2.5">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={(e) => onSelectAll(e.target.checked)}
-                className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 accent-red-600"
-              />
-            </th>
-            <th className={`${PTH} min-w-[200px]`}>Name</th>
-            {isCol("company")           && <th className={`${PTH} min-w-[160px]`}>Company</th>}
-            {isCol("title")             && <th className={`${PTH} min-w-[150px]`}>Title</th>}
-            {isCol("email")             && <th className={`${PTH} min-w-[130px]`}>Email</th>}
-            {isCol("location")          && <th className={`${PTH} min-w-[130px]`}>Location</th>}
-            {isCol("mobile")            && <th className={`${PTH} min-w-[120px]`}>Mobile</th>}
-            {isCol("person_country")    && <th className={`${PTH} min-w-[100px]`}>Country</th>}
-            {isCol("person_city")       && <th className={`${PTH} min-w-[100px]`}>City</th>}
-            {isCol("state")             && <th className={`${PTH} min-w-[100px]`}>State</th>}
-            {isCol("department")        && <th className={`${PTH} min-w-[120px]`}>Department</th>}
-            {isCol("seniority")         && <th className={`${PTH} min-w-[100px]`}>Seniority</th>}
-            {isCol("job_started")       && <th className={`${PTH} min-w-[100px]`}>Job Started</th>}
-            {isCol("time_in_role")      && <th className={`${PTH} min-w-[80px]`}>In Role</th>}
-            {isCol("exp_years")         && <th className={`${PTH} min-w-[70px]`}>Exp.</th>}
-            {isCol("headline")          && <th className={`${PTH} min-w-[180px]`}>Headline</th>}
-            {isCol("skills")            && <th className={`${PTH} min-w-[150px]`}>Skills</th>}
-            {isCol("awards_certs")      && <th className={`${PTH} min-w-[140px]`}>Awards & Certs</th>}
-            {isCol("connections")       && <th className={`${PTH} min-w-[90px]`}>Connections</th>}
-            {isCol("followers")         && <th className={`${PTH} min-w-[80px]`}>Followers</th>}
-            {isCol("salary")            && <th className={`${PTH} min-w-[90px]`}>Est. Salary</th>}
-            {isCol("linkedin")          && <th className={`${PTH} min-w-[80px]`}>LinkedIn</th>}
-            {isCol("co_industry")       && <th className={`${PTH} min-w-[130px]`}>Co. Industry</th>}
-            {isCol("co_employees")      && <th className={`${PTH} min-w-[90px]`}>Employees</th>}
-            {isCol("co_type")           && <th className={`${PTH} min-w-[100px]`}>Co. Type</th>}
-            {isCol("co_status")         && <th className={`${PTH} min-w-[90px]`}>Co. Status</th>}
-            {isCol("co_founded")        && <th className={`${PTH} min-w-[80px]`}>Founded</th>}
-            {isCol("co_country")        && <th className={`${PTH} min-w-[100px]`}>Co. Country</th>}
-            {isCol("co_city")           && <th className={`${PTH} min-w-[100px]`}>Co. City</th>}
-            {isCol("co_state")          && <th className={`${PTH} min-w-[100px]`}>Co. State</th>}
-            {isCol("co_address")        && <th className={`${PTH} min-w-[160px]`}>Co. Address</th>}
-            {isCol("co_keywords")       && <th className={`${PTH} min-w-[160px]`}>Keywords</th>}
-            {isCol("products_services") && <th className={`${PTH} min-w-[160px]`}>Products & Services</th>}
-            {isCol("co_revenue")        && <th className={`${PTH} min-w-[100px]`}>Revenue</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((person) => {
-            const fullName = person.full_name || `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim();
-            const name = fullName || "—";
-            const checked = selected.has(person.id);
-            const companyName = person.active_experience_company_name;
-            const jobTitle = person.active_experience_title;
-            const jobDepartment = person.active_experience_department;
-            const revealedEmail = revealedEmails.get(person.id);
-            const isRevealing = revealingIds.has(person.id);
-            const coEmployees = person.active_experience_company_employees_count;
-            const coSize = person.active_experience_company_size;
-            const coFounded = person.active_experience_company_founded ?? person.active_experience_company_founded_year;
-            const coKeywords = toStringArr(person.active_experience_company_categories_and_keywords);
-            const awardsList = toStringArr(person.awards_certifications);
-
-            return (
-              <tr
-                key={person.id}
-                className={`border-b border-gray-100 transition-colors hover:bg-gray-50/60 ${checked ? "bg-red-50/40" : ""}`}
-              >
-                {/* Checkbox */}
-                <Cell>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => onSelect(person.id)}
-                    className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 accent-red-600"
-                  />
-                </Cell>
-
-                {/* Name — always visible */}
-                <Cell className="max-w-[220px]">
-                  <div className="flex items-center gap-2.5 overflow-hidden">
-                    <Avatar name={name} pictureUrl={person.picture_url} size="md" />
-                    <div className="min-w-0 overflow-hidden">
-                      <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
-                      {!isCol("linkedin") && person.linkedin_url ? (
-                        <a
-                          href={`https://${person.linkedin_url.replace(/^https?:\/\//, "")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-0.5 text-xs text-blue-500 hover:underline"
-                        >
-                          <Globe className="h-2.5 w-2.5" />
-                          LinkedIn
-                        </a>
-                      ) : person.headline ? (
-                        <p className="truncate text-xs text-gray-500 max-w-[160px]">{person.headline}</p>
-                      ) : null}
-                    </div>
-                  </div>
-                </Cell>
-
-                {/* Company */}
-                {isCol("company") && (
-                  <Cell>
-                    {companyName ? (
-                      <div className="flex items-center gap-2">
-                        <div className={`h-6 w-6 shrink-0 flex items-center justify-center rounded text-xs font-bold text-white ${avatarColor(companyName)}`}>
-                          {companyName[0]?.toUpperCase()}
-                        </div>
-                        <p className="truncate text-[13px] font-medium text-gray-800 max-w-[130px]">{companyName}</p>
-                      </div>
-                    ) : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Title */}
-                {isCol("title") && (
-                  <Cell>
-                    {jobTitle ? (
-                      <div>
-                        <p className="truncate text-[13px] text-gray-800 max-w-[140px]" title={jobTitle}>{jobTitle}</p>
-                        {!isCol("department") && jobDepartment && (
-                          <span className="mt-0.5 inline-block rounded-full bg-red-50 px-1.5 py-0.5 text-xs font-medium capitalize text-red-600">
-                            {jobDepartment}
-                          </span>
-                        )}
-                      </div>
-                    ) : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Email */}
-                {isCol("email") && (
-                  <Cell>
-                    {revealedEmails.has(person.id) ? (
-                      revealedEmail
-                        ? <span className="block max-w-[160px] truncate text-[13px] font-medium text-gray-800">{revealedEmail}</span>
-                        : <span className="text-xs text-gray-500">No email</span>
-                    ) : person.has_email ? (
-                      <button
-                        type="button"
-                        disabled={isRevealing}
-                        onClick={() => onRevealEmail(person.id)}
-                        className="flex items-center gap-1 rounded border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:cursor-wait disabled:opacity-50"
-                      >
-                        <Mail className="h-3 w-3" />
-                        {isRevealing ? "Revealing…" : "Reveal"}
-                      </button>
-                    ) : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Location */}
-                {isCol("location") && (
-                  <Cell>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base leading-none">{flag(person.location_country)}</span>
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] text-gray-800">{person.location_country ?? "—"}</p>
-                        {person.location_city && (
-                          <p className="truncate text-xs text-gray-500">{person.location_city}</p>
-                        )}
-                      </div>
-                    </div>
-                  </Cell>
-                )}
-
-                {/* Mobile */}
-                {isCol("mobile") && (
-                  <Cell>
-                    {person.mobile_phone
-                      ? <span className="flex items-center gap-1 text-[13px] text-gray-800 whitespace-nowrap"><Phone className="h-3 w-3 shrink-0 text-gray-400" />{person.mobile_phone}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Person Country */}
-                {isCol("person_country") && (
-                  <Cell>
-                    <div className="flex items-center gap-1">
-                      <span className="text-base leading-none">{flag(person.location_country)}</span>
-                      <span className="text-[13px] capitalize text-gray-700">{person.location_country ?? "—"}</span>
-                    </div>
-                  </Cell>
-                )}
-
-                {/* Person City */}
-                {isCol("person_city") && (
-                  <Cell>
-                    <span className="text-[13px] capitalize text-gray-700">{person.location_city ?? "—"}</span>
-                  </Cell>
-                )}
-
-                {/* Person State */}
-                {isCol("state") && (
-                  <Cell>
-                    <span className="text-[13px] text-gray-800">{person.location_state ?? "—"}</span>
-                  </Cell>
-                )}
-
-                {/* Department */}
-                {isCol("department") && (
-                  <Cell>
-                    {jobDepartment
-                      ? <span className="inline-block rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium capitalize text-red-600 whitespace-nowrap">{jobDepartment}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Seniority */}
-                {isCol("seniority") && (
-                  <Cell>
-                    {person.active_experience_management_level
-                      ? <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">{String(person.active_experience_management_level)}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Job Started */}
-                {isCol("job_started") && (
-                  <Cell>
-                    <span className="text-[13px] text-gray-800 whitespace-nowrap">{fmtDate(person.active_experience_start_date)}</span>
-                  </Cell>
-                )}
-
-                {/* Time in Role */}
-                {isCol("time_in_role") && (
-                  <Cell>
-                    <span className="text-[13px] font-medium text-gray-700">{fmtDuration(person.active_experience_start_date)}</span>
-                  </Cell>
-                )}
-
-                {/* Experience years */}
-                {isCol("exp_years") && (
-                  <Cell>
-                    {person.total_experience_duration_months != null
-                      ? <span className="text-[13px] font-medium text-gray-700">{Math.floor(person.total_experience_duration_months / 12)} yrs</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Headline */}
-                {isCol("headline") && (
-                  <Cell>
-                    {person.headline
-                      ? <span className="block max-w-[180px] truncate text-[13px] text-gray-600" title={person.headline}>{person.headline}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Skills */}
-                {isCol("skills") && (
-                  <Cell>
-                    {person.inferred_skills && person.inferred_skills.length > 0 ? (
-                      <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-                        {person.inferred_skills.slice(0, 2).map((s) => (
-                          <span key={s} className="shrink-0 inline-block rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-600">{s}</span>
-                        ))}
-                        {person.inferred_skills.length > 2 && (
-                          <span className="shrink-0 text-xs text-gray-500">+{person.inferred_skills.length - 2}</span>
-                        )}
-                      </div>
-                    ) : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Awards & Certs */}
-                {isCol("awards_certs") && (
-                  <Cell>
-                    {awardsList.length > 0 ? (
-                      <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-                        {awardsList.slice(0, 2).map((a) => (
-                          <span key={a} className="shrink-0 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">{a}</span>
-                        ))}
-                        {awardsList.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{awardsList.length - 2}</span>}
-                      </div>
-                    ) : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Connections */}
-                {isCol("connections") && (
-                  <Cell>
-                    {person.connections_count != null
-                      ? <span className="text-[13px] text-gray-800">{person.connections_count.toLocaleString()}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Followers */}
-                {isCol("followers") && (
-                  <Cell>
-                    {person.followers_count != null
-                      ? <span className="text-[13px] text-gray-800">{person.followers_count.toLocaleString()}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Estimated Salary */}
-                {isCol("salary") && (
-                  <Cell>
-                    {person.projected_base_salary_median != null
-                      ? <span className="text-[13px] font-semibold text-gray-700">{(person.projected_base_salary_currency ?? "USD") === "USD" ? "$" : ""}{Math.round(person.projected_base_salary_median / 1000)}K</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* LinkedIn */}
-                {isCol("linkedin") && (
-                  <Cell>
-                    {person.linkedin_url ? (
-                      <a
-                        href={`https://${person.linkedin_url.replace(/^https?:\/\//, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-[13px] text-blue-500 hover:underline whitespace-nowrap"
-                      >
-                        <Globe className="h-3 w-3 shrink-0" />
-                        LinkedIn
-                      </a>
-                    ) : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Co. Industry */}
-                {isCol("co_industry") && (
-                  <Cell>
-                    {person.active_experience_company_industry
-                      ? <span className="inline-block max-w-[120px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">{String(person.active_experience_company_industry)}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Employees */}
-                {isCol("co_employees") && (
-                  <Cell>
-                    {coEmployees != null
-                      ? <span className="text-[13px] text-gray-800">{coEmployees.toLocaleString()}</span>
-                      : coSize
-                        ? <span className="text-[13px] text-gray-800">{coSize}</span>
-                        : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Co. Type */}
-                {isCol("co_type") && (
-                  <Cell>
-                    {person.active_experience_company_type
-                      ? <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">{String(person.active_experience_company_type)}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Co. Status */}
-                {isCol("co_status") && (
-                  <Cell>
-                    {person.active_experience_company_status
-                      ? <span className="inline-block rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium capitalize text-green-700 whitespace-nowrap">{String(person.active_experience_company_status)}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Founded */}
-                {isCol("co_founded") && (
-                  <Cell>
-                    {coFounded != null
-                      ? <span className="text-[13px] text-gray-800">{coFounded}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Co. Country */}
-                {isCol("co_country") && (
-                  <Cell>
-                    <div className="flex items-center gap-1">
-                      {person.active_experience_company_hq_country && (
-                        <span className="text-base leading-none">{flag(person.active_experience_company_hq_country)}</span>
-                      )}
-                      <span className="text-[13px] capitalize text-gray-700">{person.active_experience_company_hq_country ?? "—"}</span>
-                    </div>
-                  </Cell>
-                )}
-
-                {/* Co. City */}
-                {isCol("co_city") && (
-                  <Cell>
-                    <span className="text-[13px] capitalize text-gray-700">{person.active_experience_company_hq_city ?? "—"}</span>
-                  </Cell>
-                )}
-
-                {/* Co. State */}
-                {isCol("co_state") && (
-                  <Cell>
-                    <span className="text-[13px] text-gray-800">{person.active_experience_company_hq_region ?? "—"}</span>
-                  </Cell>
-                )}
-
-                {/* Co. Address */}
-                {isCol("co_address") && (
-                  <Cell>
-                    {person.active_experience_company_hq_location
-                      ? <span className="block max-w-[160px] truncate text-[13px] text-gray-800" title={String(person.active_experience_company_hq_location)}>{String(person.active_experience_company_hq_location)}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Keywords */}
-                {isCol("co_keywords") && (
-                  <Cell>
-                    {coKeywords.length > 0 ? (
-                      <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-                        {coKeywords.slice(0, 2).map((k) => (
-                          <span key={k} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{k}</span>
-                        ))}
-                        {coKeywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{coKeywords.length - 2}</span>}
-                      </div>
-                    ) : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Products & Services */}
-                {isCol("products_services") && (
-                  <Cell>
-                    {coKeywords.length > 0 ? (
-                      <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-                        {coKeywords.slice(0, 2).map((k) => (
-                          <span key={k} className="shrink-0 inline-block rounded bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-700">{k}</span>
-                        ))}
-                        {coKeywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{coKeywords.length - 2}</span>}
-                      </div>
-                    ) : <Dash />}
-                  </Cell>
-                )}
-
-                {/* Revenue */}
-                {isCol("co_revenue") && (
-                  <Cell>
-                    {person.active_experience_company_annual_revenue != null
-                      ? <span className="text-[13px] text-gray-800">{String(person.active_experience_company_annual_revenue)}</span>
-                      : <Dash />}
-                  </Cell>
-                )}
-
-
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={cols}
+      data={data}
+      rowKey={(p) => p.id}
+      minTableWidth={640}
+      selection={{ selected, onSelect, onSelectAll }}
+      onOpenColumnSettings={onOpenColumnSettings}
+    />
   );
 }

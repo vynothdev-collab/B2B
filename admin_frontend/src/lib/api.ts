@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "./cookies";
 
-const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000") + "/api/v1";
+const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "") + "/api/v1";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
 
 // ── Response interceptor — auto-refresh on 401 ────────────────────────────
 
-let isRefreshing   = false;
+let isRefreshing = false;
 let refreshQueue: Array<(token: string) => void> = [];
 
 function processQueue(newToken: string) {
