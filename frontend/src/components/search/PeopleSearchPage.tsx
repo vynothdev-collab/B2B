@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
-import { Eye, ListPlus, SearchX, Settings, SlidersHorizontal, X } from "lucide-react";
+import { Eye, ListPlus, SearchX, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import PeopleFilterPanel from "./filters/PeopleFilterPanel";
@@ -281,14 +281,6 @@ export default function PeopleSearchPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setColumnSettingsOpen(true)}
-                  title="Column settings"
-                  className="rounded-md border border-gray-200 bg-white p-1.5 text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
-                >
-                  <Settings className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
                   disabled={selected.size === 0}
                   onClick={() => openListModal(selectedPeople)}
                   className="flex items-center gap-1 rounded-md bg-red-600 px-2.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-xs"
@@ -319,6 +311,7 @@ export default function PeopleSearchPage() {
                     revealedEmails={revealedEmails}
                     onRevealEmail={handleRevealEmail}
                     revealingIds={revealingIds}
+                    onOpenColumnSettings={() => setColumnSettingsOpen(true)}
                   />
                 </div>
                 {meta && (
