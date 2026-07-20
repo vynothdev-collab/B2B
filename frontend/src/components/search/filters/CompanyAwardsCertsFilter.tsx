@@ -42,7 +42,7 @@ function TagInput({
           {values.map((v) => (
             <span
               key={v}
-              className="flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] text-red-700"
+              className="flex items-center gap-1 rounded-full bg-[#D9E8DB] px-2 py-0.5 text-[11px] text-[#2d5a3d]"
             >
               {v}
               <button

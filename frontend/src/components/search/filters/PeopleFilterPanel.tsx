@@ -61,6 +61,22 @@ function chips(items: string[], onRemove: (v: string) => void): ChipItem[] {
   return items.map((v) => ({ label: v, onRemove: () => onRemove(v) }));
 }
 
+function fmtRange(min: string, max: string, suffix = ""): string {
+  if (min && max) return `${min}–${max}${suffix}`;
+  if (min) return `≥${min}${suffix}`;
+  if (max) return `≤${max}${suffix}`;
+  return "";
+}
+
+function fmtDuration(minY: string, minM: string, maxY: string, maxM: string): string {
+  const lo = [minY && `${minY}y`, minM && `${minM}mo`].filter(Boolean).join(" ");
+  const hi = [maxY && `${maxY}y`, maxM && `${maxM}mo`].filter(Boolean).join(" ");
+  if (lo && hi) return `${lo} – ${hi}`;
+  if (lo) return `≥ ${lo}`;
+  if (hi) return `≤ ${hi}`;
+  return "";
+}
+
 export default function PeopleFilterPanel({ filters, onChange }: Props) {
   const [open, setOpen] = useState<Section | "">("people");
   const toggle = (s: Section) => setOpen((p) => (p === s ? "" : s));
@@ -138,6 +154,64 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
   const keywordPreview: ChipItem[] = [
     ...filters.keywordsInclude.map((v) => ({ label: v, onRemove: () => onChange({ keywordsInclude: filters.keywordsInclude.filter((x) => x !== v) }) })),
     ...filters.keywordsExclude.map((v) => ({ label: `−${v}`, onRemove: () => onChange({ keywordsExclude: filters.keywordsExclude.filter((x) => x !== v) }) })),
+  ];
+  const contactPreview: ChipItem[] = filters.requireWorkEmail
+    ? [{ label: "Work email", onRemove: () => onChange({ requireWorkEmail: false }) }]
+    : [];
+  const headcountPreview: ChipItem[] = [
+    ...chips(filters.employeeHeadcountRanges, (v) => onChange({ employeeHeadcountRanges: filters.employeeHeadcountRanges.filter((x) => x !== v) })),
+    ...(fmtRange(filters.employeeCountMin, filters.employeeCountMax) ? [{ label: fmtRange(filters.employeeCountMin, filters.employeeCountMax), onRemove: () => onChange({ employeeCountMin: "", employeeCountMax: "" }) }] : []),
+  ];
+  const revenuePreview: ChipItem[] = [
+    ...chips(filters.revenueBuckets, (v) => onChange({ revenueBuckets: filters.revenueBuckets.filter((x) => x !== v) })),
+    ...(fmtRange(filters.revenueMin, filters.revenueMax) ? [{ label: fmtRange(filters.revenueMin, filters.revenueMax), onRemove: () => onChange({ revenueMin: "", revenueMax: "" }) }] : []),
+  ];
+  const fundingPreview: ChipItem[] = [
+    ...chips(filters.fundingPresets, (v) => onChange({ fundingPresets: filters.fundingPresets.filter((x) => x !== v) })),
+    ...(fmtRange(filters.fundingMin, filters.fundingMax) ? [{ label: fmtRange(filters.fundingMin, filters.fundingMax), onRemove: () => onChange({ fundingMin: "", fundingMax: "" }) }] : []),
+  ];
+  const growthPreview: ChipItem[] = [
+    ...chips(filters.headcountGrowthPresets, (v) => onChange({ headcountGrowthPresets: filters.headcountGrowthPresets.filter((x) => x !== v) })),
+    ...(fmtRange(filters.headcountGrowthMin, filters.headcountGrowthMax, "%") ? [{ label: fmtRange(filters.headcountGrowthMin, filters.headcountGrowthMax, "%"), onRemove: () => onChange({ headcountGrowthMin: "", headcountGrowthMax: "" }) }] : []),
+  ];
+  const deptPreview: ChipItem[] = [
+    ...(filters.headcountByDepartment ? [{ label: filters.headcountByDepartment, onRemove: () => onChange({ headcountByDepartment: "" }) }] : []),
+    ...chips(filters.headcountByDepartmentPresets, (v) => onChange({ headcountByDepartmentPresets: filters.headcountByDepartmentPresets.filter((x) => x !== v) })),
+    ...(fmtRange(filters.headcountByDepartmentMin, filters.headcountByDepartmentMax) ? [{ label: fmtRange(filters.headcountByDepartmentMin, filters.headcountByDepartmentMax), onRemove: () => onChange({ headcountByDepartmentMin: "", headcountByDepartmentMax: "" }) }] : []),
+  ];
+  const locationByPreview: ChipItem[] = [
+    ...(filters.headcountByLocationCountry ? [{ label: filters.headcountByLocationCountry, onRemove: () => onChange({ headcountByLocationCountry: "" }) }] : []),
+    ...chips(filters.headcountByLocationPresets, (v) => onChange({ headcountByLocationPresets: filters.headcountByLocationPresets.filter((x) => x !== v) })),
+    ...(fmtRange(filters.headcountByLocationMin, filters.headcountByLocationMax) ? [{ label: fmtRange(filters.headcountByLocationMin, filters.headcountByLocationMax), onRemove: () => onChange({ headcountByLocationMin: "", headcountByLocationMax: "" }) }] : []),
+  ];
+  const foundedPreview: ChipItem[] = [
+    ...chips(filters.foundedPresets, (v) => onChange({ foundedPresets: filters.foundedPresets.filter((x) => x !== v) })),
+    ...(fmtRange(filters.foundedMin, filters.foundedMax) ? [{ label: fmtRange(filters.foundedMin, filters.foundedMax), onRemove: () => onChange({ foundedMin: "", foundedMax: "" }) }] : []),
+  ];
+  const timeRoleLabel = fmtDuration(filters.timeInRoleMinYears, filters.timeInRoleMinMonths, filters.timeInRoleMaxYears, filters.timeInRoleMaxMonths);
+  const timeRolePreview: ChipItem[] = timeRoleLabel ? [{ label: timeRoleLabel, onRemove: () => onChange({ timeInRoleMinYears: "", timeInRoleMinMonths: "", timeInRoleMaxYears: "", timeInRoleMaxMonths: "" }) }] : [];
+  const timeCompanyLabel = fmtDuration(filters.timeInCompanyMinYears, filters.timeInCompanyMinMonths, filters.timeInCompanyMaxYears, filters.timeInCompanyMaxMonths);
+  const timeCompanyPreview: ChipItem[] = timeCompanyLabel ? [{ label: timeCompanyLabel, onRemove: () => onChange({ timeInCompanyMinYears: "", timeInCompanyMinMonths: "", timeInCompanyMaxYears: "", timeInCompanyMaxMonths: "" }) }] : [];
+  const expLabel = fmtRange(filters.experienceYearsMin, filters.experienceYearsMax, " yrs");
+  const expPreview: ChipItem[] = expLabel ? [{ label: expLabel, onRemove: () => onChange({ experienceYearsMin: "", experienceYearsMax: "" }) }] : [];
+  const jobChangePreview: ChipItem[] = filters.jobChangeTimeframe
+    ? [{ label: `Changed in ${filters.jobChangeTimeframe}mo`, onRemove: () => onChange({ jobChangeTimeframe: "" }) }]
+    : [];
+  const jobPostingPreview = chips(filters.jobPostingKeywords, (v) => onChange({ jobPostingKeywords: filters.jobPostingKeywords.filter((x) => x !== v) }));
+  const certsPreview: ChipItem[] = [
+    ...chips(filters.awards, (v) => onChange({ awards: filters.awards.filter((x) => x !== v) })),
+    ...chips(filters.certifications, (v) => onChange({ certifications: filters.certifications.filter((x) => x !== v) })),
+    ...chips(filters.otherCompliance, (v) => onChange({ otherCompliance: filters.otherCompliance.filter((x) => x !== v) })),
+  ];
+  const trafficLabel = [
+    fmtRange(filters.websiteVisitsMin, filters.websiteVisitsMax, " visits"),
+    fmtRange(filters.visitChangeMin, filters.visitChangeMax, "% change"),
+  ].filter(Boolean).join(", ");
+  const trafficPreview: ChipItem[] = trafficLabel ? [{ label: trafficLabel, onRemove: () => onChange({ websiteVisitsMin: "", websiteVisitsMax: "", visitChangeMin: "", visitChangeMax: "" }) }] : [];
+  const newsPreview: ChipItem[] = [
+    ...chips(filters.companyNewsKeywords, (v) => onChange({ companyNewsKeywords: filters.companyNewsKeywords.filter((x) => x !== v) })),
+    ...chips(filters.companyNewsCategories ?? [], (v) => onChange({ companyNewsCategories: (filters.companyNewsCategories ?? []).filter((x) => x !== v) })),
+    ...(filters.companyNewsTimeframe ? [{ label: filters.companyNewsTimeframe, onRemove: () => onChange({ companyNewsTimeframe: "" }) }] : []),
   ];
 
   return (
@@ -307,6 +381,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("contact")}
         count={contactCount}
         onClear={() => onChange({ requireWorkEmail: false })}
+        preview={<FilterPreviewChips items={contactPreview} />}
       >
         <ContactDetailsFilter
           requireWorkEmail={filters.requireWorkEmail}
@@ -354,6 +429,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("employeeHeadcount")}
         count={headcountCount}
         onClear={() => onChange({ employeeHeadcountRanges: [], employeeCountMin: "", employeeCountMax: "", employeeHeadcountMode: "predefined" })}
+        preview={<FilterPreviewChips items={headcountPreview} />}
       >
         <EmployeeHeadcountFilter
           mode={filters.employeeHeadcountMode}
@@ -414,6 +490,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("revenue")}
         count={revenueCount}
         onClear={() => onChange({ revenueBuckets: [], revenueMin: "", revenueMax: "", revenueMode: "predefined" })}
+        preview={<FilterPreviewChips items={revenuePreview} />}
       >
         <RevenueFilter
           mode={filters.revenueMode}
@@ -434,6 +511,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("funding")}
         count={fundingCount}
         onClear={() => onChange({ fundingPresets: [], fundingMin: "", fundingMax: "", fundingMode: "predefined" })}
+        preview={<FilterPreviewChips items={fundingPreview} />}
       >
         <FundingFilter
           mode={filters.fundingMode}
@@ -455,6 +533,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("headcountGrowth")}
         count={growthCount}
         onClear={() => onChange({ headcountGrowthPresets: [], headcountGrowthMin: "", headcountGrowthMax: "", headcountGrowthMode: "predefined" })}
+        preview={<FilterPreviewChips items={growthPreview} />}
       >
         <PresetRangeFilter
           options={GROWTH_PRESETS}
@@ -479,10 +558,12 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("headcountByDept")}
         count={deptCount}
         onClear={() => onChange({ headcountByDepartment: "", headcountByDepartmentPresets: [], headcountByDepartmentMin: "", headcountByDepartmentMax: "", headcountByDepartmentMode: "predefined" })}
+        preview={<FilterPreviewChips items={deptPreview} />}
       >
         <MultiChipSelect
           label="Department"
           placeholder="Select department"
+          noCheckbox
           options={DEPARTMENT_OPTIONS}
           values={filters.headcountByDepartment ? [filters.headcountByDepartment] : []}
           onChange={(v) => onChange({ headcountByDepartment: v[v.length - 1] ?? "" })}
@@ -510,6 +591,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("headcountByLocation")}
         count={locationByCount}
         onClear={() => onChange({ headcountByLocationCountry: "", headcountByLocationPresets: [], headcountByLocationMin: "", headcountByLocationMax: "", headcountByLocationMode: "predefined" })}
+        preview={<FilterPreviewChips items={locationByPreview} />}
       >
         <CountrySelect
           label="Country"
@@ -539,6 +621,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("founded")}
         count={foundedCount}
         onClear={() => onChange({ foundedPresets: [], foundedMin: "", foundedMax: "", foundedMode: "predefined" })}
+        preview={<FilterPreviewChips items={foundedPreview} />}
       >
         <PresetRangeFilter
           options={FOUNDED_YEAR_PRESETS}
@@ -562,6 +645,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("timeInRole")}
         count={timeRoleCount}
         onClear={() => onChange({ timeInRoleMinYears: "", timeInRoleMinMonths: "", timeInRoleMaxYears: "", timeInRoleMaxMonths: "" })}
+        preview={<FilterPreviewChips items={timeRolePreview} />}
       >
         <TimeInRoleFilter mode="role" filters={filters} onChange={onChange} />
       </FilterSection>
@@ -573,6 +657,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("timeInCompany")}
         count={timeCompanyCount}
         onClear={() => onChange({ timeInCompanyMinYears: "", timeInCompanyMinMonths: "", timeInCompanyMaxYears: "", timeInCompanyMaxMonths: "" })}
+        preview={<FilterPreviewChips items={timeCompanyPreview} />}
       >
         <TimeInRoleFilter mode="company" filters={filters} onChange={onChange} />
       </FilterSection>
@@ -584,6 +669,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("totalExperience")}
         count={expCount}
         onClear={() => onChange({ experienceYearsMin: "", experienceYearsMax: "" })}
+        preview={<FilterPreviewChips items={expPreview} />}
       >
         <TotalExperienceFilter filters={filters} onChange={onChange} />
       </FilterSection>
@@ -595,6 +681,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("jobChange")}
         count={jobChangeCount}
         onClear={() => onChange({ jobChangeTimeframe: "" })}
+        preview={<FilterPreviewChips items={jobChangePreview} />}
       >
         <JobChangeFilter filters={filters} onChange={onChange} />
       </FilterSection>
@@ -606,6 +693,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("jobPosting")}
         count={jobPostingCount}
         onClear={() => onChange({ jobPostingKeywords: [] })}
+        preview={<FilterPreviewChips items={jobPostingPreview} />}
       >
         <JobPostingFilter filters={filters} onChange={onChange} />
       </FilterSection>
@@ -617,6 +705,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("awardsCerts")}
         count={certsCount}
         onClear={() => onChange({ awards: [], certifications: [], otherCompliance: [] })}
+        preview={<FilterPreviewChips items={certsPreview} />}
       >
         <AwardsCertsFilter filters={filters} onChange={onChange} />
       </FilterSection>
@@ -628,6 +717,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("websiteTraffic")}
         count={trafficCount}
         onClear={() => onChange({ websiteVisitsMin: "", websiteVisitsMax: "", visitChangeMin: "", visitChangeMax: "", visitChangeTimeframe: "monthly" })}
+        preview={<FilterPreviewChips items={trafficPreview} />}
       >
         <WebsiteTrafficFilter filters={filters} onChange={onChange} />
       </FilterSection>
@@ -639,6 +729,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onToggle={() => toggle("companyNews")}
         count={newsCount}
         onClear={() => onChange({ companyNewsKeywords: [], companyNewsCategories: [], companyNewsTimeframe: "" })}
+        preview={<FilterPreviewChips items={newsPreview} />}
       >
         <InlineCompanyNewsFilter filters={filters} onChange={onChange} />
       </FilterSection>

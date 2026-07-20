@@ -35,7 +35,7 @@ function CheckList({
             key={opt.value}
             type="button"
             onMouseDown={(e) => { e.preventDefault(); onToggle(opt.value); }}
-            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[12px] transition-colors ${
+            className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
               i === activeIdx ? "bg-red-50 text-red-700" : selected ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
             }`}
           >
@@ -142,7 +142,7 @@ function IndustryMultiSelect({
           {values.map((v) => {
             const label = INDUSTRY_OPTIONS.find((o) => o.value === v)?.label ?? v;
             return (
-              <span key={v} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-700">
+              <span key={v} className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-1.5 py-0.5 text-[11px] font-medium text-[#2d5a3d]">
                 {label}
                 <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
                   <X className="h-2.5 w-2.5" />
@@ -161,7 +161,6 @@ function IndustryMultiSelect({
           value={text}
           onChange={(e) => { setText(e.target.value); setActiveIdx(-1); }}
           onFocus={() => { reposition(); setOpen(true); }}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
           onKeyDown={handleKey}
           className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none"
         />

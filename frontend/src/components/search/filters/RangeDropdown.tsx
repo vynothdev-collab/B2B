@@ -153,7 +153,7 @@ export default function RangeDropdown({
                   onMaxChange(p.max != null ? String(p.max) : "");
                   setOpen(false);
                 }}
-                className="block w-full px-2.5 py-1.5 text-left text-[12px] text-gray-700 hover:bg-red-50 hover:bg-red-500"
+                className="block w-full px-2.5 py-1 text-left text-[12px] text-gray-700 hover:bg-red-50 hover:bg-red-500"
               >
                 {p.label}
               </button>
@@ -166,7 +166,7 @@ export default function RangeDropdown({
                 onMaxChange("");
                 setOpen(false);
               }}
-              className="block w-full border-t border-gray-100 px-2.5 py-1.5 text-left text-[12px] font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+              className="block w-full border-t border-gray-100 px-2.5 py-1 text-left text-[12px] font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
             >
               Clear
             </button>

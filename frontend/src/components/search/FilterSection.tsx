@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Info, X } from "lucide-react";
 
 export interface ChipItem {
@@ -14,13 +14,13 @@ export function FilterPreviewChips({ items }: { items: ChipItem[] }) {
       {items.map((item, i) => (
         <span
           key={i}
-          className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[11px] font-medium text-red-700"
+          className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-1.5 py-0.5 text-[11px] font-medium text-[#2d5a3d]"
         >
           {item.label}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); item.onRemove(); }}
-            className="hover:opacity-60"
+            className="opacity-70 hover:opacity-100"
           >
             <X className="h-2.5 w-2.5" />
           </button>
@@ -47,13 +47,20 @@ export default function FilterSection({
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const prevOpenRef = useRef(isOpen);
+  const [previewVisible, setPreviewVisible] = useState(!isOpen);
 
   useEffect(() => {
-    if (isOpen && !prevOpenRef.current && wrapRef.current) {
-      const t = window.setTimeout(() => {
-        wrapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 60);
-      prevOpenRef.current = true;
+    if (isOpen) {
+      setPreviewVisible(false);
+      if (!prevOpenRef.current && wrapRef.current) {
+        const t = window.setTimeout(() => {
+          wrapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 60);
+        prevOpenRef.current = true;
+        return () => window.clearTimeout(t);
+      }
+    } else {
+      const t = window.setTimeout(() => setPreviewVisible(true), 500);
       return () => window.clearTimeout(t);
     }
     prevOpenRef.current = isOpen;
@@ -72,46 +79,50 @@ export default function FilterSection({
           : "mx-1.5 my-1 overflow-hidden rounded-xl border-2 border-gray-100 transition-colors hover:border-gray-200"
       }
     >
-      {/* Header row */}
-      <div className="flex items-center">
-        <button
-          type="button"
-          onClick={onToggle}
-          title={info}
-          className={`flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium transition-colors [&_svg]:h-3.5 [&_svg]:w-3.5 ${
-            isOpen ? "text-red-700 bg-red-50/60" : "text-gray-800 hover:bg-gray-50/60"
-          }`}
-        >
-          <span className={`shrink-0 ${isOpen || hasActive ? "text-red-500" : "text-red-500"}`}>{icon}</span>
-          <span className="min-w-0 flex-1 truncate text-left">{title}</span>
-          {info && (
-            <span title={info}>
-              <Info className="h-3 w-3 shrink-0 text-gray-300" />
-            </span>
-          )}
-          <ChevronDown
-            className={`h-4 w-4 shrink-0 transition-transform duration-500 ${
-              isOpen ? "rotate-180 text-red-500" : "rotate-0 text-gray-400"
-            }`}
-          />
-        </button>
-
-        {/* Count badge + clear — outside toggle button to avoid nesting */}
+      {/* Header row — single flex row, badge before chevron, chevron at far right */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onToggle}
+        onKeyDown={(e) => e.key === "Enter" && onToggle()}
+        title={info}
+        className={`flex cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium transition-colors [&_svg]:h-3.5 [&_svg]:w-3.5 ${
+          isOpen
+            ? "bg-red-50/60 text-red-700"
+            : hasActive
+            ? "text-red-700 hover:bg-red-100/40"
+            : "text-gray-800 hover:bg-gray-50/60"
+        }`}
+      >
+        <span className="shrink-0 text-red-500">{icon}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{title}</span>
+        {info && (
+          <span title={info}>
+            <Info className="h-3 w-3 shrink-0 text-gray-300" />
+          </span>
+        )}
+        {/* Count badge — left of chevron */}
         {hasActive && (
           <button
             type="button"
-            onClick={onClear}
+            onClick={(e) => { e.stopPropagation(); onClear?.(); }}
             title="Clear filters"
-            className="mr-2.5 flex shrink-0 items-center gap-1 rounded-full bg-red-100 py-0.5 pl-2 pr-1.5 text-[11px] font-semibold text-red-700 transition-colors hover:bg-red-200"
+            className="flex shrink-0 items-center gap-1 rounded-full bg-red-100 py-0.5 pl-2 pr-1.5 text-[11px] font-semibold text-red-700 transition-colors hover:bg-red-200"
           >
             {count}
             <X className="h-2.5 w-2.5" />
           </button>
         )}
+        {/* Chevron — always at far right edge */}
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform duration-500 ${
+            isOpen ? "rotate-180 text-red-500" : hasActive ? "text-red-400" : "text-gray-400"
+          }`}
+        />
       </div>
 
-      {/* Preview chips — visible when collapsed and has active filters */}
-      {!isOpen && hasActive && preview}
+      {/* Preview chips — visible only after close animation completes */}
+      {!isOpen && previewVisible && hasActive && preview}
 
       {/* Expandable content */}
       <div

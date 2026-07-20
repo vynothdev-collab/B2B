@@ -60,7 +60,7 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
     setLoading(true);
     debounceRef.current = setTimeout(async () => {
       const results = await fetchTitleSuggestions(text);
-      setSuggestions(results.filter((s) => !values.includes(s)));
+      setSuggestions(results);
       setLoading(false);
     }, 250);
     return () => {
@@ -69,13 +69,10 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
-  const addValue = (val: string) => {
+  const toggleValue = (val: string) => {
     const trimmed = val.trim();
-    if (!trimmed || values.includes(trimmed)) return;
-    onChange([...values, trimmed]);
-    setText("");
-    setSuggestions([]);
-    setOpen(false);
+    if (!trimmed) return;
+    onChange(values.includes(trimmed) ? values.filter((x) => x !== trimmed) : [...values, trimmed]);
     setActiveIdx(-1);
     inputRef.current?.focus();
   };
@@ -94,9 +91,9 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
     if (e.key === "Enter") {
       e.preventDefault();
       if (open && activeIdx >= 0 && suggestions[activeIdx]) {
-        addValue(suggestions[activeIdx]);
+        toggleValue(suggestions[activeIdx]);
       } else if (text.trim()) {
-        addValue(text);
+        toggleValue(text);
       }
       return;
     }
@@ -117,13 +114,13 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
           {values.map((v) => (
             <span
               key={v}
-              className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-700"
+              className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-1.5 py-0.5 text-[11px] font-medium text-[#2d5a3d]"
             >
               {v}
               <button
                 type="button"
                 onClick={() => onChange(values.filter((x) => x !== v))}
-                className="hover:opacity-70"
+                className="opacity-70 hover:opacity-100"
               >
                 <X className="h-2.5 w-2.5" />
               </button>
@@ -145,7 +142,6 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
             setOpen(true);
           }}
           onFocus={() => { reposition(); setOpen(true); }}
-          onBlur={() => setTimeout(() => setOpen(false), 150)}
           onKeyDown={handleKey}
           className={inputCls}
         />
@@ -168,18 +164,30 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
               ) : suggestions.length === 0 ? (
                 <div className="px-3 py-2 text-[12px] text-gray-400">No matches</div>
               ) : (
-                suggestions.map((s, i) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); addValue(s); }}
-                    className={`flex w-full items-center px-2.5 py-1.5 text-left text-[12px] transition-colors ${
-                      i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))
+                suggestions.map((s, i) => {
+                  const checked = values.includes(s);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); toggleValue(s); }}
+                      className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
+                        i === activeIdx ? "bg-red-50 text-red-700" : checked ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                        checked ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
+                      }`}>
+                        {checked && (
+                          <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className={`flex-1 truncate ${checked ? "font-medium" : ""}`}>{s}</span>
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>

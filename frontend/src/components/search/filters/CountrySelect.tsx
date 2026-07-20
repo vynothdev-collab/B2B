@@ -139,7 +139,7 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
                     key={name}
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); select(name); }}
-                    className={`flex w-full items-center px-2.5 py-1.5 text-left text-[12px] transition-colors ${
+                    className={`flex w-full items-center px-2.5 py-1 text-left text-[12px] transition-colors ${
                       i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
                     }`}
                   >

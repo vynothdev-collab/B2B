@@ -41,7 +41,7 @@ export default function InlineCompanyNewsFilter({ filters, onChange }: Props) {
             {filters.companyNewsKeywords.map((kw) => (
               <span
                 key={kw}
-                className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700"
+                className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-2 py-0.5 text-[11px] font-medium text-[#2d5a3d]"
               >
                 {kw}
                 <button

@@ -58,7 +58,7 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
           {values.map((val) => (
             <span
               key={val}
-              className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-700"
+              className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-1.5 py-0.5 text-[11px] font-medium text-[#2d5a3d]"
             >
               {val}
               <button
