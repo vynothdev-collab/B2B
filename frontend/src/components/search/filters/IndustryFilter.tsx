@@ -25,12 +25,11 @@ export default function IndustryFilter({ values, onChange }: Props) {
   const q = query.toLowerCase().trim();
 
   const suggestions = ALL_INDUSTRIES.filter(
-    (o) => (!q || o.label.toLowerCase().includes(q)) && !values.includes(o.value)
-  ).slice(0, 30);
+    (o) => !q || o.label.toLowerCase().includes(q)
+  ).slice(0, 50);
 
-  const add = (val: string) => {
-    if (!values.includes(val)) onChange([...values, val]);
-    setQuery("");
+  const toggle = (val: string) => {
+    onChange(values.includes(val) ? values.filter((v) => v !== val) : [...values, val]);
   };
 
   const remove = (val: string) => onChange(values.filter((v) => v !== val));
@@ -45,7 +44,7 @@ export default function IndustryFilter({ values, onChange }: Props) {
           {values.map((v) => (
             <span
               key={v}
-              className="flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] text-red-700 max-w-full"
+              className="flex items-center gap-1 rounded-full bg-[#D9E8DB] px-2 py-0.5 text-[11px] text-[#2d5a3d] max-w-full"
             >
               <span className="truncate max-w-[150px]">{v}</span>
               <button
@@ -78,21 +77,35 @@ export default function IndustryFilter({ values, onChange }: Props) {
       {showList && (
         <div className="max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           {suggestions.length === 0 ? (
-            <p className="px-3 py-3 text-[12px] text-gray-400">{q ? `No results for "${query}"` : "All industries selected"}</p>
+            <p className="px-3 py-3 text-[12px] text-gray-400">{q ? `No results for "${query}"` : "No industries"}</p>
           ) : (
             <ul>
-              {suggestions.map((opt) => (
-                <li key={opt.value}>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => add(opt.value)}
-                    className="w-full px-3 py-1 text-left text-[12px] text-gray-800 hover:bg-gray-50 transition-colors"
-                  >
-                    {opt.label}
-                  </button>
-                </li>
-              ))}
+              {suggestions.map((opt) => {
+                const checked = values.includes(opt.value);
+                return (
+                  <li key={opt.value}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => toggle(opt.value)}
+                      className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
+                        checked ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                        checked ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
+                      }`}>
+                        {checked && (
+                          <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className={`flex-1 truncate ${checked ? "font-medium" : ""}`}>{opt.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

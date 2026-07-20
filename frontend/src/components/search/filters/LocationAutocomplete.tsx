@@ -185,7 +185,6 @@ export default function LocationAutocomplete({
     if (values.includes(stored)) return;
     onChange([...values, stored]);
     setText("");
-    setOpen(false);
     setActiveIdx(-1);
     inputRef.current?.focus();
   };
@@ -230,7 +229,7 @@ export default function LocationAutocomplete({
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1.5">
           {values.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium capitalize text-red-700">
+            <span key={v} className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-1.5 py-0.5 text-[11px] font-medium capitalize text-[#2d5a3d]">
               {v}
               <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
                 <X className="h-2.5 w-2.5" />
@@ -272,22 +271,33 @@ export default function LocationAutocomplete({
                    "No matches"}
                 </div>
               ) : (
-                suggestions.map((s, i) => (
-                  <button
-                    key={s.display}
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); add(s); }}
-                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[12px] transition-colors ${
-                      i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <MapPin className="h-3 w-3 shrink-0 text-gray-400" />
-                    <span className="truncate flex-1">{s.display}</span>
-                    <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-gray-500">
-                      {KIND_LABEL[s.kind]}
-                    </span>
-                  </button>
-                ))
+                suggestions.map((s, i) => {
+                  const checked = values.includes(s.display);
+                  return (
+                    <button
+                      key={s.display}
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); add(s); }}
+                      className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
+                        i === activeIdx ? "bg-red-50 text-red-700" : checked ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                        checked ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
+                      }`}>
+                        {checked && (
+                          <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="truncate flex-1">{s.display}</span>
+                      <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-gray-500">
+                        {KIND_LABEL[s.kind]}
+                      </span>
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>

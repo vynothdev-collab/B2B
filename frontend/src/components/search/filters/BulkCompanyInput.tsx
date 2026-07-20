@@ -69,7 +69,7 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
           {values.map((v) => (
             <span
               key={v}
-              className="inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-700"
+              className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-1.5 py-0.5 text-[11px] font-medium text-[#2d5a3d]"
             >
               {v}
               <button

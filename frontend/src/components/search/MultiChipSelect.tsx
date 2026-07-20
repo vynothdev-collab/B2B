@@ -9,15 +9,16 @@ interface Props {
   values: string[];
   onChange: (values: string[]) => void;
   options: { value: string; label: string }[];
+  noCheckbox?: boolean;
 }
 
 const labelCls = "mb-1 block text-[12px] text-gray-500";
 
-const CHIP_CLS = "bg-red-100 text-red-700";
+const CHIP_CLS = "bg-[#D9E8DB] text-[#2d5a3d]";
 
 const DROPDOWN_MAX_H = 220;
 
-export default function MultiChipSelect({ label, placeholder, values, onChange, options }: Props) {
+export default function MultiChipSelect({ label, placeholder, values, onChange, options, noCheckbox }: Props) {
   const [inputText, setInputText] = useState("");
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
@@ -125,16 +126,22 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
                       key={o.value}
                       type="button"
                       onMouseDown={(e) => { e.preventDefault(); toggleValue(o.value); }}
-                      className={`flex w-full items-center justify-between px-2.5 py-1.5 text-[12px] transition-colors ${
-                        selected ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
+                      className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
+                        selected ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      <span className="truncate">{o.label}</span>
-                      {selected && (
-                        <svg className="ml-2 h-3.5 w-3.5 shrink-0 text-red-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
+                      {!noCheckbox && (
+                        <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                          selected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
+                        }`}>
+                          {selected && (
+                            <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </span>
                       )}
+                      <span className={`flex-1 truncate ${selected ? "font-medium" : ""}`}>{o.label}</span>
                     </button>
                   );
                 })

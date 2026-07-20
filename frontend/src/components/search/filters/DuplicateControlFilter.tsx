@@ -150,7 +150,7 @@ export default function DuplicateControlFilter({ filters, onChange }: Props) {
         {filters.exclusionCompanyNames.length > 0 && (
           <div className="mb-1.5 flex flex-wrap gap-1">
             {filters.exclusionCompanyNames.map((v) => (
-              <span key={v} className="flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] text-red-700">
+              <span key={v} className="flex items-center gap-1 rounded-full bg-[#D9E8DB] px-2 py-0.5 text-[11px] text-[#2d5a3d]">
                 {v}
                 <button
                   type="button"

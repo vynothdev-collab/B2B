@@ -61,18 +61,19 @@ function KeywordInput({
   }
 
   return (
-    <div
-      className={`min-h-[38px] w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 flex flex-wrap gap-1 cursor-text transition-colors focus-within:border-red-400 ${disabled ? "opacity-50 pointer-events-none bg-gray-50" : ""}`}
-      onClick={() => inputRef.current?.focus()}
-    >
-      {values.map((v) => (
-        <span key={v} className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">
-          {v}
-          <button type="button" onClick={(e) => { e.stopPropagation(); onChange(values.filter((x) => x !== v)); }} className="text-gray-400 hover:text-gray-700">
-            <X className="h-2.5 w-2.5" />
-          </button>
-        </span>
-      ))}
+    <div className={disabled ? "opacity-50 pointer-events-none" : ""}>
+      {values.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-1.5">
+          {values.map((v) => (
+            <span key={v} className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-2 py-0.5 text-[11px] font-medium text-[#2d5a3d]">
+              {v}
+              <button type="button" onClick={(e) => { e.stopPropagation(); onChange(values.filter((x) => x !== v)); }} className="opacity-70 hover:opacity-100">
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       {values.length < MAX_KEYWORDS && (
         <input
           ref={inputRef}
@@ -80,9 +81,11 @@ function KeywordInput({
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKey}
           onBlur={() => commit(draft)}
-          placeholder={values.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-[120px] bg-transparent text-[12px] text-gray-800 placeholder-gray-400 outline-none"
+          placeholder={placeholder}
           disabled={disabled}
+          className={`w-full rounded-lg border bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:outline-none focus:border-red-400 ${
+            values.length > 0 ? "border-red-300" : "border-gray-200"
+          }`}
         />
       )}
     </div>
