@@ -3,8 +3,8 @@ import { Globe, Users } from "lucide-react";
 import type { CompanyResult } from "@/types/search";
 import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
 import {
-  avatarColor,
   ChipList,
+  CompanyLogo,
   Dash,
   fmtMoney,
   normalizeSizeRange,
@@ -18,8 +18,6 @@ interface BuildColsArgs {
 }
 
 function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn<CompanyResult>[] {
-  const isCol = (key: string) => visibleColumns[key] !== false;
-
   const rawCols: DataTableColumn<CompanyResult>[] = [
     {
       key: "company",
@@ -27,26 +25,11 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
       minWidth: 200,
       render: (company) => {
         const name = company.company_name ?? "—";
-        const color = avatarColor(name);
-        const typeLabel = company.is_public === true
-          ? "public"
-          : company.is_public === false
-            ? "private"
-            : (company.type ?? "");
-        const typeKey = typeLabel.toLowerCase();
-        const typeBadgeClass = TYPE_COLORS[typeKey] ?? "bg-gray-100 text-gray-500";
         return (
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded text-[13px] font-bold text-white ${color}`}>
-              {name[0]?.toUpperCase()}
-            </div>
+            <CompanyLogo name={name} logoUrl={company.logo_url} website={company.website} size="md" />
             <div className="min-w-0 overflow-hidden">
               <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
-              {!isCol("type") && typeLabel && (
-                <span className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize ${typeBadgeClass}`}>
-                  {typeLabel}
-                </span>
-              )}
             </div>
           </div>
         );
@@ -126,11 +109,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
       label: "Type",
       minWidth: 90,
       render: (company) => {
-        const typeLabel = company.is_public === true
-          ? "public"
-          : company.is_public === false
-            ? "private"
-            : (company.type ?? "");
+        const typeLabel = company.type ?? "";
         const typeBadgeClass = TYPE_COLORS[typeLabel.toLowerCase()] ?? "bg-gray-100 text-gray-500";
         return typeLabel ? (
           <span className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${typeBadgeClass}`}>
