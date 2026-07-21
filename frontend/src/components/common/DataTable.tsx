@@ -183,26 +183,38 @@ export default function DataTable<T>({
                   {visibleCols.map((col, idx) => {
                     const isSticky = idx < stickyLeftColumns;
                     const stickyClass = isSticky ? STICKY_TD_CONTENT : "";
+                    const barWidths = ["w-28", "w-20", "w-16", "w-24", "w-14", "w-20", "w-16", "w-10"];
+                    const barW = barWidths[idx % barWidths.length];
                     return (
                       <td
                         key={col.key}
-                        className={`border-b border-gray-200 px-4 py-2.5 ${stickyClass}`}
-                        style={isSticky ? { left: `${stickyOffsets[idx]}px` } : undefined}
+                        className={`border-b border-gray-200 px-4 py-0 align-middle ${stickyClass}`}
+                        style={isSticky ? { left: `${stickyOffsets[idx]}px`, backgroundColor: "#fff" } : undefined}
                       >
-                        {idx === 0 && selection ? (
-                          <div className="flex items-center gap-2.5">
-                            <div className="h-4 w-4 shrink-0 rounded border border-gray-200 bg-gray-100" />
-                            <div className="h-3 w-24 rounded bg-gray-200" />
-                          </div>
-                        ) : (
-                          <div className="h-3 w-24 rounded bg-gray-200" />
-                        )}
+                        <div className="flex h-[54px] items-center overflow-hidden">
+                          {idx === 0 && selection ? (
+                            <div className="flex items-center gap-2.5 overflow-hidden">
+                              <div className="h-4 w-4 shrink-0 rounded border border-gray-200 bg-gray-100" />
+                              <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200" />
+                              <div className="h-3 w-24 rounded bg-gray-200" />
+                            </div>
+                          ) : idx === 0 ? (
+                            <div className="flex items-center gap-2.5 overflow-hidden">
+                              <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200" />
+                              <div className="h-3 w-24 rounded bg-gray-200" />
+                            </div>
+                          ) : (
+                            <div className={`h-3 ${barW} rounded bg-gray-200`} />
+                          )}
+                        </div>
                       </td>
                     );
                   })}
                   {actions && (
-                    <td className="border-b border-gray-200 px-4 py-2.5">
-                      <div className="h-5 w-5 rounded bg-gray-200" />
+                    <td className="border-b border-gray-200 px-4 py-0 align-middle">
+                      <div className="flex h-[54px] items-center">
+                        <div className="h-5 w-5 rounded bg-gray-200" />
+                      </div>
                     </td>
                   )}
                 </tr>

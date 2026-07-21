@@ -54,12 +54,12 @@ export default function CompanySearchPage() {
       return;
     }
     setLoading(true);
+    setHasSearched(true);
     setSelected(new Set());
     try {
       const res = await searchCompanies(filters, scrollToken, PAGE_SIZE);
       setResults(res);
       setMeta(res.meta ?? null);
-      setHasSearched(true);
       setCurrentPage(page);
       pageCacheRef.current.set(page, res);
       if ((res.data?.length ?? 0) === 0) setNoDataDialog(true);
@@ -142,13 +142,13 @@ export default function CompanySearchPage() {
     setTokenHistory([]);
     setCurrentPage(1);
     setLoading(true);
+    setHasSearched(true);
     setSelected(new Set());
     try {
       const res = await agenticSearch(prompt, "company", undefined, PAGE_SIZE);
       if (res.meta?.es_query) agenticEsQueryRef.current = res.meta.es_query;
       setResults(res);
       setMeta(res.meta ?? null);
-      setHasSearched(true);
       setCurrentPage(1);
       pageCacheRef.current.set(1, res);
       if ((res.data?.length ?? 0) === 0) setNoDataDialog(true);
@@ -196,7 +196,7 @@ export default function CompanySearchPage() {
     <>
       <AppHeader title="Company search" />
       <div className="flex min-w-0 flex-1 gap-2 overflow-hidden px-2 py-2 sm:px-3">
-        <FilterPanelShell onReset={handleReset} onApply={startSearch} open={filtersOpen} onClose={() => setFiltersOpen(false)}>
+        <FilterPanelShell onReset={handleReset} onApply={startSearch} open={filtersOpen} onClose={() => setFiltersOpen(false)} loading={loading}>
           <CompanyFilterPanel
             filters={filters}
             onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}

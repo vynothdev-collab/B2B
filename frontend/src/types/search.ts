@@ -17,16 +17,10 @@ export interface PersonFilters {
   requireWorkEmail: boolean;
   companyStatus: string[];
   companyType: string[];
-  companyHowTheySell: string[];
-  companyMoreFlags: string[];
-  companyRevenueModel: string[];
   employeeHeadcountMode: "predefined" | "custom";
   employeeHeadcountRanges: string[];
   employeeCountMin: string;
   employeeCountMax: string;
-  companyNewsKeywords: string[];
-  companyNewsCategories: string[];
-  companyNewsTimeframe: string;
   technologies: string[];
   revenueMode: "predefined" | "custom";
   revenueBuckets: string[];
@@ -40,27 +34,8 @@ export interface PersonFilters {
   headcountGrowthPresets: string[];
   headcountGrowthMin: string;
   headcountGrowthMax: string;
-  headcountByDepartment: string;
-  headcountByDepartmentMode: "predefined" | "custom";
-  headcountByDepartmentPresets: string[];
-  headcountByDepartmentMin: string;
-  headcountByDepartmentMax: string;
-  headcountByLocationCountry: string;
-  headcountByLocationMode: "predefined" | "custom";
-  headcountByLocationPresets: string[];
-  headcountByLocationMin: string;
-  headcountByLocationMax: string;
   foundedMode: "predefined" | "custom";
   foundedPresets: string[];
-  websiteVisitsMin: string;
-  websiteVisitsMax: string;
-  visitChangeTimeframe: "monthly" | "quarterly" | "yearly";
-  visitChangeMin: string;
-  visitChangeMax: string;
-  trafficCountry: string;
-  trafficCountryMin: string;
-  trafficCountryMax: string;
-  emailProviders: string[];
   industries: string[];
   timeInRoleMinYears: string;
   timeInRoleMinMonths: string;
@@ -83,7 +58,6 @@ export interface PersonFilters {
   hideAllSavedCompanies: boolean;
   hideSavedCompanyListIds: string[];
   exclusionCompanyNames: string[];
-  awards: string[];
   certifications: string[];
   otherCompliance: string[];
   foundedMin: string;
@@ -106,16 +80,10 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   requireWorkEmail: false,
   companyStatus: [],
   companyType: [],
-  companyHowTheySell: [],
-  companyMoreFlags: [],
-  companyRevenueModel: [],
   employeeHeadcountMode: "predefined",
   employeeHeadcountRanges: [],
   employeeCountMin: "",
   employeeCountMax: "",
-  companyNewsKeywords: [],
-  companyNewsCategories: [],
-  companyNewsTimeframe: "",
   technologies: [],
   revenueMode: "predefined",
   revenueBuckets: [],
@@ -129,27 +97,8 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   headcountGrowthPresets: [],
   headcountGrowthMin: "",
   headcountGrowthMax: "",
-  headcountByDepartment: "",
-  headcountByDepartmentMode: "predefined",
-  headcountByDepartmentPresets: [],
-  headcountByDepartmentMin: "",
-  headcountByDepartmentMax: "",
-  headcountByLocationCountry: "",
-  headcountByLocationMode: "predefined",
-  headcountByLocationPresets: [],
-  headcountByLocationMin: "",
-  headcountByLocationMax: "",
   foundedMode: "predefined",
   foundedPresets: [],
-  websiteVisitsMin: "",
-  websiteVisitsMax: "",
-  visitChangeTimeframe: "monthly",
-  visitChangeMin: "",
-  visitChangeMax: "",
-  trafficCountry: "",
-  trafficCountryMin: "",
-  trafficCountryMax: "",
-  emailProviders: [],
   industries: [],
   timeInRoleMinYears: "",
   timeInRoleMinMonths: "",
@@ -172,7 +121,6 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   hideAllSavedCompanies: false,
   hideSavedCompanyListIds: [],
   exclusionCompanyNames: [],
-  awards: [],
   certifications: [],
   otherCompliance: [],
   foundedMin: "",
