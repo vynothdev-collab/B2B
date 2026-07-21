@@ -405,6 +405,7 @@ export interface SearchMeta {
   total: number;
   total_pages?: number;
   scroll_token?: string;
+  es_query?: Record<string, unknown>;
 }
 
 export interface SearchResponse {

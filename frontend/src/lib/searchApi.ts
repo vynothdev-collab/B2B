@@ -282,12 +282,14 @@ export async function agenticSearch(
   entity: "employee" | "company",
   scrollToken?: string,
   pageSize = 10,
+  esQuery?: Record<string, unknown>,
 ): Promise<SearchResponse> {
   const { data } = await apiClient.post<SearchResponse>("/search/agentic", {
     prompt,
     entity,
     scroll_token: scrollToken,
     page_size: pageSize,
+    es_query: esQuery,
   });
   return data;
 }

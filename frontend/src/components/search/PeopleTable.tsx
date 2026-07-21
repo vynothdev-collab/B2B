@@ -1,5 +1,5 @@
 "use client";
-import { Globe, Mail, Phone } from "lucide-react";
+import { Globe, Mail } from "lucide-react";
 import type { PersonResult } from "@/types/search";
 import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
 import {
@@ -75,8 +75,8 @@ function buildPeopleColumns({
       },
     },
     {
-      key: "email",
-      label: "Email",
+      key: "work_email",
+      label: "Work Email",
       minWidth: 165,
       render: (person) => {
         const revealedEmail = revealedEmails.get(person.id);
@@ -99,6 +99,12 @@ function buildPeopleColumns({
       },
     },
     {
+      key: "email",
+      label: "Email",
+      minWidth: 165,
+      render: () => <Dash />,
+    },
+    {
       key: "location",
       label: "Location",
       minWidth: 130,
@@ -115,9 +121,7 @@ function buildPeopleColumns({
       key: "mobile",
       label: "Mobile",
       minWidth: 120,
-      render: (person) => person.mobile_phone
-        ? <span className="flex items-center gap-1 text-[13px] text-gray-800 whitespace-nowrap"><Phone className="h-3 w-3 shrink-0 text-gray-400" />{person.mobile_phone}</span>
-        : <Dash />,
+      render: () => <Dash />,
     },
     {
       key: "person_country",

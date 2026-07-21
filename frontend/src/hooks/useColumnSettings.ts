@@ -13,9 +13,10 @@ export const PEOPLE_COLUMNS: ColumnDef[] = [
   { key: "name",              label: "Name",               locked: true, defaultVisible: true  },
   { key: "company",           label: "Company",                          defaultVisible: true  },
   { key: "title",             label: "Title",                            defaultVisible: true  },
-  { key: "email",             label: "Email",                            defaultVisible: true  },
+  { key: "work_email",        label: "Work Email",                       defaultVisible: true  },
   { key: "location",          label: "Location",                         defaultVisible: true  },
   // ── Person fields ──────────────────────────────────────────────────────────
+  { key: "email",             label: "Email",                            defaultVisible: false },
   { key: "mobile",            label: "Mobile",                           defaultVisible: false },
   { key: "person_country",    label: "Person Country",                   defaultVisible: false },
   { key: "person_city",       label: "Person City",                      defaultVisible: false },

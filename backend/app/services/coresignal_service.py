@@ -8,7 +8,6 @@ Endpoints hit:
 from __future__ import annotations
 
 import asyncio
-import math
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any, NoReturn, Optional
 
@@ -65,6 +64,39 @@ def _add_multi_match(
                 "minimum_should_match": 1,
             }
         })
+
+
+def _add_active_experience_industry_filter(
+    clauses: list[dict],
+    industries: Optional[list[str]],
+) -> None:
+    """Filter employees by their CURRENT company's industry via nested experience query.
+
+    Uses a nested query on experience[] scoped to active entries (date_to absent),
+    because company_industry lives inside the experience nested object in the ES index.
+    """
+    if not industries:
+        return
+    ind_should = [{"match_phrase": {"experience.company_industry": v}} for v in industries]
+    industry_match = (
+        {"bool": {"should": ind_should, "minimum_should_match": 1}}
+        if len(industries) > 1
+        else ind_should[0]
+    )
+    clauses.append({
+        "nested": {
+            "path": "experience",
+            "query": {
+                "bool": {
+                    "must": [
+                        industry_match,
+                        # Scope to current/active experience — date_to is absent on current roles
+                        {"bool": {"must_not": [{"exists": {"field": "experience.date_to"}}]}},
+                    ]
+                }
+            },
+        }
+    })
 
 
 def _add_location_match_multi(
@@ -642,7 +674,8 @@ def build_person_query(f: PersonSearchRequest, *, use_company_id_filter: bool = 
         _add_location_match_multi(must, ["active_experience_company_hq_country"], f.hq_countries)
         _add_location_match_multi(must, ["active_experience_company_hq_region"], f.hq_states)
         _add_location_match_multi(must, ["active_experience_company_hq_city"], f.hq_cities)
-        _add_multi_match(must, "active_experience_company_industry", f.industries, phrase=True)
+
+    _add_active_experience_industry_filter(must, f.industries)
 
     _add_location_match_multi(must, ["location_country"], f.person_location_countries)
     _add_location_match_multi(must, ["location_state"], f.person_location_states)
@@ -1162,7 +1195,6 @@ def _person_has_non_name_company_filters(req: PersonSearchRequest) -> bool:
         bool(req.company_news_timeframe),
         bool(req.keywords_include),
         bool(req.keywords_exclude),
-        bool(req.industries),
         bool(req.hq_countries),
         bool(req.hq_states),
         bool(req.hq_cities),
@@ -1261,21 +1293,6 @@ async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int 
 def _require_api_key() -> None:
     if not settings.CORESIGNAL_API_KEY:
         raise HTTPException(status_code=500, detail="CORESIGNAL_API_KEY is not configured")
-
-
-def _paginate_ids(
-    ids: list,
-    scroll_token: Optional[str],
-    page_size: Optional[int] = None,
-) -> tuple[list, Optional[str]]:
-    try:
-        offset = int(scroll_token) if scroll_token else 0
-    except ValueError:
-        offset = 0
-    page_size = page_size or settings.CORESIGNAL_PAGE_SIZE
-    page = ids[offset : offset + page_size]
-    next_token = str(offset + page_size) if offset + page_size < len(ids) else None
-    return page, next_token
 
 
 def _safe_int(val: str | None) -> int:
@@ -1423,104 +1440,36 @@ async def search_companies(req: CompanySearchRequest, db: Optional["AsyncSession
 _AGENTIC_URL = f"{settings.CORESIGNAL_BASE_URL}/v2/agentic_search/fast"
 
 
-def _map_agentic_person(r: dict) -> dict:
-    """Map the lightweight agentic preview record to the standard person shape."""
-    if not isinstance(r, dict):
-        return {}
-    return {
-        "id": str(r.get("id", "")),
-        "full_name": r.get("full_name"),
-        "first_name": None,
-        "last_name": None,
-        "headline": r.get("headline"),
-        "picture_url": None,
-        "linkedin_url": r.get("professional_network_url"),
-        "location_country": r.get("location_country"),
-        "location_city": None,
-        "location_state": None,
-        "mobile_phone": None,
-        "connections_count": r.get("connections_count"),
-        "followers_count": r.get("followers_count"),
-        "has_email": False,
-        "inferred_skills": [],
-        "total_experience_duration_months": None,
-        "projected_base_salary_median": None,
-        "projected_base_salary_currency": None,
-        "active_experience_title": r.get("active_experience_title"),
-        "active_experience_department": r.get("active_experience_department"),
-        "active_experience_management_level": r.get("active_experience_management_level"),
-        "active_experience_start_date": None,
-        "active_experience_company_id": None,
-        "active_experience_company_name": r.get("company_name"),
-        "active_experience_company_website": r.get("company_website"),
-        "active_experience_company_industry": r.get("company_industry"),
-        "active_experience_company_employees_count": None,
-        "active_experience_company_size": None,
-        "active_experience_company_type": None,
-        "active_experience_company_status": None,
-        "active_experience_company_founded": None,
-        "active_experience_company_founded_year": None,
-        "active_experience_company_hq_country": r.get("company_hq_country"),
-        "active_experience_company_hq_city": None,
-        "active_experience_company_hq_region": None,
-        "active_experience_company_hq_location": r.get("company_hq_full_address"),
-        "active_experience_company_categories_and_keywords": None,
-        "active_experience_company_annual_revenue": None,
-        "awards_certifications": None,
-    }
-
-
-def _map_agentic_company(r: dict) -> dict:
-    """Map the lightweight agentic preview record to the standard company shape."""
-    if not isinstance(r, dict):
-        return {}
-    return {
-        "id": str(r.get("id", "")),
-        "company_name": r.get("company_name"),
-        "company_legal_name": None,
-        "website": r.get("website"),
-        "canonical_linkedin_url": r.get("professional_network_url"),
-        "industry": r.get("industry"),
-        "type": None,
-        "is_public": None,
-        "company_status": None,
-        "founded": None,
-        "employees_count": r.get("employees_count"),
-        "size_range": r.get("size_range"),
-        "hq_country": r.get("hq_country"),
-        "hq_region": None,
-        "hq_city": None,
-        "hq_state": None,
-        "hq_location": None,
-        "categories_and_keywords": None,
-        "awards_certifications": None,
-        "employees_count_change": None,
-        "total_website_visits_monthly": None,
-        "total_website_visits_change": None,
-        "revenue_annual_range": None,
-        "last_funding_round": None,
-        "company_employee_reviews_aggregate_score": None,
-        "active_job_postings": [],
-        "technologies_used": [],
-    }
-
-
 async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
-    """Natural-language search via CoreSignal Agentic /fast endpoint (return_data=true).
+    """Natural-language AI search with proper CoreSignal cursor-based pagination.
 
-    Uses return_data=true so CoreSignal returns records directly — a single API call
-    instead of the previous agentic→search→collect chain that could silently drop
-    records or leave `records`/`all_ids` undefined when an inner call raised an error.
+    Page 1: converts the prompt to an ES-DSL query via the agentic /fast endpoint (query
+    mode), then runs it through _search_ids → _collect_records to get real x-total-results
+    and x-next-page-after headers from CoreSignal.
+
+    Page 2+: frontend sends back the cached es_query, skipping the agentic call entirely.
+    The Coresignal cursor (x-next-page-after) drives pagination identically to regular search.
     """
     _require_api_key()
 
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            resp = await client.post(
-                _AGENTIC_URL,
-                headers=_headers(),
-                json={"prompt": req.prompt, "entity": req.entity, "return_data": True, "limit": 10},
-            )
+    dataset = "company_multi_source" if req.entity == "company" else "employee_multi_source"
+
+    if req.es_query:
+        # Subsequent pages — reuse the ES-DSL query generated on page 1
+        query = req.es_query
+    else:
+        # First page — convert natural-language prompt to ES-DSL via agentic endpoint
+        try:
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                resp = await client.post(
+                    _AGENTIC_URL,
+                    headers=_headers(),
+                    json={"prompt": req.prompt, "entity": req.entity},
+                )
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=504, detail="Agentic search timed out. Please try again.")
+        except httpx.RequestError:
+            raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
         if resp.status_code != 200:
             try:
@@ -1530,27 +1479,39 @@ async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
             _raise_provider_error(resp.status_code, err_body)
 
         try:
-            body = resp.json()
+            agentic_body = resp.json()
         except Exception:
             return SearchResponse(data=[], meta=SearchMeta(total=0))
 
-        if not isinstance(body, list):
+        if not isinstance(agentic_body, dict):
             return SearchResponse(data=[], meta=SearchMeta(total=0))
 
+        # Agentic query mode may wrap in a "query" key or return the inner query directly
+        query = agentic_body.get("query", agentic_body)
+
+    # Run through the real search pipeline — proper x-total-results & x-next-page-after
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            search_result = await _search_ids(
+                client,
+                dataset,
+                query,
+                scroll_token=req.scroll_token,
+                page_size=req.page_size,
+            )
+            records = await _collect_records(client, dataset, search_result["ids"])
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Agentic search timed out. Please try again.")
+        raise HTTPException(status_code=504, detail="Search timed out. Please try again.")
     except httpx.RequestError:
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
-    mapper = _map_agentic_company if req.entity == "company" else _map_agentic_person
-    all_records = [mapper(r) for r in body]
-    page_records, next_token = _paginate_ids(
-        all_records,
-        req.scroll_token,
-        page_size=req.page_size,
-    )
-    total_pages = math.ceil(len(all_records) / req.page_size) if all_records else 1
+    map_fn = _map_company if req.entity == "company" else _map_person
     return SearchResponse(
-        data=page_records,
-        meta=SearchMeta(total=len(all_records), total_pages=total_pages, scroll_token=next_token),
+        data=[map_fn(r) for r in records],
+        meta=SearchMeta(
+            total=search_result["total"],
+            total_pages=search_result["total_pages"] or None,
+            scroll_token=search_result["next_token"],
+            es_query=query,  # Frontend caches and sends back for page 2, 3, etc.
+        ),
     )
