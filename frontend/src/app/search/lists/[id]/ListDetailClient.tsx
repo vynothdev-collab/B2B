@@ -4,19 +4,23 @@ import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, ArrowRightLeft, Building2, Check, Globe,
-  Loader2, MoreHorizontal, Trash2, Users,
+  Loader2, MoreHorizontal, Trash2, Users, X,
 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import ColumnSettingsPanel from "@/components/search/ColumnSettingsPanel";
 import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
 import {
-  avatarColor,
+  Avatar,
+  ChipList,
+  CompanyLogo,
   Dash,
+  fmtDate,
+  fmtDuration,
   fmtMoney,
   SIZE_LABEL,
   STATUS_COLORS,
   normalizeSizeRange,
-  toArr,
+  toStringArr,
   TYPE_COLORS,
 } from "@/components/common/tableHelpers";
 import { addToList, getListItems, getLists, removeListItem, type ListItemRecord, type ListRecord } from "@/lib/listsApi";
@@ -166,14 +170,15 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         const name = (d.company_name as string) ?? "—";
-        const color = avatarColor(name);
         const typeLabel = d.is_public === true ? "public" : d.is_public === false ? "private" : ((d.type as string) ?? "");
         const typeBadgeClass = TYPE_COLORS[typeLabel.toLowerCase()] ?? "bg-gray-100 text-gray-500";
         return (
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded text-[13px] font-bold text-white ${color}`}>
-              {name[0]?.toUpperCase()}
-            </div>
+            <CompanyLogo
+              name={name}
+              logoUrl={d.logo_url as string | undefined}
+              website={d.website as string | undefined}
+            />
             <div className="min-w-0 overflow-hidden">
               <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
               {!isCol("type") && typeLabel && (
@@ -189,7 +194,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
     {
       key: "industry",
       label: "Industry",
-      minWidth: 120,
+      minWidth: 140,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.industry ? (
@@ -231,7 +236,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
     {
       key: "website",
       label: "Website",
-      minWidth: 120,
+      minWidth: 150,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.website ? (
@@ -361,52 +366,28 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
     {
       key: "co_keywords",
       label: "Keywords",
-      minWidth: 140,
+      minWidth: 160,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const keywords = toArr(d.categories_and_keywords);
-        return keywords.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {keywords.slice(0, 2).map((k, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{k}</span>
-            ))}
-            {keywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{keywords.length - 2}</span>}
-          </div>
-        ) : <Dash />;
+        return <ChipList items={toStringArr(d.categories_and_keywords as string | string[] | undefined)} />;
       },
     },
     {
       key: "products_services",
       label: "Products & Services",
-      minWidth: 140,
+      minWidth: 170,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const keywords = toArr(d.categories_and_keywords);
-        return keywords.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {keywords.slice(0, 2).map((k, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{k}</span>
-            ))}
-            {keywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{keywords.length - 2}</span>}
-          </div>
-        ) : <Dash />;
+        return <ChipList items={toStringArr(d.categories_and_keywords as string | string[] | undefined)} />;
       },
     },
     {
       key: "awards_certs",
       label: "Awards & Certs",
-      minWidth: 140,
+      minWidth: 155,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const awards = toArr(d.awards_certifications);
-        return awards.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {awards.slice(0, 2).map((a, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{a}</span>
-            ))}
-            {awards.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{awards.length - 2}</span>}
-          </div>
-        ) : <Dash />;
+        return <ChipList items={toStringArr(d.awards_certifications as string | string[] | undefined)} />;
       },
     },
     {
@@ -520,21 +501,13 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
     {
       key: "technologies",
       label: "Technologies",
-      minWidth: 140,
+      minWidth: 160,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const techs = (d.technologies_used as unknown[]) ?? [];
-        return techs.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {techs.slice(0, 2).map((t, i) => {
-              const label = typeof t === "string" ? t : ((t as Record<string, string>)?.technology ?? "");
-              return label ? (
-                <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{label}</span>
-              ) : null;
-            })}
-            {techs.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{techs.length - 2}</span>}
-          </div>
-        ) : <Dash />;
+        const techs = ((d.technologies_used as unknown[]) ?? [])
+          .map((t) => typeof t === "string" ? t : ((t as Record<string, string>)?.technology ?? ""))
+          .filter(Boolean);
+        return <ChipList items={techs} />;
       },
     },
     {
@@ -580,7 +553,8 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
         const d = item.data as Record<string, unknown>;
         const name = (d.full_name as string) || `${(d.first_name as string) ?? ""} ${(d.last_name as string) ?? ""}`.trim() || "—";
         return (
-          <div className="min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <Avatar name={name} pictureUrl={d.picture_url as string | undefined} size="sm" />
             <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
           </div>
         );
@@ -589,13 +563,21 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
     {
       key: "company",
       label: "Company",
-      minWidth: 160,
+      minWidth: 170,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
+        const companyName = d.active_experience_company_name as string | undefined;
+        if (!companyName) return <Dash />;
         return (
-          <div className="min-w-0">
-            <p className="truncate text-[13px] font-medium text-gray-800">
-              {(d.active_experience_company_name as string) ?? "—"}
+          <div className="flex items-center gap-2 overflow-hidden">
+            <CompanyLogo
+              name={companyName}
+              logoUrl={d.active_experience_company_logo_url as string | undefined}
+              website={d.active_experience_company_website as string | undefined}
+              size="sm"
+            />
+            <p className="truncate text-[13px] font-medium text-gray-800" title={companyName}>
+              {companyName}
             </p>
           </div>
         );
@@ -604,17 +586,21 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
     {
       key: "title",
       label: "Title",
-      minWidth: 140,
+      minWidth: 160,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return (
-          <div className="min-w-0">
-            <p className="truncate text-[13px] text-gray-800">{(d.active_experience_title as string) ?? "—"}</p>
-            {!isCol("headline") && d.headline != null && (
-              <p className="truncate text-xs text-gray-500" title={d.headline as string}>{d.headline as string}</p>
+        const jobTitle = d.active_experience_title as string | undefined;
+        const jobDepartment = d.active_experience_department as string | undefined;
+        return jobTitle ? (
+          <div>
+            <p className="truncate text-[13px] text-gray-800 max-w-[140px]" title={jobTitle}>{jobTitle}</p>
+            {!isCol("department") && jobDepartment && (
+              <span className="mt-0.5 inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium capitalize text-gray-600">
+                {jobDepartment}
+              </span>
             )}
           </div>
-        );
+        ) : <Dash />;
       },
     },
     {
@@ -718,36 +704,39 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
     {
       key: "job_started",
       label: "Job Started",
-      minWidth: 90,
+      minWidth: 85,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.active_experience_start_date ? (
-          <span className="text-[13px] text-gray-800">{(d.active_experience_start_date as string).slice(0, 7)}</span>
-        ) : <Dash />;
+        return (
+          <span className="text-[13px] text-gray-800 whitespace-nowrap">
+            {fmtDate(d.active_experience_start_date as string | undefined)}
+          </span>
+        );
       },
     },
     {
       key: "time_in_role",
-      label: "Time in Role",
-      minWidth: 90,
+      label: "In Role",
+      minWidth: 80,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.active_experience_start_date ? (() => {
-          const months = Math.floor((Date.now() - new Date(d.active_experience_start_date as string).getTime()) / (1000 * 60 * 60 * 24 * 30.4));
-          return <span className="text-[13px] text-gray-800">{months < 12 ? `${months}m` : `${Math.floor(months / 12)}y ${months % 12}m`}</span>;
-        })() : <Dash />;
+        return (
+          <span className="text-[13px] font-medium text-gray-700">
+            {fmtDuration(d.active_experience_start_date as string | undefined)}
+          </span>
+        );
       },
     },
     {
       key: "exp_years",
-      label: "Exp (yrs)",
-      minWidth: 80,
+      label: "Exp.",
+      minWidth: 70,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         const expMonths = d.total_experience_duration_months as number | undefined;
-        return expMonths != null ? (
-          <span className="text-[13px] text-gray-800">{(expMonths / 12).toFixed(1)}</span>
-        ) : <Dash />;
+        return expMonths != null
+          ? <span className="text-[13px] font-medium text-gray-700">{Math.floor(expMonths / 12)} yrs</span>
+          : <Dash />;
       },
     },
     {
@@ -766,18 +755,10 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
     {
       key: "skills",
       label: "Skills",
-      minWidth: 140,
+      minWidth: 150,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const skills = toArr(d.inferred_skills);
-        return skills.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {skills.slice(0, 2).map((s, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{s}</span>
-            ))}
-            {skills.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{skills.length - 2}</span>}
-          </div>
-        ) : <Dash />;
+        return <ChipList items={toStringArr(d.inferred_skills as string | string[] | undefined)} />;
       },
     },
     {
@@ -786,26 +767,18 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
       minWidth: 140,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const awards = toArr(d.awards_certifications);
-        return awards.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {awards.slice(0, 2).map((a, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{a}</span>
-            ))}
-            {awards.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{awards.length - 2}</span>}
-          </div>
-        ) : <Dash />;
+        return <ChipList items={toStringArr(d.awards_certifications as string | string[] | undefined)} />;
       },
     },
     {
       key: "connections",
       label: "Connections",
-      minWidth: 80,
+      minWidth: 90,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.connections_count != null ? (
-          <span className="text-[13px] text-gray-800">{String(d.connections_count)}</span>
-        ) : <Dash />;
+        return d.connections_count != null
+          ? <span className="text-[13px] text-gray-800">{(d.connections_count as number).toLocaleString()}</span>
+          : <Dash />;
       },
     },
     {
@@ -814,23 +787,20 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
       minWidth: 80,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.followers_count != null ? (
-          <span className="text-[13px] text-gray-800">{String(d.followers_count)}</span>
-        ) : <Dash />;
+        return d.followers_count != null
+          ? <span className="text-[13px] text-gray-800">{(d.followers_count as number).toLocaleString()}</span>
+          : <Dash />;
       },
     },
     {
       key: "salary",
       label: "Est. Salary",
-      minWidth: 90,
+      minWidth: 85,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.projected_base_salary_median != null ? (
-          <span className="text-[13px] text-gray-800">
-            {fmtMoney(d.projected_base_salary_median as number)}
-            {d.projected_base_salary_currency ? ` ${d.projected_base_salary_currency}` : ""}
-          </span>
-        ) : <Dash />;
+        return d.projected_base_salary_median != null
+          ? <span className="text-[13px] font-semibold text-gray-700">{(d.projected_base_salary_currency ?? "USD") === "USD" ? "$" : ""}{Math.round((d.projected_base_salary_median as number) / 1000)}K</span>
+          : <Dash />;
       },
     },
     {
@@ -990,36 +960,20 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
     },
     {
       key: "co_keywords",
-      label: "Co. Keywords",
-      minWidth: 140,
+      label: "Keywords",
+      minWidth: 160,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const coKeywords = toArr(d.active_experience_company_categories_and_keywords);
-        return coKeywords.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {coKeywords.slice(0, 2).map((k, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{k}</span>
-            ))}
-            {coKeywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{coKeywords.length - 2}</span>}
-          </div>
-        ) : <Dash />;
+        return <ChipList items={toStringArr(d.active_experience_company_categories_and_keywords as string | string[] | undefined)} />;
       },
     },
     {
       key: "products_services",
       label: "Products & Services",
-      minWidth: 140,
+      minWidth: 170,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const coKeywords = toArr(d.active_experience_company_categories_and_keywords);
-        return coKeywords.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {coKeywords.slice(0, 2).map((k, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{k}</span>
-            ))}
-            {coKeywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{coKeywords.length - 2}</span>}
-          </div>
-        ) : <Dash />;
+        return <ChipList items={toStringArr(d.active_experience_company_categories_and_keywords as string | string[] | undefined)} />;
       },
     },
     {
@@ -1052,6 +1006,8 @@ export default function ListDetailPage() {
   const [items, setItems] = useState<ListItemRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [bulkRemoving, setBulkRemoving] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [colSettingsOpen, setColSettingsOpen] = useState(false);
   const [moveItem, setMoveItem] = useState<ListItemRecord | null>(null);
   const [availableLists, setAvailableLists] = useState<ListRecord[]>([]);
@@ -1082,16 +1038,42 @@ export default function ListDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const toggleSelect = (itemId: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(itemId) ? next.delete(itemId) : next.add(itemId);
+      return next;
+    });
+
+  const toggleSelectAll = (all: boolean) =>
+    setSelected(all ? new Set(items.map((i) => i.id)) : new Set());
+
   async function handleRemove(itemId: string) {
     setRemoving(itemId);
     try {
       await removeListItem(id, itemId);
       setItems((prev) => prev.filter((i) => i.id !== itemId));
+      setSelected((prev) => { const next = new Set(prev); next.delete(itemId); return next; });
       toast.success("Removed from list");
     } catch {
       toast.error("Failed to remove item");
     } finally {
       setRemoving(null);
+    }
+  }
+
+  async function handleBulkRemove() {
+    if (selected.size === 0) return;
+    setBulkRemoving(true);
+    try {
+      await Promise.all([...selected].map((itemId) => removeListItem(id, itemId)));
+      setItems((prev) => prev.filter((i) => !selected.has(i.id)));
+      toast.success(`${selected.size} item${selected.size !== 1 ? "s" : ""} removed`);
+      setSelected(new Set());
+    } catch {
+      toast.error("Failed to remove items");
+    } finally {
+      setBulkRemoving(false);
     }
   }
 
@@ -1136,18 +1118,20 @@ export default function ListDetailPage() {
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white">
 
           {/* Toolbar */}
-          <div className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-100 px-3 py-2.5 sm:px-4">
-            <button
-              type="button"
-              onClick={() => router.push("/search/lists")}
-              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <span className="text-gray-400">
-              {isPeople ? <Users className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-gray-900">{list?.name ?? "—"}</span>
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-3 py-2.5 sm:px-4">
+            <div className="flex min-w-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => router.push("/search/lists")}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <span className="text-gray-400">
+                {isPeople ? <Users className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
+              </span>
+              <span className="min-w-0 truncate text-[13px] font-semibold text-gray-900">{list?.name ?? "—"}</span>
+            </div>
             {!loading && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
                 {items.length} {isPeople ? "people" : "companies"}
@@ -1156,7 +1140,7 @@ export default function ListDetailPage() {
           </div>
 
           {/* Table */}
-          <div className="flex-1 overflow-hidden">
+          <div className="relative flex flex-1 flex-col overflow-hidden">
             <DataTable
               columns={tableColumns}
               data={loading ? [] : items}
@@ -1165,6 +1149,7 @@ export default function ListDetailPage() {
               loading={loading}
               onOpenColumnSettings={() => setColSettingsOpen(true)}
               emptyMessage="No records in this list yet."
+              selection={{ selected, onSelect: toggleSelect, onSelectAll: toggleSelectAll }}
               actions={{
                 render: (item) => (
                   <ActionMenu
@@ -1175,6 +1160,34 @@ export default function ListDetailPage() {
                 ),
               }}
             />
+
+            {/* Floating bulk action bar */}
+            {selected.size > 0 && (
+              <div className="absolute bottom-2 left-2 right-2 z-30 flex flex-wrap items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 shadow-2xl sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:flex-nowrap sm:px-4">
+                <span className="whitespace-nowrap text-[11px] font-semibold text-white sm:text-xs">
+                  {selected.size} selected
+                </span>
+                <div className="mx-1 h-4 w-px bg-gray-600" />
+                <button
+                  type="button"
+                  disabled={bulkRemoving}
+                  onClick={handleBulkRemove}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 disabled:opacity-60 sm:px-3 sm:text-xs"
+                >
+                  {bulkRemoving
+                    ? <Loader2 className="h-3 w-3 animate-spin" />
+                    : <Trash2 className="h-3 w-3" />}
+                  Remove
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelected(new Set())}
+                  className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
