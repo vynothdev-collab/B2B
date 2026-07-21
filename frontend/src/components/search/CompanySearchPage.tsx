@@ -224,7 +224,7 @@ export default function CompanySearchPage() {
             </div>
 
             {loading && !showEmpty && (
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-hidden">
                 <CompanyTableSkeleton rows={8} visibleColumns={visibleColumns} />
               </div>
             )}
@@ -233,7 +233,7 @@ export default function CompanySearchPage() {
 
             {!loading && showTable && (
               <div className="relative flex flex-1 flex-col overflow-hidden">
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-hidden">
                   <CompanyTable
                     data={(results!.data ?? []) as CompanyResult[]}
                     selected={selected}

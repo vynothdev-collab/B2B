@@ -76,15 +76,6 @@ function TagInput({
 export default function CompanyAwardsCertsFilter({ filters, onChange }: Props) {
   return (
     <div className="flex flex-col gap-3">
-      {/* Awards */}
-      <TagInput
-        label="Awards"
-        placeholder='e.g. "Best Workplace 2024"'
-        values={filters.awards}
-        onAdd={(v) => onChange({ awards: [...filters.awards, v] })}
-        onRemove={(v) => onChange({ awards: filters.awards.filter((x) => x !== v) })}
-      />
-
       {/* Standard Certifications */}
       <div>
         <span className={labelCls}>Standard Certifications</span>

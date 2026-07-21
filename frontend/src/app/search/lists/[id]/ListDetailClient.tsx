@@ -3,17 +3,15 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft, ArrowRightLeft, Building2, Check, ExternalLink, Globe,
+  ArrowLeft, ArrowRightLeft, Building2, Check, Globe,
   Loader2, MoreHorizontal, Trash2, Users,
 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import ColumnSettingsPanel from "@/components/search/ColumnSettingsPanel";
 import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
 import {
-  Avatar,
   avatarColor,
   Dash,
-  flag,
   fmtMoney,
   SIZE_LABEL,
   STATUS_COLORS,
@@ -259,13 +257,10 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
         const country = (d.hq_country as string) ?? "";
         const city = (d.hq_city as string) ?? "";
         return (
-          <div className="flex items-center gap-1.5">
-            <span className="text-base leading-none">{flag(country)}</span>
-            <div className="min-w-0">
+          <div className="min-w-0">
               <p className="truncate text-[13px] capitalize text-gray-700">{country || "—"}</p>
               {city && <p className="truncate text-xs capitalize text-gray-400">{city}</p>}
             </div>
-          </div>
         );
       },
     },
@@ -327,10 +322,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
         const d = item.data as Record<string, unknown>;
         const country = (d.hq_country as string) ?? "";
         return (
-          <div className="flex items-center gap-1">
-            <span className="text-base leading-none">{flag(country)}</span>
-            <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
-          </div>
+          <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
         );
       },
     },
@@ -393,7 +385,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
         return keywords.length > 0 ? (
           <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
             {keywords.slice(0, 2).map((k, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-700">{k}</span>
+              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{k}</span>
             ))}
             {keywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{keywords.length - 2}</span>}
           </div>
@@ -410,7 +402,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
         return awards.length > 0 ? (
           <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
             {awards.slice(0, 2).map((a, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">{a}</span>
+              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{a}</span>
             ))}
             {awards.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{awards.length - 2}</span>}
           </div>
@@ -425,7 +417,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
         const d = item.data as Record<string, unknown>;
         const empChange = d.employees_count_change as Record<string, number> | null;
         return empChange?.change_yearly_percentage != null ? (
-          <span className={`text-[13px] font-medium ${empChange.change_yearly_percentage >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+          <span className="text-[13px] font-medium text-gray-800">
             {empChange.change_yearly_percentage >= 0 ? "+" : ""}{empChange.change_yearly_percentage.toFixed(1)}%
           </span>
         ) : <Dash />;
@@ -456,7 +448,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
         const d = item.data as Record<string, unknown>;
         const visitChange = d.total_website_visits_change as Record<string, number> | null;
         return visitChange?.change_yearly_percentage != null ? (
-          <span className={`text-[13px] font-medium ${visitChange.change_yearly_percentage >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+          <span className="text-[13px] font-medium text-gray-800">
             {visitChange.change_yearly_percentage >= 0 ? "+" : ""}{visitChange.change_yearly_percentage.toFixed(1)}%
           </span>
         ) : <Dash />;
@@ -490,7 +482,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
         return funding ? (
           <div className="flex flex-nowrap items-center gap-1.5 overflow-hidden">
             {funding.type != null && (
-              <span className="shrink-0 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-600 whitespace-nowrap">
+              <span className="shrink-0 inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600 whitespace-nowrap">
                 {String(funding.type)}
               </span>
             )}
@@ -588,22 +580,8 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
         const d = item.data as Record<string, unknown>;
         const name = (d.full_name as string) || `${(d.first_name as string) ?? ""} ${(d.last_name as string) ?? ""}`.trim() || "—";
         return (
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <Avatar name={name} pictureUrl={d.picture_url as string | undefined} />
-            <div className="min-w-0 overflow-hidden">
-              <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
-              {!isCol("linkedin") && d.linkedin_url != null && (
-                <a
-                  href={`https://${(d.linkedin_url as string).replace(/^https?:\/\//, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 text-xs text-blue-500 hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Globe className="h-2.5 w-2.5" />LinkedIn
-                </a>
-              )}
-            </div>
+          <div className="min-w-0 overflow-hidden">
+            <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
           </div>
         );
       },
@@ -619,18 +597,6 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
             <p className="truncate text-[13px] font-medium text-gray-800">
               {(d.active_experience_company_name as string) ?? "—"}
             </p>
-            {d.active_experience_company_website != null && (
-              <a
-                href={`https://${(d.active_experience_company_website as string).replace(/^https?:\/\//, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-0.5 text-xs text-blue-400 hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="h-2.5 w-2.5" />
-                {(d.active_experience_company_website as string).replace(/^https?:\/\//, "").replace(/\/$/, "")}
-              </a>
-            )}
           </div>
         );
       },
@@ -672,13 +638,10 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
         const country = (d.location_country as string) ?? "";
         const city = (d.location_city as string) ?? "";
         return (
-          <div className="flex items-center gap-1.5">
-            <span className="text-base leading-none">{flag(country)}</span>
-            <div className="min-w-0">
+          <div className="min-w-0">
               <p className="truncate text-[13px] capitalize text-gray-700">{country || "—"}</p>
               {city && <p className="truncate text-xs capitalize text-gray-400">{city}</p>}
             </div>
-          </div>
         );
       },
     },
@@ -701,10 +664,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
         const d = item.data as Record<string, unknown>;
         const country = (d.location_country as string) ?? "";
         return (
-          <div className="flex items-center gap-1">
-            <span className="text-base leading-none">{flag(country)}</span>
-            <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
-          </div>
+          <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
         );
       },
     },
@@ -733,9 +693,11 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
       minWidth: 110,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.active_experience_department ? (
-          <span className="inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium capitalize text-gray-600">
-            {d.active_experience_department as string}
+        const raw = (d.active_experience_department as string) ?? "";
+        const dept = raw.split(/[·,]/)[0].trim();
+        return dept ? (
+          <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">
+            {dept}
           </span>
         ) : <Dash />;
       },
@@ -747,7 +709,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.active_experience_management_level ? (
-          <span className="inline-block rounded-full bg-indigo-50 px-1.5 py-0.5 text-xs font-medium capitalize text-indigo-700">
+          <span className="inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium capitalize text-gray-600">
             {d.active_experience_management_level as string}
           </span>
         ) : <Dash />;
@@ -811,7 +773,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
         return skills.length > 0 ? (
           <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
             {skills.slice(0, 2).map((s, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">{s}</span>
+              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{s}</span>
             ))}
             {skills.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{skills.length - 2}</span>}
           </div>
@@ -828,7 +790,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
         return awards.length > 0 ? (
           <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
             {awards.slice(0, 2).map((a, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">{a}</span>
+              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{a}</span>
             ))}
             {awards.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{awards.length - 2}</span>}
           </div>
@@ -874,7 +836,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
     {
       key: "linkedin",
       label: "LinkedIn",
-      minWidth: 80,
+      minWidth: 100,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.linkedin_url ? (
@@ -888,6 +850,30 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
             <Globe className="h-3 w-3 shrink-0" />LinkedIn
           </a>
         ) : <Dash />;
+      },
+    },
+    {
+      key: "co_website",
+      label: "Company Website",
+      minWidth: 150,
+      render: (item) => {
+        const d = item.data as Record<string, unknown>;
+        const website = d.active_experience_company_website as string | undefined;
+        if (!website) return <Dash />;
+        const href = website.startsWith("http") ? website : `https://${website}`;
+        const display = website.replace(/^https?:\/\//, "").replace(/\/$/, "");
+        return (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 max-w-[140px] truncate text-[13px] text-blue-500 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Globe className="h-3 w-3 shrink-0" />
+            {display}
+          </a>
+        );
       },
     },
     {
@@ -967,10 +953,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return (
-          <div className="flex items-center gap-1">
-            <span className="text-base leading-none">{flag((d.active_experience_company_hq_country as string) ?? "")}</span>
-            <span className="text-[13px] capitalize text-gray-700">{(d.active_experience_company_hq_country as string) ?? "—"}</span>
-          </div>
+          <span className="text-[13px] capitalize text-gray-700">{(d.active_experience_company_hq_country as string) ?? "—"}</span>
         );
       },
     },
@@ -1032,7 +1015,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
         return coKeywords.length > 0 ? (
           <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
             {coKeywords.slice(0, 2).map((k, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-700">{k}</span>
+              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">{k}</span>
             ))}
             {coKeywords.length > 2 && <span className="shrink-0 text-xs text-gray-500">+{coKeywords.length - 2}</span>}
           </div>
@@ -1173,7 +1156,7 @@ export default function ListDetailPage() {
           </div>
 
           {/* Table */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-hidden">
             <DataTable
               columns={tableColumns}
               data={loading ? [] : items}

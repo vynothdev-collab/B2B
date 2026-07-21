@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export const AVATAR_COLORS = [
   "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500",
@@ -109,17 +110,117 @@ export function normalizeSizeRange(raw: string): string {
 }
 
 export const TYPE_COLORS: Record<string, string> = {
-  "privately held": "bg-blue-50 text-blue-600",
-  "public": "bg-green-50 text-green-600",
-  "nonprofit": "bg-amber-50 text-amber-600",
-  "educational": "bg-red-50 text-red-600",
+  "privately held": "bg-gray-100 text-gray-600",
+  "public": "bg-gray-100 text-gray-600",
+  "nonprofit": "bg-gray-100 text-gray-600",
+  "educational": "bg-gray-100 text-gray-600",
   "government": "bg-gray-100 text-gray-600",
-  "self employed": "bg-orange-50 text-orange-600",
+  "self employed": "bg-gray-100 text-gray-600",
 };
 
 export const STATUS_COLORS: Record<string, string> = {
-  "active": "bg-emerald-50 text-emerald-600",
-  "acquired": "bg-blue-50 text-blue-600",
-  "closed": "bg-red-50 text-red-500",
-  "ipo": "bg-violet-50 text-violet-600",
+  "active": "bg-gray-100 text-gray-600",
+  "acquired": "bg-gray-100 text-gray-600",
+  "closed": "bg-gray-100 text-gray-600",
+  "ipo": "bg-gray-100 text-gray-600",
 };
+
+const POPOVER_HEIGHT = 300;
+
+export function ChipList({ items, max = 2 }: { items: string[]; max?: number }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, flipUp: false });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const overflow = items.length - max;
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e: MouseEvent) {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [open]);
+
+  if (items.length === 0) return <Dash />;
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      const popoverWidth = 224; // w-56 = 14rem = 224px
+      const spaceBelow = window.innerHeight - r.bottom;
+      const flipUp = spaceBelow < POPOVER_HEIGHT + 12;
+      const rawLeft = r.left;
+      const left = Math.min(rawLeft, window.innerWidth - popoverWidth - 8);
+      setPos({
+        top: flipUp ? r.top - 8 : r.bottom + 6,
+        left: Math.max(8, left),
+        flipUp,
+      });
+    }
+    setOpen((v) => !v);
+  };
+
+  return (
+    <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
+      {items.slice(0, max).map((item) => (
+        <span
+          key={item}
+          title={item}
+          className="shrink-0 inline-block max-w-[90px] truncate rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600"
+        >
+          {item}
+        </span>
+      ))}
+      {overflow > 0 && (
+        <>
+          <button
+            ref={btnRef}
+            type="button"
+            onClick={handleOpen}
+            className="shrink-0 inline-flex items-center rounded bg-gray-200 px-1.5 py-0.5 text-xs font-semibold text-gray-600 hover:bg-gray-300 transition-colors"
+          >
+            +{overflow}
+          </button>
+          {open && createPortal(
+            <div
+              ref={popoverRef}
+              style={{
+                position: "fixed",
+                top: pos.flipUp ? undefined : pos.top,
+                bottom: pos.flipUp ? window.innerHeight - pos.top : undefined,
+                left: pos.left,
+                zIndex: 9999,
+              }}
+              className="w-56 max-h-72 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-2xl"
+            >
+              <div className="sticky top-0 border-b border-gray-100 bg-white px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                  {items.length} items
+                </p>
+              </div>
+              <div className="p-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {items.map((item, i) => (
+                    <span
+                      key={i}
+                      title={item}
+                      className="inline-block max-w-full truncate rounded bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 leading-none"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+        </>
+      )}
+    </div>
+  );
+}

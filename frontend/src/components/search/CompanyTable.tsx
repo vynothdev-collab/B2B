@@ -4,8 +4,8 @@ import type { CompanyResult } from "@/types/search";
 import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
 import {
   avatarColor,
+  ChipList,
   Dash,
-  flag,
   fmtMoney,
   normalizeSizeRange,
   STATUS_COLORS,
@@ -55,7 +55,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "industry",
       label: "Industry",
-      minWidth: 120,
+      minWidth: 140,
       render: (company) => company.industry ? (
         <span className="inline-block max-w-[140px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">
           {company.industry}
@@ -65,7 +65,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "employees",
       label: "Employees",
-      minWidth: 90,
+      minWidth: 100,
       render: (company) => {
         const raw = company.size_range;
         const count = company.employees_count;
@@ -93,7 +93,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "website",
       label: "Website",
-      minWidth: 120,
+      minWidth: 150,
       render: (company) => company.website ? (
         <a
           href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
@@ -109,25 +109,22 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "location",
       label: "Location",
-      minWidth: 120,
+      minWidth: 130,
       render: (company) => {
         const country = company.hq_country ?? "";
         const city = company.hq_city ?? "";
         return (
-          <div className="flex items-center gap-1.5">
-            <span className="text-base leading-none">{flag(country)}</span>
-            <div className="min-w-0">
+          <div className="min-w-0">
               <p className="truncate text-[13px] capitalize text-gray-700">{country || "—"}</p>
               {city && <p className="truncate text-xs capitalize text-gray-400">{city}</p>}
             </div>
-          </div>
         );
       },
     },
     {
       key: "type",
       label: "Type",
-      minWidth: 100,
+      minWidth: 90,
       render: (company) => {
         const typeLabel = company.is_public === true
           ? "public"
@@ -145,7 +142,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "co_status",
       label: "Status",
-      minWidth: 80,
+      minWidth: 90,
       render: (company) => {
         const statusBadgeClass = STATUS_COLORS[(company.company_status ?? "").toLowerCase()] ?? "bg-gray-100 text-gray-500";
         return company.company_status ? (
@@ -166,7 +163,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "legal_name",
       label: "Legal Name",
-      minWidth: 140,
+      minWidth: 160,
       render: (company) => company.company_legal_name ? (
         <span className="block max-w-[160px] truncate text-[13px] text-gray-800">
           {company.company_legal_name}
@@ -176,21 +173,18 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "co_country",
       label: "Country",
-      minWidth: 100,
+      minWidth: 135,
       render: (company) => {
         const country = company.hq_country ?? "";
         return (
-          <div className="flex items-center gap-1">
-            <span className="text-base leading-none">{flag(country)}</span>
-            <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
-          </div>
+          <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
         );
       },
     },
     {
       key: "co_city",
       label: "City",
-      minWidth: 100,
+      minWidth: 140,
       render: (company) => {
         const city = company.hq_city ?? "";
         return <span className="text-[13px] capitalize text-gray-700">{city || "—"}</span>;
@@ -199,7 +193,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "state",
       label: "State",
-      minWidth: 100,
+      minWidth: 150,
       render: (company) => (
         <span className="text-[13px] text-gray-800">{company.hq_state ?? "—"}</span>
       ),
@@ -207,7 +201,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "co_address",
       label: "Address",
-      minWidth: 140,
+      minWidth: 180,
       render: (company) => company.hq_location ? (
         <span className="block max-w-[160px] truncate text-[13px] text-gray-800" title={company.hq_location}>
           {company.hq_location}
@@ -217,69 +211,27 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "co_keywords",
       label: "Keywords",
-      minWidth: 140,
-      render: (company) => {
-        const keywords = toStringArr(company.categories_and_keywords);
-        return keywords.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {keywords.slice(0, 2).map((k, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
-                {k}
-              </span>
-            ))}
-            {keywords.length > 2 && (
-              <span className="shrink-0 text-xs text-gray-500">+{keywords.length - 2}</span>
-            )}
-          </div>
-        ) : <Dash />;
-      },
+      minWidth: 160,
+      render: (company) => <ChipList items={toStringArr(company.categories_and_keywords)} />,
     },
     {
       key: "products_services",
       label: "Products & Services",
-      minWidth: 140,
-      render: (company) => {
-        const keywords = toStringArr(company.categories_and_keywords);
-        return keywords.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {keywords.slice(0, 2).map((k, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-purple-50 px-1.5 py-0.5 text-xs font-medium text-purple-700">
-                {k}
-              </span>
-            ))}
-            {keywords.length > 2 && (
-              <span className="shrink-0 text-xs text-gray-500">+{keywords.length - 2}</span>
-            )}
-          </div>
-        ) : <Dash />;
-      },
+      minWidth: 170,
+      render: (company) => <ChipList items={toStringArr(company.categories_and_keywords)} />,
     },
     {
       key: "awards_certs",
       label: "Awards & Certs",
-      minWidth: 140,
-      render: (company) => {
-        const awards = toStringArr(company.awards_certifications);
-        return awards.length > 0 ? (
-          <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-            {awards.slice(0, 2).map((a, i) => (
-              <span key={i} className="shrink-0 inline-block rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700">
-                {a}
-              </span>
-            ))}
-            {awards.length > 2 && (
-              <span className="shrink-0 text-xs text-gray-500">+{awards.length - 2}</span>
-            )}
-          </div>
-        ) : <Dash />;
-      },
+      minWidth: 155,
+      render: (company) => <ChipList items={toStringArr(company.awards_certifications)} />,
     },
     {
       key: "growth",
       label: "HC Growth",
       minWidth: 80,
       render: (company) => company.employees_count_change?.change_yearly_percentage != null ? (
-        <span className={`text-[13px] font-medium ${company.employees_count_change.change_yearly_percentage >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+        <span className="text-[13px] font-medium text-gray-800">
           {company.employees_count_change.change_yearly_percentage >= 0 ? "+" : ""}
           {company.employees_count_change.change_yearly_percentage.toFixed(1)}%
         </span>
@@ -288,7 +240,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "web_traffic",
       label: "Web Traffic",
-      minWidth: 90,
+      minWidth: 85,
       render: (company) => company.total_website_visits_monthly != null ? (
         <span className="text-[13px] text-gray-800">
           {company.total_website_visits_monthly >= 1_000_000
@@ -304,7 +256,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
       label: "Traffic Growth",
       minWidth: 90,
       render: (company) => company.total_website_visits_change?.change_yearly_percentage != null ? (
-        <span className={`text-[13px] font-medium ${company.total_website_visits_change.change_yearly_percentage >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+        <span className="text-[13px] font-medium text-gray-800">
           {company.total_website_visits_change.change_yearly_percentage >= 0 ? "+" : ""}
           {company.total_website_visits_change.change_yearly_percentage.toFixed(1)}%
         </span>
@@ -313,7 +265,7 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "revenue",
       label: "Revenue",
-      minWidth: 100,
+      minWidth: 150,
       render: (company) => {
         const r = company.revenue_annual_range;
         if (!r) return <Dash />;
@@ -330,11 +282,11 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "funding",
       label: "Last Funding",
-      minWidth: 120,
+      minWidth: 140,
       render: (company) => company.last_funding_round ? (
         <div className="flex flex-nowrap items-center gap-1.5 overflow-hidden">
           {company.last_funding_round.type && (
-            <span className="shrink-0 inline-block rounded-full bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-600 whitespace-nowrap">
+            <span className="shrink-0 inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600 whitespace-nowrap">
               {company.last_funding_round.type}
             </span>
           )}
@@ -369,22 +321,8 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
     {
       key: "technologies",
       label: "Technologies",
-      minWidth: 140,
-      render: (company) => company.technologies_used && company.technologies_used.length > 0 ? (
-        <div className="flex flex-nowrap items-center gap-1 overflow-hidden">
-          {company.technologies_used.slice(0, 2).map((t, i) => {
-            const label = typeof t === "string" ? t : (t?.technology ?? "");
-            return label ? (
-              <span key={i} className="shrink-0 inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
-                {label}
-              </span>
-            ) : null;
-          })}
-          {company.technologies_used.length > 2 && (
-            <span className="shrink-0 text-xs text-gray-500">+{company.technologies_used.length - 2}</span>
-          )}
-        </div>
-      ) : <Dash />,
+      minWidth: 160,
+      render: (company) => <ChipList items={(company.technologies_used ?? []).map((t) => typeof t === "string" ? t : (t?.technology ?? "")).filter(Boolean)} />,
     },
     {
       key: "linkedin",

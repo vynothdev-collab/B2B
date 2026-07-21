@@ -121,7 +121,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
   const expCount = filters.experienceYearsMin || filters.experienceYearsMax ? 1 : 0;
   const jobChangeCount = filters.jobChangeTimeframe ? 1 : 0;
   const jobPostingCount = filters.jobPostingKeywords.length;
-  const certsCount = filters.awards.length + filters.certifications.length + filters.otherCompliance.length;
+  const certsCount = filters.certifications.length + filters.otherCompliance.length;
   const trafficCount =
     filters.websiteVisitsMin || filters.websiteVisitsMax ||
     filters.visitChangeMin || filters.visitChangeMax ? 1 : 0;
@@ -199,7 +199,6 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
     : [];
   const jobPostingPreview = chips(filters.jobPostingKeywords, (v) => onChange({ jobPostingKeywords: filters.jobPostingKeywords.filter((x) => x !== v) }));
   const certsPreview: ChipItem[] = [
-    ...chips(filters.awards, (v) => onChange({ awards: filters.awards.filter((x) => x !== v) })),
     ...chips(filters.certifications, (v) => onChange({ certifications: filters.certifications.filter((x) => x !== v) })),
     ...chips(filters.otherCompliance, (v) => onChange({ otherCompliance: filters.otherCompliance.filter((x) => x !== v) })),
   ];
@@ -699,12 +698,12 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
       </FilterSection>
 
       <FilterSection
-        title="Awards & Certifications"
+        title="Certifications"
         icon={<Award className="h-4 w-4" />}
         isOpen={open === "awardsCerts"}
         onToggle={() => toggle("awardsCerts")}
         count={certsCount}
-        onClear={() => onChange({ awards: [], certifications: [], otherCompliance: [] })}
+        onClear={() => onChange({ certifications: [], otherCompliance: [] })}
         preview={<FilterPreviewChips items={certsPreview} />}
       >
         <AwardsCertsFilter filters={filters} onChange={onChange} />
