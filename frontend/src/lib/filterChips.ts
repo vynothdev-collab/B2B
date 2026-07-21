@@ -7,7 +7,7 @@ import {
   COMPANY_NEWS_CATEGORIES, COMPANY_NEWS_TIMEFRAMES,
   REVENUE_OPTIONS, FUNDING_STAGE_OPTIONS, CERTIFICATION_OPTIONS, EMAIL_PROVIDER_OPTIONS,
   JOB_CHANGE_TIMEFRAMES,
-  FUNDING_PRESETS, GROWTH_PRESETS, HEADCOUNT_RANGE_OPTIONS, FOUNDED_YEAR_PRESETS,
+  FUNDING_PRESETS, GROWTH_PRESETS, FOUNDED_YEAR_PRESETS,
 } from "@/types/search";
 
 function presetLabels(values: string[], options: { value: string; label: string }[]): string {
@@ -101,31 +101,6 @@ export function buildPersonChips(
     chips.push({ id: `type-${v}`, label: labelOf(INDUSTRY_OPTIONS, v), onRemove: () => onChange({ companyType: filters.companyType.filter((x) => x !== v) }) })
   );
 
-  filters.companyHowTheySell.forEach((v) =>
-    chips.push({ id: `sell-${v}`, label: labelOf(COMPANY_HOW_THEY_SELL_OPTIONS, v), onRemove: () => onChange({ companyHowTheySell: filters.companyHowTheySell.filter((x) => x !== v) }) })
-  );
-
-  filters.companyMoreFlags.forEach((v) =>
-    chips.push({ id: `flag-${v}`, label: labelOf(COMPANY_MORE_FLAGS_OPTIONS, v), onRemove: () => onChange({ companyMoreFlags: filters.companyMoreFlags.filter((x) => x !== v) }) })
-  );
-
-  filters.companyRevenueModel.forEach((v) =>
-    chips.push({ id: `rev-model-${v}`, label: labelOf(COMPANY_REVENUE_MODEL_OPTIONS, v), onRemove: () => onChange({ companyRevenueModel: filters.companyRevenueModel.filter((x) => x !== v) }) })
-  );
-
-  filters.companyNewsKeywords.forEach((v) =>
-    chips.push({ id: `news-kw-${v}`, label: `News: "${v}"`, onRemove: () => onChange({ companyNewsKeywords: filters.companyNewsKeywords.filter((x) => x !== v) }) })
-  );
-
-  filters.companyNewsCategories.forEach((v) =>
-    chips.push({ id: `news-cat-${v}`, label: labelOf(COMPANY_NEWS_CATEGORIES, v), onRemove: () => onChange({ companyNewsCategories: filters.companyNewsCategories.filter((x) => x !== v) }) })
-  );
-
-  if (filters.companyNewsTimeframe) {
-    const tf = COMPANY_NEWS_TIMEFRAMES.find((o) => o.value === filters.companyNewsTimeframe);
-    chips.push({ id: "news-tf", label: `News: ${tf?.label ?? filters.companyNewsTimeframe}`, onRemove: () => onChange({ companyNewsTimeframe: "" }) });
-  }
-
   filters.technologies.forEach((v) =>
     chips.push({ id: `tech-${v}`, label: v, onRemove: () => onChange({ technologies: filters.technologies.filter((x) => x !== v) }) })
   );
@@ -165,58 +140,12 @@ export function buildPersonChips(
     if (growthRange) chips.push({ id: "growth", label: `Growth: ${growthRange}`, onRemove: () => onChange({ headcountGrowthMin: "", headcountGrowthMax: "" }) });
   }
 
-  if (filters.headcountByDepartment) {
-    const deptLabel = labelOf(DEPARTMENT_OPTIONS, filters.headcountByDepartment);
-    let deptRangeStr = "";
-    if (filters.headcountByDepartmentMode === "predefined" && filters.headcountByDepartmentPresets.length)
-      deptRangeStr = presetLabels(filters.headcountByDepartmentPresets, HEADCOUNT_RANGE_OPTIONS);
-    else deptRangeStr = rangeLabel(filters.headcountByDepartmentMin, filters.headcountByDepartmentMax);
-    chips.push({
-      id: "hc-dept",
-      label: `${deptLabel} headcount${deptRangeStr ? `: ${deptRangeStr}` : ""}`,
-      onRemove: () => onChange({ headcountByDepartment: "", headcountByDepartmentPresets: [], headcountByDepartmentMin: "", headcountByDepartmentMax: "" }),
-    });
-  }
-
-  if (filters.headcountByLocationCountry) {
-    let locRangeStr = "";
-    if (filters.headcountByLocationMode === "predefined" && filters.headcountByLocationPresets.length)
-      locRangeStr = presetLabels(filters.headcountByLocationPresets, HEADCOUNT_RANGE_OPTIONS);
-    else locRangeStr = rangeLabel(filters.headcountByLocationMin, filters.headcountByLocationMax);
-    chips.push({
-      id: "hc-loc",
-      label: `${capitalize(filters.headcountByLocationCountry)} headcount${locRangeStr ? `: ${locRangeStr}` : ""}`,
-      onRemove: () => onChange({ headcountByLocationCountry: "", headcountByLocationPresets: [], headcountByLocationMin: "", headcountByLocationMax: "" }),
-    });
-  }
-
   if (filters.foundedMode === "predefined" && filters.foundedPresets.length)
     chips.push({ id: "founded", label: `Founded: ${presetLabels(filters.foundedPresets, FOUNDED_YEAR_PRESETS)}`, onRemove: () => onChange({ foundedPresets: [] }) });
   else if (filters.foundedMode === "custom") {
     const foundRange = rangeLabel(filters.foundedMin, filters.foundedMax);
     if (foundRange) chips.push({ id: "founded", label: `Founded: ${foundRange}`, onRemove: () => onChange({ foundedMin: "", foundedMax: "" }) });
   }
-
-  const visitsRange = rangeLabel(filters.websiteVisitsMin, filters.websiteVisitsMax);
-  if (visitsRange)
-    chips.push({ id: "visits", label: `Monthly Visits: ${visitsRange}`, onRemove: () => onChange({ websiteVisitsMin: "", websiteVisitsMax: "" }) });
-
-  const visitChangeRange = rangeLabel(filters.visitChangeMin, filters.visitChangeMax, (n) => `${n}%`);
-  if (visitChangeRange)
-    chips.push({ id: "visit-change", label: `Visit Change (${filters.visitChangeTimeframe}): ${visitChangeRange}`, onRemove: () => onChange({ visitChangeMin: "", visitChangeMax: "" }) });
-
-  if (filters.trafficCountry) {
-    const countryRange = rangeLabel(filters.trafficCountryMin, filters.trafficCountryMax, (n) => `${n}%`);
-    chips.push({
-      id: "traffic-country",
-      label: `Traffic ${capitalize(filters.trafficCountry)}${countryRange ? `: ${countryRange}` : ""}`,
-      onRemove: () => onChange({ trafficCountry: "", trafficCountryMin: "", trafficCountryMax: "" }),
-    });
-  }
-
-  filters.emailProviders.forEach((v) =>
-    chips.push({ id: `email-${v}`, label: `Email: ${labelOf(EMAIL_PROVIDER_OPTIONS, v)}`, onRemove: () => onChange({ emailProviders: filters.emailProviders.filter((x) => x !== v) }) })
-  );
 
   // Time in role chips
   const roleMin = toMonths(filters.timeInRoleMinYears, filters.timeInRoleMinMonths);
@@ -258,10 +187,6 @@ export function buildPersonChips(
 
   filters.exclusionCompanyNames.forEach((v) =>
     chips.push({ id: `excl-${v}`, label: `Exclude: ${v}`, onRemove: () => onChange({ exclusionCompanyNames: filters.exclusionCompanyNames.filter((x) => x !== v) }) })
-  );
-
-  filters.awards.forEach((v) =>
-    chips.push({ id: `award-${v}`, label: `Award: ${v}`, onRemove: () => onChange({ awards: filters.awards.filter((x) => x !== v) }) })
   );
 
   filters.certifications.forEach((v) =>
@@ -405,31 +330,6 @@ export function buildCompanyChips(
   else if (filters.headcountGrowthMode === "custom") {
     const growthRange = rangeLabel(filters.headcountGrowthMin, filters.headcountGrowthMax, (n) => `${n}%`);
     if (growthRange) chips.push({ id: "growth", label: `Growth: ${growthRange}`, onRemove: () => onChange({ headcountGrowthMin: "", headcountGrowthMax: "" }) });
-  }
-
-  if (filters.headcountByDepartment) {
-    const deptLabel = labelOf(DEPARTMENT_OPTIONS, filters.headcountByDepartment);
-    let deptRangeStr = "";
-    if (filters.headcountByDepartmentMode === "predefined" && filters.headcountByDepartmentPresets.length)
-      deptRangeStr = presetLabels(filters.headcountByDepartmentPresets, HEADCOUNT_RANGE_OPTIONS);
-    else deptRangeStr = rangeLabel(filters.headcountByDepartmentMin, filters.headcountByDepartmentMax);
-    chips.push({
-      id: "hc-dept",
-      label: `${deptLabel} headcount${deptRangeStr ? `: ${deptRangeStr}` : ""}`,
-      onRemove: () => onChange({ headcountByDepartment: "", headcountByDepartmentPresets: [], headcountByDepartmentMin: "", headcountByDepartmentMax: "" }),
-    });
-  }
-
-  if (filters.headcountByLocationCountry) {
-    let locRangeStr = "";
-    if (filters.headcountByLocationMode === "predefined" && filters.headcountByLocationPresets.length)
-      locRangeStr = presetLabels(filters.headcountByLocationPresets, HEADCOUNT_RANGE_OPTIONS);
-    else locRangeStr = rangeLabel(filters.headcountByLocationMin, filters.headcountByLocationMax);
-    chips.push({
-      id: "hc-loc",
-      label: `${capitalize(filters.headcountByLocationCountry)} headcount${locRangeStr ? `: ${locRangeStr}` : ""}`,
-      onRemove: () => onChange({ headcountByLocationCountry: "", headcountByLocationPresets: [], headcountByLocationMin: "", headcountByLocationMax: "" }),
-    });
   }
 
   if (filters.foundedMode === "predefined" && filters.foundedPresets.length)

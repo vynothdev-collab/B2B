@@ -125,14 +125,8 @@ export async function searchPersons(
     company_status: listOrUndef(filters.companyStatus),
     company_type: listOrUndef(filters.companyType),
     industries: listOrUndef(filters.industries),
-    company_how_they_sell: listOrUndef(filters.companyHowTheySell),
-    company_more_flags: listOrUndef(filters.companyMoreFlags),
-    company_revenue_model: listOrUndef(filters.companyRevenueModel),
     employee_count_min: computeEmployeeCountMin(filters),
     employee_count_max: computeEmployeeCountMax(filters),
-    company_news_keywords: listOrUndef(filters.companyNewsKeywords),
-    company_news_categories: listOrUndef(filters.companyNewsCategories),
-    company_news_timeframe: filters.companyNewsTimeframe || undefined,
     technologies: listOrUndef(filters.technologies),
     revenue_buckets: listOrUndef(filters.revenueBuckets),
     revenue_min: filters.revenueMode === "custom" ? cleanFloat(filters.revenueMin) : undefined,
@@ -143,27 +137,9 @@ export async function searchPersons(
     headcount_growth_min: filters.headcountGrowthMode === "custom" ? cleanFloat(filters.headcountGrowthMin) : presetMin(filters.headcountGrowthPresets, GROWTH_PRESETS),
     headcount_growth_max: filters.headcountGrowthMode === "custom" ? cleanFloat(filters.headcountGrowthMax) : presetMax(filters.headcountGrowthPresets, GROWTH_PRESETS),
 
-    headcount_by_department: cleanStr(filters.headcountByDepartment),
-    headcount_by_department_min: filters.headcountByDepartmentMode === "custom" ? cleanNum(filters.headcountByDepartmentMin) : presetMin(filters.headcountByDepartmentPresets, HEADCOUNT_RANGE_OPTIONS),
-    headcount_by_department_max: filters.headcountByDepartmentMode === "custom" ? cleanNum(filters.headcountByDepartmentMax) : presetMax(filters.headcountByDepartmentPresets, HEADCOUNT_RANGE_OPTIONS),
-
-    headcount_by_location_country: cleanStr(filters.headcountByLocationCountry),
-    headcount_by_location_min: filters.headcountByLocationMode === "custom" ? cleanNum(filters.headcountByLocationMin) : presetMin(filters.headcountByLocationPresets, HEADCOUNT_RANGE_OPTIONS),
-    headcount_by_location_max: filters.headcountByLocationMode === "custom" ? cleanNum(filters.headcountByLocationMax) : presetMax(filters.headcountByLocationPresets, HEADCOUNT_RANGE_OPTIONS),
-
     founded_min: filters.foundedMode === "custom" ? cleanNum(filters.foundedMin) : presetMin(filters.foundedPresets, FOUNDED_YEAR_PRESETS),
     founded_max: filters.foundedMode === "custom" ? cleanNum(filters.foundedMax) : presetMax(filters.foundedPresets, FOUNDED_YEAR_PRESETS),
 
-    website_visits_min: cleanNum(filters.websiteVisitsMin),
-    website_visits_max: cleanNum(filters.websiteVisitsMax),
-    visit_change_timeframe: filters.visitChangeTimeframe,
-    visit_change_min: cleanFloat(filters.visitChangeMin),
-    visit_change_max: cleanFloat(filters.visitChangeMax),
-    traffic_country: cleanStr(filters.trafficCountry),
-    traffic_country_min: cleanFloat(filters.trafficCountryMin),
-    traffic_country_max: cleanFloat(filters.trafficCountryMax),
-
-    email_providers: listOrUndef(filters.emailProviders),
 
     time_in_role_min_months: toTotalMonths(filters.timeInRoleMinYears, filters.timeInRoleMinMonths),
     time_in_role_max_months: toTotalMonths(filters.timeInRoleMaxYears, filters.timeInRoleMaxMonths),
@@ -186,7 +162,6 @@ export async function searchPersons(
     exclude_company_ids: listOrUndef(exclusions?.excludeCompanyIds ?? []),
     exclude_company_names: listOrUndef(filters.exclusionCompanyNames),
 
-    awards: listOrUndef(filters.awards),
     certifications: listOrUndef(filters.certifications),
     other_compliance: listOrUndef(filters.otherCompliance),
 

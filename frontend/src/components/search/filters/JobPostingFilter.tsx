@@ -161,7 +161,7 @@ export default function JobPostingFilter({ filters, onChange }: Props) {
         document.body
       )}
       <p className="px-0.5 text-[10px] text-gray-400">
-        Filters people at companies actively hiring for matching roles.
+        Filters people whose current job title contains the entered phrase.
       </p>
     </div>
   );

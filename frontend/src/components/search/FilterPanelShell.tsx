@@ -7,9 +7,10 @@ interface Props {
   onApply: () => void;
   open?: boolean;
   onClose?: () => void;
+  loading?: boolean;
 }
 
-export default function FilterPanelShell({ children, onReset, onApply, open, onClose }: Props) {
+export default function FilterPanelShell({ children, onReset, onApply, open, onClose, loading }: Props) {
   return (
     <>
       {open && (
@@ -64,9 +65,13 @@ export default function FilterPanelShell({ children, onReset, onApply, open, onC
           <button
             type="button"
             onClick={() => { onApply(); onClose?.(); }}
-            className="flex-1 rounded-lg bg-red-600 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-500 sm:py-2 sm:text-sm"
+            disabled={loading}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-70 sm:py-2 sm:text-sm"
           >
-            Apply filters
+            {loading && (
+              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            )}
+            {loading ? "Searching…" : "Apply filters"}
           </button>
         </div>
       </aside>

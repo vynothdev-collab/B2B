@@ -24,9 +24,6 @@ class PersonSearchRequest(BaseModel):
 
     company_type: Optional[list[str]] = None
     company_status: Optional[list[str]] = None
-    company_how_they_sell: Optional[list[str]] = None
-    company_more_flags: Optional[list[str]] = None
-    company_revenue_model: Optional[list[str]] = None
     industries: Optional[list[str]] = None
     technologies: Optional[list[str]] = None
     revenue_buckets: Optional[list[str]] = None
@@ -38,29 +35,11 @@ class PersonSearchRequest(BaseModel):
     headcount_growth_min: Optional[float] = None
     headcount_growth_max: Optional[float] = None
 
-    headcount_by_department: Optional[str] = None
-    headcount_by_department_min: Optional[int] = None
-    headcount_by_department_max: Optional[int] = None
-
-    headcount_by_location_country: Optional[str] = None
-    headcount_by_location_min: Optional[int] = None
-    headcount_by_location_max: Optional[int] = None
-
     founded_min: Optional[int] = None
     founded_max: Optional[int] = None
 
     employee_count_min: Optional[int] = None
     employee_count_max: Optional[int] = None
-
-    # Website traffic filters — map to CoreSignal monthly_visits / monthly_visits_change / traffic_by_country
-    website_visits_min: Optional[int] = None
-    website_visits_max: Optional[int] = None
-    visit_change_timeframe: Literal["monthly", "quarterly", "yearly"] = "monthly"
-    visit_change_min: Optional[float] = None
-    visit_change_max: Optional[float] = None
-    traffic_country: Optional[str] = None
-    traffic_country_min: Optional[float] = None
-    traffic_country_max: Optional[float] = None
 
     # Keyword search — matched against company description fields
     keywords_include: Optional[list[str]] = None
@@ -73,11 +52,6 @@ class PersonSearchRequest(BaseModel):
     company_news_categories: Optional[list[str]] = None
     company_news_timeframe: Optional[str] = None
 
-    # Email provider — matched via technologies_used nested field
-    email_providers: Optional[list[str]] = None
-
-    # Awards & certifications — matched via short_description text search
-    awards: Optional[list[str]] = None
     certifications: Optional[list[str]] = None
     other_compliance: Optional[list[str]] = None
 

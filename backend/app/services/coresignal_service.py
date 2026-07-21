@@ -8,11 +8,14 @@ Endpoints hit:
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any, NoReturn, Optional
 
 import httpx
 from fastapi import HTTPException
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,30 +54,27 @@ def _add_multi_match(
     field: str,
     values: Optional[list[str]],
     phrase: bool = False,
+    and_operator: bool = False,
 ) -> None:
     if not values:
         return
-    query_type = "match_phrase" if phrase else "match"
-    if len(values) == 1:
-        clauses.append({query_type: {field: values[0]}})
+    if phrase:
+        items = [{"match_phrase": {field: v}} for v in values]
+    elif and_operator:
+        items = [{"match": {field: {"query": v, "operator": "and"}}} for v in values]
     else:
-        clauses.append({
-            "bool": {
-                "should": [{query_type: {field: v}} for v in values],
-                "minimum_should_match": 1,
-            }
-        })
+        items = [{"match": {field: v}} for v in values]
+    if len(items) == 1:
+        clauses.append(items[0])
+    else:
+        clauses.append({"bool": {"should": items, "minimum_should_match": 1}})
 
 
 def _add_active_experience_industry_filter(
     clauses: list[dict],
     industries: Optional[list[str]],
 ) -> None:
-    """Filter employees by their CURRENT company's industry via nested experience query.
-
-    Uses a nested query on experience[] scoped to active entries (date_to absent),
-    because company_industry lives inside the experience nested object in the ES index.
-    """
+    """Filter employees by their CURRENT company's industry via nested experience query."""
     if not industries:
         return
     ind_should = [{"match_phrase": {"experience.company_industry": v}} for v in industries]
@@ -83,20 +83,219 @@ def _add_active_experience_industry_filter(
         if len(industries) > 1
         else ind_should[0]
     )
-    clauses.append({
+    clauses.append(_build_active_experience_nested(industry_match))
+
+
+def _build_active_experience_nested(inner_query: dict) -> dict:
+    """Wrap inner_query in a nested experience[] query scoped to active (current) roles.
+
+    Uses the documented active_experience == 1 integer flag per the CoreSignal data dictionary.
+    """
+    return {
         "nested": {
             "path": "experience",
             "query": {
                 "bool": {
                     "must": [
-                        industry_match,
-                        # Scope to current/active experience — date_to is absent on current roles
-                        {"bool": {"must_not": [{"exists": {"field": "experience.date_to"}}]}},
+                        inner_query,
+                        {"term": {"experience.active_experience": 1}},
                     ]
                 }
             },
         }
+    }
+
+
+def _add_active_experience_hq_filter(
+    clauses: list[dict],
+    countries: Optional[list[str]],
+    states: Optional[list[str]],
+    cities: Optional[list[str]],
+) -> None:
+    """Filter people by current company HQ location via nested experience query.
+
+    company_hq_country/state/city live inside experience[] — not flat top-level fields.
+    Each non-empty dimension is an independent AND requirement (OR across values within).
+    """
+    dims = [
+        ("experience.company_hq_country", countries),
+        ("experience.company_hq_state",   states),
+        ("experience.company_hq_city",    cities),
+    ]
+    for field, values in dims:
+        if not values:
+            continue
+        cleaned = [v.strip().title() for v in values if v and v.strip()]
+        if not cleaned:
+            continue
+        inner: dict = (
+            {"match_phrase": {field: cleaned[0]}}
+            if len(cleaned) == 1
+            else {
+                "bool": {
+                    "should": [{"match_phrase": {field: v}} for v in cleaned],
+                    "minimum_should_match": 1,
+                }
+            }
+        )
+        clauses.append(_build_active_experience_nested(inner))
+
+
+def _datetime_ago_str(months: int) -> str:
+    """Return 'YYYY-MM-DD 00:00:00.000000' for the date N months before today."""
+    today = date.today()
+    total = today.year * 12 + (today.month - 1) - months
+    y, m = divmod(total, 12)
+    return f"{y}-{m + 1:02d}-01 00:00:00.000000"
+
+
+def _add_active_experience_date_filter(
+    clauses: list[dict],
+    min_months: Optional[int],
+    max_months: Optional[int],
+) -> None:
+    """Filter by job-change recency via the experience_recently_started nested path.
+
+    CoreSignal indexes recently-started roles in experience_recently_started[].
+    identification_date stores when the role change was detected (full datetime string).
+
+    max_months → started WITHIN last M months → identification_date >= M months ago (gte)
+    min_months → started AT LEAST N months ago → identification_date <= N months ago (lte)
+    """
+    r: dict[str, str] = {}
+    if max_months is not None:
+        r["gte"] = _datetime_ago_str(max_months)
+    if min_months is not None:
+        r["lte"] = _datetime_ago_str(min_months)
+    if not r:
+        return
+    clauses.append({
+        "nested": {
+            "path": "experience_recently_started",
+            "query": {
+                "range": {
+                    "experience_recently_started.identification_date": r,
+                }
+            },
+        }
     })
+
+
+def _add_active_experience_range_filter(
+    clauses: list[dict],
+    exp_field: str,
+    minv: Optional[float],
+    maxv: Optional[float],
+) -> None:
+    """Filter by a numeric field inside experience[] scoped to the active role."""
+    if minv is None and maxv is None:
+        return
+    r: dict = {}
+    if minv is not None:
+        r["gte"] = minv
+    if maxv is not None:
+        r["lte"] = maxv
+    clauses.append(_build_active_experience_nested({"range": {f"experience.{exp_field}": r}}))
+
+
+def _add_active_experience_founded_filter(
+    clauses: list[dict],
+    min_year: Optional[int],
+    max_year: Optional[int],
+) -> None:
+    """Filter by experience.company_founded_year (stored as String e.g. '2015')."""
+    if min_year is None and max_year is None:
+        return
+    r: dict = {}
+    if min_year is not None:
+        r["gte"] = str(min_year)
+    if max_year is not None:
+        r["lte"] = str(max_year)
+    clauses.append(_build_active_experience_nested({"range": {"experience.company_founded_year": r}}))
+
+
+def _add_active_experience_revenue_filter(
+    clauses: list[dict],
+    minv: Optional[float],
+    maxv: Optional[float],
+) -> None:
+    """Filter by current employer's annual revenue via nested experience revenue fields.
+
+    OR-matches across point-value sources since not all are populated for every company.
+    """
+    if minv is None and maxv is None:
+        return
+    r: dict = {}
+    if minv is not None:
+        r["gte"] = minv
+    if maxv is not None:
+        r["lte"] = maxv
+    should = [
+        _build_active_experience_nested({"range": {f"experience.{src}": r}})
+        for src in _EXPERIENCE_REVENUE_SOURCES
+    ]
+    clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+def _add_active_experience_revenue_bucket_filter(
+    clauses: list[dict],
+    buckets: Optional[list[str]],
+) -> None:
+    """Filter by revenue bucket via nested experience revenue fields."""
+    if not buckets:
+        return
+    should: list[dict] = []
+    for b in buckets:
+        rng = _REVENUE_BUCKET_TO_RANGE.get(b)
+        if not rng:
+            continue
+        low, high = rng
+        for src in _EXPERIENCE_REVENUE_SOURCES:
+            r: dict = {}
+            if low is not None:
+                r["gte"] = low
+            if high is not None:
+                r["lte"] = high
+            if r:
+                should.append(_build_active_experience_nested({"range": {f"experience.{src}": r}}))
+    if should:
+        clauses.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+
+def _add_active_experience_company_type_filter(
+    clauses: list[dict],
+    types: Optional[list[str]],
+) -> None:
+    """Filter by current employer's company type via nested experience.company_type."""
+    if not types:
+        return
+    should: list[dict] = []
+    for t in types:
+        for val in _EXPERIENCE_COMPANY_TYPE_VALUES.get(t.lower().strip(), [t]):
+            should.append({"match_phrase": {"experience.company_type": val}})
+    if should:
+        inner = {"bool": {"should": should, "minimum_should_match": 1}}
+        clauses.append(_build_active_experience_nested(inner))
+
+
+def _add_active_experience_company_status_filter(
+    clauses: list[dict],
+    statuses: Optional[list[str]],
+) -> None:
+    """Filter by current employer's organisational status via nested experience.company_type.
+
+    COMPANY_STATUS_OPTIONS values ("Privately Held", "Public Company", "Nonprofit", etc.)
+    are the exact strings CoreSignal stores in experience.company_type on the employee record,
+    so no mapping is needed — they can be used directly without a company prefetch.
+    """
+    if not statuses:
+        return
+    inner = (
+        {"match_phrase": {"experience.company_type": statuses[0]}}
+        if len(statuses) == 1
+        else {"bool": {"should": [{"match_phrase": {"experience.company_type": s}} for s in statuses], "minimum_should_match": 1}}
+    )
+    clauses.append(_build_active_experience_nested(inner))
 
 
 def _add_location_match_multi(
@@ -167,27 +366,6 @@ def _add_nested_range(
     })
 
 
-def _months_ago_str(months: int) -> str:
-    today = date.today()
-    total = today.year * 12 + (today.month - 1) - months
-    y, m = divmod(total, 12)
-    return f"{y}-{m + 1:02d}-01"
-
-
-def _add_date_range(
-    clauses: list[dict],
-    field: str,
-    min_months: Optional[int],   # AT LEAST N months in role → start_date <= N months ago
-    max_months: Optional[int],   # AT MOST N months in role  → start_date >= N months ago
-) -> None:
-    r: dict[str, str] = {}
-    if max_months is not None:
-        r["gte"] = _months_ago_str(max_months)
-    if min_months is not None:
-        r["lte"] = _months_ago_str(min_months)
-    if r:
-        clauses.append({"range": {field: r}})
-
 
 def _build_bool_query(
     must: list[dict],
@@ -237,7 +415,26 @@ _REVENUE_RANGE_PARENT = "revenue_annual_range"
 _REVENUE_POINT_SOURCES = ("source_5_annual_revenue", "source_1_annual_revenue")
 _REVENUE_POINT_PARENT = "revenue_annual"
 
+# Revenue fields inside experience[] on the employee record — simple numeric point values.
+# OR-matched across sources since not all are populated for every company.
+_EXPERIENCE_REVENUE_SOURCES = (
+    "company_annual_revenue_source_1",
+    "company_annual_revenue_source_5",
+)
+
 _DESCRIPTION_FIELDS = ["description", "description_enriched", "categories_and_keywords"]
+
+# Mapping from frontend company_type input values → stored strings in experience.company_type.
+# These mirror the values CoreSignal stores in the `type` field on the company record,
+# which is the same data surfaced as experience.company_type on the employee record.
+_EXPERIENCE_COMPANY_TYPE_VALUES: dict[str, list[str]] = {
+    "public":            ["Public Company"],
+    "private":           ["Privately Held"],
+    "public_subsidiary": ["Public Company"],
+    "nonprofit":         ["Nonprofit"],
+    "government":        ["Government Agency"],
+    "educational":       ["Educational Institution", "Educational"],
+}
 
 _COMPANY_TYPE_TERMS: dict[str, list[str]] = {
     "saas":           ["SaaS", "software as a service"],
@@ -457,7 +654,7 @@ def _add_company_type_filter(clauses: list[dict], types: Optional[list[str]]) ->
                 {"exists": {"field": "parent_company_name"}},
             ]}})
         elif t_norm in _TYPE_MAP_DIRECT:
-            should.append({"term": {"type": _TYPE_MAP_DIRECT[t_norm]}})
+            should.append({"match_phrase": {"type": _TYPE_MAP_DIRECT[t_norm]}})
         elif t_norm in _COMPANY_TYPE_TERMS:
             for phrase in _COMPANY_TYPE_TERMS[t_norm]:
                 for field in _DESCRIPTION_FIELDS:
@@ -534,6 +731,22 @@ def _add_certifications_filter(clauses: list[dict], certs: Optional[list[str]]) 
         clauses.append({"bool": {"should": cert_should, "minimum_should_match": 1}})
 
 
+def _add_person_certifications_filter(clauses: list[dict], certs: Optional[list[str]]) -> None:
+    """Filter by employee certifications via nested certifications[].title query.
+
+    certifications is a documented top-level nested array on employee_multi_source.
+    Each cert is an AND requirement; aliases within a cert are OR-matched against
+    certifications.title (the actual cert title field on the person record).
+    """
+    if not certs:
+        return
+    for cert in certs:
+        aliases = _CERT_SEARCH_TERMS.get(cert.lower(), [cert])
+        cert_should = [{"match_phrase": {"certifications.title": alias}} for alias in aliases]
+        inner = {"bool": {"should": cert_should, "minimum_should_match": 1}}
+        clauses.append({"nested": {"path": "certifications", "query": inner}})
+
+
 def _add_keywords_filter(
     must: list[dict],
     filters: list[dict],
@@ -570,6 +783,37 @@ def _add_keywords_filter(
         for kw in exclude:
             kw_must_not = [{"match_phrase": {f: kw}} for f in fields]
             must_not.append({"bool": {"should": kw_must_not, "minimum_should_match": 1}})
+
+
+def _add_person_keywords_filter(
+    must: list[dict],
+    filters: list[dict],
+    must_not: list[dict],
+    include: Optional[list[str]],
+    match_mode: str,
+    exclude: Optional[list[str]],
+) -> None:
+    """Keyword search on people via experience.company_categories_and_keywords (nested, active role).
+
+    This field is the company's specialties/tags embedded in the experience[] array on the
+    employee record — no company prefetch needed.
+    """
+    if not include and not exclude:
+        return
+
+    field = "experience.company_categories_and_keywords"
+
+    if include:
+        if match_mode == "all":
+            for kw in include:
+                must.append(_build_active_experience_nested({"match_phrase": {field: kw}}))
+        else:
+            should = [_build_active_experience_nested({"match_phrase": {field: kw}}) for kw in include]
+            filters.append({"bool": {"should": should, "minimum_should_match": 1}})
+
+    if exclude:
+        for kw in exclude:
+            must_not.append(_build_active_experience_nested({"match_phrase": {field: kw}}))
 
 
 def _add_enum_text_filter(
@@ -650,32 +894,42 @@ def _add_funding_stage_filter(clauses: list[dict], stages: Optional[list[str]]) 
 # Query builders — Person (employee_multi_source).
 # ---------------------------------------------------------------------------
 
-def build_person_query(f: PersonSearchRequest, *, use_company_id_filter: bool = False) -> dict:
-    """Build ES-DSL query for employee_multi_source.
-
-    When use_company_id_filter=True the caller has already resolved company names
-    to IDs and will inject a `terms` clause on active_experience_company_id, so
-    we skip the less-reliable active_experience_company_name match_phrase.
-    """
+def build_person_query(f: PersonSearchRequest) -> dict:
+    """Build ES-DSL query for employee_multi_source."""
     must: list[dict] = []
     filters: list[dict] = []
     must_not: list[dict] = []
 
     if f.name:
-        should = [{"match": {"full_name": n.lower()}} for n in f.name]
+        should = [{"match_phrase": {"full_name": n.lower()}} for n in f.name]
         must.append({"bool": {"should": should, "minimum_should_match": 1}})
 
-    _add_multi_match(must, "active_experience_title", f.job_title, phrase=(f.job_title_match_type == "exact"))
+    _add_multi_match(
+        must, "active_experience_title", f.job_title,
+        phrase=(f.job_title_match_type == "exact"),
+        and_operator=(f.job_title_match_type == "contains"),
+    )
+    _add_multi_match(filters, "active_experience_title", f.job_posting_keywords, and_operator=True)
     _add_multi_term(filters, "active_experience_department", f.departments)
     _add_multi_term(filters, "active_experience_management_level", f.seniority)
 
-    if not use_company_id_filter:
-        _add_multi_match(must, "active_experience_company_shorthand_name", f.companies, phrase=True)
-        _add_location_match_multi(must, ["active_experience_company_hq_country"], f.hq_countries)
-        _add_location_match_multi(must, ["active_experience_company_hq_region"], f.hq_states)
-        _add_location_match_multi(must, ["active_experience_company_hq_city"], f.hq_cities)
+    _add_multi_match(must, "active_experience_company_shorthand_name", f.companies, phrase=True)
+    _add_active_experience_hq_filter(must, f.hq_countries, f.hq_states, f.hq_cities)
 
     _add_active_experience_industry_filter(must, f.industries)
+
+    # Person-level nested fields — directly on the employee record, no company prefetch needed.
+    _add_person_certifications_filter(must, f.certifications)
+
+    # Company-level fields embedded in experience[] — apply directly without company prefetch.
+    _add_active_experience_company_type_filter(must, f.company_type)
+    _add_active_experience_company_status_filter(must, f.company_status)
+    _add_active_experience_revenue_bucket_filter(must, f.revenue_buckets)
+    _add_active_experience_revenue_filter(must, f.revenue_min, f.revenue_max)
+    _add_active_experience_range_filter(must, "company_employees_count", f.employee_count_min, f.employee_count_max)
+    _add_active_experience_range_filter(must, "company_employees_count_change_yearly_percentage", f.headcount_growth_min, f.headcount_growth_max)
+    _add_active_experience_range_filter(must, "company_last_funding_round_amount_raised", f.funding_min, f.funding_max)
+    _add_active_experience_founded_filter(must, f.founded_min, f.founded_max)
 
     _add_location_match_multi(must, ["location_country"], f.person_location_countries)
     _add_location_match_multi(must, ["location_state"], f.person_location_states)
@@ -698,7 +952,7 @@ def build_person_query(f: PersonSearchRequest, *, use_company_id_filter: bool = 
         for name in f.exclude_company_names:
             must_not.append({"match_phrase": {"active_experience_company_shorthand_name": name}})
 
-    # time_in_role and time_in_company both map to active_experience_start_date;
+    # time_in_role and time_in_company both map to experience_recently_started nested path;
     # merge into one range clause to avoid conflicting gte/lte bounds.
     role_min = f.time_in_role_min_months
     role_max = f.time_in_role_max_months
@@ -706,12 +960,23 @@ def build_person_query(f: PersonSearchRequest, *, use_company_id_filter: bool = 
     co_max = f.time_in_company_max_months
     merged_min: Optional[int] = max(v for v in (role_min, co_min) if v is not None) if any(v is not None for v in (role_min, co_min)) else None
     merged_max: Optional[int] = min(v for v in (role_max, co_max) if v is not None) if any(v is not None for v in (role_max, co_max)) else None
-    _add_date_range(filters, "active_experience_start_date", min_months=merged_min, max_months=merged_max)
+    _add_active_experience_date_filter(filters, min_months=merged_min, max_months=merged_max)
 
     if f.experience_years_min is not None or f.experience_years_max is not None:
         months_min = int(f.experience_years_min * 12) if f.experience_years_min is not None else None
         months_max = int(f.experience_years_max * 12) if f.experience_years_max is not None else None
         _add_range(filters, "total_experience_duration_months", months_min, months_max)
+
+    _add_person_keywords_filter(must, filters, must_not, f.keywords_include, f.keywords_match_mode, f.keywords_exclude)
+
+    # other_compliance terms (e.g. "SOC 2", "HIPAA") — each is a required AND match
+    # against experience.company_categories_and_keywords on the employee record.
+    if f.other_compliance:
+        _add_person_keywords_filter(must, filters, must_not, f.other_compliance, "all", None)
+
+    # Always exclude deleted/duplicate records per CoreSignal's recommended base filters.
+    filters.append({"term": {"is_deleted": 0}})
+    filters.append({"term": {"is_parent": 1}})
 
     return _build_bool_query(must, filters, must_not=must_not or None)
 
@@ -737,7 +1002,7 @@ def build_company_query(f: CompanySearchRequest) -> dict:
     _add_enum_text_filter(filters, f.company_more_flags, _MORE_FLAGS_TERMS)
     _add_enum_text_filter(filters, f.company_revenue_model, _REVENUE_MODEL_TERMS)
     _add_news_filter(filters, f.company_news_keywords, f.company_news_categories, f.company_news_timeframe)
-    _add_multi_term(filters, "industry.exact", f.industries, lowercase=False)
+    _add_multi_match(filters, "industry", f.industries, phrase=True)
 
     if f.technologies:
         should_tech: list[dict] = []
@@ -828,7 +1093,6 @@ def build_company_query(f: CompanySearchRequest) -> dict:
 
     _add_email_provider_filter(filters, f.email_providers)
     _add_certifications_filter(filters, f.certifications)
-    _add_text_search_filter(filters, f.awards)
     _add_text_search_filter(filters, f.other_compliance)
 
     if f.job_posting_keywords:
@@ -866,6 +1130,7 @@ def _extract_error(body: Any) -> str:
 def _raise_provider_error(status: int, body: Any) -> NoReturn:
     msg = _extract_error(body)
     if status == 400:
+        logger.error("CoreSignal 400 error body: %s", body)
         raise HTTPException(status_code=400, detail="Invalid search parameters. Please adjust your filters and try again.")
     if status == 401:
         raise HTTPException(status_code=503, detail="Search service is not configured. Please contact support.")
@@ -1163,134 +1428,6 @@ async def _store_company_records(db: "AsyncSession", records: list[dict]) -> Non
 
 
 # ---------------------------------------------------------------------------
-# Company pre-fetch — resolve company filters into IDs for person search.
-# ---------------------------------------------------------------------------
-
-def _person_has_non_name_company_filters(req: PersonSearchRequest) -> bool:
-    """True when company-scoped filters beyond company name are present."""
-    company_scoped = any([
-        req.company_type,
-        req.revenue_buckets,
-        req.revenue_min is not None,
-        req.revenue_max is not None,
-        req.funding_min is not None,
-        req.funding_max is not None,
-        req.founded_min is not None,
-        req.founded_max is not None,
-        req.headcount_growth_min is not None,
-        req.headcount_growth_max is not None,
-        req.employee_count_min is not None,
-        req.employee_count_max is not None,
-        req.website_visits_min is not None,
-        req.website_visits_max is not None,
-        req.visit_change_min is not None,
-        req.visit_change_max is not None,
-        bool(req.traffic_country),
-        bool(req.email_providers),
-        bool(req.job_posting_keywords),
-        bool(req.awards),
-        bool(req.certifications),
-        bool(req.other_compliance),
-        bool(req.company_status),
-        bool(req.company_how_they_sell),
-        bool(req.company_more_flags),
-        bool(req.company_revenue_model),
-        bool(req.company_news_keywords),
-        bool(req.company_news_categories),
-        bool(req.company_news_timeframe),
-        bool(req.keywords_include),
-        bool(req.keywords_exclude),
-        bool(req.hq_countries),
-        bool(req.hq_states),
-        bool(req.hq_cities),
-    ])
-    dept_active = bool(req.headcount_by_department) and (
-        req.headcount_by_department_min is not None
-        or req.headcount_by_department_max is not None
-    )
-    loc_active = bool(req.headcount_by_location_country) and (
-        req.headcount_by_location_min is not None
-        or req.headcount_by_location_max is not None
-    )
-    return company_scoped or dept_active or loc_active
-
-
-def _person_needs_company_prefetch(req: PersonSearchRequest) -> bool:
-    return bool(req.companies) or _person_has_non_name_company_filters(req)
-
-
-async def _prefetch_company_ids_for_person(req: PersonSearchRequest, limit: int = 200) -> list[str]:
-    co_req = CompanySearchRequest(
-        companies=req.companies,
-        location_countries=req.hq_countries,
-        location_states=req.hq_states,
-        location_cities=req.hq_cities,
-        industries=req.industries,
-        type=req.company_type,
-        revenue_buckets=req.revenue_buckets,
-        revenue_min=req.revenue_min,
-        revenue_max=req.revenue_max,
-        funding_min=req.funding_min,
-        funding_max=req.funding_max,
-        founded_min=req.founded_min,
-        founded_max=req.founded_max,
-        headcount_growth_min=req.headcount_growth_min,
-        headcount_growth_max=req.headcount_growth_max,
-        headcount_by_department=req.headcount_by_department,
-        headcount_by_department_min=req.headcount_by_department_min,
-        headcount_by_department_max=req.headcount_by_department_max,
-        headcount_by_location_country=req.headcount_by_location_country,
-        headcount_by_location_min=req.headcount_by_location_min,
-        headcount_by_location_max=req.headcount_by_location_max,
-        employee_count_min=req.employee_count_min,
-        employee_count_max=req.employee_count_max,
-        website_visits_min=req.website_visits_min,
-        website_visits_max=req.website_visits_max,
-        visit_change_timeframe=req.visit_change_timeframe,
-        visit_change_min=req.visit_change_min,
-        visit_change_max=req.visit_change_max,
-        traffic_country=req.traffic_country,
-        traffic_country_min=req.traffic_country_min,
-        traffic_country_max=req.traffic_country_max,
-        email_providers=req.email_providers,
-        job_posting_keywords=req.job_posting_keywords,
-        awards=req.awards,
-        certifications=req.certifications,
-        other_compliance=req.other_compliance,
-        company_status=req.company_status,
-        company_how_they_sell=req.company_how_they_sell,
-        company_more_flags=req.company_more_flags,
-        company_revenue_model=req.company_revenue_model,
-        company_news_keywords=req.company_news_keywords,
-        company_news_categories=req.company_news_categories,
-        company_news_timeframe=req.company_news_timeframe,
-        keywords_include=req.keywords_include,
-        keywords_match_mode=req.keywords_match_mode,
-        keywords_scope=req.keywords_scope,
-        keywords_exclude=req.keywords_exclude,
-    )
-    body = _make_search_body(build_company_query(co_req))
-
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(
-            _search_url("company_multi_source"),
-            headers=_headers(),
-            params={"items_per_page": limit},
-            json=body,
-        )
-
-    if resp.status_code == 200:
-        ids = resp.json()
-        if not isinstance(ids, list):
-            return []
-        return [str(i) for i in ids[:limit]]
-    try:
-        err_body = resp.json()
-    except Exception:
-        err_body = {}
-    _raise_provider_error(resp.status_code, err_body)
-
-
 # ---------------------------------------------------------------------------
 # Public surface — search_persons / search_companies / agentic_search.
 # ---------------------------------------------------------------------------
@@ -1346,33 +1483,7 @@ async def _search_ids(
 async def search_persons(req: PersonSearchRequest, db: Optional["AsyncSession"] = None) -> SearchResponse:
     _require_api_key()
 
-    company_id_constraint: Optional[list[str]] = None
-    if _person_needs_company_prefetch(req):
-        try:
-            company_id_constraint = await _prefetch_company_ids_for_person(req)
-        except httpx.TimeoutException:
-            raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
-        except httpx.RequestError:
-            raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
-
-        if not company_id_constraint:
-            # Non-name company filters returned zero matching companies — no results possible.
-            if _person_has_non_name_company_filters(req):
-                return SearchResponse(data=[], meta=SearchMeta(total=0))
-            # Company name not found in company dataset (new/unlisted company);
-            # fall back to direct active_experience_company_name match.
-            company_id_constraint = None
-
-    # active_experience_company_id is a long field — convert strings to integers before
-    # building the terms clause, otherwise ES returns 0 results on type mismatch.
-    int_ids = [int(i) for i in (company_id_constraint or []) if str(i).isdigit()]
-    query = build_person_query(req, use_company_id_filter=bool(int_ids))
-    if int_ids:
-        terms_clause = {"terms": {"active_experience_company_id": int_ids}}
-        if "bool" in query:
-            query["bool"].setdefault("filter", []).append(terms_clause)
-        else:
-            query = {"bool": {"filter": [terms_clause]}}
+    query = build_person_query(req)
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
