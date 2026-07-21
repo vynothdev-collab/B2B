@@ -8,10 +8,11 @@ interface Props {
   count: number;
   totalPages?: number;
   hasNext: boolean;
+  loading?: boolean;
   onPage: (p: number) => void;
 }
 
-export default function Pagination({ page, total, pageSize, count, totalPages, hasNext, onPage }: Props) {
+export default function Pagination({ page, total, pageSize, count, totalPages, hasNext, loading, onPage }: Props) {
   const computedTotalPages = totalPages ?? Math.max(1, Math.ceil(total / pageSize));
   if (computedTotalPages <= 1 && !hasNext) return null;
 
@@ -32,7 +33,7 @@ export default function Pagination({ page, total, pageSize, count, totalPages, h
         <button
           type="button"
           onClick={() => onPage(page - 1)}
-          disabled={page === 1}
+          disabled={page === 1 || loading}
           className="flex items-center gap-0.5 rounded-md px-2 py-1.5 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 sm:text-xs"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -46,7 +47,7 @@ export default function Pagination({ page, total, pageSize, count, totalPages, h
         <button
           type="button"
           onClick={() => onPage(page + 1)}
-          disabled={!hasNext}
+          disabled={!hasNext || loading}
           className="flex items-center gap-0.5 rounded-md px-2 py-1.5 text-[11px] font-medium text-gray-500 transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 sm:text-xs"
         >
           <span>Next</span>

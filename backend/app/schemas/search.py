@@ -183,6 +183,7 @@ class SearchMeta(BaseModel):
     total: int
     total_pages: Optional[int] = None
     scroll_token: Optional[str] = None
+    es_query: Optional[dict] = None  # Returned by agentic search so frontend can cache it
 
 
 class SearchResponse(BaseModel):
@@ -195,6 +196,7 @@ class AgenticSearchRequest(BaseModel):
     entity: Literal["employee", "company"] = "employee"
     scroll_token: Optional[str] = None
     page_size: int = Field(default=10, ge=1, le=1000)
+    es_query: Optional[dict] = None  # Cached ES-DSL query for page 2+ (skips agentic re-call)
 
 
 class EmailRevealResponse(BaseModel):

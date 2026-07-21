@@ -38,6 +38,7 @@ export default function CompanySearchPage() {
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
   const isAgenticRef = useRef(false);
   const agenticPromptRef = useRef<string>("");
+  const agenticEsQueryRef = useRef<Record<string, unknown> | undefined>(undefined);
   const [noDataDialog, setNoDataDialog] = useState(false);
 
   const { visible: visibleColumns, toggle, reset, cols } = useColumnSettings("b2b:col:companies", COMPANY_COLUMNS);
@@ -78,6 +79,7 @@ export default function CompanySearchPage() {
     pageCacheRef.current = new Map();
     isAgenticRef.current = false;
     agenticPromptRef.current = "";
+    agenticEsQueryRef.current = undefined;
     setResults(null);
     setMeta(null);
     setHasSearched(false);
@@ -90,6 +92,7 @@ export default function CompanySearchPage() {
     pageCacheRef.current = new Map();
     isAgenticRef.current = false;
     agenticPromptRef.current = "";
+    agenticEsQueryRef.current = undefined;
     setTokenHistory([]);
     setCurrentPage(1);
     runSearch(1, undefined);
@@ -107,7 +110,14 @@ export default function CompanySearchPage() {
     setLoading(true);
     setSelected(new Set());
     try {
-      const res = await agenticSearch(agenticPromptRef.current, "company", scrollToken, PAGE_SIZE);
+      const res = await agenticSearch(
+        agenticPromptRef.current,
+        "company",
+        scrollToken,
+        PAGE_SIZE,
+        agenticEsQueryRef.current,
+      );
+      if (res.meta?.es_query) agenticEsQueryRef.current = res.meta.es_query;
       setResults(res);
       setMeta(res.meta ?? null);
       setCurrentPage(page);
@@ -128,12 +138,14 @@ export default function CompanySearchPage() {
     pageCacheRef.current = new Map();
     isAgenticRef.current = true;
     agenticPromptRef.current = prompt;
+    agenticEsQueryRef.current = undefined;
     setTokenHistory([]);
     setCurrentPage(1);
     setLoading(true);
     setSelected(new Set());
     try {
       const res = await agenticSearch(prompt, "company", undefined, PAGE_SIZE);
+      if (res.meta?.es_query) agenticEsQueryRef.current = res.meta.es_query;
       setResults(res);
       setMeta(res.meta ?? null);
       setHasSearched(true);
@@ -223,16 +235,16 @@ export default function CompanySearchPage() {
               </div>
             </div>
 
-            {loading && !showEmpty && (
-              <div className="flex-1 overflow-hidden">
-                <CompanyTableSkeleton rows={8} visibleColumns={visibleColumns} />
-              </div>
-            )}
+            <div className="relative flex flex-1 flex-col overflow-hidden">
+              {loading && !showEmpty && (
+                <div className="flex-1 overflow-hidden">
+                  <CompanyTableSkeleton rows={8} visibleColumns={visibleColumns} />
+                </div>
+              )}
 
-            {showEmpty && <EmptyState onQuery={handleAgenticQuery} loading={loading} />}
+              {showEmpty && <EmptyState onQuery={handleAgenticQuery} loading={loading} />}
 
-            {!loading && showTable && (
-              <div className="relative flex flex-1 flex-col overflow-hidden">
+              {!loading && showTable && (
                 <div className="flex-1 overflow-hidden">
                   <CompanyTable
                     data={(results!.data ?? []) as CompanyResult[]}
@@ -243,47 +255,49 @@ export default function CompanySearchPage() {
                     onOpenColumnSettings={() => setColumnSettingsOpen(true)}
                   />
                 </div>
-                {meta && (
-                  <div className="shrink-0 border-t border-gray-100">
-                    <Pagination
-                      page={currentPage}
-                      total={meta.total}
-                      pageSize={PAGE_SIZE}
-                      count={results!.data?.length ?? 0}
-                      totalPages={meta.total_pages}
-                      hasNext={!!meta.scroll_token}
-                      onPage={(p) => {
-                        if (p === currentPage) return;
-                        const token = p === 1 ? undefined : tokenHistory[p - 2];
-                        if (isAgenticRef.current) {
-                          runAgenticPage(p, token);
-                        } else {
-                          runSearch(p, token);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
+              )}
 
-                {selected.size > 0 && (
-                  <div className="absolute bottom-14 left-2 right-2 z-30 flex flex-wrap items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 shadow-2xl sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:flex-nowrap sm:px-4">
-                    <span className="whitespace-nowrap text-[11px] font-semibold text-white sm:text-xs">
-                      {selected.size} selected
-                    </span>
-                    <div className="mx-1 h-4 w-px bg-gray-600" />
-                    <button
-                      type="button"
-                      onClick={() => openListModal(selectedCompanies)}
-                      className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
-                    >
-                      <ListPlus className="h-3 w-3" />
-                      Add to list
-                    </button>
-                    <button type="button" onClick={() => setSelected(new Set())} className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white">
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
+              {!loading && selected.size > 0 && (
+                <div className="absolute bottom-2 left-2 right-2 z-30 flex flex-wrap items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 shadow-2xl sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:flex-nowrap sm:px-4">
+                  <span className="whitespace-nowrap text-[11px] font-semibold text-white sm:text-xs">
+                    {selected.size} selected
+                  </span>
+                  <div className="mx-1 h-4 w-px bg-gray-600" />
+                  <button
+                    type="button"
+                    onClick={() => openListModal(selectedCompanies)}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
+                  >
+                    <ListPlus className="h-3 w-3" />
+                    Add to list
+                  </button>
+                  <button type="button" onClick={() => setSelected(new Set())} className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {meta && hasSearched && !showEmpty && (
+              <div className="shrink-0 border-t border-gray-100">
+                <Pagination
+                  page={currentPage}
+                  total={meta.total}
+                  pageSize={PAGE_SIZE}
+                  count={results?.data?.length ?? 0}
+                  totalPages={meta.total_pages}
+                  hasNext={!!meta.scroll_token}
+                  loading={loading}
+                  onPage={(p) => {
+                    if (p === currentPage) return;
+                    const token = p === 1 ? undefined : tokenHistory[p - 2];
+                    if (isAgenticRef.current) {
+                      runAgenticPage(p, token);
+                    } else {
+                      runSearch(p, token);
+                    }
+                  }}
+                />
               </div>
             )}
           </div>

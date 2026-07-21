@@ -1,5 +1,6 @@
 "use client";
-import { Mail, BadgeCheck } from "lucide-react";
+import { useState } from "react";
+import { Mail, Smartphone, BadgeCheck } from "lucide-react";
 
 interface Props {
   requireWorkEmail: boolean;
@@ -25,6 +26,9 @@ function Checkbox({
 }
 
 export default function ContactDetailsFilter({ requireWorkEmail, onChange }: Props) {
+  const [hasEmail, setHasEmail] = useState(false);
+  const [hasMobile, setHasMobile] = useState(false);
+
   return (
     <div className="space-y-1.5">
       <Checkbox
@@ -32,6 +36,18 @@ export default function ContactDetailsFilter({ requireWorkEmail, onChange }: Pro
         label="Work email"
         checked={requireWorkEmail}
         onChange={(v) => onChange({ requireWorkEmail: v })}
+      />
+      <Checkbox
+        icon={<Mail className="h-3.5 w-3.5" />}
+        label="Email"
+        checked={hasEmail}
+        onChange={setHasEmail}
+      />
+      <Checkbox
+        icon={<Smartphone className="h-3.5 w-3.5" />}
+        label="Mobile"
+        checked={hasMobile}
+        onChange={setHasMobile}
       />
     </div>
   );
