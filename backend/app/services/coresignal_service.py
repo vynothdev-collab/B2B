@@ -1010,6 +1010,10 @@ def _map_person(r: dict) -> dict:
             exp.get("company_name")
             or r.get("active_experience_company_shorthand_name")
         ),
+        "active_experience_company_logo_url": (
+            r.get("active_experience_company_logo_url")
+            or exp.get("company_logo_url")
+        ),
         "active_experience_company_website": r.get("active_experience_company_website") or exp.get("company_website"),
         "active_experience_company_linkedin_url": exp.get("company_linkedin_url"),
         "active_experience_company_industry": exp.get("company_industry"),
@@ -1056,6 +1060,7 @@ def _map_company(r: dict) -> dict:
         "company_name": r.get("company_name") or r.get("name"),
         "company_legal_name": r.get("company_legal_name"),
         "website": r.get("website"),
+        "logo_url": r.get("logo_url"),
         "canonical_linkedin_url": r.get("canonical_linkedin_url"),
         # ── Classification ────────────────────────────────────────────────────
         "industry": r.get("industry"),
@@ -1440,7 +1445,7 @@ async def search_companies(req: CompanySearchRequest, db: Optional["AsyncSession
 _AGENTIC_URL = f"{settings.CORESIGNAL_BASE_URL}/v2/agentic_search/fast"
 
 
-async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
+async def agentic_search(req: AgenticSearchRequest, db: Optional["AsyncSession"] = None) -> SearchResponse:
     """Natural-language AI search with proper CoreSignal cursor-based pagination.
 
     Page 1: converts the prompt to an ES-DSL query via the agentic /fast endpoint (query
@@ -1506,6 +1511,16 @@ async def agentic_search(req: AgenticSearchRequest) -> SearchResponse:
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
     map_fn = _map_company if req.entity == "company" else _map_person
+
+    if db is not None:
+        try:
+            if req.entity == "company":
+                await _store_company_records(db, records)
+            else:
+                await _store_person_records(db, records)
+        except Exception:
+            pass  # storage failure must never block search results
+
     return SearchResponse(
         data=[map_fn(r) for r in records],
         meta=SearchMeta(

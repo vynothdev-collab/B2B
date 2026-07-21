@@ -42,6 +42,56 @@ export function Avatar({
   );
 }
 
+function extractDomain(website?: string): string | undefined {
+  if (!website) return undefined;
+  try {
+    const url = new URL(website.startsWith("http") ? website : `https://${website}`);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}
+
+export function CompanyLogo({
+  name,
+  logoUrl,
+  website,
+  size = "md",
+}: {
+  name: string;
+  logoUrl?: string;
+  website?: string;
+  size?: "sm" | "md";
+}) {
+  const domain = extractDomain(website);
+  const clearbitUrl = domain ? `https://logo.clearbit.com/${domain}` : undefined;
+
+  const sources = [logoUrl, clearbitUrl].filter(Boolean) as string[];
+  const [srcIndex, setSrcIndex] = useState(0);
+
+  const dim = size === "sm" ? "h-6 w-6" : "h-8 w-8";
+  const textSize = size === "sm" ? "text-[10px]" : "text-[13px]";
+
+  const currentSrc = sources[srcIndex];
+
+  if (currentSrc) {
+    return (
+      <img
+        src={currentSrc}
+        alt={name}
+        onError={() => setSrcIndex((i) => i + 1)}
+        className={`${dim} shrink-0 rounded object-contain bg-white p-0.5`}
+      />
+    );
+  }
+
+  return (
+    <div className={`${dim} shrink-0 flex items-center justify-center rounded ${textSize} font-bold text-white ${avatarColor(name)}`}>
+      {name[0]?.toUpperCase()}
+    </div>
+  );
+}
+
 export const FLAG: Record<string, string> = {
   "united states": "🇺🇸", "united kingdom": "🇬🇧", canada: "🇨🇦",
   france: "🇫🇷", germany: "🇩🇪", india: "🇮🇳", portugal: "🇵🇹",

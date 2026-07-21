@@ -3,8 +3,9 @@ import { Globe, Mail } from "lucide-react";
 import type { PersonResult } from "@/types/search";
 import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
 import {
-  avatarColor,
+  Avatar,
   ChipList,
+  CompanyLogo,
   Dash,
   fmtDate,
   fmtDuration,
@@ -30,12 +31,15 @@ function buildPeopleColumns({
     {
       key: "name",
       label: "Name",
-      minWidth: 180,
+      minWidth: 200,
       render: (person) => {
         const fullName = person.full_name || `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim();
         const name = fullName || "—";
         return (
-          <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
+          <div className="flex items-center gap-2 overflow-hidden">
+            <Avatar name={name} pictureUrl={person.picture_url} size="sm" />
+            <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
+          </div>
         );
       },
     },
@@ -45,14 +49,18 @@ function buildPeopleColumns({
       minWidth: 170,
       render: (person) => {
         const companyName = person.active_experience_company_name;
-        return companyName ? (
+        if (!companyName) return <Dash />;
+        return (
           <div className="flex items-center gap-2">
-            <div className={`h-6 w-6 shrink-0 flex items-center justify-center rounded text-xs font-bold text-white ${avatarColor(companyName)}`}>
-              {companyName[0]?.toUpperCase()}
-            </div>
+            <CompanyLogo
+              name={companyName}
+              logoUrl={person.active_experience_company_logo_url}
+              website={person.active_experience_company_website}
+              size="sm"
+            />
             <p className="truncate text-[13px] font-medium text-gray-800 max-w-[130px]">{companyName}</p>
           </div>
-        ) : <Dash />;
+        );
       },
     },
     {

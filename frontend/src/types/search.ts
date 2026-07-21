@@ -346,6 +346,7 @@ export interface PersonResult {
   active_experience_management_level?: string;
   active_experience_company_id?: string | number;
   active_experience_company_name?: string;
+  active_experience_company_logo_url?: string;
   active_experience_company_website?: string;
   active_experience_company_industry?: string;
   active_experience_company_linkedin_url?: string;
@@ -375,6 +376,7 @@ export interface CompanyResult {
   company_name?: string;
   company_legal_name?: string;
   website?: string;
+  logo_url?: string;
   industry?: string;
   employees_count?: number;
   size_range?: string;
@@ -391,8 +393,24 @@ export interface CompanyResult {
   categories_and_keywords?: string | string[];
   awards_certifications?: string | string[];
   total_website_visits_monthly?: number;
-  total_website_visits_change?: { change_yearly_percentage?: number; change_monthly_percentage?: number };
-  employees_count_change?: { change_yearly_percentage?: number; change_quarterly_percentage?: number };
+  total_website_visits_change?: {
+    current?: number;
+    change_monthly?: number;
+    change_monthly_percentage?: number | null;
+    change_quarterly?: number;
+    change_quarterly_percentage?: number | null;
+    change_yearly?: number;
+    change_yearly_percentage?: number | null;
+  };
+  employees_count_change?: {
+    current?: number;
+    change_monthly?: number;
+    change_monthly_percentage?: number | null;
+    change_quarterly?: number;
+    change_quarterly_percentage?: number | null;
+    change_yearly?: number;
+    change_yearly_percentage?: number | null;
+  };
   company_employee_reviews_aggregate_score?: number;
   last_funding_round?: { type?: string; amount_raised?: number };
   revenue_annual_range?: Record<string, { annual_revenue_range_from?: number; annual_revenue_range_to?: number }>;
