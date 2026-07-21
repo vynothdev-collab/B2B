@@ -74,8 +74,6 @@ export default function FilterSection({
       className={
         isOpen
           ? "mx-1.5 my-1 overflow-hidden rounded-xl border-2 border-red-300 bg-white shadow-sm"
-          : hasActive
-          ? "mx-1.5 my-1 overflow-hidden rounded-xl border-2 border-red-200 bg-white"
           : "mx-1.5 my-1 overflow-hidden rounded-xl border-2 border-gray-100 transition-colors hover:border-gray-200"
       }
     >
@@ -89,8 +87,6 @@ export default function FilterSection({
         className={`flex cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium transition-colors [&_svg]:h-3.5 [&_svg]:w-3.5 ${
           isOpen
             ? "bg-red-50/60 text-red-700"
-            : hasActive
-            ? "text-red-700 hover:bg-red-100/40"
             : "text-gray-800 hover:bg-gray-50/60"
         }`}
       >
@@ -116,7 +112,7 @@ export default function FilterSection({
         {/* Chevron — always at far right edge */}
         <ChevronDown
           className={`h-4 w-4 shrink-0 transition-transform duration-500 ${
-            isOpen ? "rotate-180 text-red-500" : hasActive ? "text-red-400" : "text-gray-400"
+            isOpen ? "rotate-180 text-red-500" : "text-gray-400"
           }`}
         />
       </div>

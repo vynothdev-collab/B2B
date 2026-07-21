@@ -37,24 +37,60 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
 }
 
-const TH = "border-b border-gray-100 px-4 py-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap";
-const STICKY_TH_CHECKBOX = "sticky left-0 z-30 bg-gray-50 shadow-[1px_0_0_0_rgb(243,244,246)]";
-const STICKY_TD_CHECKBOX = "sticky left-0 z-20 bg-[inherit] shadow-[1px_0_0_0_rgb(243,244,246)]";
-const STICKY_TH_CONTENT = "sticky z-30 bg-gray-50 shadow-[1px_0_0_0_rgb(229,231,235)]";
-const STICKY_TD_CONTENT = "sticky z-20 bg-[inherit] shadow-[1px_0_0_0_rgb(229,231,235)]";
+const TH = "border-b border-gray-200 bg-white px-4 py-3.5 text-left text-sm font-bold text-gray-900 whitespace-nowrap";
+const STICKY_TH_CONTENT = "sticky z-30 bg-white border-r border-gray-200";
+const STICKY_TD_CONTENT = "sticky z-20 border-r border-gray-200";
+
+function Checkbox({
+  checked,
+  indeterminate = false,
+  onChange,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={indeterminate ? "mixed" : checked}
+      onClick={(e) => { e.stopPropagation(); onChange(!checked); }}
+      className={`
+        group relative flex h-4 w-4 shrink-0 items-center justify-center rounded
+        border transition-all duration-150
+        ${checked || indeterminate
+          ? "border-red-500 bg-red-500"
+          : "border-gray-300 bg-white hover:border-red-400 hover:bg-red-50"
+        }
+      `}
+    >
+      {checked && !indeterminate && (
+        <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 8" fill="none">
+          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+      {indeterminate && (
+        <span className="block h-0.5 w-2 rounded-full bg-white" />
+      )}
+    </button>
+  );
+}
 
 export function Cell({
   children,
   className = "",
   overflowVisible = false,
+  style,
 }: {
   children: React.ReactNode;
   className?: string;
   overflowVisible?: boolean;
+  style?: React.CSSProperties;
 }) {
   return (
-    <td className={`px-4 py-0 align-middle ${className}`}>
-      <div className={`flex h-[64px] items-center ${overflowVisible ? "overflow-visible" : "overflow-hidden"}`}>
+    <td className={`border-b border-gray-200 px-4 py-0 align-middle ${className}`} style={style}>
+      <div className={`flex h-[54px] items-center ${overflowVisible ? "overflow-visible" : "overflow-hidden"}`}>
         {children}
       </div>
     </td>
@@ -75,14 +111,14 @@ export default function DataTable<T>({
   emptyMessage = "No records",
 }: DataTableProps<T>) {
   const visibleCols = columns.filter((c) => c.visible !== false);
-  const allSelected =
-    !!selection && data.length > 0 && data.every((r) => selection.selected.has(rowKey(r)));
 
-  // Sticky-left offsets: checkbox is 36px (w-9). Then each sticky content col adds its minWidth.
-  const checkboxOffset = selection ? 36 : 0;
+  const selectedCount = selection ? data.filter((r) => selection.selected.has(rowKey(r))).length : 0;
+  const allSelected = !!selection && data.length > 0 && selectedCount === data.length;
+  const someSelected = !!selection && selectedCount > 0 && selectedCount < data.length;
+
   const stickyOffsets: number[] = [];
   {
-    let acc = checkboxOffset;
+    let acc = 0;
     for (let i = 0; i < stickyLeftColumns && i < visibleCols.length; i++) {
       stickyOffsets.push(acc);
       acc += visibleCols[i].minWidth ?? 200;
@@ -90,34 +126,14 @@ export default function DataTable<T>({
   }
 
   return (
-    <div className="relative max-w-full">
-      {onOpenColumnSettings && (
-        <button
-          type="button"
-          onClick={onOpenColumnSettings}
-          title="Column settings"
-          className="absolute right-2 top-1.5 z-40 flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-700"
-        >
-          <Settings className="h-3.5 w-3.5" />
-        </button>
-      )}
-      <div className="max-w-full overflow-x-auto">
+    <div className="relative flex h-full max-w-full flex-col">
+      <div className="flex-1 min-h-0 max-w-full overflow-x-auto overflow-y-auto">
         <table
           className="w-full border-separate border-spacing-0 text-xs"
           style={{ minWidth: `${minTableWidth}px` }}
         >
-          <thead>
-            <tr className="bg-gray-50">
-              {selection && (
-                <th className={`w-9 border-b border-gray-100 px-3 py-2.5 ${STICKY_TH_CHECKBOX}`}>
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={(e) => selection.onSelectAll(e.target.checked)}
-                    className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 accent-red-600"
-                  />
-                </th>
-              )}
+          <thead className="sticky top-0 z-40">
+            <tr className="bg-white">
               {visibleCols.map((col, idx) => {
                 const isSticky = idx < stickyLeftColumns;
                 const stickyClass = isSticky ? STICKY_TH_CONTENT : "";
@@ -130,37 +146,62 @@ export default function DataTable<T>({
                     className={`${TH} ${col.className ?? ""} ${stickyClass}`}
                     style={style}
                   >
-                    {col.label}
+                    {idx === 0 && selection ? (
+                      <div className="flex items-center gap-2.5">
+                        <Checkbox
+                          checked={allSelected}
+                          indeterminate={someSelected}
+                          onChange={(val) => selection.onSelectAll(val)}
+                        />
+                        <span>{col.label}</span>
+                      </div>
+                    ) : (
+                      col.label
+                    )}
                   </th>
                 );
               })}
               {actions && <th className={TH}>{actions.label ?? "Actions"}</th>}
+              {onOpenColumnSettings && (
+                <th
+                  className="sticky right-0 z-30 cursor-pointer border-b border-l border-gray-200 bg-white px-4 py-3.5 text-left text-sm font-bold text-gray-900 whitespace-nowrap hover:bg-gray-50 transition-colors"
+                  onClick={onOpenColumnSettings}
+                  title="Column settings"
+                >
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <Settings className="h-3.5 w-3.5" />
+                    <span className="text-sm font-bold text-gray-900">Settings</span>
+                  </div>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
             {loading &&
               Array.from({ length: loadingRows }).map((_, i) => (
                 <tr key={`sk-${i}`} className="animate-pulse bg-white">
-                  {selection && (
-                    <td className={`px-3 py-2.5 ${STICKY_TD_CHECKBOX}`}>
-                      <div className="mx-auto h-3.5 w-3.5 rounded bg-gray-200" />
-                    </td>
-                  )}
                   {visibleCols.map((col, idx) => {
                     const isSticky = idx < stickyLeftColumns;
                     const stickyClass = isSticky ? STICKY_TD_CONTENT : "";
                     return (
                       <td
                         key={col.key}
-                        className={`px-3 py-2.5 ${stickyClass}`}
+                        className={`border-b border-gray-200 px-4 py-2.5 ${stickyClass}`}
                         style={isSticky ? { left: `${stickyOffsets[idx]}px` } : undefined}
                       >
-                        <div className="h-3 w-24 rounded bg-gray-200" />
+                        {idx === 0 && selection ? (
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-4 w-4 shrink-0 rounded border border-gray-200 bg-gray-100" />
+                            <div className="h-3 w-24 rounded bg-gray-200" />
+                          </div>
+                        ) : (
+                          <div className="h-3 w-24 rounded bg-gray-200" />
+                        )}
                       </td>
                     );
                   })}
                   {actions && (
-                    <td className="px-3 py-2.5">
+                    <td className="border-b border-gray-200 px-4 py-2.5">
                       <div className="h-5 w-5 rounded bg-gray-200" />
                     </td>
                   )}
@@ -174,38 +215,38 @@ export default function DataTable<T>({
                 return (
                   <tr
                     key={id}
-                    className={`border-b border-gray-100 transition-colors hover:bg-gray-50/60 ${
-                      checked ? "bg-red-50/40" : "bg-white"
-                    }`}
+                    className="bg-white transition-colors hover:bg-gray-50"
                   >
-                    {selection && (
-                      <Cell className={STICKY_TD_CHECKBOX}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => selection.onSelect(id)}
-                          className="h-3.5 w-3.5 cursor-pointer rounded border-gray-300 accent-red-600"
-                        />
-                      </Cell>
-                    )}
                     {visibleCols.map((col, idx) => {
                       const isSticky = idx < stickyLeftColumns;
                       const stickyClass = isSticky ? STICKY_TD_CONTENT : "";
                       return (
                         <td
                           key={col.key}
-                          className={`px-4 py-0 align-middle ${col.className ?? ""} ${stickyClass}`}
-                          style={isSticky ? { left: `${stickyOffsets[idx]}px` } : undefined}
+                          className={`border-b border-gray-200 px-4 py-0 align-middle ${col.className ?? ""} ${stickyClass}`}
+                          style={isSticky ? { left: `${stickyOffsets[idx]}px`, backgroundColor: "#fff" } : undefined}
                         >
-                          <div className="flex h-[64px] items-center overflow-hidden">
-                            {col.render(row)}
+                          <div className="flex h-[54px] items-center overflow-hidden">
+                            {idx === 0 && selection ? (
+                              <div className="flex items-center gap-2.5 overflow-hidden">
+                                <Checkbox
+                                  checked={checked}
+                                  onChange={() => selection.onSelect(id)}
+                                />
+                                <div className="flex-1 overflow-hidden">
+                                  {col.render(row)}
+                                </div>
+                              </div>
+                            ) : (
+                              col.render(row)
+                            )}
                           </div>
                         </td>
                       );
                     })}
                     {actions && (
-                      <td className="px-4 py-0 align-middle">
-                        <div className="flex h-[64px] items-center overflow-visible">
+                      <td className="border-b border-gray-200 px-4 py-0 align-middle">
+                        <div className="flex h-[54px] items-center overflow-visible">
                           {actions.render(row)}
                         </div>
                       </td>

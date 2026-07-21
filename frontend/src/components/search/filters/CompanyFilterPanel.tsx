@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Sparkles, Building2, MapPin, Tag, Type,
   Users, BarChart3, TrendingUp, Cpu, DollarSign, Banknote, Calendar, Activity,
-  Briefcase, Award, Globe, Newspaper,
+  Briefcase, Globe, Newspaper,
 } from "lucide-react";
 import FilterSection, { FilterPreviewChips } from "../FilterSection";
 import type { ChipItem } from "../FilterSection";
@@ -18,7 +18,6 @@ import KeywordsFilter from "./KeywordsFilter";
 import StaticPlaceholder from "./StaticPlaceholder";
 import CompanyTypeBusinessFilter from "./CompanyTypeBusinessFilter";
 import CompanyJobPostingFilter from "./CompanyJobPostingFilter";
-import CompanyAwardsCertsFilter from "./CompanyAwardsCertsFilter";
 import CompanyWebsiteTrafficFilter from "./CompanyWebsiteTrafficFilter";
 import CompanyNewsFilter from "./CompanyNewsFilter";
 import IndustryFilter from "./IndustryFilter";
@@ -92,7 +91,6 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
   const foundedCount =
     filters.foundedPresets.length + (filters.foundedMin || filters.foundedMax ? 1 : 0);
   const jobPostingCount = filters.jobPostingKeywords.length;
-  const certsCount = filters.awards.length + filters.certifications.length + filters.otherCompliance.length;
   const trafficCount =
     filters.websiteVisitsMin || filters.websiteVisitsMax ||
     filters.visitChangeMin || filters.visitChangeMax ? 1 : 0;
@@ -149,11 +147,6 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
     ...(fmtRange(filters.foundedMin, filters.foundedMax) ? [{ label: fmtRange(filters.foundedMin, filters.foundedMax), onRemove: () => onChange({ foundedMin: "", foundedMax: "" }) }] : []),
   ];
   const jobPostingPreview = chips(filters.jobPostingKeywords, (v) => onChange({ jobPostingKeywords: filters.jobPostingKeywords.filter((x) => x !== v) }));
-  const certsPreview: ChipItem[] = [
-    ...chips(filters.awards, (v) => onChange({ awards: filters.awards.filter((x) => x !== v) })),
-    ...chips(filters.certifications, (v) => onChange({ certifications: filters.certifications.filter((x) => x !== v) })),
-    ...chips(filters.otherCompliance, (v) => onChange({ otherCompliance: filters.otherCompliance.filter((x) => x !== v) })),
-  ];
   const trafficLabel = [
     fmtRange(filters.websiteVisitsMin, filters.websiteVisitsMax, " visits"),
     fmtRange(filters.visitChangeMin, filters.visitChangeMax, "% change"),
@@ -500,18 +493,6 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
         preview={<FilterPreviewChips items={jobPostingPreview} />}
       >
         <CompanyJobPostingFilter filters={filters} onChange={onChange} />
-      </FilterSection>
-
-      <FilterSection
-        title="Company Awards & Certs"
-        icon={<Award className="h-4 w-4" />}
-        isOpen={open === "awardsCerts"}
-        onToggle={() => toggle("awardsCerts")}
-        count={certsCount}
-        onClear={() => onChange({ awards: [], certifications: [], otherCompliance: [] })}
-        preview={<FilterPreviewChips items={certsPreview} />}
-      >
-        <CompanyAwardsCertsFilter filters={filters} onChange={onChange} />
       </FilterSection>
 
       <FilterSection

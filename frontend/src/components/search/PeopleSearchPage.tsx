@@ -292,7 +292,7 @@ export default function PeopleSearchPage() {
             </div>
 
             {loading && !showEmpty && (
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-hidden">
                 <PeopleTableSkeleton rows={8} visibleColumns={visibleColumns} />
               </div>
             )}
@@ -301,7 +301,7 @@ export default function PeopleSearchPage() {
 
             {!loading && showTable && (
               <div className="relative flex flex-1 flex-col overflow-hidden">
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-hidden">
                   <PeopleTable
                     data={(results!.data ?? []) as PersonResult[]}
                     selected={selected}

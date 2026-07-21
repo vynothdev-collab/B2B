@@ -31,7 +31,8 @@ export const PEOPLE_COLUMNS: ColumnDef[] = [
   { key: "connections",       label: "Connections",                      defaultVisible: false },
   { key: "followers",         label: "Followers",                        defaultVisible: false },
   { key: "salary",            label: "Est. Salary",                      defaultVisible: false },
-  { key: "linkedin",          label: "LinkedIn",                         defaultVisible: false },
+  { key: "linkedin",          label: "LinkedIn",                         defaultVisible: true  },
+  { key: "co_website",        label: "Company Website",                  defaultVisible: true  },
   // ── Company fields (from person's active experience) ──────────────────────
   { key: "co_industry",       label: "Company Industry",                 defaultVisible: false },
   { key: "co_employees",      label: "Employee Count",                   defaultVisible: false },
