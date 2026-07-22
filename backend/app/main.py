@@ -67,6 +67,9 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(
             _add_column_if_missing, "enterprises", "plan", "VARCHAR(50) NOT NULL DEFAULT 'Free'"
         )
+        await conn.run_sync(
+            _add_column_if_missing, "list_items", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
+        )
     yield
 
 

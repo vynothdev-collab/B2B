@@ -73,7 +73,7 @@ async def get_lists(
     responses = []
     for lst in lists:
         count_result = await db.execute(
-            select(func.count(ListItem.id)).where(ListItem.list_id == lst.id)
+            select(func.count(ListItem.id)).where(ListItem.list_id == lst.id, ListItem.deleted_at == None)
         )
         count = count_result.scalar() or 0
         responses.append(
@@ -167,14 +167,14 @@ async def add_items_to_list(
     default_list = next((d for d in defaults if d.list_type == list_type), None)
 
     existing_in_target_result = await db.execute(
-        select(ListItem.record_id).where(ListItem.list_id == target_list.id)
+        select(ListItem.record_id).where(ListItem.list_id == target_list.id, ListItem.deleted_at == None)
     )
     existing_in_target = {row[0] for row in existing_in_target_result.fetchall()}
 
     existing_in_default: set[str] = set()
     if default_list and default_list.id != target_list.id:
         existing_in_default_result = await db.execute(
-            select(ListItem.record_id).where(ListItem.list_id == default_list.id)
+            select(ListItem.record_id).where(ListItem.list_id == default_list.id, ListItem.deleted_at == None)
         )
         existing_in_default = {row[0] for row in existing_in_default_result.fetchall()}
 
@@ -288,7 +288,7 @@ async def rename_list(
     await db.flush()
 
     count_result = await db.execute(
-        select(func.count(ListItem.id)).where(ListItem.list_id == lst.id)
+        select(func.count(ListItem.id)).where(ListItem.list_id == lst.id, ListItem.deleted_at == None)
     )
     return ListResponse(
         id=lst.id,
@@ -320,14 +320,15 @@ async def remove_list_item(
         raise HTTPException(status_code=404, detail="List not found")
 
     item_result = await db.execute(
-        select(ListItem).where(ListItem.id == item_id, ListItem.list_id == list_id)
+        select(ListItem).where(ListItem.id == item_id, ListItem.list_id == list_id, ListItem.deleted_at == None)
     )
     item = item_result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    await db.delete(item)
+    item.deleted_at = datetime.now(timezone.utc)
     lst.updated_at = datetime.now(timezone.utc)
+    await db.flush()
     return {"ok": True}
 
 
@@ -349,7 +350,7 @@ async def get_list_items(
         raise HTTPException(status_code=404, detail="List not found")
 
     items_result = await db.execute(
-        select(ListItem).where(ListItem.list_id == list_id).order_by(ListItem.added_at.desc())
+        select(ListItem).where(ListItem.list_id == list_id, ListItem.deleted_at == None).order_by(ListItem.added_at.desc())
     )
     items = items_result.scalars().all()
 

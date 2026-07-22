@@ -62,6 +62,27 @@ function fmtRange(min: string, max: string, suffix = ""): string {
   return "";
 }
 
+export function countCompanyFilters(f: CompanyFilters): number {
+  return (
+    f.companies.length +
+    f.locationCountries.length + f.locationStates.length + f.locationCities.length +
+    f.companyStatus.length + f.type.length +
+    f.keywordsInclude.length + f.keywordsExclude.length +
+    f.employeeHeadcountRanges.length + (f.employeeCountMin || f.employeeCountMax ? 1 : 0) +
+    f.industries.length +
+    f.technologies.length +
+    f.revenueBuckets.length + (f.revenueMin || f.revenueMax ? 1 : 0) +
+    f.fundingPresets.length + (f.fundingMin || f.fundingMax ? 1 : 0) + f.fundingStages.length +
+    f.headcountGrowthPresets.length + (f.headcountGrowthMin || f.headcountGrowthMax ? 1 : 0) +
+    (f.headcountByDepartment ? 1 : 0) + f.headcountByDepartmentPresets.length + (f.headcountByDepartmentMin || f.headcountByDepartmentMax ? 1 : 0) +
+    (f.headcountByLocationCountry ? 1 : 0) + f.headcountByLocationPresets.length + (f.headcountByLocationMin || f.headcountByLocationMax ? 1 : 0) +
+    f.foundedPresets.length + (f.foundedMin || f.foundedMax ? 1 : 0) +
+    f.jobPostingKeywords.length +
+    (f.websiteVisitsMin || f.websiteVisitsMax || f.visitChangeMin || f.visitChangeMax ? 1 : 0) +
+    f.companyNewsKeywords.length + f.companyNewsCategories.length + (f.companyNewsTimeframe ? 1 : 0)
+  );
+}
+
 export default function CompanyFilterPanel({ filters, onChange }: Props) {
   const [open, setOpen] = useState<Section>("company");
   const toggle = (s: Section) => setOpen((p) => (p === s ? ("" as Section) : s));

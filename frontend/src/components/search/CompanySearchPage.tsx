@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { ListPlus, SearchX, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
-import CompanyFilterPanel from "./filters/CompanyFilterPanel";
+import CompanyFilterPanel, { countCompanyFilters } from "./filters/CompanyFilterPanel";
 import CompanyTable, { CompanyTableSkeleton } from "./CompanyTable";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
@@ -196,7 +196,7 @@ export default function CompanySearchPage() {
     <>
       <AppHeader title="Company search" />
       <div className="flex min-w-0 flex-1 gap-2 overflow-hidden px-2 py-2 sm:px-3">
-        <FilterPanelShell onReset={handleReset} onApply={startSearch} open={filtersOpen} onClose={() => setFiltersOpen(false)} loading={loading}>
+        <FilterPanelShell onReset={handleReset} onApply={startSearch} open={filtersOpen} onClose={() => setFiltersOpen(false)} loading={loading} totalCount={countCompanyFilters(filters)}>
           <CompanyFilterPanel
             filters={filters}
             onChange={(patch) => setFilters((f) => ({ ...f, ...patch }))}

@@ -40,11 +40,14 @@ const DEFAULT_PLACEHOLDER: Record<LocKind, string> = {
 };
 
 function buildCountryIndex(): LocOption[] {
-  return Country.getAllCountries().map((c) => ({
+  const all = Country.getAllCountries().map((c) => ({
     display: c.name,
     stored: c.name.toLowerCase(),
     kind: "country" as const,
   }));
+  const us = all.find((c) => c.stored === "united states");
+  const rest = all.filter((c) => c.stored !== "united states");
+  return us ? [us, ...rest] : all;
 }
 
 function buildStateIndex(): LocOption[] {

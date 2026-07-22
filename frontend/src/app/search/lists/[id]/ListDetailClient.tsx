@@ -3,10 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft, ArrowRightLeft, Building2, Check, Globe,
+  ArrowLeft, ArrowRightLeft, Building2, Globe,
   Loader2, MoreHorizontal, Trash2, Users, X,
 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ColumnSettingsPanel from "@/components/search/ColumnSettingsPanel";
 import DataTable, { type DataTableColumn } from "@/components/common/DataTable";
 import {
@@ -28,6 +29,18 @@ import { useColumnSettings, COMPANY_COLUMNS, PEOPLE_COLUMNS } from "@/hooks/useC
 import { toast } from "@/lib/toast";
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getItemDisplayName(item: ListItemRecord): string {
+  const d = item.data as Record<string, unknown>;
+  if (item.item_type === "person") {
+    return (d.full_name as string) || `${(d.first_name as string) ?? ""} ${(d.last_name as string) ?? ""}`.trim() || "this person";
+  }
+  return (d.company_name as string) || "this company";
+}
+
+// ---------------------------------------------------------------------------
 // ActionMenu / MoveToListModal
 // ---------------------------------------------------------------------------
 
@@ -43,11 +56,15 @@ function ActionMenu({
   const [open, setOpen] = useState(false);
   const [dropPos, setDropPos] = useState({ top: 0, right: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     function handle(e: MouseEvent) {
-      if (btnRef.current && !btnRef.current.closest("[data-action-menu]")?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      const insideToggle = btnRef.current?.closest("[data-action-menu]")?.contains(target);
+      const insideDrop = dropRef.current?.contains(target);
+      if (!insideToggle && !insideDrop) setOpen(false);
     }
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
@@ -75,6 +92,7 @@ function ActionMenu({
       </button>
       {open && createPortal(
         <div
+          ref={dropRef}
           style={{ position: "fixed", top: dropPos.top, right: dropPos.right }}
           className="z-[9999] w-48 rounded-lg border border-gray-100 bg-white py-1 shadow-xl"
         >
@@ -105,15 +123,15 @@ function ActionMenu({
 function MoveToListModal({
   open,
   availableLists,
-  movingToList,
+  loading,
   onClose,
   onMove,
 }: {
   open: boolean;
   availableLists: ListRecord[];
-  movingToList: string | null;
+  loading?: boolean;
   onClose: () => void;
-  onMove: (targetListId: string) => void;
+  onMove: (targetListId: string, targetListName: string) => void;
 }) {
   if (!open) return null;
   return (
@@ -124,20 +142,23 @@ function MoveToListModal({
           <p className="text-xs text-gray-500 mt-0.5">Select a destination list</p>
         </div>
         <div className="max-h-64 overflow-y-auto py-1">
-          {availableLists.length === 0 && (
+          {loading && (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+            </div>
+          )}
+          {!loading && availableLists.length === 0 && (
             <p className="px-4 py-6 text-center text-xs text-gray-500">No other lists available.</p>
           )}
-          {availableLists.map((lst) => (
+          {!loading && availableLists.map((lst) => (
             <button
               key={lst.id}
               type="button"
-              disabled={movingToList === lst.id}
-              onClick={() => onMove(lst.id)}
-              className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              onClick={() => onMove(lst.id, lst.name)}
+              className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50"
             >
               <span className="truncate font-medium">{lst.name}</span>
               <span className="shrink-0 text-gray-400">{lst.record_count} items</span>
-              {movingToList === lst.id && <Check className="h-3.5 w-3.5 shrink-0 text-red-500" />}
             </button>
           ))}
         </div>
@@ -226,7 +247,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
           return (
             <div className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-gray-800">
               <Users className="h-3 w-3 shrink-0 text-gray-400" />
-              {count.toLocaleString()}
+              {count.toLocaleString("en-US")}
             </div>
           );
         }
@@ -412,11 +433,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
         const d = item.data as Record<string, unknown>;
         return d.total_website_visits_monthly != null ? (
           <span className="text-[13px] text-gray-800">
-            {(d.total_website_visits_monthly as number) >= 1_000_000
-              ? `${((d.total_website_visits_monthly as number) / 1_000_000).toFixed(1)}M`
-              : (d.total_website_visits_monthly as number) >= 1_000
-                ? `${Math.round((d.total_website_visits_monthly as number) / 1_000)}K`
-                : String(d.total_website_visits_monthly)}
+            {(d.total_website_visits_monthly as number).toLocaleString("en-US")}
           </span>
         ) : <Dash />;
       },
@@ -777,7 +794,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.connections_count != null
-          ? <span className="text-[13px] text-gray-800">{(d.connections_count as number).toLocaleString()}</span>
+          ? <span className="text-[13px] text-gray-800">{(d.connections_count as number).toLocaleString("en-US")}</span>
           : <Dash />;
       },
     },
@@ -788,7 +805,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.followers_count != null
-          ? <span className="text-[13px] text-gray-800">{(d.followers_count as number).toLocaleString()}</span>
+          ? <span className="text-[13px] text-gray-800">{(d.followers_count as number).toLocaleString("en-US")}</span>
           : <Dash />;
       },
     },
@@ -799,7 +816,7 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.projected_base_salary_median != null
-          ? <span className="text-[13px] font-semibold text-gray-700">{(d.projected_base_salary_currency ?? "USD") === "USD" ? "$" : ""}{Math.round((d.projected_base_salary_median as number) / 1000)}K</span>
+          ? <span className="text-[13px] font-semibold text-gray-700">{new Intl.NumberFormat("en-US", { style: "currency", currency: (d.projected_base_salary_currency as string) ?? "USD", maximumFractionDigits: 0 }).format(d.projected_base_salary_median as number)}</span>
           : <Dash />;
       },
     },
@@ -1005,13 +1022,21 @@ export default function ListDetailPage() {
   const [list, setList] = useState<ListRecord | null>(null);
   const [items, setItems] = useState<ListItemRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [removing, setRemoving] = useState<string | null>(null);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<ListItemRecord | null>(null);
+  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const [listsLoading, setListsLoading] = useState(false);
+  const [bulkDeletePending, setBulkDeletePending] = useState(false);
   const [bulkRemoving, setBulkRemoving] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [colSettingsOpen, setColSettingsOpen] = useState(false);
   const [moveItem, setMoveItem] = useState<ListItemRecord | null>(null);
   const [availableLists, setAvailableLists] = useState<ListRecord[]>([]);
-  const [movingToList, setMovingToList] = useState<string | null>(null);
+  const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
+  const [bulkMovingToList, setBulkMovingToList] = useState<string | null>(null);
+  const [pendingMoveTarget, setPendingMoveTarget] = useState<{
+    id: string; name: string; bulk: boolean; item?: ListItemRecord;
+  } | null>(null);
+  const [moveConfirming, setMoveConfirming] = useState(false);
   const hasFetched = useRef(false);
 
   const isPeople = list?.list_type === "people";
@@ -1048,27 +1073,30 @@ export default function ListDetailPage() {
   const toggleSelectAll = (all: boolean) =>
     setSelected(all ? new Set(items.map((i) => i.id)) : new Set());
 
-  async function handleRemove(itemId: string) {
-    setRemoving(itemId);
+  async function handleConfirmDelete() {
+    if (!deleteConfirmItem) return;
+    setDeleteConfirming(true);
     try {
-      await removeListItem(id, itemId);
-      setItems((prev) => prev.filter((i) => i.id !== itemId));
-      setSelected((prev) => { const next = new Set(prev); next.delete(itemId); return next; });
+      await removeListItem(id, deleteConfirmItem.id);
+      setItems((prev) => prev.filter((i) => i.id !== deleteConfirmItem.id));
+      setSelected((prev) => { const next = new Set(prev); next.delete(deleteConfirmItem.id); return next; });
       toast.success("Removed from list");
     } catch {
       toast.error("Failed to remove item");
     } finally {
-      setRemoving(null);
+      setDeleteConfirming(false);
+      setDeleteConfirmItem(null);
     }
   }
 
-  async function handleBulkRemove() {
-    if (selected.size === 0) return;
+  async function handleConfirmBulkDelete() {
+    setBulkDeletePending(false);
     setBulkRemoving(true);
+    const count = selected.size;
     try {
       await Promise.all([...selected].map((itemId) => removeListItem(id, itemId)));
       setItems((prev) => prev.filter((i) => !selected.has(i.id)));
-      toast.success(`${selected.size} item${selected.size !== 1 ? "s" : ""} removed`);
+      toast.success(`${count} item${count !== 1 ? "s" : ""} removed`);
       setSelected(new Set());
     } catch {
       toast.error("Failed to remove items");
@@ -1079,31 +1107,75 @@ export default function ListDetailPage() {
 
   async function handleOpenMoveToList(item: ListItemRecord) {
     setMoveItem(item);
+    setListsLoading(true);
     try {
       const allLists = await getLists();
       const listType = item.item_type === "person" ? "people" : "companies";
       setAvailableLists(allLists.filter((l) => l.id !== id && l.list_type === listType));
     } catch {
       toast.error("Failed to load lists");
+    } finally {
+      setListsLoading(false);
     }
   }
 
-  async function handleMoveToList(targetListId: string) {
-    if (!moveItem) return;
-    setMovingToList(targetListId);
+  async function handleOpenBulkMove() {
+    setBulkMoveOpen(true);
+    setListsLoading(true);
     try {
-      await addToList({
-        list_id: targetListId,
-        items: [{ record_id: moveItem.record_id, item_type: moveItem.item_type, data: moveItem.data }],
-      });
-      await removeListItem(id, moveItem.id);
-      setItems((prev) => prev.filter((i) => i.id !== moveItem.id));
-      toast.success("Moved to list");
+      const allLists = await getLists();
+      const first = items.find((i) => selected.has(i.id));
+      const listType = first?.item_type === "person" ? "people" : "companies";
+      setAvailableLists(allLists.filter((l) => l.id !== id && l.list_type === listType));
+    } catch {
+      toast.error("Failed to load lists");
+    } finally {
+      setListsLoading(false);
+    }
+  }
+
+  function handleSelectMoveTarget(targetListId: string, targetListName: string, bulk: boolean) {
+    if (bulk) {
+      setBulkMoveOpen(false);
+      setPendingMoveTarget({ id: targetListId, name: targetListName, bulk });
+    } else {
+      const capturedItem = moveItem;
       setMoveItem(null);
+      setPendingMoveTarget({ id: targetListId, name: targetListName, bulk, item: capturedItem ?? undefined });
+    }
+  }
+
+  async function handleConfirmMove() {
+    if (!pendingMoveTarget) return;
+    setMoveConfirming(true);
+    try {
+      if (pendingMoveTarget.bulk) {
+        const selectedItems = items.filter((i) => selected.has(i.id));
+        setBulkMovingToList(pendingMoveTarget.id);
+        await addToList({
+          list_id: pendingMoveTarget.id,
+          items: selectedItems.map((i) => ({ record_id: i.record_id, item_type: i.item_type, data: i.data })),
+        });
+        await Promise.all(selectedItems.map((i) => removeListItem(id, i.id)));
+        setItems((prev) => prev.filter((i) => !selected.has(i.id)));
+        toast.success(`${selectedItems.length} item${selectedItems.length !== 1 ? "s" : ""} moved`);
+        setSelected(new Set());
+        setBulkMovingToList(null);
+      } else if (pendingMoveTarget.item) {
+        const item = pendingMoveTarget.item;
+        await addToList({
+          list_id: pendingMoveTarget.id,
+          items: [{ record_id: item.record_id, item_type: item.item_type, data: item.data }],
+        });
+        await removeListItem(id, item.id);
+        setItems((prev) => prev.filter((i) => i.id !== item.id));
+        toast.success("Moved to list");
+      }
     } catch {
       toast.error("Failed to move item");
     } finally {
-      setMovingToList(null);
+      setMoveConfirming(false);
+      setPendingMoveTarget(null);
     }
   }
 
@@ -1153,8 +1225,8 @@ export default function ListDetailPage() {
               actions={{
                 render: (item) => (
                   <ActionMenu
-                    removing={removing === item.id}
-                    onRemove={() => handleRemove(item.id)}
+                    removing={deleteConfirming && deleteConfirmItem?.id === item.id}
+                    onRemove={() => setDeleteConfirmItem(item)}
                     onMoveToList={() => handleOpenMoveToList(item)}
                   />
                 ),
@@ -1170,8 +1242,17 @@ export default function ListDetailPage() {
                 <div className="mx-1 h-4 w-px bg-gray-600" />
                 <button
                   type="button"
-                  disabled={bulkRemoving}
-                  onClick={handleBulkRemove}
+                  disabled={bulkRemoving || bulkMovingToList !== null}
+                  onClick={handleOpenBulkMove}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 disabled:opacity-60 sm:px-3 sm:text-xs"
+                >
+                  <ArrowRightLeft className="h-3 w-3" />
+                  Move to list
+                </button>
+                <button
+                  type="button"
+                  disabled={bulkRemoving || bulkMovingToList !== null}
+                  onClick={() => setBulkDeletePending(true)}
                   className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 disabled:opacity-60 sm:px-3 sm:text-xs"
                 >
                   {bulkRemoving
@@ -1204,9 +1285,64 @@ export default function ListDetailPage() {
       <MoveToListModal
         open={moveItem !== null}
         availableLists={availableLists}
-        movingToList={movingToList}
-        onClose={() => setMoveItem(null)}
-        onMove={handleMoveToList}
+        loading={listsLoading}
+        onClose={() => { setMoveItem(null); setListsLoading(false); }}
+        onMove={(targetId, targetName) => handleSelectMoveTarget(targetId, targetName, false)}
+      />
+
+      <MoveToListModal
+        open={bulkMoveOpen}
+        availableLists={availableLists}
+        loading={listsLoading}
+        onClose={() => { setBulkMoveOpen(false); setListsLoading(false); }}
+        onMove={(targetId, targetName) => handleSelectMoveTarget(targetId, targetName, true)}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmItem !== null}
+        title="Remove from list"
+        message={
+          <span>
+            Remove <strong>{deleteConfirmItem ? getItemDisplayName(deleteConfirmItem) : "this item"}</strong> from the list?
+          </span>
+        }
+        icon={<Trash2 className="h-4 w-4 text-red-500" />}
+        variant="danger"
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        loading={deleteConfirming}
+        onClose={() => setDeleteConfirmItem(null)}
+        onConfirm={handleConfirmDelete}
+      />
+
+      <ConfirmDialog
+        open={bulkDeletePending}
+        title="Remove selected items"
+        message={`Are you sure you want to remove ${selected.size} item${selected.size !== 1 ? "s" : ""} from the list?`}
+        icon={<Trash2 className="h-4 w-4 text-red-500" />}
+        variant="danger"
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        loading={bulkRemoving}
+        onClose={() => setBulkDeletePending(false)}
+        onConfirm={handleConfirmBulkDelete}
+      />
+
+      <ConfirmDialog
+        open={pendingMoveTarget !== null}
+        title="Move to list"
+        message={
+          <span>
+            Move <strong>{pendingMoveTarget?.bulk ? `${selected.size} item${selected.size !== 1 ? "s" : ""}` : (pendingMoveTarget?.item ? getItemDisplayName(pendingMoveTarget.item) : "this item")}</strong> to <strong>{pendingMoveTarget?.name}</strong>?
+          </span>
+        }
+        icon={<ArrowRightLeft className="h-4 w-4 text-gray-500" />}
+        variant="info"
+        confirmLabel="Move"
+        cancelLabel="Cancel"
+        loading={moveConfirming}
+        onClose={() => setPendingMoveTarget(null)}
+        onConfirm={handleConfirmMove}
       />
     </>
   );

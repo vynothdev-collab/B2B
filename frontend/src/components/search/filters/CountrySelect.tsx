@@ -17,10 +17,10 @@ const labelCls = "mb-1 block text-[12px] text-gray-500";
 const DROPDOWN_MAX_H = 220;
 
 export default function CountrySelect({ label, placeholder, value, onChange }: Props) {
-  const allCountries = useMemo<string[]>(
-    () => Country.getAllCountries().map((c) => c.name).sort(),
-    []
-  );
+  const allCountries = useMemo<string[]>(() => {
+    const sorted = Country.getAllCountries().map((c) => c.name).sort();
+    return ["United States", ...sorted.filter((c) => c !== "United States")];
+  }, []);
 
   const [text, setText] = useState(value);
   const [open, setOpen] = useState(false);
