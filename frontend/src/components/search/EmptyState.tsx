@@ -54,10 +54,10 @@ export default function EmptyState({ onQuery, loading }: Props) {
       </div>
 
 
-      <h2 className="text-lg font-bold text-gray-900 sm:text-2xl">Find the right prospects</h2>
+      <h2 className="text-lg font-bold text-gray-900 sm:text-2xl">Find Decision-Makers Instantly</h2>
       <p className="mt-1 text-xs text-gray-500 sm:text-base">
-        Describe them and{" "}
-        <span className="font-semibold text-red-600">B2B AI</span> does the rest
+        Apply filters or describe your ideal prospect —{" "}
+        <span className="font-semibold text-red-600">LeadsBuddy AI</span> surfaces the best matches in seconds
       </p>
 
       <div className="mt-5 w-full max-w-lg rounded-lg border border-gray-200 bg-white shadow-sm sm:mt-8 sm:rounded-xl">
@@ -65,7 +65,7 @@ export default function EmptyState({ onQuery, loading }: Props) {
           <span className="text-red-500 text-base">✦</span>
           <input
             type="text"
-            placeholder='Initiate a query — e.g. "Marketing managers in the healthcare industry"'
+            placeholder='e.g. "VP of Sales at SaaS companies with 200+ employees in the US"'
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()}

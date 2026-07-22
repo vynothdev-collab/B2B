@@ -8,9 +8,10 @@ interface Props {
   open?: boolean;
   onClose?: () => void;
   loading?: boolean;
+  totalCount?: number;
 }
 
-export default function FilterPanelShell({ children, onReset, onApply, open, onClose, loading }: Props) {
+export default function FilterPanelShell({ children, onReset, onApply, open, onClose, loading, totalCount }: Props) {
   return (
     <>
       {open && (
@@ -31,6 +32,11 @@ export default function FilterPanelShell({ children, onReset, onApply, open, onC
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-3.5 w-3.5 text-red-600 sm:h-4 sm:w-4" />
             <span className="text-sm font-semibold text-gray-800 sm:text-base">Filters</span>
+            {totalCount != null && totalCount > 0 && (
+              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
+                {totalCount}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             <button

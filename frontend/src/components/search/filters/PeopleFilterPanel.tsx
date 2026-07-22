@@ -72,6 +72,32 @@ function fmtDuration(minY: string, minM: string, maxY: string, maxM: string): st
   return "";
 }
 
+export function countPeopleFilters(f: PersonFilters): number {
+  return (
+    f.name.length +
+    f.jobTitle.length + f.departments.length + f.seniority.length +
+    f.companies.length +
+    f.personLocationCountries.length + f.personLocationStates.length + f.personLocationCities.length +
+    f.companyHQCountries.length + f.companyHQStates.length + f.companyHQCities.length +
+    (f.requireWorkEmail ? 1 : 0) +
+    f.companyStatus.length + f.companyType.length +
+    f.keywordsInclude.length + f.keywordsExclude.length +
+    f.employeeHeadcountRanges.length + (f.employeeCountMin || f.employeeCountMax ? 1 : 0) +
+    f.industries.length +
+    f.technologies.length +
+    f.revenueBuckets.length + (f.revenueMin || f.revenueMax ? 1 : 0) +
+    f.fundingPresets.length + (f.fundingMin || f.fundingMax ? 1 : 0) +
+    f.headcountGrowthPresets.length + (f.headcountGrowthMin || f.headcountGrowthMax ? 1 : 0) +
+    f.foundedPresets.length + (f.foundedMin || f.foundedMax ? 1 : 0) +
+    (f.timeInRoleMinYears || f.timeInRoleMinMonths || f.timeInRoleMaxYears || f.timeInRoleMaxMonths ? 1 : 0) +
+    (f.timeInCompanyMinYears || f.timeInCompanyMinMonths || f.timeInCompanyMaxYears || f.timeInCompanyMaxMonths ? 1 : 0) +
+    (f.experienceYearsMin || f.experienceYearsMax ? 1 : 0) +
+    (f.jobChangeTimeframe ? 1 : 0) +
+    f.jobPostingKeywords.length +
+    f.certifications.length + f.otherCompliance.length
+  );
+}
+
 export default function PeopleFilterPanel({ filters, onChange }: Props) {
   const [open, setOpen] = useState<Section | "">("people");
   const toggle = (s: Section) => setOpen((p) => (p === s ? "" : s));
