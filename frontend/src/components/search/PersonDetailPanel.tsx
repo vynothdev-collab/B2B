@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   X, MapPin, Mail, Phone, Globe, Briefcase,
   GraduationCap, Loader2, ExternalLink, Award, Users, Clock,
@@ -19,8 +19,6 @@ function LinkedInIcon({ className }: { className?: string }) {
 
 import { apiClient } from "@/lib/api";
 import type { PersonResult } from "@/types/search";
-
-type Tab = "experience" | "skills" | "education" | "certifications" | "projects" | "about";
 
 interface WorkEntry {
   company_name: string | null; company_logo_url: string | null;
@@ -71,21 +69,11 @@ interface PersonDetail extends PersonResult {
 
 interface Props { person: PersonResult | null; onClose: () => void; }
 
-/* ─── palette ─── */
 const AVATAR_COLORS = [
   "bg-red-500", "bg-blue-600", "bg-emerald-600",
   "bg-purple-600", "bg-orange-500", "bg-pink-600", "bg-teal-600",
 ];
-const SKILL_CHIPS = [
-  "bg-red-50 text-red-700 border-red-200",
-  "bg-blue-50 text-blue-700 border-blue-200",
-  "bg-emerald-50 text-emerald-700 border-emerald-200",
-  "bg-purple-50 text-purple-700 border-purple-200",
-  "bg-orange-50 text-orange-700 border-orange-200",
-  "bg-teal-50 text-teal-700 border-teal-200",
-];
 
-/* ─── sub-components ─── */
 function Avatar({ name, src }: { name: string; src?: string | null }) {
   const [err, setErr] = useState(false);
   useEffect(() => setErr(false), [src]);
@@ -120,106 +108,131 @@ function metaStr(parts: (string | null | undefined)[]) {
   return parts.filter(Boolean).join("  ·  ");
 }
 
-/* Section label */
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-3 flex items-center gap-2">
-      <div className="h-px flex-1 bg-gray-100" />
-      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-1">{children}</span>
-      <div className="h-px flex-1 bg-gray-100" />
-    </div>
-  );
-}
-
-/* Empty state */
 function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 gap-2.5 text-gray-300">
+    <div className="flex flex-col items-center justify-center py-8 gap-2.5 text-gray-300">
       <div className="rounded-2xl bg-gray-50 p-4">{icon}</div>
       <p className="text-[13px] text-gray-400 font-medium">{text}</p>
     </div>
   );
 }
 
-/* Meta pills row */
-function Meta({ parts }: { parts: (string | null | undefined)[] }) {
-  const valid = parts.filter(Boolean) as string[];
-  if (!valid.length) return null;
-  return (
-    <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[11px] text-gray-400 leading-snug">
-      {valid.map((v, i) => (
-        <span key={i} className="flex items-center gap-1.5">
-          {i > 0 && <span className="text-gray-300">·</span>}
-          {v}
-        </span>
-      ))}
-    </p>
-  );
-}
-
-/* Entry row — used for work history, education, etc. */
-function EntryRow({
-  logo, logoFallback, title, subtitle, subtitleHref, meta, description,
-  badge, badgeColor = "blue", isCurrent,
+/* Timeline entry used for work, education, certifications, etc. */
+function TimelineEntry({
+  dot = "outline",
+  title,
+  subtitle,
+  subtitleHref,
+  locationText,
+  startDate,
+  endDate,
+  isCurrent,
+  description,
+  isLast,
 }: {
-  logo?: string | null;
-  logoFallback: React.ReactNode;
+  dot?: "filled" | "outline";
   title: string;
   subtitle?: string | null;
   subtitleHref?: string | null;
-  meta?: (string | null | undefined)[];
-  description?: string | null;
-  badge?: string | null;
-  badgeColor?: "blue" | "green" | "red";
+  locationText?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
   isCurrent?: boolean;
+  description?: string | null;
+  isLast?: boolean;
 }) {
-  const badgeCls = {
-    blue: "bg-blue-50 text-blue-600 border border-blue-200",
-    green: "bg-emerald-50 text-emerald-600 border border-emerald-200",
-    red: "bg-red-50 text-red-600 border border-red-200",
-  }[badgeColor];
-
   return (
-    <div className="flex items-start gap-3 py-3.5 border-b border-gray-50 last:border-b-0">
-      {/* Logo */}
-      <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg overflow-hidden border border-gray-100 bg-gray-50 ${isCurrent ? "ring-2 ring-red-400/30" : ""}`}>
-        {logo ? (
-          <img src={logo} alt="" className="h-full w-full object-contain"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).replaceWith(
-              Object.assign(document.createElement("span"), { className: "flex h-full w-full items-center justify-center" })
-            ); }} />
-        ) : logoFallback}
+    <div className="flex gap-3.5">
+      <div className="flex flex-col items-center">
+        <div className={`mt-0.5 h-5 w-5 rounded-full border-2 flex-shrink-0 ${
+          dot === "filled" ? "bg-red-500 border-red-500" : "bg-white border-gray-300"
+        }`} />
+        {!isLast && <div className="w-px bg-gray-200 flex-1 mt-1.5 mb-1.5 min-h-[20px]" />}
       </div>
-
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-[13px] font-semibold text-gray-900 leading-snug">{title}</p>
-          {badge && (
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${badgeCls}`}>{badge}</span>
-          )}
-        </div>
+      <div className={`flex-1 min-w-0 ${!isLast ? "pb-5" : "pb-1"}`}>
+        <p className="text-[14px] font-bold text-gray-900 leading-tight">{title}</p>
         {subtitle && (
           subtitleHref ? (
             <a href={subtitleHref.startsWith("http") ? subtitleHref : `https://${subtitleHref}`}
               target="_blank" rel="noopener noreferrer"
-              className="mt-0.5 block text-[12px] font-medium text-red-500 hover:text-red-600 hover:underline">
+              className="mt-0.5 block text-[13px] font-semibold text-red-500 hover:underline">
               {subtitle}
             </a>
           ) : (
-            <p className="mt-0.5 text-[12px] font-medium text-gray-500">{subtitle}</p>
+            <p className="mt-0.5 text-[13px] font-semibold text-red-500">{subtitle}</p>
           )
         )}
-        {meta && <Meta parts={meta} />}
+        {locationText !== undefined && (
+          <p className="mt-0.5 text-[12px] text-gray-400">{locationText ?? "Location not specified"}</p>
+        )}
+        {(startDate || endDate || isCurrent) && (
+          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+            {fmtMo(startDate) && (
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">
+                {fmtMo(startDate)}
+              </span>
+            )}
+            <span className="text-gray-400 text-[11px]">–</span>
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">
+              {isCurrent ? "Current" : (fmtMo(endDate) || "Present")}
+            </span>
+          </div>
+        )}
         {description && (
-          <p className="mt-1.5 text-[11.5px] leading-relaxed text-gray-500 line-clamp-3">{description}</p>
+          <p className="mt-2 text-[12px] leading-relaxed text-gray-500 line-clamp-3">{description}</p>
         )}
       </div>
     </div>
   );
 }
 
-/* Generic info card */
+/* Year-range date pills (for education) */
+function YearRange({ start, end }: { start?: string | null; end?: string | null }) {
+  if (!start && !end) return null;
+  return (
+    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+      {start && <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">{start}</span>}
+      {start && end && <span className="text-gray-400 text-[11px]">–</span>}
+      {end && <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">{end}</span>}
+    </div>
+  );
+}
+
+/* Skills / tags section with collapse */
+function SkillsSection({ skills }: { skills: string[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const VISIBLE = 3;
+  const visible = showAll ? skills : skills.slice(0, VISIBLE);
+  const remaining = skills.length - VISIBLE;
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+      <p className="text-[15px] font-bold text-gray-900 mb-4">Skills</p>
+      {skills.length === 0 ? (
+        <Empty icon={<Award className="h-7 w-7" />} text="No skills listed" />
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {visible.map((s, i) => (
+            <span key={i} className="rounded-full bg-gray-100 px-4 py-2 text-[13px] font-medium text-gray-700">{s}</span>
+          ))}
+          {!showAll && remaining > 0 && (
+            <button type="button" onClick={() => setShowAll(true)}
+              className="rounded-full bg-red-50 border border-red-200 px-4 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
+              +{remaining} more
+            </button>
+          )}
+          {showAll && skills.length > VISIBLE && (
+            <button type="button" onClick={() => setShowAll(false)}
+              className="rounded-full bg-gray-100 px-4 py-2 text-[13px] font-medium text-gray-500 hover:bg-gray-200 transition-colors">
+              Show less
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Info card for projects / publications / patents */
 function InfoCard({ icon, iconColor, iconBg, title, subtitle, meta, description, extra, actionUrl, actionLabel }: {
   icon: React.ReactNode; iconColor: string; iconBg: string;
   title: string; subtitle?: string | null;
@@ -247,7 +260,9 @@ function InfoCard({ icon, iconColor, iconBg, title, subtitle, meta, description,
             )}
           </div>
           {subtitle && <p className="mt-0.5 text-[12px] text-gray-500">{subtitle}</p>}
-          {meta && <Meta parts={meta} />}
+          {meta && meta.filter(Boolean).length > 0 && (
+            <p className="mt-1 text-[11px] text-gray-400">{meta.filter(Boolean).join(" · ")}</p>
+          )}
           {description && <p className="mt-1.5 text-[11.5px] leading-relaxed text-gray-500 line-clamp-3">{description}</p>}
           {extra}
         </div>
@@ -256,7 +271,6 @@ function InfoCard({ icon, iconColor, iconBg, title, subtitle, meta, description,
   );
 }
 
-/* Pill row (members / authors / inventors) */
 function PillRow({ items, color = "gray" }: { items: string[]; color?: "gray" | "red" | "blue" | "emerald" | "orange" }) {
   if (!items.length) return null;
   const cls = {
@@ -279,12 +293,17 @@ function PillRow({ items, color = "gray" }: { items: string[]; color?: "gray" | 
 export default function PersonDetailPanel({ person, onClose }: Props) {
   const [detail, setDetail] = useState<PersonDetail | null>(null);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<Tab>("experience");
+
+  const expRef    = useRef<HTMLDivElement>(null);
+  const skillsRef = useRef<HTMLDivElement>(null);
+  const eduRef    = useRef<HTMLDivElement>(null);
+  const certRef   = useRef<HTMLDivElement>(null);
+  const projRef   = useRef<HTMLDivElement>(null);
+  const aboutRef  = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!person) { setDetail(null); return; }
     setDetail(null);
-    setTab("experience");
     setLoading(true);
     apiClient.get<PersonDetail>(`/search/persons/${person.id}/detail`)
       .then(({ data }) => setDetail(data))
@@ -297,6 +316,10 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       .finally(() => setLoading(false));
   }, [person?.id]);
 
+  const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const isOpen = !!person;
   const d = detail ?? person;
   const fullName = d ? d.full_name || `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim() || "—" : "";
@@ -306,14 +329,15 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
   const projCount = (detail?.projects.length ?? 0) + (detail?.publications.length ?? 0) + (detail?.patents.length ?? 0);
   const certCount = (detail?.certifications.length ?? 0) + (detail?.courses.length ?? 0) + (detail?.awards.length ?? 0);
+  const skillCount = Array.isArray(d?.inferred_skills) ? (d!.inferred_skills as string[]).length : 0;
 
-  const TABS: { id: Tab; label: string }[] = [
-    { id: "experience",     label: "Experience"     },
-    { id: "skills",         label: "Skills"         },
-    { id: "education",      label: "Education"      },
-    { id: "certifications", label: "Certifications" },
-    { id: "projects",       label: "Projects"       },
-    { id: "about",          label: "About"          },
+  const NAV: { label: string; ref: React.RefObject<HTMLDivElement | null>; count?: number }[] = [
+    { label: "Experience", ref: expRef },
+    { label: "Skills",     ref: skillsRef, count: skillCount },
+    { label: "Education",  ref: eduRef },
+    { label: "Certs",      ref: certRef,   count: certCount  },
+    { label: "Projects",   ref: projRef,   count: projCount  },
+    { label: "About",      ref: aboutRef  },
   ];
 
   return (
@@ -330,8 +354,6 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
         {/* ══════════ HEADER ══════════ */}
         <div className="shrink-0 bg-white border-b border-gray-100">
-
-          {/* Top bar */}
           <div className="flex items-center justify-between px-5 pt-4 pb-3">
             <div className="flex items-center gap-2">
               <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
@@ -343,7 +365,6 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
             </button>
           </div>
 
-          {/* Identity */}
           <div className="flex items-start gap-4 px-5 pb-4">
             <Avatar name={fullName} src={d?.picture_url as string | null} />
             <div className="min-w-0 flex-1 pt-1">
@@ -351,14 +372,11 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               {titleLine ? (
                 <p className="mt-0.5 text-[12.5px] text-gray-500 leading-snug">
                   {titleLine}
-                  {showCompany && (
-                    <> · <span className="font-semibold text-red-500">{companyLine}</span></>
-                  )}
+                  {showCompany && <> · <span className="font-semibold text-red-500">{companyLine}</span></>}
                 </p>
               ) : d?.headline ? (
                 <p className="mt-0.5 text-[12.5px] text-gray-500 line-clamp-2 leading-snug">{d.headline as string}</p>
               ) : null}
-
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                 {(d?.location_city || d?.location_country) && (
                   <span className="flex items-center gap-1 text-[11.5px] text-gray-400">
@@ -372,8 +390,6 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                   </span>
                 )}
               </div>
-
-              {/* Connection stats */}
               {(d?.connections_count != null || d?.follower_count != null) && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {d?.connections_count != null && (
@@ -392,75 +408,61 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
             </div>
           </div>
 
-          {/* Contact info block */}
-          <div className="mx-5 mb-4 rounded-xl border border-gray-100 bg-gray-50 overflow-hidden">
-            {/* Email */}
-            <div className="flex items-center gap-3 px-3.5 py-2.5 border-b border-gray-100">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-50 border border-red-100">
-                <Mail className="h-3.5 w-3.5 text-red-500" />
+          {/* Contact block */}
+          <div className="mx-5 mb-4 rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+            <div className="flex items-center gap-3.5 px-4 py-3 border-b border-gray-100">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 border border-red-100">
+                <Mail className="h-4 w-4 text-red-500" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Email</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Email</p>
                 {(detail as PersonDetail | null)?.email ? (
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${(detail as PersonDetail).email}`; }}
-                    className="block truncate text-[12.5px] font-semibold text-red-500 hover:text-red-600 hover:underline transition-colors text-left w-full">
+                  <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${(detail as PersonDetail).email}`; }}
+                    className="block truncate text-[13px] font-semibold text-red-500 hover:text-red-600 hover:underline transition-colors text-left w-full">
                     {(detail as PersonDetail).email}
                   </button>
                 ) : (
-                  <p className="text-[12.5px] font-medium text-gray-400">
-                    {d?.has_email ? "Email available — reveal to view" : "—"}
-                  </p>
+                  <p className="text-[13px] font-medium text-gray-400">{d?.has_email ? "Available — reveal to view" : "—"}</p>
                 )}
               </div>
               {(detail as PersonDetail | null)?.email && (
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${(detail as PersonDetail).email}`; }}
-                  className="shrink-0 rounded-lg bg-red-500 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-600 transition-colors">
+                <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${(detail as PersonDetail).email}`; }}
+                  className="shrink-0 rounded-lg bg-red-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-red-600 transition-colors shadow-sm">
                   Send
                 </button>
               )}
             </div>
-
-            {/* Work Email */}
-            <div className="flex items-center gap-3 px-3.5 py-2.5 border-b border-gray-100">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 border border-blue-100">
-                <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+            <div className="flex items-center gap-3.5 px-4 py-3 border-b border-gray-100">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 border border-blue-100">
+                <Briefcase className="h-4 w-4 text-blue-500" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Work Email</p>
-                <p className="text-[12.5px] font-medium text-gray-400">—</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Work Email</p>
+                <p className="text-[13px] font-medium text-gray-400">—</p>
               </div>
             </div>
-
-            {/* Mobile */}
-            <div className="flex items-center gap-3 px-3.5 py-2.5">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 border border-emerald-100">
-                <Phone className="h-3.5 w-3.5 text-emerald-500" />
+            <div className="flex items-center gap-3.5 px-4 py-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-100">
+                <Phone className="h-4 w-4 text-emerald-500" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Mobile</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Mobile</p>
                 {d?.mobile_phone ? (
-                  <a href={`tel:${d.mobile_phone as string}`}
-                    className="block text-[12.5px] font-semibold text-gray-800 hover:text-emerald-600 transition-colors">
-                    {d.mobile_phone as string}
-                  </a>
+                  <span className="block text-[13px] font-semibold text-gray-800">{d.mobile_phone as string}</span>
                 ) : (
-                  <p className="text-[12.5px] font-medium text-gray-400">—</p>
+                  <p className="text-[13px] font-medium text-gray-400">—</p>
                 )}
               </div>
               {d?.mobile_phone && (
-                <a href={`tel:${d.mobile_phone as string}`}
-                  className="shrink-0 rounded-lg bg-emerald-500 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-600 transition-colors">
+                <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${d.mobile_phone as string}`; }}
+                  className="shrink-0 rounded-lg bg-emerald-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-600 transition-colors shadow-sm">
                   Call
-                </a>
+                </button>
               )}
             </div>
           </div>
 
-          {/* Action buttons row */}
+          {/* Action links */}
           <div className="flex flex-wrap gap-2 px-5 pb-4">
             {d?.linkedin_url && (
               <a href={`https://${(d.linkedin_url as string).replace(/^https?:\/\//, "")}`}
@@ -481,32 +483,22 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
           </div>
         </div>
 
-        {/* ══════════ TABS ══════════ */}
+        {/* ══════════ SECTION NAV ══════════ */}
         <div className="shrink-0 flex bg-white border-b border-gray-200 overflow-x-auto">
-          {TABS.map((t) => (
-            <button key={t.id} type="button" onClick={() => setTab(t.id)}
-              className={[
-                "relative shrink-0 whitespace-nowrap px-4 py-2.5 text-[12px] font-semibold transition-all",
-                tab === t.id
-                  ? "text-red-500 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-red-500 after:rounded-t-full"
-                  : "text-gray-500 hover:text-gray-800 hover:bg-gray-50",
-              ].join(" ")}>
-              {t.label}
-              {t.id === "projects" && projCount > 0 && (
+          {NAV.map((item) => (
+            <button key={item.label} type="button" onClick={() => scrollTo(item.ref)}
+              className="shrink-0 whitespace-nowrap px-4 py-2.5 text-[12px] font-semibold text-gray-500 hover:text-red-500 hover:bg-gray-50 transition-all">
+              {item.label}
+              {item.count != null && item.count > 0 && (
                 <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  {projCount}
-                </span>
-              )}
-              {t.id === "certifications" && certCount > 0 && (
-                <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  {certCount}
+                  {item.count}
                 </span>
               )}
             </button>
           ))}
         </div>
 
-        {/* ══════════ CONTENT ══════════ */}
+        {/* ══════════ SINGLE-PAGE CONTENT ══════════ */}
         <div className="flex-1 overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -518,291 +510,272 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
           )}
 
           {!loading && d && (
-            <div className="px-4 py-5 space-y-6">
+            <div className="px-4 py-5 space-y-5">
 
-              {/* ══ EXPERIENCE ══ */}
-              {tab === "experience" && (
-                <>
-                  {detail?.work_history && detail.work_history.length > 0 ? (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                      <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Work History</span>
-                        {detail.total_experience && (
-                          <span className="flex items-center gap-1 rounded-full bg-red-50 border border-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-500">
-                            <Clock className="h-3 w-3" />{detail.total_experience}
-                          </span>
-                        )}
-                      </div>
-                      <div className="px-4 pb-1">
-                        {detail.work_history.map((w, i) => (
-                          <EntryRow key={i}
-                            logo={w.company_logo_url}
-                            logoFallback={<Briefcase className="h-4 w-4 text-gray-400" />}
-                            title={w.title ?? "—"}
-                            subtitle={w.company_name}
-                            subtitleHref={w.company_website}
-                            meta={[fmtRange(w.start_date, w.end_date, w.is_current), w.duration, w.location]}
-                            description={w.description}
-                            badge={w.is_current ? "Current" : undefined}
-                            badgeColor="red"
-                            isCurrent={w.is_current}
-                          />
-                        ))}
-                      </div>
+              {/* ── WORK EXPERIENCE ── */}
+              <div ref={expRef}>
+                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[15px] font-bold text-gray-900">Work Experience</span>
+                      {detail?.total_experience && (
+                        <span className="text-[13px] font-normal text-gray-400">· {detail.total_experience}</span>
+                      )}
                     </div>
+                  </div>
+                  {!detail?.work_history?.length ? (
+                    <Empty icon={<Briefcase className="h-7 w-7" />} text="No work experience listed" />
                   ) : (
-                    <Empty icon={<Briefcase className="h-8 w-8" />} text="No work experience listed" />
+                    detail.work_history.map((w, i) => (
+                      <TimelineEntry key={i}
+                        dot={w.is_current ? "filled" : "outline"}
+                        title={w.title ?? "—"}
+                        subtitle={w.company_name}
+                        subtitleHref={w.company_website}
+                        locationText={w.location}
+                        startDate={w.start_date}
+                        endDate={w.end_date}
+                        isCurrent={w.is_current}
+                        description={w.description}
+                        isLast={i === detail.work_history.length - 1}
+                      />
+                    ))
                   )}
+                </div>
 
-                  {detail?.volunteering && detail.volunteering.length > 0 && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                      <div className="px-4 pt-3.5 pb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Volunteering</span>
-                      </div>
-                      <div className="px-4 pb-1">
-                        {detail.volunteering.map((v, i) => (
-                          <EntryRow key={i}
-                            logo={null}
-                            logoFallback={<Heart className="h-4 w-4 text-red-400" />}
-                            title={v.role ?? "Volunteer"}
-                            subtitle={v.organization}
-                            meta={[v.cause, fmtRange(v.start_date, v.end_date), v.duration]}
-                            description={v.description}
-                          />
-                        ))}
-                      </div>
+                {detail?.volunteering && detail.volunteering.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-5">
+                      <Heart className="h-4 w-4 text-red-400" />
+                      <span className="text-[15px] font-bold text-gray-900">Volunteering</span>
                     </div>
-                  )}
-                </>
-              )}
+                    {detail.volunteering.map((v, i) => (
+                      <TimelineEntry key={i}
+                        title={v.role ?? "Volunteer"}
+                        subtitle={v.organization}
+                        locationText={v.cause ?? undefined}
+                        startDate={v.start_date}
+                        endDate={v.end_date}
+                        description={v.description}
+                        isLast={i === detail.volunteering.length - 1}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
 
-              {/* ══ SKILLS ══ */}
-              {tab === "skills" && (
-                <>
-                  {Array.isArray(d.inferred_skills) && (d.inferred_skills as string[]).length > 0 ? (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Skills</span>
-                        <span className="rounded-full bg-red-50 border border-red-100 px-2 py-0.5 text-[11px] font-bold text-red-500">
-                          {(d.inferred_skills as string[]).length}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(d.inferred_skills as string[]).map((s, i) => (
-                          <span key={i} className={`rounded-full border px-2.5 py-1 text-[12px] font-medium capitalize ${SKILL_CHIPS[i % SKILL_CHIPS.length]}`}>
-                            {s}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+              {/* ── SKILLS ── */}
+              <div ref={skillsRef}>
+                <SkillsSection skills={Array.isArray(d.inferred_skills) ? (d.inferred_skills as string[]) : []} />
+              </div>
+
+              {/* ── EDUCATION ── */}
+              <div ref={eduRef}>
+                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="flex items-center gap-2 mb-5">
+                    <GraduationCap className="h-4 w-4 text-blue-400" />
+                    <span className="text-[15px] font-bold text-gray-900">Education</span>
+                  </div>
+                  {!detail?.education?.length ? (
+                    <Empty icon={<GraduationCap className="h-7 w-7" />} text="No education listed" />
                   ) : (
-                    <Empty icon={<Award className="h-8 w-8" />} text="No skills listed" />
+                    detail.education.map((e, i) => (
+                      <div key={i} className="flex gap-3.5">
+                        <div className="flex flex-col items-center">
+                          <div className="mt-0.5 h-5 w-5 rounded-full border-2 bg-white border-gray-300 flex-shrink-0" />
+                          {i < detail.education.length - 1 && (
+                            <div className="w-px bg-gray-200 flex-1 mt-1.5 mb-1.5 min-h-[20px]" />
+                          )}
+                        </div>
+                        <div className={`flex-1 min-w-0 ${i < detail.education.length - 1 ? "pb-5" : "pb-1"}`}>
+                          <p className="text-[14px] font-bold text-gray-900 leading-tight">{e.school ?? "—"}</p>
+                          {(e.degree || e.field) && (
+                            <p className="mt-0.5 text-[13px] font-semibold text-red-500">
+                              {[e.degree, e.field].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                          <YearRange start={e.start_year} end={e.end_year} />
+                          {e.activities && <p className="mt-2 text-[12px] text-gray-500 line-clamp-2">{e.activities}</p>}
+                        </div>
+                      </div>
+                    ))
                   )}
+                </div>
 
-                </>
-              )}
-
-              {/* ══ CERTIFICATIONS ══ */}
-              {tab === "certifications" && (
-                <>
-                  {detail?.certifications && detail.certifications.length > 0 && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                      <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Certifications</span>
-                        <span className="rounded-full bg-red-50 border border-red-100 px-2 py-0.5 text-[11px] font-bold text-red-500">
-                          {detail.certifications.length}
-                        </span>
-                      </div>
-                      <div className="px-4 pb-1">
-                        {detail.certifications.map((c, i) => (
-                          <EntryRow key={i}
-                            logo={null}
-                            logoFallback={<Award className="h-4 w-4 text-yellow-500" />}
-                            title={c.title ?? "Certificate"}
-                            subtitle={c.issuer}
-                            meta={[c.date ? fmtMo(c.date) : null]}
-                            subtitleHref={c.url}
-                          />
-                        ))}
-                      </div>
+                {detail?.organizations && detail.organizations.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-5">
+                      <Building className="h-4 w-4 text-indigo-400" />
+                      <span className="text-[15px] font-bold text-gray-900">Organizations</span>
                     </div>
-                  )}
+                    {detail.organizations.map((o, i) => (
+                      <TimelineEntry key={i}
+                        title={o.name ?? "Organization"}
+                        subtitle={o.position}
+                        startDate={o.start_date}
+                        endDate={o.end_date}
+                        description={o.description}
+                        isLast={i === detail.organizations.length - 1}
+                      />
+                    ))}
+                  </div>
+                )}
 
-                  {detail?.courses && detail.courses.length > 0 && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                      <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Courses</span>
-                        <span className="rounded-full bg-red-50 border border-red-100 px-2 py-0.5 text-[11px] font-bold text-red-500">
-                          {detail.courses.length}
-                        </span>
-                      </div>
-                      <div className="px-4 pb-1">
-                        {detail.courses.map((c, i) => (
-                          <EntryRow key={i}
-                            logo={null}
-                            logoFallback={<BookOpen className="h-4 w-4 text-teal-500" />}
-                            title={c.title ?? "Course"}
-                            subtitle={c.organizer}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {detail?.awards && detail.awards.length > 0 && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                      <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Awards</span>
-                        <span className="rounded-full bg-red-50 border border-red-100 px-2 py-0.5 text-[11px] font-bold text-red-500">
-                          {detail.awards.length}
-                        </span>
-                      </div>
-                      <div className="px-4 pb-1">
-                        {detail.awards.map((a, i) => (
-                          <EntryRow key={i}
-                            logo={null}
-                            logoFallback={<Trophy className="h-4 w-4 text-amber-500" />}
-                            title={a.title ?? "Award"}
-                            subtitle={a.issuer}
-                            meta={[a.date ? fmtMo(a.date) : null]}
-                            description={a.description}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {!detail?.certifications?.length && !detail?.courses?.length && !detail?.awards?.length && (
-                    <Empty icon={<Award className="h-8 w-8" />} text="No certifications, courses or awards" />
-                  )}
-                </>
-              )}
-
-              {/* ══ EDUCATION ══ */}
-              {tab === "education" && (
-                <>
-                  {detail?.education && detail.education.length > 0 ? (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                      <div className="px-4 pt-3.5 pb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Education</span>
-                      </div>
-                      <div className="px-4 pb-1">
-                        {detail.education.map((e, i) => (
-                          <EntryRow key={i}
-                            logo={e.school_logo_url}
-                            logoFallback={<GraduationCap className="h-4 w-4 text-blue-400" />}
-                            title={e.school ?? "—"}
-                            subtitle={[e.degree, e.field].filter(Boolean).join(" · ") || null}
-                            meta={[e.start_year && e.end_year ? `${e.start_year} – ${e.end_year}` : (e.start_year ?? e.end_year)]}
-                            description={e.activities}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <Empty icon={<GraduationCap className="h-8 w-8" />} text="No education listed" />
-                  )}
-
-                  {detail?.organizations && detail.organizations.length > 0 && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                      <div className="px-4 pt-3.5 pb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Organizations</span>
-                      </div>
-                      <div className="px-4 pb-1">
-                        {detail.organizations.map((o, i) => (
-                          <EntryRow key={i}
-                            logo={null}
-                            logoFallback={<Building className="h-4 w-4 text-indigo-500" />}
-                            title={o.name ?? "Organization"}
-                            subtitle={o.position}
-                            meta={[fmtRange(o.start_date, o.end_date)]}
-                            description={o.description}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {detail?.test_scores && detail.test_scores.length > 0 && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-                      <div className="px-4 pt-3.5 pb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Test Scores</span>
-                      </div>
-                      <div className="divide-y divide-gray-50 px-4 pb-1">
-                        {detail.test_scores.map((ts, i) => (
-                          <div key={i} className="flex items-center justify-between py-3.5">
-                            <div className="min-w-0">
-                              <p className="text-[13px] font-semibold text-gray-900">{ts.title}</p>
-                              {ts.date && <p className="text-[11px] text-gray-400 mt-0.5">{fmtMo(ts.date)}</p>}
-                              {ts.description && <p className="mt-1 text-[11.5px] text-gray-500 line-clamp-2">{ts.description}</p>}
-                            </div>
-                            {ts.score && (
-                              <span className="ml-4 shrink-0 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-[16px] font-bold text-green-600">
-                                {ts.score}
-                              </span>
-                            )}
+                {detail?.test_scores && detail.test_scores.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Test Scores</p>
+                    <div className="divide-y divide-gray-50">
+                      {detail.test_scores.map((ts, i) => (
+                        <div key={i} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-semibold text-gray-900">{ts.title}</p>
+                            {ts.date && <p className="text-[11px] text-gray-400 mt-0.5">{fmtMo(ts.date)}</p>}
+                            {ts.description && <p className="mt-1 text-[11.5px] text-gray-500 line-clamp-2">{ts.description}</p>}
                           </div>
-                        ))}
-                      </div>
+                          {ts.score && (
+                            <span className="ml-4 shrink-0 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-[16px] font-bold text-green-600">
+                              {ts.score}
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </>
-              )}
+                  </div>
+                )}
+              </div>
 
-              {/* ══ PROJECTS ══ */}
-              {tab === "projects" && (
-                <>
-                  {detail?.projects && detail.projects.length > 0 && (
+              {/* ── CERTIFICATIONS ── */}
+              <div ref={certRef}>
+                {detail?.certifications && detail.certifications.length > 0 && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-5">
+                      <Award className="h-4 w-4 text-yellow-500" />
+                      <span className="text-[15px] font-bold text-gray-900">Certifications</span>
+                    </div>
+                    {detail.certifications.map((c, i) => (
+                      <TimelineEntry key={i}
+                        title={c.title ?? "Certificate"}
+                        subtitle={c.issuer}
+                        subtitleHref={c.url}
+                        startDate={c.date}
+                        isLast={i === detail.certifications.length - 1}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {detail?.courses && detail.courses.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <BookOpen className="h-4 w-4 text-teal-500" />
+                      <span className="text-[15px] font-bold text-gray-900">Courses</span>
+                    </div>
+                    <div className="space-y-3">
+                      {detail.courses.map((c, i) => (
+                        <div key={i} className={`flex items-start gap-3 ${i < detail.courses.length - 1 ? "pb-3 border-b border-gray-50" : ""}`}>
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-50 border border-teal-100 mt-0.5">
+                            <BookOpen className="h-3.5 w-3.5 text-teal-500" />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-semibold text-gray-900">{c.title}</p>
+                            {c.organizer && <p className="text-[12px] text-gray-500 mt-0.5">{c.organizer}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {detail?.awards && detail.awards.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Trophy className="h-4 w-4 text-amber-500" />
+                      <span className="text-[15px] font-bold text-gray-900">Awards</span>
+                    </div>
+                    <div className="space-y-3">
+                      {detail.awards.map((a, i) => (
+                        <div key={i} className={`flex items-start gap-3 ${i < detail.awards.length - 1 ? "pb-3 border-b border-gray-50" : ""}`}>
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-50 border border-amber-100 mt-0.5">
+                            <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-semibold text-gray-900">{a.title}</p>
+                            {a.issuer && <p className="text-[12px] font-medium text-red-500 mt-0.5">{a.issuer}</p>}
+                            {a.date && (
+                              <div className="mt-1.5">
+                                <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">{fmtMo(a.date)}</span>
+                              </div>
+                            )}
+                            {a.description && <p className="mt-1.5 text-[12px] text-gray-500">{a.description}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!detail?.certifications?.length && !detail?.courses?.length && !detail?.awards?.length && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Certifications</p>
+                    <Empty icon={<Award className="h-7 w-7" />} text="No certifications, courses or awards" />
+                  </div>
+                )}
+              </div>
+
+              {/* ── PROJECTS ── */}
+              <div ref={projRef}>
+                {detail?.projects && detail.projects.length > 0 && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <FolderGit2 className="h-4 w-4 text-violet-500" />
+                      <span className="text-[15px] font-bold text-gray-900">Projects</span>
+                    </div>
                     <div className="space-y-2.5">
-                      <Label>Projects</Label>
                       {detail.projects.map((p, i) => (
                         <InfoCard key={i}
-                          icon={<FolderGit2 className="h-4 w-4" />}
-                          iconColor="text-violet-600"
-                          iconBg="bg-violet-50"
-                          title={p.name ?? "—"}
-                          meta={[fmtRange(p.start_date, p.end_date)]}
-                          description={p.description}
-                          actionUrl={p.url}
-                          actionLabel="View"
+                          icon={<FolderGit2 className="h-4 w-4" />} iconColor="text-violet-600" iconBg="bg-violet-50"
+                          title={p.name ?? "—"} meta={[fmtRange(p.start_date, p.end_date)]}
+                          description={p.description} actionUrl={p.url} actionLabel="View"
                           extra={<PillRow items={p.members} color="gray" />}
                         />
                       ))}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {detail?.publications && detail.publications.length > 0 && (
+                {detail?.publications && detail.publications.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <FileText className="h-4 w-4 text-emerald-500" />
+                      <span className="text-[15px] font-bold text-gray-900">Publications</span>
+                    </div>
                     <div className="space-y-2.5">
-                      <Label>Publications</Label>
                       {detail.publications.map((p, i) => (
                         <InfoCard key={i}
-                          icon={<FileText className="h-4 w-4" />}
-                          iconColor="text-emerald-600"
-                          iconBg="bg-emerald-50"
+                          icon={<FileText className="h-4 w-4" />} iconColor="text-emerald-600" iconBg="bg-emerald-50"
                           title={p.title ?? "—"}
                           subtitle={metaStr([p.publisher, p.date ? fmtMo(p.date) : null]) || null}
-                          description={p.description}
-                          actionUrl={p.url}
-                          actionLabel="Read"
+                          description={p.description} actionUrl={p.url} actionLabel="Read"
                           extra={<PillRow items={p.authors} color="emerald" />}
                         />
                       ))}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {detail?.patents && detail.patents.length > 0 && (
+                {detail?.patents && detail.patents.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <FlaskConical className="h-4 w-4 text-orange-500" />
+                      <span className="text-[15px] font-bold text-gray-900">Patents</span>
+                    </div>
                     <div className="space-y-2.5">
-                      <Label>Patents</Label>
                       {detail.patents.map((p, i) => (
                         <InfoCard key={i}
-                          icon={<FlaskConical className="h-4 w-4" />}
-                          iconColor="text-orange-500"
-                          iconBg="bg-orange-50"
+                          icon={<FlaskConical className="h-4 w-4" />} iconColor="text-orange-500" iconBg="bg-orange-50"
                           title={p.title ?? "—"}
                           subtitle={metaStr([p.patent_number, p.date ? fmtMo(p.date) : null]) || null}
-                          description={p.description}
-                          actionUrl={p.url}
-                          actionLabel="View"
+                          description={p.description} actionUrl={p.url} actionLabel="View"
                           extra={
                             <>
                               {p.status && (
@@ -816,142 +789,104 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                         />
                       ))}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {!detail?.projects?.length && !detail?.publications?.length && !detail?.patents?.length && (
-                    <Empty icon={<FolderGit2 className="h-8 w-8" />} text="No projects, publications or patents" />
-                  )}
-                </>
-              )}
+                {!detail?.projects?.length && !detail?.publications?.length && !detail?.patents?.length && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Projects</p>
+                    <Empty icon={<FolderGit2 className="h-7 w-7" />} text="No projects, publications or patents" />
+                  </div>
+                )}
+              </div>
 
-              {/* ══ ABOUT ══ */}
-              {tab === "about" && (
-                <>
-                  {/* Summary */}
-                  {detail?.summary && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-4">
-                      <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Summary</span>
-                      <p className="mt-2.5 text-[13px] leading-relaxed text-gray-700 whitespace-pre-line">{detail.summary}</p>
-                    </div>
-                  )}
+              {/* ── ABOUT ── */}
+              <div ref={aboutRef} className="space-y-4">
+                {detail?.summary && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-3">Summary</p>
+                    <p className="text-[13px] leading-relaxed text-gray-700 whitespace-pre-line">{detail.summary}</p>
+                  </div>
+                )}
 
-                  {/* Current company */}
-                  {d?.active_experience_company_name && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-4">
-                      <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Current Company</span>
-                      <div className="mt-3 flex items-center gap-3">
-                        {d.active_experience_company_logo_url ? (
-                          <img src={d.active_experience_company_logo_url as string} alt=""
-                            className="h-10 w-10 rounded-lg border border-gray-100 object-contain"
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-                            <Briefcase className="h-5 w-5 text-gray-400" />
-                          </div>
+                {d?.active_experience_company_name && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Current Company</p>
+                    <div className="flex items-center gap-3">
+                      {d.active_experience_company_logo_url ? (
+                        <img src={d.active_experience_company_logo_url as string} alt=""
+                          className="h-10 w-10 rounded-lg border border-gray-100 object-contain"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                          <Briefcase className="h-5 w-5 text-gray-400" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-[14px] font-bold text-gray-900">{d.active_experience_company_name as string}</p>
+                        {d.active_experience_company_industry && (
+                          <p className="text-[12px] capitalize text-gray-500">{d.active_experience_company_industry as string}</p>
                         )}
-                        <div>
-                          <p className="text-[14px] font-bold text-gray-900">{d.active_experience_company_name as string}</p>
-                          {d.active_experience_company_industry && (
-                            <p className="text-[12px] capitalize text-gray-500">{d.active_experience_company_industry as string}</p>
-                          )}
-                        </div>
-                      </div>
-                      {(d.active_experience_company_employees_count != null || d.active_experience_company_founded) && (
-                        <div className="mt-3 grid grid-cols-2 gap-2">
-                          {d.active_experience_company_employees_count != null && (
-                            <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Employees</p>
-                              <p className="mt-0.5 text-[13px] font-bold text-gray-800">
-                                {d.active_experience_company_size
-                                  ? (d.active_experience_company_size as string)
-                                  : Number(d.active_experience_company_employees_count).toLocaleString("en-US")}
-                              </p>
-                            </div>
-                          )}
-                          {d.active_experience_company_founded && (
-                            <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Founded</p>
-                              <p className="mt-0.5 text-[13px] font-bold text-gray-800">{String(d.active_experience_company_founded)}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {(d.active_experience_company_website || d.active_experience_company_linkedin_url) && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {d.active_experience_company_website && (
-                            <a href={(d.active_experience_company_website as string).startsWith("http") ? (d.active_experience_company_website as string) : `https://${d.active_experience_company_website}`}
-                              target="_blank" rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                              <Globe className="h-3.5 w-3.5 text-gray-400" />Website<ExternalLink className="h-3 w-3 text-gray-400" />
-                            </a>
-                          )}
-                          {d.active_experience_company_linkedin_url && (
-                            <a href={`https://${String(d.active_experience_company_linkedin_url).replace(/^https?:\/\//, "")}`}
-                              target="_blank" rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 rounded-lg bg-[#0A66C2]/10 border border-[#0A66C2]/20 px-3 py-1.5 text-[12px] font-medium text-[#0A66C2] hover:bg-[#0A66C2]/20 transition-colors">
-                              <LinkedInIcon className="h-3.5 w-3.5" />LinkedIn<ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Languages */}
-                  {detail?.languages && detail.languages.length > 0 && (
-                    <div className="rounded-xl border border-gray-100 bg-white shadow-sm p-4">
-                      <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Languages</span>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        {detail.languages.map((l, i) => (
-                          <div key={i} className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5">
-                            <span className="text-[13px] font-semibold text-gray-800">{l.language}</span>
-                            {l.proficiency && (
-                              <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-500 shadow-sm">
-                                {l.proficiency}
-                              </span>
-                            )}
-                          </div>
-                        ))}
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Recommendations */}
-                  {detail?.recommendations && detail.recommendations.length > 0 && (
-                    <div className="space-y-2.5">
-                      <Label>Recommendations · {detail.recommendations.length}</Label>
-                      {detail.recommendations.map((r, i) => (
-                        <div key={i} className="rounded-xl border border-gray-100 bg-white shadow-sm p-4">
-                          <div className="mb-2 flex items-center gap-1.5">
-                            <div className="h-px flex-1 bg-red-100" />
-                            <Quote className="h-4 w-4 text-red-300" />
-                            <div className="h-px flex-1 bg-red-100" />
-                          </div>
-                          <p className="text-[12.5px] leading-relaxed text-gray-600 italic">{r.text}</p>
-                          {r.from_name && (
-                            <div className="mt-3 flex items-center gap-2 border-t border-gray-50 pt-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-50 text-[12px] font-bold text-red-500">
-                                {r.from_name.charAt(0).toUpperCase()}
-                              </div>
-                              {r.from_url ? (
-                                <a href={r.from_url.startsWith("http") ? r.from_url : `https://${r.from_url}`}
-                                  target="_blank" rel="noopener noreferrer"
-                                  className="text-[12px] font-semibold text-blue-600 hover:underline">{r.from_name}</a>
-                              ) : (
-                                <span className="text-[12px] font-semibold text-gray-700">{r.from_name}</span>
-                              )}
-                            </div>
+                {detail?.languages && detail.languages.length > 0 && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Languages</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {detail.languages.map((l, i) => (
+                        <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                          <span className="text-[13px] font-semibold text-gray-800">{l.language}</span>
+                          {l.proficiency && (
+                            <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-500 shadow-sm">
+                              {l.proficiency}
+                            </span>
                           )}
                         </div>
                       ))}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {!detail?.summary && !d?.active_experience_company_name && !detail?.languages?.length && !detail?.recommendations?.length && (
-                    <Empty icon={<Globe className="h-8 w-8" />} text="No additional info available" />
-                  )}
-                </>
-              )}
+                {detail?.recommendations && detail.recommendations.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-[15px] font-bold text-gray-900 px-1">Recommendations</p>
+                    {detail.recommendations.map((r, i) => (
+                      <div key={i} className="rounded-2xl border border-gray-100 bg-white shadow-sm p-4">
+                        <div className="mb-2 flex items-center gap-1.5">
+                          <div className="h-px flex-1 bg-red-100" />
+                          <Quote className="h-4 w-4 text-red-300" />
+                          <div className="h-px flex-1 bg-red-100" />
+                        </div>
+                        <p className="text-[12.5px] leading-relaxed text-gray-600 italic">{r.text}</p>
+                        {r.from_name && (
+                          <div className="mt-3 flex items-center gap-2 border-t border-gray-50 pt-2.5">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-50 text-[12px] font-bold text-red-500">
+                              {r.from_name.charAt(0).toUpperCase()}
+                            </div>
+                            {r.from_url ? (
+                              <a href={r.from_url.startsWith("http") ? r.from_url : `https://${r.from_url}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="text-[12px] font-semibold text-blue-600 hover:underline">{r.from_name}</a>
+                            ) : (
+                              <span className="text-[12px] font-semibold text-gray-700">{r.from_name}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!detail?.summary && !d?.active_experience_company_name && !detail?.languages?.length && !detail?.recommendations?.length && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">About</p>
+                    <Empty icon={<Globe className="h-7 w-7" />} text="No additional info available" />
+                  </div>
+                )}
+              </div>
 
             </div>
           )}
