@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft, ArrowRightLeft, Building2, Globe,
+  ArrowLeft, ArrowRightLeft, Building2, ChevronLeft, ChevronRight, Globe,
   Loader2, MoreHorizontal, Trash2, Users, X,
 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
@@ -24,9 +24,12 @@ import {
   toStringArr,
   TYPE_COLORS,
 } from "@/components/common/tableHelpers";
-import { addToList, getListItems, getLists, removeListItem, type ListItemRecord, type ListRecord } from "@/lib/listsApi";
+import { addToList, getListItems, getLists, removeListItem, type ListItemRecord, type ListItemsPage, type ListRecord } from "@/lib/listsApi";
 import { useColumnSettings, COMPANY_COLUMNS, PEOPLE_COLUMNS } from "@/hooks/useColumnSettings";
 import { toast } from "@/lib/toast";
+import PersonDetailPanel from "@/components/search/PersonDetailPanel";
+import CompanyDetailPanel from "@/components/search/CompanyDetailPanel";
+import type { PersonResult, CompanyResult } from "@/types/search";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -180,7 +183,7 @@ function MoveToListModal({
 // Company columns
 // ---------------------------------------------------------------------------
 
-function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataTableColumn<ListItemRecord>[] {
+function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onNameClick?: (item: ListItemRecord) => void): DataTableColumn<ListItemRecord>[] {
   const isCol = (key: string) => visibleColumns[key] !== false;
 
   const rawCols: DataTableColumn<ListItemRecord>[] = [
@@ -201,7 +204,14 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
               website={d.website as string | undefined}
             />
             <div className="min-w-0 overflow-hidden">
-              <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onNameClick?.(item); }}
+                className="truncate text-[13px] font-semibold text-gray-900 hover:underline cursor-pointer text-left"
+                title={name}
+              >
+                {name}
+              </button>
               {!isCol("type") && typeLabel && (
                 <span className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize ${typeBadgeClass}`}>
                   {typeLabel}
@@ -558,7 +568,7 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>): DataT
 // People columns
 // ---------------------------------------------------------------------------
 
-function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTableColumn<ListItemRecord>[] {
+function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameClick?: (item: ListItemRecord) => void): DataTableColumn<ListItemRecord>[] {
   const isCol = (key: string) => visibleColumns[key] !== false;
 
   const rawCols: DataTableColumn<ListItemRecord>[] = [
@@ -572,7 +582,14 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>): DataTa
         return (
           <div className="flex items-center gap-2 overflow-hidden">
             <Avatar name={name} pictureUrl={d.picture_url as string | undefined} size="sm" />
-            <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onNameClick?.(item); }}
+              className="truncate text-[13px] font-semibold text-gray-900 hover:underline cursor-pointer text-left"
+              title={name}
+            >
+              {name}
+            </button>
           </div>
         );
       },
@@ -1020,7 +1037,7 @@ export default function ListDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [list, setList] = useState<ListRecord | null>(null);
-  const [items, setItems] = useState<ListItemRecord[]>([]);
+  const [pageData, setPageData] = useState<ListItemsPage>({ total: 0, page: 1, page_size: 25, items: [] });
   const [loading, setLoading] = useState(true);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<ListItemRecord | null>(null);
   const [deleteConfirming, setDeleteConfirming] = useState(false);
@@ -1037,7 +1054,10 @@ export default function ListDetailPage() {
     id: string; name: string; bulk: boolean; item?: ListItemRecord;
   } | null>(null);
   const [moveConfirming, setMoveConfirming] = useState(false);
-  const hasFetched = useRef(false);
+  const [selectedListItem, setSelectedListItem] = useState<ListItemRecord | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const listFetched = useRef(false);
 
   const isPeople = list?.list_type === "people";
 
@@ -1051,17 +1071,29 @@ export default function ListDetailPage() {
     isPeople ? PEOPLE_COLUMNS : COMPANY_COLUMNS,
   );
 
+  const fetchItems = useRef(async (pg: number, ps: number) => {
+    setLoading(true);
+    try {
+      const data = await getListItems(id, pg, ps);
+      setPageData(data);
+      setSelected(new Set());
+    } catch {
+      toast.error("Failed to load items");
+    } finally {
+      setLoading(false);
+    }
+  });
+
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-    Promise.all([getLists(), getListItems(id)])
-      .then(([allLists, listItems]) => {
-        setList(allLists.find((l) => l.id === id) ?? null);
-        setItems(listItems);
-      })
-      .catch(() => toast.error("Failed to load list"))
-      .finally(() => setLoading(false));
-  }, [id]);
+    if (!listFetched.current) {
+      listFetched.current = true;
+      getLists()
+        .then((allLists) => setList(allLists.find((l) => l.id === id) ?? null))
+        .catch(() => toast.error("Failed to load list"));
+    }
+    fetchItems.current(page, pageSize);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, page, pageSize]);
 
   const toggleSelect = (itemId: string) =>
     setSelected((prev) => {
@@ -1071,16 +1103,15 @@ export default function ListDetailPage() {
     });
 
   const toggleSelectAll = (all: boolean) =>
-    setSelected(all ? new Set(items.map((i) => i.id)) : new Set());
+    setSelected(all ? new Set(pageData.items.map((i: ListItemRecord) => i.id)) : new Set());
 
   async function handleConfirmDelete() {
     if (!deleteConfirmItem) return;
     setDeleteConfirming(true);
     try {
       await removeListItem(id, deleteConfirmItem.id);
-      setItems((prev) => prev.filter((i) => i.id !== deleteConfirmItem.id));
-      setSelected((prev) => { const next = new Set(prev); next.delete(deleteConfirmItem.id); return next; });
       toast.success("Removed from list");
+      await fetchItems.current(page, pageSize);
     } catch {
       toast.error("Failed to remove item");
     } finally {
@@ -1095,9 +1126,8 @@ export default function ListDetailPage() {
     const count = selected.size;
     try {
       await Promise.all([...selected].map((itemId) => removeListItem(id, itemId)));
-      setItems((prev) => prev.filter((i) => !selected.has(i.id)));
       toast.success(`${count} item${count !== 1 ? "s" : ""} removed`);
-      setSelected(new Set());
+      await fetchItems.current(page, pageSize);
     } catch {
       toast.error("Failed to remove items");
     } finally {
@@ -1124,7 +1154,7 @@ export default function ListDetailPage() {
     setListsLoading(true);
     try {
       const allLists = await getLists();
-      const first = items.find((i) => selected.has(i.id));
+      const first = pageData.items.find((i: ListItemRecord) => selected.has(i.id));
       const listType = first?.item_type === "person" ? "people" : "companies";
       setAvailableLists(allLists.filter((l) => l.id !== id && l.list_type === listType));
     } catch {
@@ -1150,17 +1180,16 @@ export default function ListDetailPage() {
     setMoveConfirming(true);
     try {
       if (pendingMoveTarget.bulk) {
-        const selectedItems = items.filter((i) => selected.has(i.id));
+        const selectedItems = pageData.items.filter((i: ListItemRecord) => selected.has(i.id));
         setBulkMovingToList(pendingMoveTarget.id);
         await addToList({
           list_id: pendingMoveTarget.id,
-          items: selectedItems.map((i) => ({ record_id: i.record_id, item_type: i.item_type, data: i.data })),
+          items: selectedItems.map((i: ListItemRecord) => ({ record_id: i.record_id, item_type: i.item_type, data: i.data })),
         });
-        await Promise.all(selectedItems.map((i) => removeListItem(id, i.id)));
-        setItems((prev) => prev.filter((i) => !selected.has(i.id)));
+        await Promise.all(selectedItems.map((i: ListItemRecord) => removeListItem(id, i.id)));
         toast.success(`${selectedItems.length} item${selectedItems.length !== 1 ? "s" : ""} moved`);
-        setSelected(new Set());
         setBulkMovingToList(null);
+        await fetchItems.current(page, pageSize);
       } else if (pendingMoveTarget.item) {
         const item = pendingMoveTarget.item;
         await addToList({
@@ -1168,8 +1197,8 @@ export default function ListDetailPage() {
           items: [{ record_id: item.record_id, item_type: item.item_type, data: item.data }],
         });
         await removeListItem(id, item.id);
-        setItems((prev) => prev.filter((i) => i.id !== item.id));
         toast.success("Moved to list");
+        await fetchItems.current(page, pageSize);
       }
     } catch {
       toast.error("Failed to move item");
@@ -1179,9 +1208,14 @@ export default function ListDetailPage() {
     }
   }
 
+  const { total, items: pageItems } = pageData;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const pageStart = (page - 1) * pageSize;
+  const pageEnd = Math.min(pageStart + pageSize, total);
+
   const tableColumns = isPeople
-    ? buildPeopleListColumns(visibleColumns)
-    : buildCompanyListColumns(visibleColumns);
+    ? buildPeopleListColumns(visibleColumns, (item) => setSelectedListItem(item))
+    : buildCompanyListColumns(visibleColumns, (item) => setSelectedListItem(item));
 
   return (
     <>
@@ -1206,7 +1240,7 @@ export default function ListDetailPage() {
             </div>
             {!loading && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                {items.length} {isPeople ? "people" : "companies"}
+                {total.toLocaleString("en-US")} {isPeople ? "people" : "companies"}
               </span>
             )}
           </div>
@@ -1214,24 +1248,25 @@ export default function ListDetailPage() {
           {/* Table */}
           <div className="relative flex flex-1 flex-col overflow-hidden">
             <DataTable
-              columns={tableColumns}
-              data={loading ? [] : items}
-              rowKey={(item) => item.id}
-              minTableWidth={580}
-              loading={loading}
-              onOpenColumnSettings={() => setColSettingsOpen(true)}
-              emptyMessage="No records in this list yet."
-              selection={{ selected, onSelect: toggleSelect, onSelectAll: toggleSelectAll }}
-              actions={{
-                render: (item) => (
-                  <ActionMenu
-                    removing={deleteConfirming && deleteConfirmItem?.id === item.id}
-                    onRemove={() => setDeleteConfirmItem(item)}
-                    onMoveToList={() => handleOpenMoveToList(item)}
-                  />
-                ),
-              }}
-            />
+                columns={tableColumns}
+                data={loading ? [] : pageItems}
+                rowKey={(item) => item.id}
+                minTableWidth={580}
+                loading={loading}
+                onOpenColumnSettings={() => setColSettingsOpen(true)}
+                emptyMessage="No records in this list yet."
+                selection={{ selected, onSelect: toggleSelect, onSelectAll: toggleSelectAll }}
+                onRowClick={undefined}
+                actions={{
+                  render: (item) => (
+                    <ActionMenu
+                      removing={deleteConfirming && deleteConfirmItem?.id === item.id}
+                      onRemove={() => setDeleteConfirmItem(item)}
+                      onMoveToList={() => handleOpenMoveToList(item)}
+                    />
+                  ),
+                }}
+              />
 
             {/* Floating bulk action bar */}
             {selected.size > 0 && (
@@ -1269,9 +1304,97 @@ export default function ListDetailPage() {
                 </button>
               </div>
             )}
+            </div>
           </div>
+
+          {/* Pagination bar */}
+          {!loading && total > 0 && (
+            <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white px-4 py-2.5">
+              {/* Left: count + page-size picker */}
+              <div className="flex items-center gap-3">
+                <span className="text-[12px] text-gray-500">
+                  {pageStart + 1}–{pageEnd} of {total.toLocaleString("en-US")} {isPeople ? "people" : "companies"}
+                </span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                  className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-[12px] text-gray-600 focus:outline-none focus:ring-1 focus:ring-red-400"
+                >
+                  {[10, 25, 50, 100].map((n) => (
+                    <option key={n} value={n}>{n} / page</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Right: page buttons */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => p - 1)}
+                    disabled={page === 1}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+
+                  {(() => {
+                    const pages: (number | "...")[] = [];
+                    if (totalPages <= 7) {
+                      for (let i = 1; i <= totalPages; i++) pages.push(i);
+                    } else {
+                      pages.push(1);
+                      if (page > 3) pages.push("...");
+                      for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
+                      if (page < totalPages - 2) pages.push("...");
+                      pages.push(totalPages);
+                    }
+                    return pages.map((p, i) =>
+                      p === "..." ? (
+                        <span key={`ellipsis-${i}`} className="px-1 text-[12px] text-gray-400">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setPage(p as number)}
+                          className={[
+                            "flex h-7 min-w-[28px] items-center justify-center rounded-lg px-1 text-[12px] font-medium border transition-colors",
+                            page === p
+                              ? "border-red-500 bg-red-500 text-white"
+                              : "border-gray-200 text-gray-600 hover:bg-gray-50",
+                          ].join(" ")}
+                        >
+                          {p}
+                        </button>
+                      )
+                    );
+                  })()}
+
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={page === totalPages}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+
+      {isPeople ? (
+        <PersonDetailPanel
+          person={selectedListItem ? { id: selectedListItem.record_id, ...(selectedListItem.data as Record<string, unknown>) } as PersonResult : null}
+          onClose={() => setSelectedListItem(null)}
+        />
+      ) : (
+        <CompanyDetailPanel
+          company={selectedListItem ? { id: selectedListItem.record_id, ...(selectedListItem.data as Record<string, unknown>) } as CompanyResult : null}
+          onClose={() => setSelectedListItem(null)}
+        />
+      )}
 
       <ColumnSettingsPanel
         open={colSettingsOpen}

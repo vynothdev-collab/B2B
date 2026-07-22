@@ -51,8 +51,21 @@ export async function renameList(id: string, name: string): Promise<ListRecord> 
   return data;
 }
 
-export async function getListItems(id: string): Promise<ListItemRecord[]> {
-  const { data } = await apiClient.get<ListItemRecord[]>(`/lists/${id}/items`);
+export interface ListItemsPage {
+  total: number;
+  page: number;
+  page_size: number;
+  items: ListItemRecord[];
+}
+
+export async function getListItems(
+  id: string,
+  page = 1,
+  pageSize = 25,
+): Promise<ListItemsPage> {
+  const { data } = await apiClient.get<ListItemsPage>(`/lists/${id}/items`, {
+    params: { page, page_size: pageSize },
+  });
   return data;
 }
 

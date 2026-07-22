@@ -31,6 +31,7 @@ export interface DataTableProps<T> {
   };
 
   stickyLeftColumns?: number;
+  onRowClick?: (row: T) => void;
 
   loading?: boolean;
   loadingRows?: number;
@@ -106,6 +107,7 @@ export default function DataTable<T>({
   onOpenColumnSettings,
   actions,
   stickyLeftColumns = 1,
+  onRowClick,
   loading = false,
   loadingRows = 8,
   emptyMessage = "No records",
@@ -227,7 +229,8 @@ export default function DataTable<T>({
                 return (
                   <tr
                     key={id}
-                    className="bg-white transition-colors hover:bg-gray-50"
+                    onClick={() => onRowClick?.(row)}
+                    className={`bg-white transition-colors hover:bg-gray-50 ${onRowClick ? "cursor-pointer" : ""}`}
                   >
                     {visibleCols.map((col, idx) => {
                       const isSticky = idx < stickyLeftColumns;
