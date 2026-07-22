@@ -15,9 +15,10 @@ import {
 
 interface BuildColsArgs {
   visibleColumns: Record<string, boolean>;
+  onNameClick?: (row: CompanyResult) => void;
 }
 
-function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn<CompanyResult>[] {
+function buildCompanyColumns({ visibleColumns, onNameClick }: BuildColsArgs): DataTableColumn<CompanyResult>[] {
   const rawCols: DataTableColumn<CompanyResult>[] = [
     {
       key: "company",
@@ -29,7 +30,14 @@ function buildCompanyColumns({ visibleColumns }: BuildColsArgs): DataTableColumn
           <div className="flex items-center gap-2.5 overflow-hidden">
             <CompanyLogo name={name} logoUrl={company.logo_url} website={company.website} size="md" />
             <div className="min-w-0 overflow-hidden">
-              <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onNameClick?.(company); }}
+                className="truncate text-[13px] font-semibold text-gray-900 hover:underline cursor-pointer text-left"
+                title={name}
+              >
+                {name}
+              </button>
             </div>
           </div>
         );
@@ -362,6 +370,8 @@ interface Props {
   onSelectAll: (all: boolean) => void;
   visibleColumns: Record<string, boolean>;
   onOpenColumnSettings?: () => void;
+  onRowClick?: (row: CompanyResult) => void;
+  onNameClick?: (row: CompanyResult) => void;
 }
 
 export default function CompanyTable({
@@ -371,8 +381,10 @@ export default function CompanyTable({
   onSelectAll,
   visibleColumns,
   onOpenColumnSettings,
+  onRowClick,
+  onNameClick,
 }: Props) {
-  const cols = buildCompanyColumns({ visibleColumns });
+  const cols = buildCompanyColumns({ visibleColumns, onNameClick });
   return (
     <DataTable
       columns={cols}
@@ -381,6 +393,7 @@ export default function CompanyTable({
       minTableWidth={580}
       selection={{ selected, onSelect, onSelectAll }}
       onOpenColumnSettings={onOpenColumnSettings}
+      onRowClick={onRowClick}
     />
   );
 }

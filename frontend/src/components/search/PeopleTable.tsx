@@ -17,6 +17,7 @@ interface BuildColsArgs {
   revealedEmails: Map<string, string | null>;
   onRevealEmail: (recordId: string) => void;
   revealingIds: Set<string>;
+  onNameClick?: (row: PersonResult) => void;
 }
 
 function buildPeopleColumns({
@@ -24,6 +25,7 @@ function buildPeopleColumns({
   revealedEmails,
   onRevealEmail,
   revealingIds,
+  onNameClick,
 }: BuildColsArgs): DataTableColumn<PersonResult>[] {
   const isCol = (key: string) => visibleColumns[key] !== false;
 
@@ -38,7 +40,14 @@ function buildPeopleColumns({
         return (
           <div className="flex items-center gap-2 overflow-hidden">
             <Avatar name={name} pictureUrl={person.picture_url} size="sm" />
-            <p className="truncate text-[13px] font-semibold text-gray-900" title={name}>{name}</p>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onNameClick?.(person); }}
+              className="truncate text-[13px] font-semibold text-gray-900 hover:underline cursor-pointer text-left"
+              title={name}
+            >
+              {name}
+            </button>
           </div>
         );
       },
@@ -433,6 +442,8 @@ interface Props {
   onRevealEmail: (recordId: string) => void;
   revealingIds: Set<string>;
   onOpenColumnSettings?: () => void;
+  onRowClick?: (row: PersonResult) => void;
+  onNameClick?: (row: PersonResult) => void;
 }
 
 export default function PeopleTable({
@@ -445,8 +456,10 @@ export default function PeopleTable({
   onRevealEmail,
   revealingIds,
   onOpenColumnSettings,
+  onRowClick,
+  onNameClick,
 }: Props) {
-  const cols = buildPeopleColumns({ visibleColumns, revealedEmails, onRevealEmail, revealingIds });
+  const cols = buildPeopleColumns({ visibleColumns, revealedEmails, onRevealEmail, revealingIds, onNameClick });
   return (
     <DataTable
       columns={cols}
@@ -455,6 +468,7 @@ export default function PeopleTable({
       minTableWidth={640}
       selection={{ selected, onSelect, onSelectAll }}
       onOpenColumnSettings={onOpenColumnSettings}
+      onRowClick={onRowClick}
     />
   );
 }

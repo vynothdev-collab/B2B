@@ -5,6 +5,7 @@ import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import PeopleFilterPanel, { countPeopleFilters } from "./filters/PeopleFilterPanel";
 import PeopleTable, { PeopleTableSkeleton } from "./PeopleTable";
+import PersonDetailPanel from "./PersonDetailPanel";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import AddToListModal from "./AddToListModal";
@@ -47,6 +48,7 @@ export default function PeopleSearchPage() {
   const [columnSettingsOpen, setColumnSettingsOpen] = useState(false);
 
   const [noDataDialog, setNoDataDialog] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState<PersonResult | null>(null);
 
   // Email reveal state
   const [revealedEmails, setRevealedEmails] = useState<Map<string, string | null>>(new Map());
@@ -325,9 +327,14 @@ export default function PeopleSearchPage() {
                     onRevealEmail={handleRevealEmail}
                     revealingIds={revealingIds}
                     onOpenColumnSettings={() => setColumnSettingsOpen(true)}
+                    onNameClick={(row) => setSelectedPerson(row)}
                   />
                 </div>
               )}
+              <PersonDetailPanel
+                person={selectedPerson}
+                onClose={() => setSelectedPerson(null)}
+              />
 
               {!loading && selected.size > 0 && (
                 <div className="absolute bottom-2 left-2 right-2 z-30 flex flex-wrap items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 shadow-2xl sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:flex-nowrap sm:px-4">

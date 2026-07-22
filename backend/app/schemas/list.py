@@ -40,6 +40,13 @@ class ListItemOut(BaseModel):
     added_at: Optional[datetime] = None
 
 
+class ListItemsPageResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: list[ListItemOut]
+
+
 class AddToListRequest(BaseModel):
     list_id: Optional[str] = None
     list_name: Optional[str] = None

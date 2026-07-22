@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +10,7 @@ from app.core.security import get_current_user
 from app.models.list import List as ListModel, ListItem
 from app.models.search_record import CompanySearchRecord, PersonSearchRecord
 from app.models.user import User
-from app.schemas.list import AddToListRequest, AddToListResponse, ListCreate, ListItemOut, ListResponse, ListUpdate
+from app.schemas.list import AddToListRequest, AddToListResponse, ListCreate, ListItemOut, ListItemsPageResponse, ListResponse, ListUpdate
 from app.services.coresignal_service import _map_company, _map_person
 
 router = APIRouter(prefix="/lists", tags=["lists"])
@@ -332,9 +332,11 @@ async def remove_list_item(
     return {"ok": True}
 
 
-@router.get("/{list_id}/items", response_model=list[ListItemOut])
+@router.get("/{list_id}/items", response_model=ListItemsPageResponse)
 async def get_list_items(
     list_id: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=25, ge=1, le=200),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -349,8 +351,19 @@ async def get_list_items(
     if not lst:
         raise HTTPException(status_code=404, detail="List not found")
 
+    base_filter = (ListItem.list_id == list_id, ListItem.deleted_at == None)
+
+    count_result = await db.execute(
+        select(func.count()).select_from(ListItem).where(*base_filter)
+    )
+    total: int = count_result.scalar_one()
+
     items_result = await db.execute(
-        select(ListItem).where(ListItem.list_id == list_id, ListItem.deleted_at == None).order_by(ListItem.added_at.desc())
+        select(ListItem)
+        .where(*base_filter)
+        .order_by(ListItem.added_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
     )
     items = items_result.scalars().all()
 
@@ -402,13 +415,18 @@ async def get_list_items(
 
         return stored
 
-    return [
-        ListItemOut(
-            id=i.id,
-            record_id=i.record_id,
-            item_type=i.item_type,
-            data=_resolve_data(i),
-            added_at=i.added_at,
-        )
-        for i in items
-    ]
+    return ListItemsPageResponse(
+        total=total,
+        page=page,
+        page_size=page_size,
+        items=[
+            ListItemOut(
+                id=i.id,
+                record_id=i.record_id,
+                item_type=i.item_type,
+                data=_resolve_data(i),
+                added_at=i.added_at,
+            )
+            for i in items
+        ],
+    )
