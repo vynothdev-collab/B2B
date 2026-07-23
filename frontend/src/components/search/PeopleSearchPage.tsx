@@ -88,7 +88,7 @@ export default function PeopleSearchPage() {
 
       for (const lst of targetPeopleLists) {
         const items = await getListItems(lst.id);
-        for (const item of items) {
+        for (const item of items.items) {
           if (hideAllSavedPeople) excludePersonIds.push(item.record_id);
           if (hideAllSavedCompanies) {
             const companyId = (item.data as Record<string, unknown>)?.active_experience_company_id;
@@ -101,7 +101,7 @@ export default function PeopleSearchPage() {
         const companyLists = allLists.filter((l) => l.list_type === "companies" && hideSavedCompanyListIds.includes(l.id));
         for (const lst of companyLists) {
           const items = await getListItems(lst.id);
-          for (const item of items) excludeCompanyIds.push(item.record_id);
+          for (const item of items.items) excludeCompanyIds.push(item.record_id);
         }
       }
     }
