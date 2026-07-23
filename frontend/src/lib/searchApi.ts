@@ -294,3 +294,29 @@ export async function fetchTitleSuggestions(text: string): Promise<string[]> {
     return [];
   }
 }
+
+export async function fetchTechnologySuggestions(text: string): Promise<string[]> {
+  if (text.trim().length < 1) return [];
+  try {
+    const { data } = await apiClient.get<{ suggestions: string[] }>(
+      "/search/autocomplete/technologies",
+      { params: { text: text.trim(), size: 10 } },
+    );
+    return data.suggestions ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchIntentSuggestions(text: string): Promise<string[]> {
+  if (text.trim().length < 1) return [];
+  try {
+    const { data } = await apiClient.get<{ suggestions: string[] }>(
+      "/search/autocomplete/intents",
+      { params: { text: text.trim(), size: 10 } },
+    );
+    return data.suggestions ?? [];
+  } catch {
+    return [];
+  }
+}

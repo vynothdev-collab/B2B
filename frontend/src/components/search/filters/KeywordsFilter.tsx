@@ -1,9 +1,12 @@
 "use client";
-import { useRef, useState } from "react";
-import { X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Loader2, X } from "lucide-react";
+import { fetchIntentSuggestions } from "@/lib/searchApi";
 
 const MAX_KEYWORDS = 20;
 const MIN_CHARS = 3;
+const DROPDOWN_MAX_H = 220;
 
 const SCOPES = [
   { value: "company_specialties",      label: "Company specialties" },
@@ -30,14 +33,64 @@ function KeywordInput({
   onChange,
   placeholder,
   disabled,
+  withAutocomplete,
 }: {
   values: string[];
   onChange: (v: string[]) => void;
   placeholder: string;
   disabled?: boolean;
+  withAutocomplete?: boolean;
 }) {
   const [draft, setDraft] = useState("");
+  const [open, setOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const reposition = useCallback(() => {
+    if (!containerRef.current) return;
+    const r = containerRef.current.getBoundingClientRect();
+    const avail = Math.max(80, window.innerHeight - r.bottom - 8);
+    setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxH: Math.min(DROPDOWN_MAX_H, avail) });
+  }, []);
+
+  useEffect(() => {
+    if (!open || !withAutocomplete) return;
+    const close = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    };
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open, withAutocomplete]);
+
+  useEffect(() => {
+    if (!withAutocomplete) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (draft.trim().length < 1) {
+      setSuggestions([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      const results = await fetchIntentSuggestions(draft);
+      setSuggestions(results);
+      setLoading(false);
+    }, 250);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, withAutocomplete]);
 
   function commit(raw: string) {
     const val = raw.trim();
@@ -49,9 +102,34 @@ function KeywordInput({
     }
     onChange([...values, val]);
     setDraft("");
+    setSuggestions([]);
+    setOpen(false);
+  }
+
+  function pick(val: string) {
+    const trimmed = val.trim();
+    if (!trimmed) return;
+    if (!values.some((v) => v.toLowerCase() === trimmed.toLowerCase()) && values.length < MAX_KEYWORDS) {
+      onChange([...values, trimmed]);
+    }
+    setDraft("");
+    setSuggestions([]);
+    setOpen(false);
+    setActiveIdx(-1);
+    inputRef.current?.focus();
   }
 
   function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (withAutocomplete && open) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1)); return; }
+      if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); return; }
+      if (e.key === "Escape") { setOpen(false); return; }
+      if (e.key === "Enter" && activeIdx >= 0 && suggestions[activeIdx]) {
+        e.preventDefault();
+        pick(suggestions[activeIdx]);
+        return;
+      }
+    }
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       commit(draft);
@@ -59,6 +137,8 @@ function KeywordInput({
       onChange(values.slice(0, -1));
     }
   }
+
+  const showDropdown = withAutocomplete && open && (loading || suggestions.length > 0);
 
   return (
     <div className={disabled ? "opacity-50 pointer-events-none" : ""}>
@@ -75,18 +155,57 @@ function KeywordInput({
         </div>
       )}
       {values.length < MAX_KEYWORDS && (
-        <input
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKey}
-          onBlur={() => commit(draft)}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={`w-full rounded-lg border bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:outline-none focus:border-red-400 ${
-            values.length > 0 ? "border-red-300" : "border-gray-200"
-          }`}
-        />
+        <div ref={containerRef} className="relative">
+          <input
+            ref={inputRef}
+            value={draft}
+            onChange={(e) => { setDraft(e.target.value); setActiveIdx(-1); reposition(); setOpen(true); }}
+            onFocus={() => { reposition(); setOpen(true); }}
+            onKeyDown={handleKey}
+            onBlur={() => { if (!withAutocomplete) commit(draft); }}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={`w-full rounded-lg border bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:outline-none focus:border-red-400 ${
+              values.length > 0 ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+        </div>
+      )}
+
+      {showDropdown && typeof document !== "undefined" && createPortal(
+        <>
+          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
+          <div
+            ref={dropdownRef}
+            className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
+            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH }}
+          >
+            <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
+              {loading ? (
+                <div className="flex items-center gap-2 px-3 py-2 text-[12px] text-gray-400">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Searching…
+                </div>
+              ) : suggestions.length === 0 ? (
+                <div className="px-3 py-2 text-[12px] text-gray-400">No matches</div>
+              ) : (
+                suggestions.map((s, i) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); pick(s); }}
+                    className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[12px] transition-colors ${
+                      i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </>,
+        document.body
       )}
     </div>
   );
@@ -117,7 +236,8 @@ export default function KeywordsFilter({
         <KeywordInput
           values={include}
           onChange={onIncludeChange}
-          placeholder="Type keyword and press Enter…"
+          placeholder="Type to search or press Enter…"
+          withAutocomplete
         />
       </div>
 
