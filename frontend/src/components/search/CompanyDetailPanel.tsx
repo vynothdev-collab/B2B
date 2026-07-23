@@ -1,20 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import {
-  X, MapPin, Globe, Briefcase, Users, TrendingUp, DollarSign,
+  X, MapPin, Briefcase, Users, DollarSign,
   Award, Loader2, ExternalLink, Star, Zap, BarChart2, Building2,
   ChevronUp, ChevronDown, Layers,
 } from "lucide-react";
-
-function LinkedInIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-      <rect x="2" y="9" width="4" height="12" />
-      <circle cx="4" cy="4" r="2" />
-    </svg>
-  );
-}
 
 import { fmtMoney, toStringArr } from "@/components/common/tableHelpers";
 import { apiClient } from "@/lib/api";
@@ -32,9 +22,14 @@ interface Props {
   onClose: () => void;
 }
 
-const LOGO_COLORS = [
-  "bg-red-500", "bg-blue-600", "bg-emerald-600",
-  "bg-purple-600", "bg-orange-500", "bg-pink-600", "bg-teal-600",
+const AVATAR_COLOR_SETS = [
+  { bg: "bg-red-100",     text: "text-red-500"     },
+  { bg: "bg-blue-100",    text: "text-blue-600"    },
+  { bg: "bg-emerald-100", text: "text-emerald-600" },
+  { bg: "bg-purple-100",  text: "text-purple-600"  },
+  { bg: "bg-orange-100",  text: "text-orange-500"  },
+  { bg: "bg-pink-100",    text: "text-pink-600"    },
+  { bg: "bg-teal-100",    text: "text-teal-600"    },
 ];
 
 const CHIP_COLORS = [
@@ -52,19 +47,46 @@ function CompanyAvatar({ name, logoUrl, website }: { name: string; logoUrl?: str
   const [err, setErr] = useState(false);
   useEffect(() => setErr(false), [logoUrl]);
   const initials = name.split(/\s+/).filter(Boolean).map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
-  const bg = LOGO_COLORS[name.charCodeAt(0) % LOGO_COLORS.length];
+  const colorSet = AVATAR_COLOR_SETS[(name.charCodeAt(0) || 0) % AVATAR_COLOR_SETS.length];
   const src = logoUrl || (website ? `https://logo.clearbit.com/${website.replace(/^https?:\/\//, "").split("/")[0]}` : null);
   if (src && !err) {
     return (
       <img src={src} alt={name}
-        className="h-[60px] w-[60px] shrink-0 rounded-xl object-contain border border-gray-100 bg-white p-1 shadow-md ring-[3px] ring-white"
+        className="h-[60px] w-[60px] shrink-0 rounded-xl object-contain border border-gray-100 bg-white p-1"
         onError={() => setErr(true)} />
     );
   }
   return (
-    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-xl text-[20px] font-bold text-white shadow-md ring-[3px] ring-white ${bg}`}>
+    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-xl text-[20px] font-bold ${colorSet.bg} ${colorSet.text}`}>
       {initials}
     </div>
+  );
+}
+
+function LinkedInSVG() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="li-mask-company" fill="white">
+        <path d="M0 10C0 4.47715 4.47715 0 10 0H30C35.5228 0 40 4.47715 40 10V30C40 35.5228 35.5228 40 30 40H10C4.47715 40 0 35.5228 0 30V10Z"/>
+      </mask>
+      <path d="M0 10C0 4.47715 4.47715 0 10 0H30C35.5228 0 40 4.47715 40 10V30C40 35.5228 35.5228 40 30 40H10C4.47715 40 0 35.5228 0 30V10Z" fill="white"/>
+      <path d="M10 0V1H30V0V-1H10V0ZM40 10H39V30H40H41V10H40ZM30 40V39H10V40V41H30V40ZM0 30H1V10H0H-1V30H0ZM10 40V39C5.02944 39 1 34.9706 1 30H0H-1C-1 36.0751 3.92487 41 10 41V40ZM40 30H39C39 34.9706 34.9706 39 30 39V40V41C36.0751 41 41 36.0751 41 30H40ZM30 0V1C34.9706 1 39 5.02944 39 10H40H41C41 3.92487 36.0751 -1 30 -1V0ZM10 0V-1C3.92487 -1 -1 3.92487 -1 10H0H1C1 5.02944 5.02944 1 10 1V0Z" fill="#ECEBF2" mask="url(#li-mask-company)"/>
+      <path d="M14.387 26.5V18.31H16.637V26.5H14.387ZM14.387 17.575V15.325H16.637V17.575H14.387ZM18.2835 26.5V18.31H20.3835V19.93L20.2635 19.57C20.4535 19.08 20.7585 18.72 21.1785 18.49C21.6085 18.25 22.1085 18.13 22.6785 18.13C23.2985 18.13 23.8385 18.26 24.2985 18.52C24.7685 18.78 25.1335 19.145 25.3935 19.615C25.6535 20.075 25.7835 20.615 25.7835 21.235V26.5H23.5335V21.715C23.5335 21.395 23.4685 21.12 23.3385 20.89C23.2185 20.66 23.0435 20.48 22.8135 20.35C22.5935 20.22 22.3335 20.155 22.0335 20.155C21.7435 20.155 21.4835 20.22 21.2535 20.35C21.0235 20.48 20.8435 20.66 20.7135 20.89C20.5935 21.12 20.5335 21.395 20.5335 21.715V26.5H18.2835Z" fill="#0A66C2"/>
+    </svg>
+  );
+}
+
+function WebsiteSVG() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="web-mask-company" fill="white">
+        <path d="M0 10C0 4.47715 4.47715 0 10 0H30C35.5228 0 40 4.47715 40 10V30C40 35.5228 35.5228 40 30 40H10C4.47715 40 0 35.5228 0 30V10Z"/>
+      </mask>
+      <path d="M0 10C0 4.47715 4.47715 0 10 0H30C35.5228 0 40 4.47715 40 10V30C40 35.5228 35.5228 40 30 40H10C4.47715 40 0 35.5228 0 30V10Z" fill="white"/>
+      <path d="M10 0V1H30V0V-1H10V0ZM40 10H39V30H40H41V10H40ZM30 40V39H10V40V41H30V40ZM0 30H1V10H0H-1V30H0ZM10 40V39C5.02944 39 1 34.9706 1 30H0H-1C-1 36.0751 3.92487 41 10 41V40ZM40 30H39C39 34.9706 34.9706 39 30 39V40V41C36.0751 41 41 36.0751 41 30H40ZM30 0V1C34.9706 1 39 5.02944 39 10H40H41C41 3.92487 36.0751 -1 30 -1V0ZM10 0V-1C3.92487 -1 -1 3.92487 -1 10H0H1C1 5.02944 5.02944 1 10 1V0Z" fill="#ECEBF2" mask="url(#web-mask-company)"/>
+      <path d="M20 26.375C23.5208 26.375 26.375 23.5208 26.375 20C26.375 16.4792 23.5208 13.625 20 13.625C16.4792 13.625 13.625 16.4792 13.625 20C13.625 23.5208 16.4792 26.375 20 26.375Z" stroke="#5A5964" strokeWidth="1.275"/>
+      <path d="M13.625 20H26.375M20 13.625C21.7708 15.3958 21.7708 24.25 20 26.375C18.2292 24.25 18.2292 15.3958 20 13.625Z" stroke="#5A5964" strokeWidth="1.275" strokeLinecap="round"/>
+    </svg>
   );
 }
 
@@ -101,7 +123,6 @@ function GrowthBadge({ pct }: { pct: number }) {
   );
 }
 
-/* Chips section with "+X more" collapse */
 function ChipsSection({ title, items, colorize = false }: { title: string; items: string[]; colorize?: boolean }) {
   const [showAll, setShowAll] = useState(false);
   const VISIBLE = 3;
@@ -141,11 +162,11 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
   const [detail, setDetail] = useState<CompanyDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const overviewRef     = useRef<HTMLDivElement>(null);
-  const specialtiesRef  = useRef<HTMLDivElement>(null);
-  const techRef         = useRef<HTMLDivElement>(null);
-  const metricsRef      = useRef<HTMLDivElement>(null);
-  const aboutRef        = useRef<HTMLDivElement>(null);
+  const overviewRef    = useRef<HTMLDivElement>(null);
+  const specialtiesRef = useRef<HTMLDivElement>(null);
+  const techRef        = useRef<HTMLDivElement>(null);
+  const metricsRef     = useRef<HTMLDivElement>(null);
+  const aboutRef       = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!company) { setDetail(null); return; }
@@ -191,12 +212,15 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
   const keywordsArr: string[] = d?.categories_and_keywords ? toStringArr(d.categories_and_keywords) : [];
   const awardsArr: string[] = d?.awards_certifications ? toStringArr(d.awards_certifications) : [];
 
+  const companyWebsite = d?.website ?? null;
+  const companyLinkedIn = d?.canonical_linkedin_url ?? null;
+
   const NAV: { label: string; ref: React.RefObject<HTMLDivElement | null>; count?: number }[] = [
-    { label: "Overview",    ref: overviewRef   },
+    { label: "Overview",    ref: overviewRef    },
     { label: "Specialties", ref: specialtiesRef, count: specialtiesArr.length },
     { label: "Tech Stack",  ref: techRef,        count: techArr.length        },
-    { label: "Metrics",     ref: metricsRef   },
-    { label: "About",       ref: aboutRef      },
+    { label: "Metrics",     ref: metricsRef     },
+    { label: "About",       ref: aboutRef       },
   ];
 
   return (
@@ -213,6 +237,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
 
         {/* ══════════ HEADER ══════════ */}
         <div className="shrink-0 bg-white border-b border-gray-100">
+          {/* Top bar */}
           <div className="flex items-center justify-between px-5 pt-4 pb-3">
             <div className="flex items-center gap-2">
               <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
@@ -224,17 +249,22 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
             </button>
           </div>
 
+          {/* Identity row */}
           <div className="flex items-start gap-4 px-5 pb-4">
             <CompanyAvatar name={name} logoUrl={d?.logo_url} website={d?.website} />
             <div className="min-w-0 flex-1 pt-1">
-              <div className="flex items-start gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-[16px] font-bold text-gray-900 leading-tight tracking-tight">{name}</h2>
                 {d?.is_public && (
-                  <span className="mt-0.5 shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">PUBLIC</span>
+                  <span className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                    PUBLIC
+                  </span>
                 )}
               </div>
-              {d?.industry && <p className="mt-0.5 text-[12.5px] capitalize text-gray-500">{d.industry}</p>}
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+              {d?.industry && (
+                <p className="mt-0.5 text-[12.5px] font-semibold text-red-500 leading-snug capitalize">{d.industry}</p>
+              )}
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                 {(d?.hq_city || d?.hq_country) && (
                   <span className="flex items-center gap-1 text-[11.5px] text-gray-400">
                     <MapPin className="h-3 w-3 shrink-0 text-red-400" />
@@ -259,7 +289,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
               </div>
               {d?.type && (
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[11px] font-medium text-gray-500 capitalize">
                     {d.type.replace(/_/g, " ")}
                   </span>
@@ -268,26 +298,37 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-wrap gap-2 px-5 pb-3">
-            {d?.canonical_linkedin_url && (
-              <a href={`https://${d.canonical_linkedin_url.replace(/^https?:\/\//, "")}`}
-                target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg bg-[#0A66C2] px-3 py-1.5 text-[12px] font-semibold text-white shadow-sm hover:bg-[#085099] transition-colors">
-                <LinkedInIcon className="h-3.5 w-3.5" />LinkedIn
-                <ExternalLink className="h-3 w-3 opacity-70" />
+          {/* Social icon buttons – LinkedIn + Website */}
+          <div className="flex items-center gap-2 px-5 pb-4">
+            {companyLinkedIn ? (
+              <a
+                href={`https://${companyLinkedIn.replace(/^https?:\/\//, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="LinkedIn"
+              >
+                <LinkedInSVG />
               </a>
+            ) : (
+              <span className="opacity-30 cursor-not-allowed" title="LinkedIn not available">
+                <LinkedInSVG />
+              </span>
             )}
-            {d?.website && (
-              <a href={d.website.startsWith("http") ? d.website : `https://${d.website}`}
-                target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[12px] font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-                <Globe className="h-3.5 w-3.5 text-gray-400" />Website
-                <ExternalLink className="h-3 w-3 text-gray-400" />
+            {companyWebsite ? (
+              <a
+                href={companyWebsite.startsWith("http") ? companyWebsite : `https://${companyWebsite}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Website"
+              >
+                <WebsiteSVG />
               </a>
+            ) : (
+              <span className="opacity-30 cursor-not-allowed" title="Website not available">
+                <WebsiteSVG />
+              </span>
             )}
           </div>
-
         </div>
 
         {/* ══════════ SECTION NAV ══════════ */}
@@ -305,7 +346,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
           ))}
         </div>
 
-        {/* ══════════ SINGLE-PAGE CONTENT ══════════ */}
+        {/* ══════════ CONTENT ══════════ */}
         <div className="flex-1 overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">

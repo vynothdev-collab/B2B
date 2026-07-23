@@ -2,20 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import {
   X, MapPin, Mail, Phone, Globe, Briefcase,
-  GraduationCap, Loader2, ExternalLink, Award, Users, Clock,
+  GraduationCap, Loader2, ExternalLink, Award, Clock,
   BookOpen, FlaskConical, FolderGit2, Heart, Building, Quote,
-  Trophy, FileText,
+  Trophy, FileText, ChevronDown,
 } from "lucide-react";
-
-function LinkedInIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-      <rect x="2" y="9" width="4" height="12" />
-      <circle cx="4" cy="4" r="2" />
-    </svg>
-  );
-}
 
 import { apiClient } from "@/lib/api";
 import type { PersonResult } from "@/types/search";
@@ -69,9 +59,14 @@ interface PersonDetail extends PersonResult {
 
 interface Props { person: PersonResult | null; onClose: () => void; }
 
-const AVATAR_COLORS = [
-  "bg-red-500", "bg-blue-600", "bg-emerald-600",
-  "bg-purple-600", "bg-orange-500", "bg-pink-600", "bg-teal-600",
+const AVATAR_COLOR_SETS = [
+  { bg: "bg-red-100",     text: "text-red-500"     },
+  { bg: "bg-blue-100",    text: "text-blue-600"    },
+  { bg: "bg-emerald-100", text: "text-emerald-600" },
+  { bg: "bg-purple-100",  text: "text-purple-600"  },
+  { bg: "bg-orange-100",  text: "text-orange-500"  },
+  { bg: "bg-pink-100",    text: "text-pink-600"    },
+  { bg: "bg-teal-100",    text: "text-teal-600"    },
 ];
 
 function Avatar({ name, src }: { name: string; src?: string | null }) {
@@ -80,14 +75,69 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
   if (src && !err)
     return (
       <img src={src} alt={name}
-        className="h-[60px] w-[60px] shrink-0 rounded-full object-cover ring-[3px] ring-white shadow-md"
+        className="h-[60px] w-[60px] shrink-0 rounded-xl object-cover"
         onError={() => setErr(true)} />
     );
   const letters = name.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?";
-  const bg = AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
+  const colorSet = AVATAR_COLOR_SETS[(name.charCodeAt(0) || 0) % AVATAR_COLOR_SETS.length];
   return (
-    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full text-[18px] font-bold text-white shadow-md ring-[3px] ring-white ${bg}`}>
+    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-xl text-[20px] font-bold ${colorSet.bg} ${colorSet.text}`}>
       {letters}
+    </div>
+  );
+}
+
+function LinkedInSVG() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="path-1-inside-1_481_86" fill="white">
+        <path d="M0 10C0 4.47715 4.47715 0 10 0H30C35.5228 0 40 4.47715 40 10V30C40 35.5228 35.5228 40 30 40H10C4.47715 40 0 35.5228 0 30V10Z"/>
+      </mask>
+      <path d="M0 10C0 4.47715 4.47715 0 10 0H30C35.5228 0 40 4.47715 40 10V30C40 35.5228 35.5228 40 30 40H10C4.47715 40 0 35.5228 0 30V10Z" fill="white"/>
+      <path d="M10 0V1H30V0V-1H10V0ZM40 10H39V30H40H41V10H40ZM30 40V39H10V40V41H30V40ZM0 30H1V10H0H-1V30H0ZM10 40V39C5.02944 39 1 34.9706 1 30H0H-1C-1 36.0751 3.92487 41 10 41V40ZM40 30H39C39 34.9706 34.9706 39 30 39V40V41C36.0751 41 41 36.0751 41 30H40ZM30 0V1C34.9706 1 39 5.02944 39 10H40H41C41 3.92487 36.0751 -1 30 -1V0ZM10 0V-1C3.92487 -1 -1 3.92487 -1 10H0H1C1 5.02944 5.02944 1 10 1V0Z" fill="#ECEBF2" mask="url(#path-1-inside-1_481_86)"/>
+      <path d="M14.387 26.5V18.31H16.637V26.5H14.387ZM14.387 17.575V15.325H16.637V17.575H14.387ZM18.2835 26.5V18.31H20.3835V19.93L20.2635 19.57C20.4535 19.08 20.7585 18.72 21.1785 18.49C21.6085 18.25 22.1085 18.13 22.6785 18.13C23.2985 18.13 23.8385 18.26 24.2985 18.52C24.7685 18.78 25.1335 19.145 25.3935 19.615C25.6535 20.075 25.7835 20.615 25.7835 21.235V26.5H23.5335V21.715C23.5335 21.395 23.4685 21.12 23.3385 20.89C23.2185 20.66 23.0435 20.48 22.8135 20.35C22.5935 20.22 22.3335 20.155 22.0335 20.155C21.7435 20.155 21.4835 20.22 21.2535 20.35C21.0235 20.48 20.8435 20.66 20.7135 20.89C20.5935 21.12 20.5335 21.395 20.5335 21.715V26.5H18.2835Z" fill="#0A66C2"/>
+    </svg>
+  );
+}
+
+function WebsiteSVG() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="path-1-inside-1_481_89" fill="white">
+        <path d="M0 10C0 4.47715 4.47715 0 10 0H30C35.5228 0 40 4.47715 40 10V30C40 35.5228 35.5228 40 30 40H10C4.47715 40 0 35.5228 0 30V10Z"/>
+      </mask>
+      <path d="M0 10C0 4.47715 4.47715 0 10 0H30C35.5228 0 40 4.47715 40 10V30C40 35.5228 35.5228 40 30 40H10C4.47715 40 0 35.5228 0 30V10Z" fill="white"/>
+      <path d="M10 0V1H30V0V-1H10V0ZM40 10H39V30H40H41V10H40ZM30 40V39H10V40V41H30V40ZM0 30H1V10H0H-1V30H0ZM10 40V39C5.02944 39 1 34.9706 1 30H0H-1C-1 36.0751 3.92487 41 10 41V40ZM40 30H39C39 34.9706 34.9706 39 30 39V40V41C36.0751 41 41 36.0751 41 30H40ZM30 0V1C34.9706 1 39 5.02944 39 10H40H41C41 3.92487 36.0751 -1 30 -1V0ZM10 0V-1C3.92487 -1 -1 3.92487 -1 10H0H1C1 5.02944 5.02944 1 10 1V0Z" fill="#ECEBF2" mask="url(#path-1-inside-1_481_89)"/>
+      <path d="M20 26.375C23.5208 26.375 26.375 23.5208 26.375 20C26.375 16.4792 23.5208 13.625 20 13.625C16.4792 13.625 13.625 16.4792 13.625 20C13.625 23.5208 16.4792 26.375 20 26.375Z" stroke="#5A5964" strokeWidth="1.275"/>
+      <path d="M13.625 20H26.375M20 13.625C21.7708 15.3958 21.7708 24.25 20 26.375C18.2292 24.25 18.2292 15.3958 20 13.625Z" stroke="#5A5964" strokeWidth="1.275" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function SeeMoreContacts({ workEmail }: { workEmail: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1 text-[13px] font-semibold text-red-500 hover:text-red-600 transition-colors mt-1"
+      >
+        See more contacts (1)
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+      </button>
+      {expanded && (
+        <div className="mt-2 flex items-center gap-2">
+          <Briefcase className="h-4 w-4 text-gray-400 shrink-0" />
+          {workEmail ? (
+            <a href={`mailto:${workEmail}`} className="text-[13px] text-gray-700 hover:text-red-500 transition-colors">
+              {workEmail}
+            </a>
+          ) : (
+            <span className="text-[13px] text-gray-400">—</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -117,29 +167,14 @@ function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   );
 }
 
-/* Timeline entry used for work, education, certifications, etc. */
 function TimelineEntry({
-  dot = "outline",
-  title,
-  subtitle,
-  subtitleHref,
-  locationText,
-  startDate,
-  endDate,
-  isCurrent,
-  description,
-  isLast,
+  dot = "outline", title, subtitle, subtitleHref, locationText,
+  startDate, endDate, isCurrent, description, isLast,
 }: {
-  dot?: "filled" | "outline";
-  title: string;
-  subtitle?: string | null;
-  subtitleHref?: string | null;
-  locationText?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
-  isCurrent?: boolean;
-  description?: string | null;
-  isLast?: boolean;
+  dot?: "filled" | "outline"; title: string; subtitle?: string | null;
+  subtitleHref?: string | null; locationText?: string | null;
+  startDate?: string | null; endDate?: string | null;
+  isCurrent?: boolean; description?: string | null; isLast?: boolean;
 }) {
   return (
     <div className="flex gap-3.5">
@@ -186,7 +221,6 @@ function TimelineEntry({
   );
 }
 
-/* Year-range date pills (for education) */
 function YearRange({ start, end }: { start?: string | null; end?: string | null }) {
   if (!start && !end) return null;
   return (
@@ -198,7 +232,6 @@ function YearRange({ start, end }: { start?: string | null; end?: string | null 
   );
 }
 
-/* Skills / tags section with collapse */
 function SkillsSection({ skills }: { skills: string[] }) {
   const [showAll, setShowAll] = useState(false);
   const VISIBLE = 3;
@@ -232,7 +265,6 @@ function SkillsSection({ skills }: { skills: string[] }) {
   );
 }
 
-/* Info card for projects / publications / patents */
 function InfoCard({ icon, iconColor, iconBg, title, subtitle, meta, description, extra, actionUrl, actionLabel }: {
   icon: React.ReactNode; iconColor: string; iconBg: string;
   title: string; subtitle?: string | null;
@@ -294,12 +326,12 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [detail, setDetail] = useState<PersonDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const expRef    = useRef<HTMLDivElement>(null);
-  const skillsRef = useRef<HTMLDivElement>(null);
-  const eduRef    = useRef<HTMLDivElement>(null);
-  const certRef   = useRef<HTMLDivElement>(null);
-  const projRef   = useRef<HTMLDivElement>(null);
-  const aboutRef  = useRef<HTMLDivElement>(null);
+  const skillsRef   = useRef<HTMLDivElement>(null);
+  const expRef      = useRef<HTMLDivElement>(null);
+  const eduRef      = useRef<HTMLDivElement>(null);
+  const companyRef  = useRef<HTMLDivElement>(null);
+  const summaryRef  = useRef<HTMLDivElement>(null);
+  const projRef     = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!person) { setDetail(null); return; }
@@ -325,19 +357,25 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const fullName = d ? d.full_name || `${d.first_name ?? ""} ${d.last_name ?? ""}`.trim() || "—" : "";
   const titleLine = (d?.active_experience_title ?? "") as string;
   const companyLine = (d?.active_experience_company_name ?? "") as string;
-  const showCompany = companyLine && companyLine.toLowerCase() !== titleLine.toLowerCase();
 
   const projCount = (detail?.projects.length ?? 0) + (detail?.publications.length ?? 0) + (detail?.patents.length ?? 0);
-  const certCount = (detail?.certifications.length ?? 0) + (detail?.courses.length ?? 0) + (detail?.awards.length ?? 0);
   const skillCount = Array.isArray(d?.inferred_skills) ? (d!.inferred_skills as string[]).length : 0;
 
+  const personEmail = (detail as PersonDetail | null)?.email ?? null;
+  const personPhone = d?.mobile_phone as string | null ?? null;
+  const personLinkedIn = d?.linkedin_url as string | null ?? null;
+
+  const currentWork = detail?.work_history?.find((w) => w.is_current) ?? detail?.work_history?.[0] ?? null;
+  const companyLinkedIn = currentWork?.company_linkedin_url ?? null;
+  const companyWebsite = currentWork?.company_website ?? null;
+
   const NAV: { label: string; ref: React.RefObject<HTMLDivElement | null>; count?: number }[] = [
-    { label: "Experience", ref: expRef },
-    { label: "Skills",     ref: skillsRef, count: skillCount },
-    { label: "Education",  ref: eduRef },
-    { label: "Certs",      ref: certRef,   count: certCount  },
-    { label: "Projects",   ref: projRef,   count: projCount  },
-    { label: "About",      ref: aboutRef  },
+    { label: "Skills",         ref: skillsRef,  count: skillCount },
+    { label: "Work Experience",ref: expRef      },
+    { label: "Education",      ref: eduRef      },
+    { label: "Company Info",   ref: companyRef  },
+    { label: "Summary",        ref: summaryRef  },
+    { label: "Job Projects",   ref: projRef,    count: projCount  },
   ];
 
   return (
@@ -354,6 +392,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
         {/* ══════════ HEADER ══════════ */}
         <div className="shrink-0 bg-white border-b border-gray-100">
+          {/* Top bar */}
           <div className="flex items-center justify-between px-5 pt-4 pb-3">
             <div className="flex items-center gap-2">
               <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
@@ -365,19 +404,28 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
             </button>
           </div>
 
+          {/* Profile identity row */}
           <div className="flex items-start gap-4 px-5 pb-4">
             <Avatar name={fullName} src={d?.picture_url as string | null} />
             <div className="min-w-0 flex-1 pt-1">
-              <h2 className="text-[16px] font-bold text-gray-900 leading-tight tracking-tight">{fullName}</h2>
-              {titleLine ? (
-                <p className="mt-0.5 text-[12.5px] text-gray-500 leading-snug">
-                  {titleLine}
-                  {showCompany && <> · <span className="font-semibold text-red-500">{companyLine}</span></>}
-                </p>
-              ) : d?.headline ? (
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-[16px] font-bold text-gray-900 leading-tight tracking-tight">{fullName}</h2>
+                {d?.has_email && (
+                  <span className="rounded-full border border-green-300 bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-600">
+                    Revealed
+                  </span>
+                )}
+              </div>
+              {titleLine && (
+                <p className="mt-0.5 text-[12.5px] text-gray-500 leading-snug">{titleLine}</p>
+              )}
+              {companyLine && (
+                <p className="mt-0.5 text-[12.5px] font-semibold text-red-500 leading-snug">{companyLine}</p>
+              )}
+              {!titleLine && d?.headline && (
                 <p className="mt-0.5 text-[12.5px] text-gray-500 line-clamp-2 leading-snug">{d.headline as string}</p>
-              ) : null}
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+              )}
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                 {(d?.location_city || d?.location_country) && (
                   <span className="flex items-center gap-1 text-[11.5px] text-gray-400">
                     <MapPin className="h-3 w-3 shrink-0 text-red-400" />
@@ -390,96 +438,64 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                   </span>
                 )}
               </div>
-              {(d?.connections_count != null || d?.follower_count != null) && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {d?.connections_count != null && (
-                    <span className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
-                      <Users className="h-3 w-3 text-red-400" />
-                      {Number(d.connections_count).toLocaleString("en-US")} connections
-                    </span>
-                  )}
-                  {d?.follower_count != null && (
-                    <span className="flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
-                      {Number(d.follower_count).toLocaleString("en-US")} followers
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Contact block */}
-          <div className="mx-5 mb-4 rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-            <div className="flex items-center gap-3.5 px-4 py-3 border-b border-gray-100">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-50 border border-red-100">
-                <Mail className="h-4 w-4 text-red-500" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Email</p>
-                {(detail as PersonDetail | null)?.email ? (
-                  <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${(detail as PersonDetail).email}`; }}
-                    className="block truncate text-[13px] font-semibold text-red-500 hover:text-red-600 hover:underline transition-colors text-left w-full">
-                    {(detail as PersonDetail).email}
-                  </button>
-                ) : (
-                  <p className="text-[13px] font-medium text-gray-400">{d?.has_email ? "Available — reveal to view" : "—"}</p>
-                )}
-              </div>
-              {(detail as PersonDetail | null)?.email && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${(detail as PersonDetail).email}`; }}
-                  className="shrink-0 rounded-lg bg-red-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-red-600 transition-colors shadow-sm">
-                  Send
-                </button>
+          {/* Contact rows – inline style */}
+          <div className="px-5 pb-3 space-y-2.5">
+            {/* Email */}
+            <div className="flex items-center gap-2.5">
+              <Mail className="h-4 w-4 text-gray-400 shrink-0" />
+              {personEmail ? (
+                <>
+                  <a href={`mailto:${personEmail}`}
+                    className="text-[13px] text-gray-700 hover:text-red-500 transition-colors truncate">
+                    {personEmail}
+                  </a>
+                  <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-500">
+                    <svg viewBox="0 0 12 12" fill="none" className="h-2.5 w-2.5">
+                      <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </>
+              ) : (
+                <span className="text-[13px] text-gray-400">—</span>
               )}
             </div>
-            <div className="flex items-center gap-3.5 px-4 py-3 border-b border-gray-100">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 border border-blue-100">
-                <Briefcase className="h-4 w-4 text-blue-500" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Work Email</p>
-                <p className="text-[13px] font-medium text-gray-400">—</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3.5 px-4 py-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-100">
-                <Phone className="h-4 w-4 text-emerald-500" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-0.5">Mobile</p>
-                {d?.mobile_phone ? (
-                  <span className="block text-[13px] font-semibold text-gray-800">{d.mobile_phone as string}</span>
-                ) : (
-                  <p className="text-[13px] font-medium text-gray-400">—</p>
-                )}
-              </div>
-              {d?.mobile_phone && (
-                <button type="button" onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${d.mobile_phone as string}`; }}
-                  className="shrink-0 rounded-lg bg-emerald-500 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-600 transition-colors shadow-sm">
-                  Call
-                </button>
+
+            {/* Phone */}
+            <div className="flex items-center gap-2.5">
+              <Phone className="h-4 w-4 text-gray-400 shrink-0" />
+              {personPhone ? (
+                <a href={`tel:${personPhone}`}
+                  className="text-[13px] text-gray-700 hover:text-red-500 transition-colors">
+                  {personPhone}
+                </a>
+              ) : (
+                <span className="text-[13px] text-gray-400">—</span>
               )}
             </div>
+
+            {/* See more contacts → work email */}
+            <SeeMoreContacts workEmail={null} />
           </div>
 
-          {/* Action links */}
-          <div className="flex flex-wrap gap-2 px-5 pb-4">
-            {d?.linkedin_url && (
-              <a href={`https://${(d.linkedin_url as string).replace(/^https?:\/\//, "")}`}
-                target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg bg-[#0A66C2] px-3 py-1.5 text-[12px] font-semibold text-white shadow-sm hover:bg-[#085099] transition-colors">
-                <LinkedInIcon className="h-3.5 w-3.5" />LinkedIn
-                <ExternalLink className="h-3 w-3 opacity-70" />
+          {/* Social icon buttons */}
+          <div className="flex items-center gap-2 px-5 pb-4">
+            {personLinkedIn ? (
+              <a
+                href={`https://${personLinkedIn.replace(/^https?:\/\//, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="LinkedIn"
+              >
+                <LinkedInSVG />
               </a>
+            ) : (
+              <span className="opacity-30 cursor-not-allowed" title="LinkedIn not available">
+                <LinkedInSVG />
+              </span>
             )}
-            {detail?.websites?.map((url, i) => (
-              <a key={i} href={url.startsWith("http") ? url : `https://${url}`}
-                target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[12px] font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-                <Globe className="h-3.5 w-3.5 text-gray-400" />Website
-                <ExternalLink className="h-3 w-3 text-gray-400" />
-              </a>
-            ))}
           </div>
         </div>
 
@@ -498,7 +514,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
           ))}
         </div>
 
-        {/* ══════════ SINGLE-PAGE CONTENT ══════════ */}
+        {/* ══════════ CONTENT ══════════ */}
         <div className="flex-1 overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -511,6 +527,11 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
           {!loading && d && (
             <div className="px-4 py-5 space-y-5">
+
+              {/* ── SKILLS ── */}
+              <div ref={skillsRef}>
+                <SkillsSection skills={Array.isArray(d.inferred_skills) ? (d.inferred_skills as string[]) : []} />
+              </div>
 
               {/* ── WORK EXPERIENCE ── */}
               <div ref={expRef}>
@@ -562,11 +583,6 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* ── SKILLS ── */}
-              <div ref={skillsRef}>
-                <SkillsSection skills={Array.isArray(d.inferred_skills) ? (d.inferred_skills as string[]) : []} />
               </div>
 
               {/* ── EDUCATION ── */}
@@ -644,10 +660,70 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
               </div>
 
-              {/* ── CERTIFICATIONS ── */}
-              <div ref={certRef}>
-                {detail?.certifications && detail.certifications.length > 0 && (
+              {/* ── COMPANY INFO ── */}
+              <div ref={companyRef}>
+                {d?.active_experience_company_name ? (
                   <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Company Info</p>
+                    <div className="flex items-center gap-3 mb-4">
+                      {d.active_experience_company_logo_url ? (
+                        <img src={d.active_experience_company_logo_url as string} alt=""
+                          className="h-10 w-10 rounded-lg border border-gray-100 object-contain"
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                          <Briefcase className="h-5 w-5 text-gray-400" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-[14px] font-bold text-gray-900">{d.active_experience_company_name as string}</p>
+                        {d.active_experience_company_industry && (
+                          <p className="text-[12px] capitalize text-gray-500">{d.active_experience_company_industry as string}</p>
+                        )}
+                      </div>
+                    </div>
+                    {/* Company social links */}
+                    <div className="flex items-center gap-2">
+                      {companyLinkedIn ? (
+                        <a
+                          href={`https://${companyLinkedIn.replace(/^https?:\/\//, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Company LinkedIn"
+                        >
+                          <LinkedInSVG />
+                        </a>
+                      ) : (
+                        <span className="opacity-30 cursor-not-allowed" title="Company LinkedIn not available">
+                          <LinkedInSVG />
+                        </span>
+                      )}
+                      {companyWebsite ? (
+                        <a
+                          href={companyWebsite.startsWith("http") ? companyWebsite : `https://${companyWebsite}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Company Website"
+                        >
+                          <WebsiteSVG />
+                        </a>
+                      ) : (
+                        <span className="opacity-30 cursor-not-allowed" title="Company website not available">
+                          <WebsiteSVG />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Company Info</p>
+                    <Empty icon={<Building className="h-7 w-7" />} text="No company info available" />
+                  </div>
+                )}
+
+                {/* Certifications under company info area */}
+                {detail?.certifications && detail.certifications.length > 0 && (
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <Award className="h-4 w-4 text-yellow-500" />
                       <span className="text-[15px] font-bold text-gray-900">Certifications</span>
@@ -713,16 +789,72 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                     </div>
                   </div>
                 )}
+              </div>
 
-                {!detail?.certifications?.length && !detail?.courses?.length && !detail?.awards?.length && (
+              {/* ── SUMMARY / ABOUT ── */}
+              <div ref={summaryRef} className="space-y-4">
+                {detail?.summary ? (
                   <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <p className="text-[15px] font-bold text-gray-900 mb-4">Certifications</p>
-                    <Empty icon={<Award className="h-7 w-7" />} text="No certifications, courses or awards" />
+                    <p className="text-[15px] font-bold text-gray-900 mb-3">Summary</p>
+                    <p className="text-[13px] leading-relaxed text-gray-700 whitespace-pre-line">{detail.summary}</p>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Summary</p>
+                    <Empty icon={<Globe className="h-7 w-7" />} text="No summary available" />
+                  </div>
+                )}
+
+                {detail?.languages && detail.languages.length > 0 && (
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Languages</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {detail.languages.map((l, i) => (
+                        <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                          <span className="text-[13px] font-semibold text-gray-800">{l.language}</span>
+                          {l.proficiency && (
+                            <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-500 shadow-sm">
+                              {l.proficiency}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {detail?.recommendations && detail.recommendations.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-[15px] font-bold text-gray-900 px-1">Recommendations</p>
+                    {detail.recommendations.map((r, i) => (
+                      <div key={i} className="rounded-2xl border border-gray-100 bg-white shadow-sm p-4">
+                        <div className="mb-2 flex items-center gap-1.5">
+                          <div className="h-px flex-1 bg-red-100" />
+                          <Quote className="h-4 w-4 text-red-300" />
+                          <div className="h-px flex-1 bg-red-100" />
+                        </div>
+                        <p className="text-[12.5px] leading-relaxed text-gray-600 italic">{r.text}</p>
+                        {r.from_name && (
+                          <div className="mt-3 flex items-center gap-2 border-t border-gray-50 pt-2.5">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-50 text-[12px] font-bold text-red-500">
+                              {r.from_name.charAt(0).toUpperCase()}
+                            </div>
+                            {r.from_url ? (
+                              <a href={r.from_url.startsWith("http") ? r.from_url : `https://${r.from_url}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="text-[12px] font-semibold text-blue-600 hover:underline">{r.from_name}</a>
+                            ) : (
+                              <span className="text-[12px] font-semibold text-gray-700">{r.from_name}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* ── PROJECTS ── */}
+              {/* ── JOB PROJECTS ── */}
               <div ref={projRef}>
                 {detail?.projects && detail.projects.length > 0 && (
                   <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
@@ -794,96 +926,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
                 {!detail?.projects?.length && !detail?.publications?.length && !detail?.patents?.length && (
                   <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <p className="text-[15px] font-bold text-gray-900 mb-4">Projects</p>
+                    <p className="text-[15px] font-bold text-gray-900 mb-4">Job Projects</p>
                     <Empty icon={<FolderGit2 className="h-7 w-7" />} text="No projects, publications or patents" />
-                  </div>
-                )}
-              </div>
-
-              {/* ── ABOUT ── */}
-              <div ref={aboutRef} className="space-y-4">
-                {detail?.summary && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <p className="text-[15px] font-bold text-gray-900 mb-3">Summary</p>
-                    <p className="text-[13px] leading-relaxed text-gray-700 whitespace-pre-line">{detail.summary}</p>
-                  </div>
-                )}
-
-                {d?.active_experience_company_name && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <p className="text-[15px] font-bold text-gray-900 mb-4">Current Company</p>
-                    <div className="flex items-center gap-3">
-                      {d.active_experience_company_logo_url ? (
-                        <img src={d.active_experience_company_logo_url as string} alt=""
-                          className="h-10 w-10 rounded-lg border border-gray-100 object-contain"
-                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-                          <Briefcase className="h-5 w-5 text-gray-400" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-[14px] font-bold text-gray-900">{d.active_experience_company_name as string}</p>
-                        {d.active_experience_company_industry && (
-                          <p className="text-[12px] capitalize text-gray-500">{d.active_experience_company_industry as string}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {detail?.languages && detail.languages.length > 0 && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <p className="text-[15px] font-bold text-gray-900 mb-4">Languages</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {detail.languages.map((l, i) => (
-                        <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
-                          <span className="text-[13px] font-semibold text-gray-800">{l.language}</span>
-                          {l.proficiency && (
-                            <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-500 shadow-sm">
-                              {l.proficiency}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {detail?.recommendations && detail.recommendations.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-[15px] font-bold text-gray-900 px-1">Recommendations</p>
-                    {detail.recommendations.map((r, i) => (
-                      <div key={i} className="rounded-2xl border border-gray-100 bg-white shadow-sm p-4">
-                        <div className="mb-2 flex items-center gap-1.5">
-                          <div className="h-px flex-1 bg-red-100" />
-                          <Quote className="h-4 w-4 text-red-300" />
-                          <div className="h-px flex-1 bg-red-100" />
-                        </div>
-                        <p className="text-[12.5px] leading-relaxed text-gray-600 italic">{r.text}</p>
-                        {r.from_name && (
-                          <div className="mt-3 flex items-center gap-2 border-t border-gray-50 pt-2.5">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-50 text-[12px] font-bold text-red-500">
-                              {r.from_name.charAt(0).toUpperCase()}
-                            </div>
-                            {r.from_url ? (
-                              <a href={r.from_url.startsWith("http") ? r.from_url : `https://${r.from_url}`}
-                                target="_blank" rel="noopener noreferrer"
-                                className="text-[12px] font-semibold text-blue-600 hover:underline">{r.from_name}</a>
-                            ) : (
-                              <span className="text-[12px] font-semibold text-gray-700">{r.from_name}</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {!detail?.summary && !d?.active_experience_company_name && !detail?.languages?.length && !detail?.recommendations?.length && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <p className="text-[15px] font-bold text-gray-900 mb-4">About</p>
-                    <Empty icon={<Globe className="h-7 w-7" />} text="No additional info available" />
                   </div>
                 )}
               </div>
