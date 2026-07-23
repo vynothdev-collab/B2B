@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.routes import auth, health, lists, search, users
 from app.api.routes.admin import auth as admin_auth
+from app.api.routes.admin import credits as admin_credits
 from app.api.routes.admin import enterprises as admin_enterprises
 from app.api.routes.admin import manage as admin_manage
 from app.api.routes.admin import users as admin_customers
@@ -17,6 +18,7 @@ api_router.include_router(admin_auth.router, prefix="/admin/auth", tags=["admin-
 api_router.include_router(admin_manage.router, prefix="/admin/users", tags=["admin-manage"])
 api_router.include_router(admin_enterprises.router, prefix="/admin/enterprises", tags=["admin-enterprises"])
 api_router.include_router(admin_customers.router, prefix="/admin/customers", tags=["admin-customers"])
+api_router.include_router(admin_credits.router, prefix="/admin/credits", tags=["admin-credits"])
 api_router.include_router(ent_users.router, prefix="/enterprise", tags=["enterprise"])
 api_router.include_router(
     search.router,

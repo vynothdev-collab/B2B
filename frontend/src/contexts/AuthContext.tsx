@@ -45,7 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (email: string, password: string) => {
       const res = await apiLogin(email, password);
       storeTokens(res.access_token, res.refresh_token);
-      setUser(res.user);
+      setUser({
+        ...res.user,
+        allocated_credits: res.user.allocated_credits ?? 0,
+        used_credits: res.user.used_credits ?? 0,
+        remaining_credits: res.user.remaining_credits ?? 0,
+      });
       toast.success(`Welcome back, ${res.user.name}!`);
       router.replace("/search");
     },
@@ -56,7 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (name: string, email: string, password: string) => {
       const res = await apiRegister(name, email, password);
       storeTokens(res.access_token, res.refresh_token);
-      setUser(res.user);
+      setUser({
+        ...res.user,
+        allocated_credits: res.user.allocated_credits ?? 0,
+        used_credits: res.user.used_credits ?? 0,
+        remaining_credits: res.user.remaining_credits ?? 0,
+      });
       toast.success("Account created! Welcome.");
       router.replace("/search");
     },

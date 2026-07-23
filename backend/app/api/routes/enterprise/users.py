@@ -32,13 +32,16 @@ class EnterpriseMeResponse(BaseModel):
 
 
 class EnterpriseMemberResponse(BaseModel):
-    id:         str
-    name:       str
-    email:      str
-    role:       str
-    phone:      str | None
-    is_active:  bool
-    created_at: datetime
+    id:                str
+    name:              str
+    email:             str
+    role:              str
+    phone:             str | None
+    is_active:         bool
+    created_at:        datetime
+    allocated_credits: int
+    used_credits:      int
+    remaining_credits: int
 
 
 class CreateEnterpriseUserRequest(BaseModel):
@@ -66,6 +69,26 @@ class UpdateStatusRequest(BaseModel):
     is_active: bool
 
 
+class AllocateCreditsRequest(BaseModel):
+    credits: int
+
+
+class EnterpriseCreditMember(BaseModel):
+    id:                str
+    name:              str
+    email:             str
+    allocated_credits: int
+    used_credits:      int
+    remaining_credits: int
+
+
+class EnterpriseCreditSummary(BaseModel):
+    enterprise_pool:          int
+    total_allocated_to_users: int
+    total_used_by_users:      int
+    members:                  list[EnterpriseCreditMember]
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _to_member(user: User) -> EnterpriseMemberResponse:
@@ -77,6 +100,9 @@ def _to_member(user: User) -> EnterpriseMemberResponse:
         phone=user.phone,
         is_active=user.is_active,
         created_at=user.created_at,
+        allocated_credits=user.allocated_credits,
+        used_credits=user.used_credits,
+        remaining_credits=user.allocated_credits - user.used_credits,
     )
 
 
@@ -182,3 +208,89 @@ async def update_enterprise_user_status(
     await db.flush()
     await db.refresh(member)
     return _to_member(member)
+
+
+@router.post("/users/{user_id}/allocate-credits", response_model=EnterpriseMemberResponse)
+async def allocate_credits_to_member(
+    user_id: str,
+    payload: AllocateCreditsRequest,
+    current_user: User = Depends(require_enterprise_admin),
+    db: AsyncSession = Depends(get_db),
+) -> EnterpriseMemberResponse:
+    if payload.credits <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Credits must be greater than 0",
+        )
+
+    member = (
+        await db.execute(
+            select(User).where(
+                User.id == user_id,
+                User.enterprise_id == current_user.enterprise_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found in your enterprise",
+        )
+
+    ent = (
+        await db.execute(select(Enterprise).where(Enterprise.id == current_user.enterprise_id))
+    ).scalar_one_or_none()
+    if not ent or ent.credits < payload.credits:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Insufficient enterprise credits",
+        )
+
+    ent.credits -= payload.credits
+    member.allocated_credits += payload.credits
+    await db.flush()
+    await db.refresh(member)
+    return _to_member(member)
+
+
+@router.get("/credit-summary", response_model=EnterpriseCreditSummary)
+async def get_credit_summary(
+    current_user: User = Depends(require_enterprise_member),
+    db: AsyncSession = Depends(get_db),
+) -> EnterpriseCreditSummary:
+    ent = (
+        await db.execute(select(Enterprise).where(Enterprise.id == current_user.enterprise_id))
+    ).scalar_one_or_none()
+    if not ent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Enterprise not found",
+        )
+
+    members = (
+        await db.execute(
+            select(User)
+            .where(User.enterprise_id == current_user.enterprise_id)
+            .order_by(User.created_at.desc())
+        )
+    ).scalars().all()
+
+    total_allocated = sum(m.allocated_credits for m in members)
+    total_used = sum(m.used_credits for m in members)
+
+    return EnterpriseCreditSummary(
+        enterprise_pool=ent.credits,
+        total_allocated_to_users=total_allocated,
+        total_used_by_users=total_used,
+        members=[
+            EnterpriseCreditMember(
+                id=m.id,
+                name=m.name,
+                email=m.email,
+                allocated_credits=m.allocated_credits,
+                used_credits=m.used_credits,
+                remaining_credits=m.allocated_credits - m.used_credits,
+            )
+            for m in members
+        ],
+    )

@@ -17,15 +17,22 @@ router = APIRouter(dependencies=[Depends(require_super_admin)])
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
 class CustomerResponse(BaseModel):
-    id:              str
-    name:            str
-    email:           str
-    role:            str
-    phone:           str | None
-    is_active:       bool
-    enterprise_id:   str | None
-    enterprise_name: str | None
-    created_at:      datetime
+    id:                str
+    name:              str
+    email:             str
+    role:              str
+    phone:             str | None
+    is_active:         bool
+    enterprise_id:     str | None
+    enterprise_name:   str | None
+    created_at:        datetime
+    allocated_credits: int = 0
+    used_credits:      int = 0
+    remaining_credits: int = 0
+
+
+class AllocateCreditsRequest(BaseModel):
+    credits: int
 
 
 class UpdateRoleRequest(BaseModel):
@@ -120,6 +127,9 @@ async def _serialize_many(db: AsyncSession, users: list[User]) -> list[CustomerR
             enterprise_id=u.enterprise_id,
             enterprise_name=ent_names.get(u.enterprise_id) if u.enterprise_id else None,
             created_at=u.created_at,
+            allocated_credits=u.allocated_credits,
+            used_credits=u.used_credits,
+            remaining_credits=u.allocated_credits - u.used_credits,
         )
         for u in users
     ]
@@ -143,6 +153,9 @@ async def _serialize(db: AsyncSession, user: User) -> CustomerResponse:
         enterprise_id=user.enterprise_id,
         enterprise_name=enterprise_name,
         created_at=user.created_at,
+        allocated_credits=user.allocated_credits,
+        used_credits=user.used_credits,
+        remaining_credits=user.allocated_credits - user.used_credits,
     )
 
 
@@ -335,6 +348,24 @@ async def update_customer_status(
 ) -> CustomerResponse:
     user = await _load_user(db, user_id)
     user.is_active = payload.is_active
+    await db.flush()
+    await db.refresh(user)
+    return await _serialize(db, user)
+
+
+@router.post("/{user_id}/allocate-credits", response_model=CustomerResponse)
+async def allocate_credits_to_customer(
+    user_id: str,
+    payload: AllocateCreditsRequest,
+    db: AsyncSession = Depends(get_db),
+) -> CustomerResponse:
+    if payload.credits <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Credits must be greater than 0",
+        )
+    user = await _load_user(db, user_id)
+    user.allocated_credits += payload.credits
     await db.flush()
     await db.refresh(user)
     return await _serialize(db, user)

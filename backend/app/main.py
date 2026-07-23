@@ -61,6 +61,12 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(
             _add_column_if_missing, "users", "enterprise_id", "VARCHAR(36) REFERENCES enterprises(id)"
         )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "allocated_credits", "INTEGER NOT NULL DEFAULT 0"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "used_credits", "INTEGER NOT NULL DEFAULT 0"
+        )
         await conn.execute(text("UPDATE users SET role='individual' WHERE role='user'"))
         # enterprises table — drop removed columns
         await conn.run_sync(_drop_column_if_exists, "enterprises", "monthly_limit")

@@ -23,6 +23,25 @@ export interface EnterpriseMember {
   phone: string | null;
   is_active: boolean;
   created_at: string;
+  allocated_credits: number;
+  used_credits: number;
+  remaining_credits: number;
+}
+
+export interface EnterpriseCreditMember {
+  id: string;
+  name: string;
+  email: string;
+  allocated_credits: number;
+  used_credits: number;
+  remaining_credits: number;
+}
+
+export interface EnterpriseCreditSummary {
+  enterprise_pool: number;
+  total_allocated_to_users: number;
+  total_used_by_users: number;
+  members: EnterpriseCreditMember[];
 }
 
 export interface CreateEnterpriseUserPayload {
@@ -57,5 +76,21 @@ export async function apiUpdateEnterpriseMemberStatus(
     `/enterprise/users/${userId}/status`,
     { is_active },
   );
+  return data;
+}
+
+export async function apiAllocateCreditsToMember(
+  userId: string,
+  payload: { credits: number },
+): Promise<EnterpriseMember> {
+  const { data } = await apiClient.post<EnterpriseMember>(
+    `/enterprise/users/${userId}/allocate-credits`,
+    payload,
+  );
+  return data;
+}
+
+export async function apiGetEnterpriseCreditSummary(): Promise<EnterpriseCreditSummary> {
+  const { data } = await apiClient.get<EnterpriseCreditSummary>("/enterprise/credit-summary");
   return data;
 }

@@ -23,6 +23,7 @@ import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
 import CreateEnterpriseModal from "@/components/modals/CreateEnterpriseModal";
 import CreateEnterpriseAdminModal from "@/components/modals/CreateEnterpriseAdminModal";
+import AddCreditsModal from "@/components/modals/AddCreditsModal";
 import {
   getEnterpriseStats,
   listEnterprises,
@@ -56,12 +57,16 @@ function EnterpriseDetail({
   ent,
   onAddAdmin,
   onToggleStatus,
+  onAddCredits,
   busy,
+  entUsers,
 }: {
   ent: Enterprise;
   onAddAdmin: () => void;
   onToggleStatus: () => void;
+  onAddCredits: () => void;
   busy: boolean;
+  entUsers: Customer[];
 }) {
   return (
     <div className="divide-y divide-slate-100">
@@ -125,11 +130,49 @@ function EnterpriseDetail({
           <CreditCard className="h-4 w-4 text-slate-400" />
           <h4 className="text-sm font-semibold text-slate-700">Plan & Usage</h4>
         </div>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
           <div><p className="text-xs text-slate-400 mb-0.5">Current Plan</p><p className="font-semibold text-slate-900">{ent.plan}</p></div>
           <div><p className="text-xs text-slate-400 mb-0.5">Total Users</p><p className="font-semibold text-slate-900">{ent.user_count}</p></div>
-          <div><p className="text-xs text-slate-400 mb-0.5">Credits</p><p className="text-slate-700">{ent.credits.toLocaleString()}</p></div>
+          <div><p className="text-xs text-slate-400 mb-0.5">Available Pool</p><p className="text-slate-700">{ent.credits.toLocaleString()} credits</p></div>
         </div>
+
+        {entUsers.length > 0 && (
+          <div className="rounded-xl border border-slate-100 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-slate-50 text-slate-400 font-medium">
+                  <th className="px-3 py-2 text-left">Member</th>
+                  <th className="px-3 py-2 text-right">Allocated</th>
+                  <th className="px-3 py-2 text-right">Used</th>
+                  <th className="px-3 py-2 text-right">Remaining</th>
+                  <th className="px-3 py-2 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entUsers.map((u) => {
+                  const creditStatus =
+                    u.remaining_credits <= 0
+                      ? "exceeded"
+                      : u.allocated_credits > 0 && u.remaining_credits / u.allocated_credits < 0.2
+                      ? "low"
+                      : "healthy";
+                  return (
+                    <tr key={u.id} className="border-t border-slate-100">
+                      <td className="px-3 py-2">
+                        <p className="font-medium text-slate-800">{u.name}</p>
+                        <p className="text-slate-400">{u.email}</p>
+                      </td>
+                      <td className="px-3 py-2 text-right text-slate-600">{u.allocated_credits.toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right text-slate-600">{u.used_credits.toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right text-slate-600">{u.remaining_credits.toLocaleString()}</td>
+                      <td className="px-3 py-2"><Badge status={creditStatus} /></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {ent.notes && (
@@ -156,6 +199,15 @@ function EnterpriseDetail({
             style={{ background: "var(--gold)", color: "#3C2400" }}
           >
             <UserPlus className="h-4 w-4" /> Add Admin
+          </button>
+          <button
+            type="button"
+            onClick={onAddCredits}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60"
+            style={{ background: "rgba(23,50,41,.08)", color: "var(--forest)" }}
+          >
+            <CreditCard className="h-4 w-4" /> Add Credits
           </button>
           <button
             type="button"
@@ -195,6 +247,7 @@ export default function EnterprisesPage() {
   const [statsLoading, setStatsLoading] = useState(true);
 
   const [entUsers, setEntUsers] = useState<Customer[]>([]);
+  const [panelEntUsers, setPanelEntUsers] = useState<Customer[]>([]);
   const [euTotal, setEuTotal] = useState(0);
   const [euLoading, setEuLoading] = useState(false);
   const [euQuery, setEuQuery] = useState("");
@@ -206,6 +259,7 @@ export default function EnterprisesPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [addCreditsTarget, setAddCreditsTarget] = useState<{ type: "enterprise"; id: string; name: string } | null>(null);
   const [busyEntId, setBusyEntId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -313,6 +367,21 @@ export default function EnterprisesPage() {
     void loadEnterpriseUsers(controller.signal);
     return () => controller.abort();
   }, [activeTab, loadEnterpriseUsers]);
+
+  useEffect(() => {
+    if (!selected) {
+      setPanelEntUsers([]);
+      return;
+    }
+    const controller = new AbortController();
+    listCustomers(
+      { roles: ["enterprise_admin", "enterprise_user"], enterprise_id: selected.id, page: 1, page_size: 100 },
+      controller.signal,
+    )
+      .then((paged) => setPanelEntUsers(paged.items))
+      .catch((err) => { if (!axios.isCancel(err)) setPanelEntUsers([]); });
+    return () => controller.abort();
+  }, [selected]);
 
   const patchEnterprise = (updated: Enterprise) => {
     setEnterprises((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
@@ -674,6 +743,8 @@ export default function EnterprisesPage() {
             busy={busyEntId === selected.id}
             onAddAdmin={() => setAdminModalOpen(true)}
             onToggleStatus={() => handleToggleEntStatus(selected)}
+            onAddCredits={() => setAddCreditsTarget({ type: "enterprise", id: selected.id, name: selected.name })}
+            entUsers={panelEntUsers}
           />
         )}
       </SlidePanel>
@@ -697,6 +768,17 @@ export default function EnterprisesPage() {
           void loadEnterprises();
           void loadStats();
           if (activeTab === "Enterprise Users") void loadEnterpriseUsers();
+        }}
+      />
+
+      <AddCreditsModal
+        open={!!addCreditsTarget}
+        target={addCreditsTarget}
+        onClose={() => setAddCreditsTarget(null)}
+        onSuccess={() => {
+          setAddCreditsTarget(null);
+          void loadEnterprises();
+          void loadStats();
         }}
       />
     </div>

@@ -12,6 +12,9 @@ export interface Customer {
   enterprise_id: string | null;
   enterprise_name: string | null;
   created_at: string;
+  allocated_credits: number;
+  used_credits: number;
+  remaining_credits: number;
 }
 
 export interface ListCustomersParams {

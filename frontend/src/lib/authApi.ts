@@ -12,6 +12,9 @@ export interface UserInfo {
   name: string;
   role: UserRole;
   enterprise_id?: string | null;
+  allocated_credits: number;
+  used_credits: number;
+  remaining_credits: number;
 }
 
 export interface AuthResponse {

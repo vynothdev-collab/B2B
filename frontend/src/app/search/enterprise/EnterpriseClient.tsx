@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  apiAllocateCreditsToMember,
   apiCreateEnterpriseUser,
   apiGetMyEnterprise,
   apiListEnterpriseMembers,
@@ -52,6 +53,7 @@ export default function EnterpriseClient() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [pendingToggle, setPendingToggle] = useState<EnterpriseMember | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [allocateTarget, setAllocateTarget] = useState<EnterpriseMember | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -166,7 +168,7 @@ export default function EnterpriseClient() {
             </div>
             <InfoTile label="Plan" value={enterprise.plan} icon={<CreditCard className="h-4 w-4" />} />
             <InfoTile
-              label="Credits"
+              label="Available Pool"
               value={enterprise.credits.toLocaleString()}
               icon={<CreditCard className="h-4 w-4" />}
             />
@@ -220,6 +222,9 @@ export default function EnterpriseClient() {
                 <th className="px-4 py-2.5 text-left">Email</th>
                 <th className="px-4 py-2.5 text-left">Role</th>
                 <th className="px-4 py-2.5 text-left">Status</th>
+                <th className="px-4 py-2.5 text-right">Allocated</th>
+                <th className="px-4 py-2.5 text-right">Used</th>
+                <th className="px-4 py-2.5 text-right">Remaining</th>
                 <th className="px-4 py-2.5 text-left">Added</th>
                 <th className="px-4 py-2.5 text-left">Actions</th>
               </tr>
@@ -258,30 +263,58 @@ export default function EnterpriseClient() {
                       {m.is_active ? "Active" : "Suspended"}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+                    {m.allocated_credits.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right text-sm text-gray-500">
+                    {m.used_credits.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span
+                      className={
+                        m.remaining_credits <= 0
+                          ? "text-sm font-semibold text-red-600"
+                          : m.allocated_credits > 0 && m.remaining_credits / m.allocated_credits < 0.2
+                          ? "text-sm font-semibold text-amber-600"
+                          : "text-sm font-semibold text-emerald-600"
+                      }
+                    >
+                      {m.remaining_credits.toLocaleString()}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-gray-500">{formatDate(m.created_at)}</td>
                   <td className="px-4 py-3">
-                    {m.id === user?.id ? (
-                      <span className="text-xs text-gray-400">You</span>
-                    ) : (
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setPendingToggle(m)}
-                        disabled={busyId === m.id}
-                        className={
-                          m.is_active
-                            ? "rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                            : "rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
-                        }
+                        onClick={() => setAllocateTarget(m)}
+                        className="rounded-md border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50"
                       >
-                        {m.is_active ? "Suspend" : "Activate"}
+                        Allocate Credits
                       </button>
-                    )}
+                      {m.id === user?.id ? (
+                        <span className="text-xs text-gray-400">You</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setPendingToggle(m)}
+                          disabled={busyId === m.id}
+                          className={
+                            m.is_active
+                              ? "rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                              : "rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                          }
+                        >
+                          {m.is_active ? "Suspend" : "Activate"}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
               {!loading && filteredMembers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">
+                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-400">
                     {query ? "No members match your search." : "No team members yet — click Add Team Member to invite one."}
                   </td>
                 </tr>
@@ -295,6 +328,19 @@ export default function EnterpriseClient() {
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         onCreated={(m) => setMembers((prev) => [m, ...prev])}
+      />
+
+      <AllocateCreditsModal
+        key={allocateTarget?.id ?? ""}
+        open={!!allocateTarget}
+        member={allocateTarget}
+        enterprisePool={enterprise?.credits ?? 0}
+        onClose={() => setAllocateTarget(null)}
+        onAllocated={(updated, newPool) => {
+          setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+          setEnterprise((prev) => prev ? { ...prev, credits: newPool } : prev);
+          setAllocateTarget(null);
+        }}
       />
 
       <ConfirmDialog
@@ -488,6 +534,113 @@ function Field({
         {hint && <span className="ml-1 font-normal text-gray-400">— {hint}</span>}
       </label>
       {children}
+    </div>
+  );
+}
+
+/* ── Allocate Credits modal ─────────────────────────────────── */
+
+interface AllocateProps {
+  open: boolean;
+  member: EnterpriseMember | null;
+  enterprisePool: number;
+  onClose: () => void;
+  onAllocated: (updated: EnterpriseMember, newPool: number) => void;
+}
+
+function AllocateCreditsModal({ open, member, enterprisePool, onClose, onAllocated }: AllocateProps) {
+  const [amount, setAmount] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!open || !member) return null;
+
+  const handleClose = () => {
+    if (submitting) return;
+    setAmount("");
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    const credits = parseInt(amount, 10);
+    if (!credits || credits <= 0) {
+      toast.warning("Please enter a valid number of credits.");
+      return;
+    }
+    if (credits > enterprisePool) {
+      toast.error(`Insufficient enterprise pool. Only ${enterprisePool.toLocaleString()} credits available.`);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const updated = await apiAllocateCreditsToMember(member.id, { credits });
+      toast.success(`${credits.toLocaleString()} credits allocated to ${member.name}.`);
+      onAllocated(updated, enterprisePool - credits);
+      setAmount("");
+    } catch (e) {
+      toast.apiError(e);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-blue-500" />
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Allocate Credits</h2>
+              <p className="text-xs text-gray-500">to {member.name}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={submitting}
+            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
+          >
+            ×
+          </button>
+        </div>
+        <div className="space-y-4 px-5 py-4">
+          <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500">Available Enterprise Pool</p>
+            <p className="mt-0.5 text-lg font-bold text-blue-700">{enterprisePool.toLocaleString()} credits</p>
+          </div>
+          <Field label="Credits to allocate *">
+            <input
+              type="number"
+              min={1}
+              max={enterprisePool}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="e.g. 500"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              autoFocus
+            />
+          </Field>
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-gray-100 px-5 py-3">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={submitting}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
+          >
+            {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
+            {submitting ? "Allocating…" : "Allocate →"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

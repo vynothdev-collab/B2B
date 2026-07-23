@@ -10,12 +10,15 @@ router = APIRouter()
 
 
 class UserResponse(BaseModel):
-    id: str
-    email: EmailStr
-    name: str
-    role: str
-    is_active: bool
-    enterprise_id: str | None = None
+    id:                str
+    email:             EmailStr
+    name:              str
+    role:              str
+    is_active:         bool
+    enterprise_id:     str | None = None
+    allocated_credits: int = 0
+    used_credits:      int = 0
+    remaining_credits: int = 0
 
 
 class ChangePasswordRequest(BaseModel):
@@ -39,6 +42,9 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse
         role=current_user.role,
         is_active=current_user.is_active,
         enterprise_id=current_user.enterprise_id,
+        allocated_credits=current_user.allocated_credits,
+        used_credits=current_user.used_credits,
+        remaining_credits=current_user.allocated_credits - current_user.used_credits,
     )
 
 

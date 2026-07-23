@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Wallet, TrendingUp, Coins, BarChart3 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { Search, Wallet, TrendingUp, Coins, BarChart3, Loader2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
-import { INDIVIDUAL_CREDITS, ENTERPRISE_CREDITS } from "@/data/credits";
+import { useToast } from "@/components/ui/Toast";
+import { useDebounce } from "@/hooks/useDebounce";
+import {
+  listIndividualCredits,
+  listEnterpriseCredits,
+  type PagedIndividualCredits,
+  type PagedEnterpriseCredits,
+} from "@/services/credits";
+import AddCreditsModal from "@/components/modals/AddCreditsModal";
 
 const TABS = ["Individual Credits", "Enterprise Credits"] as const;
 type Tab = typeof TABS[number];
@@ -25,25 +34,96 @@ function makeFocusHandlers(isIndividual: boolean) {
   };
 }
 
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]!.toUpperCase())
+    .join("");
+}
+
 export default function CreditsPage() {
+  const toast = useToast();
+
   const [activeTab, setActiveTab] = useState<Tab>("Individual Credits");
   const CR_PER_PAGE = 8;
-  const [page, setPage] = useState(1);
+  const [indPage, setIndPage] = useState(1);
+  const [entPage, setEntPage] = useState(1);
 
   const isIndividual = activeTab === "Individual Credits";
 
-  const indOutstanding = INDIVIDUAL_CREDITS.reduce((s, u) => s + Math.max(0, u.limit - u.used), 0);
-  const indUsed        = INDIVIDUAL_CREDITS.reduce((s, u) => s + u.used, 0);
-  const indLimit       = INDIVIDUAL_CREDITS.reduce((s, u) => s + u.limit, 0);
+  // filters
+  const [indQuery, setIndQuery] = useState("");
+  const [indStatus, setIndStatus] = useState("all");
+  const [entQuery, setEntQuery] = useState("");
+  const [entStatus, setEntStatus] = useState("all");
 
-  const entOutstanding = ENTERPRISE_CREDITS.reduce((s, e) => s + Math.max(0, e.limit - e.used), 0);
-  const entUsed        = ENTERPRISE_CREDITS.reduce((s, e) => s + e.used, 0);
-  const entLimit       = ENTERPRISE_CREDITS.reduce((s, e) => s + e.limit, 0);
+  const dIndQuery = useDebounce(indQuery, 300);
+  const dEntQuery = useDebounce(entQuery, 300);
 
-  const outstanding = isIndividual ? indOutstanding : entOutstanding;
-  const used        = isIndividual ? indUsed        : entUsed;
-  const limit       = isIndividual ? indLimit       : entLimit;
-  const usageRate   = limit > 0 ? Math.round((used / limit) * 100) : 0;
+  // data
+  const [indData, setIndData] = useState<PagedIndividualCredits | null>(null);
+  const [entData, setEntData] = useState<PagedEnterpriseCredits | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // modal
+  const [addCreditsTarget, setAddCreditsTarget] = useState<{
+    type: "individual" | "enterprise";
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const abortRef = useRef<AbortController | null>(null);
+
+  const fetchData = useCallback(async () => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    setLoading(true);
+    try {
+      if (isIndividual) {
+        const data = await listIndividualCredits(
+          {
+            page: indPage,
+            page_size: CR_PER_PAGE,
+            q: dIndQuery || undefined,
+            status: indStatus !== "all" ? indStatus : undefined,
+          },
+          ctrl.signal,
+        );
+        setIndData(data);
+      } else {
+        const data = await listEnterpriseCredits(
+          {
+            page: entPage,
+            page_size: CR_PER_PAGE,
+            q: dEntQuery || undefined,
+            status: entStatus !== "all" ? entStatus : undefined,
+          },
+          ctrl.signal,
+        );
+        setEntData(data);
+      }
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+      toast.error("Failed to load credits", "Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [isIndividual, indPage, entPage, dIndQuery, dEntQuery, indStatus, entStatus, toast]);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  // derive stats
+  const stats = isIndividual ? indData?.stats : entData?.stats;
+  const outstanding = stats?.total_remaining ?? 0;
+  const used        = stats?.total_used      ?? 0;
+  const allocated   = stats?.total_allocated ?? 0;
+  const usageRate   = allocated > 0 ? Math.round((used / allocated) * 100) : 0;
 
   /* per-tab accent */
   const accent = isIndividual
@@ -65,7 +145,7 @@ export default function CreditsPage() {
               <button
                 key={tab}
                 type="button"
-                onClick={() => { setActiveTab(tab); setPage(1); }}
+                onClick={() => { setActiveTab(tab); setIndPage(1); setEntPage(1); }}
                 className="px-4 py-2.5 text-sm font-medium transition-colors"
                 style={
                   isActive
@@ -83,7 +163,6 @@ export default function CreditsPage() {
       {/* ── Stat Cards ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
 
-        {/* Outstanding Balance — per-tab accent */}
         <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: accent.dimBg }}>
             <Wallet className="h-5 w-5" style={{ color: accent.bg }} />
@@ -91,11 +170,10 @@ export default function CreditsPage() {
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Outstanding Balance</p>
             <p className="text-2xl font-bold text-slate-900 mt-0.5">{outstanding.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Credits available to use</p>
+            <p className="text-xs text-slate-400 mt-0.5">Credits remaining to use</p>
           </div>
         </div>
 
-        {/* Lifetime Used — rust */}
         <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--rust-dim)" }}>
             <TrendingUp className="h-5 w-5" style={{ color: "var(--rust)" }} />
@@ -107,19 +185,17 @@ export default function CreditsPage() {
           </div>
         </div>
 
-        {/* Total Allocated — sage */}
         <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--sage-dim)" }}>
             <Coins className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Total Allocated</p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">{limit.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Combined monthly limits</p>
+            <p className="text-2xl font-bold text-slate-900 mt-0.5">{allocated.toLocaleString()}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Credits allocated overall</p>
           </div>
         </div>
 
-        {/* Usage Rate — gold, with mini progress bar */}
         <div className="bg-white rounded-xl border border-slate-200 px-5 py-4">
           <div className="flex items-center gap-4 mb-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--gold-dim)" }}>
@@ -147,16 +223,23 @@ export default function CreditsPage() {
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
+                  value={indQuery}
+                  onChange={(e) => { setIndQuery(e.target.value); setIndPage(1); }}
                   placeholder="Search users..."
                   className="w-full h-9 rounded-lg border border-slate-200 bg-white pl-9 pr-4 text-sm placeholder-slate-400 focus:outline-none transition-colors"
                   {...focus}
                 />
               </div>
-              <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none transition-colors" {...focus}>
-                <option>All Plans</option><option>Free</option><option>Pro</option><option>Business</option>
-              </select>
-              <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none transition-colors" {...focus}>
-                <option>All Statuses</option><option>Healthy</option><option>Low</option><option>Exceeded</option>
+              <select
+                value={indStatus}
+                onChange={(e) => { setIndStatus(e.target.value); setIndPage(1); }}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none transition-colors"
+                {...focus}
+              >
+                <option value="all">All Statuses</option>
+                <option value="healthy">Healthy</option>
+                <option value="low">Low</option>
+                <option value="exceeded">Exceeded</option>
               </select>
             </div>
             <div className="overflow-x-auto">
@@ -164,24 +247,37 @@ export default function CreditsPage() {
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50">
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">User</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Plan</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Monthly Limit</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Used</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Remaining</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium text-slate-500">Allocated</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium text-slate-500">Used</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium text-slate-500">Remaining</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Status</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {INDIVIDUAL_CREDITS.slice((page - 1) * CR_PER_PAGE, page * CR_PER_PAGE).map((u, i) => (
-                    <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  {loading && !indData && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
+                      </td>
+                    </tr>
+                  )}
+                  {!loading && indData?.items.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-400">
+                        No individual users found.
+                      </td>
+                    </tr>
+                  )}
+                  {indData?.items.map((u) => (
+                    <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div
                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
                             style={{ background: "rgba(23,50,41,.08)", color: "var(--forest)", fontFamily: "var(--font-fraunces)" }}
                           >
-                            {u.initials}
+                            {initials(u.name)}
                           </div>
                           <div>
                             <p className="font-medium text-slate-800">{u.name}</p>
@@ -189,39 +285,34 @@ export default function CreditsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-medium text-slate-700">{u.plan}</td>
-                      <td className="px-4 py-3 text-slate-600">{u.limit.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-slate-600">{u.used.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-slate-600">{Math.max(0, u.limit - u.used).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{u.allocated_credits.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{u.used_credits.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{u.remaining_credits.toLocaleString()}</td>
                       <td className="px-4 py-3"><Badge status={u.status} /></td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                            style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                          >
-                            Add Credits
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                            style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                          >
-                            History
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAddCreditsTarget({ type: "individual", id: u.id, name: u.name })}
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Add Credits
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <Pagination total={INDIVIDUAL_CREDITS.length} perPage={CR_PER_PAGE} page={page} onChange={setPage} itemLabel="users" />
+            <Pagination
+              total={indData?.total ?? 0}
+              perPage={CR_PER_PAGE}
+              page={indPage}
+              onChange={setIndPage}
+              itemLabel="users"
+            />
           </>
         )}
 
@@ -232,13 +323,23 @@ export default function CreditsPage() {
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
+                  value={entQuery}
+                  onChange={(e) => { setEntQuery(e.target.value); setEntPage(1); }}
                   placeholder="Search enterprises..."
                   className="w-full h-9 rounded-lg border border-slate-200 bg-white pl-9 pr-4 text-sm placeholder-slate-400 focus:outline-none transition-colors"
                   {...focus}
                 />
               </div>
-              <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none transition-colors" {...focus}>
-                <option>All Statuses</option><option>Healthy</option><option>Low</option><option>Exceeded</option>
+              <select
+                value={entStatus}
+                onChange={(e) => { setEntStatus(e.target.value); setEntPage(1); }}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none transition-colors"
+                {...focus}
+              >
+                <option value="all">All Statuses</option>
+                <option value="healthy">Healthy</option>
+                <option value="low">Low</option>
+                <option value="exceeded">Exceeded</option>
               </select>
             </div>
             <div className="overflow-x-auto">
@@ -247,63 +348,85 @@ export default function CreditsPage() {
                   <tr className="border-b border-slate-100 bg-slate-50">
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Company</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Plan</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Monthly Limit</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Used</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Remaining</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium text-slate-500">Pool</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium text-slate-500">Allocated</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium text-slate-500">Used</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium text-slate-500">Remaining</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Status</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-slate-500">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {ENTERPRISE_CREDITS.slice((page - 1) * CR_PER_PAGE, page * CR_PER_PAGE).map((e, i) => (
-                    <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  {loading && !entData && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-10 text-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
+                      </td>
+                    </tr>
+                  )}
+                  {!loading && entData?.items.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-400">
+                        No enterprises found.
+                      </td>
+                    </tr>
+                  )}
+                  {entData?.items.map((ent) => (
+                    <tr key={ent.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div
                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
                             style={{ background: "var(--gold-dim)", color: "#8A6222", fontFamily: "var(--font-fraunces)" }}
                           >
-                            {e.initials}
+                            {initials(ent.name)}
                           </div>
-                          <span className="font-medium text-slate-800">{e.name}</span>
+                          <span className="font-medium text-slate-800">{ent.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-medium text-slate-700">{e.plan}</td>
-                      <td className="px-4 py-3 text-slate-600">{e.limit.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-slate-600">{e.used.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-slate-600">{Math.max(0, e.limit - e.used).toLocaleString()}</td>
-                      <td className="px-4 py-3"><Badge status={e.status} /></td>
+                      <td className="px-4 py-3 font-medium text-slate-700">{ent.plan}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{ent.pool_credits.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{ent.total_allocated.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{ent.total_used.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{ent.total_remaining.toLocaleString()}</td>
+                      <td className="px-4 py-3"><Badge status={ent.status} /></td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                            style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                          >
-                            Add Credits
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                            style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-                            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--paper)"; }}
-                            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-                          >
-                            History
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAddCreditsTarget({ type: "enterprise", id: ent.id, name: ent.name })}
+                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
+                          style={{ borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--sage-dim)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                        >
+                          Add Credits
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <Pagination total={ENTERPRISE_CREDITS.length} perPage={CR_PER_PAGE} page={page} onChange={setPage} itemLabel="enterprises" />
+            <Pagination
+              total={entData?.total ?? 0}
+              perPage={CR_PER_PAGE}
+              page={entPage}
+              onChange={setEntPage}
+              itemLabel="enterprises"
+            />
           </>
         )}
       </div>
+
+      <AddCreditsModal
+        open={!!addCreditsTarget}
+        target={addCreditsTarget}
+        onClose={() => setAddCreditsTarget(null)}
+        onSuccess={() => {
+          setAddCreditsTarget(null);
+          void fetchData();
+        }}
+      />
     </div>
   );
 }

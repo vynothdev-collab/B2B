@@ -52,7 +52,10 @@ class UserInfo(BaseModel):
     email: str
     name: str
     role: str
-    enterprise_id: str | None = None
+    enterprise_id:     str | None = None
+    allocated_credits: int = 0
+    used_credits:      int = 0
+    remaining_credits: int = 0
 
 
 class TokenResponse(BaseModel):
@@ -90,7 +93,16 @@ async def register(
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
-        user=UserInfo(id=user.id, email=user.email, name=user.name, role=user.role, enterprise_id=user.enterprise_id),
+        user=UserInfo(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            role=user.role,
+            enterprise_id=user.enterprise_id,
+            allocated_credits=user.allocated_credits,
+            used_credits=user.used_credits,
+            remaining_credits=user.allocated_credits - user.used_credits,
+        ),
     )
 
 
@@ -115,7 +127,16 @@ async def login(
     return TokenResponse(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(user.id),
-        user=UserInfo(id=user.id, email=user.email, name=user.name, role=user.role, enterprise_id=user.enterprise_id),
+        user=UserInfo(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            role=user.role,
+            enterprise_id=user.enterprise_id,
+            allocated_credits=user.allocated_credits,
+            used_credits=user.used_credits,
+            remaining_credits=user.allocated_credits - user.used_credits,
+        ),
     )
 
 

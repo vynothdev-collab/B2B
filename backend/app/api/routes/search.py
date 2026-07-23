@@ -1,6 +1,6 @@
 import logging
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 logger = logging.getLogger(__name__)
 from sqlalchemy import select
@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.security import get_current_user
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
+from app.models.user import User
 from app.schemas.search import (
     AgenticSearchRequest,
     CompanySearchRequest,
@@ -22,28 +24,51 @@ from app.services import coresignal_service
 router = APIRouter()
 
 
+def _check_credits(user: User) -> None:
+    if user.allocated_credits - user.used_credits <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="Insufficient credits. Please contact your admin to allocate more credits.",
+        )
+
+
 @router.post("/persons", response_model=SearchResponse, summary="Search people")
 async def person_search(
     body: PersonSearchRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    return await coresignal_service.search_persons(body, db=db)
+    _check_credits(current_user)
+    result = await coresignal_service.search_persons(body, db=db)
+    current_user.used_credits += 1
+    await db.flush()
+    return result
 
 
 @router.post("/companies", response_model=SearchResponse, summary="Search companies")
 async def company_search(
     body: CompanySearchRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    return await coresignal_service.search_companies(body, db=db)
+    _check_credits(current_user)
+    result = await coresignal_service.search_companies(body, db=db)
+    current_user.used_credits += 1
+    await db.flush()
+    return result
 
 
 @router.post("/agentic", response_model=SearchResponse, summary="Natural-language AI search")
 async def agentic_search(
     body: AgenticSearchRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    return await coresignal_service.agentic_search(body, db=db)
+    _check_credits(current_user)
+    result = await coresignal_service.agentic_search(body, db=db)
+    current_user.used_credits += 1
+    await db.flush()
+    return result
 
 
 @router.get(
