@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   X, MapPin, Briefcase, Users, DollarSign,
   Award, Loader2, ExternalLink, Star, Zap, BarChart2, Building2,
-  ChevronUp, ChevronDown, Layers,
+  ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Layers,
 } from "lucide-react";
 
 import { fmtMoney, toStringArr } from "@/components/common/tableHelpers";
@@ -52,12 +52,12 @@ function CompanyAvatar({ name, logoUrl, website }: { name: string; logoUrl?: str
   if (src && !err) {
     return (
       <img src={src} alt={name}
-        className="h-[60px] w-[60px] shrink-0 rounded-xl object-contain border border-gray-100 bg-white p-1"
+        className="h-[96px] w-[96px] shrink-0 rounded-xl object-contain border border-gray-100 bg-white p-1"
         onError={() => setErr(true)} />
     );
   }
   return (
-    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-xl text-[20px] font-bold ${colorSet.bg} ${colorSet.text}`}>
+    <div className={`flex h-[96px] w-[96px] shrink-0 items-center justify-center rounded-xl text-[26px] font-bold ${colorSet.bg} ${colorSet.text}`}>
       {initials}
     </div>
   );
@@ -103,12 +103,12 @@ function MetricCard({ icon, label, value, sub, accent = false }: {
   icon: React.ReactNode; label: string; value: string; sub?: string; accent?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border px-3 py-3 ${accent ? "border-red-100 bg-red-50" : "border-gray-100 bg-white shadow-sm"}`}>
-      <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${accent ? "text-red-400" : "text-gray-400"}`}>
+    <div className={`rounded-xl border px-3 py-3 ${accent ? "border-red-100 bg-red-50" : "border-gray-100 bg-white shadow-md"}`}>
+      <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${accent ? "text-red-400" : "text-gray-700"}`}>
         {icon}{label}
       </div>
       <p className={`mt-1 text-[15px] font-extrabold leading-tight ${accent ? "text-red-600" : "text-gray-900"}`}>{value}</p>
-      {sub && <p className="mt-0.5 text-[10.5px] text-gray-400">{sub}</p>}
+      {sub && <p className="mt-0.5 text-[11.5px] font-semibold text-gray-700">{sub}</p>}
     </div>
   );
 }
@@ -130,11 +130,11 @@ function ChipsSection({ title, items, colorize = false }: { title: string; items
   const remaining = items.length - VISIBLE;
   if (items.length === 0) return null;
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+    <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
       <p className="text-[15px] font-bold text-gray-900 mb-4">{title}</p>
       <div className="flex flex-wrap gap-2">
         {visible.map((s, i) => (
-          <span key={i} className={`rounded-full border px-4 py-2 text-[13px] font-medium ${colorize ? CHIP_COLORS[i % CHIP_COLORS.length] : "bg-gray-100 text-gray-700 border-gray-100"}`}>
+          <span key={i} className={`rounded-full border px-4 py-2 text-[13px] font-semibold ${colorize ? CHIP_COLORS[i % CHIP_COLORS.length] : "bg-[#ECEBF2] text-gray-900 border-[#ECEBF2]"}`}>
             {s}
           </span>
         ))}
@@ -146,7 +146,36 @@ function ChipsSection({ title, items, colorize = false }: { title: string; items
         )}
         {showAll && items.length > VISIBLE && (
           <button type="button" onClick={() => setShowAll(false)}
-            className="rounded-full bg-gray-100 px-4 py-2 text-[13px] font-medium text-gray-500 hover:bg-gray-200 transition-colors">
+            className="rounded-full bg-red-50 border border-red-200 px-4 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
+            Show less
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function KeywordsSection({ items }: { items: string[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const VISIBLE = 3;
+  const visible = showAll ? items : items.slice(0, VISIBLE);
+  const remaining = items.length - VISIBLE;
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+      <p className="text-[15px] font-bold text-gray-900 mb-4">Categories & Keywords</p>
+      <div className="flex flex-wrap gap-2">
+        {visible.map((k, i) => (
+          <span key={i} className="rounded-lg border border-gray-300 px-4 py-2 text-[13px] font-semibold text-gray-900" style={{ backgroundColor: "#ECEBF2" }}>{k}</span>
+        ))}
+        {!showAll && remaining > 0 && (
+          <button type="button" onClick={() => setShowAll(true)}
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
+            +{remaining} more
+          </button>
+        )}
+        {showAll && items.length > VISIBLE && (
+          <button type="button" onClick={() => setShowAll(false)}
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
             Show less
           </button>
         )}
@@ -161,12 +190,17 @@ function ChipsSection({ title, items, colorize = false }: { title: string; items
 export default function CompanyDetailPanel({ company, onClose }: Props) {
   const [detail, setDetail] = useState<CompanyDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("Overview");
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const overviewRef    = useRef<HTMLDivElement>(null);
   const specialtiesRef = useRef<HTMLDivElement>(null);
   const techRef        = useRef<HTMLDivElement>(null);
   const metricsRef     = useRef<HTMLDivElement>(null);
   const aboutRef       = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const tabNavRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!company) { setDetail(null); return; }
@@ -178,8 +212,77 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
       .finally(() => setLoading(false));
   }, [company?.id]);
 
-  const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
+  useEffect(() => {
+    const sectionRefs = [
+      { label: "Overview",    ref: overviewRef    },
+      { label: "Specialties", ref: specialtiesRef },
+      { label: "Tech Stack",  ref: techRef        },
+      { label: "Metrics",     ref: metricsRef     },
+      { label: "About",       ref: aboutRef       },
+    ];
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const threshold = container.getBoundingClientRect().top + container.clientHeight * 0.25;
+      for (let i = sectionRefs.length - 1; i >= 0; i--) {
+        const el = sectionRefs[i].ref.current;
+        if (el && el.getBoundingClientRect().top <= threshold) {
+          setActiveTab(sectionRefs[i].label);
+          return;
+        }
+      }
+      setActiveTab(sectionRefs[0].label);
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [detail]);
+
+  const scrollTo = (label: string, ref: React.RefObject<HTMLDivElement | null>) => {
+    setActiveTab(label);
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const updateTabArrows = () => {
+    const el = tabNavRef.current;
+    if (!el) return;
+    setCanScrollLeft(Math.floor(el.scrollLeft) > 0);
+    setCanScrollRight(Math.ceil(el.scrollLeft) + el.clientWidth < el.scrollWidth);
+  };
+
+  useEffect(() => {
+    const el = tabNavRef.current;
+    if (!el) return;
+    updateTabArrows();
+    el.addEventListener("scroll", updateTabArrows, { passive: true });
+    const ro = new ResizeObserver(updateTabArrows);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateTabArrows);
+      ro.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const nav = tabNavRef.current;
+    if (!nav) return;
+    const btn = nav.querySelector(`[data-tab="${activeTab}"]`) as HTMLElement | null;
+    if (!btn) return;
+    const navRect = nav.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const btnLeft = btnRect.left - navRect.left + nav.scrollLeft;
+    const btnRight = btnRect.right - navRect.left + nav.scrollLeft;
+    const navWidth = nav.clientWidth;
+    if (btnLeft < nav.scrollLeft) {
+      nav.scrollTo({ left: btnLeft, behavior: "smooth" });
+    } else if (btnRight > nav.scrollLeft + navWidth) {
+      nav.scrollTo({ left: btnRight - navWidth, behavior: "smooth" });
+    }
+  }, [activeTab]);
+
+  const scrollTabNav = (dir: "left" | "right") => {
+    tabNavRef.current?.scrollBy({ left: dir === "left" ? -120 : 120, behavior: "smooth" });
   };
 
   const isOpen = !!company;
@@ -230,7 +333,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
       )}
 
       <aside className={[
-        "fixed right-0 top-0 bottom-0 z-50 flex w-[580px] max-w-full flex-col bg-[#f8f9fb] shadow-2xl border-l border-gray-200",
+        "fixed right-0 top-0 bottom-0 z-50 flex w-[680px] max-w-full flex-col bg-[#ECEBF2] shadow-2xl border-l border-gray-200 [font-family:var(--font-plus-jakarta-sans)]",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "translate-x-full",
       ].join(" ")}>
@@ -252,9 +355,9 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
           {/* Identity row */}
           <div className="flex items-start gap-4 px-5 pb-4">
             <CompanyAvatar name={name} logoUrl={d?.logo_url} website={d?.website} />
-            <div className="min-w-0 flex-1 pt-1">
+            <div className="min-w-0 flex-1 pt-0.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-[16px] font-bold text-gray-900 leading-tight tracking-tight">{name}</h2>
+                <h2 className="text-[18px] font-bold text-gray-900 leading-tight tracking-tight">{name}</h2>
                 {d?.is_public && (
                   <span className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">
                     PUBLIC
@@ -262,7 +365,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
               </div>
               {d?.industry && (
-                <p className="mt-0.5 text-[12.5px] font-semibold text-red-500 leading-snug capitalize">{d.industry}</p>
+                <p className="mt-0.5 text-[13px] font-semibold text-blue-600 leading-snug capitalize">{d.industry}</p>
               )}
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                 {(d?.hq_city || d?.hq_country) && (
@@ -332,25 +435,39 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
         </div>
 
         {/* ══════════ SECTION NAV ══════════ */}
-        <div className="shrink-0 flex bg-white border-b border-gray-200 overflow-x-auto">
-          {NAV.map((item) => (
-            <button key={item.label} type="button" onClick={() => scrollTo(item.ref)}
-              className="shrink-0 whitespace-nowrap px-4 py-2.5 text-[12px] font-semibold text-gray-500 hover:text-red-500 hover:bg-gray-50 transition-all">
-              {item.label}
-              {item.count != null && item.count > 0 && (
-                <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  {item.count}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="shrink-0 relative flex items-stretch bg-white border-b border-gray-200">
+          <button type="button" onClick={() => scrollTabNav("left")}
+            className={`shrink-0 flex items-center justify-center w-7 bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors z-10 border-r border-gray-100 ${canScrollLeft ? "" : "invisible pointer-events-none"}`}>
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div ref={tabNavRef} className="flex overflow-x-auto scrollbar-hide flex-1">
+            {NAV.map((item) => (
+              <button key={item.label} type="button" data-tab={item.label} onClick={() => scrollTo(item.label, item.ref)}
+                className={`shrink-0 whitespace-nowrap px-4 py-2.5 text-[13px] font-bold transition-all border-b-2 ${
+                  activeTab === item.label
+                    ? "text-red-500 border-red-500 bg-red-50"
+                    : "text-gray-800 border-transparent hover:text-red-500 hover:bg-gray-50"
+                }`}>
+                {item.label}
+                {item.count != null && item.count > 0 && (
+                  <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {item.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={() => scrollTabNav("right")}
+            className={`shrink-0 flex items-center justify-center w-7 bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors z-10 border-l border-gray-100 ${canScrollRight ? "" : "invisible pointer-events-none"}`}>
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
 
         {/* ══════════ CONTENT ══════════ */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
+              <div className="rounded-2xl bg-white p-4 shadow-md border border-gray-100">
                 <Loader2 className="h-6 w-6 animate-spin text-red-500" />
               </div>
               <p className="text-[12px] text-gray-400">Loading company…</p>
@@ -363,9 +480,9 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               {/* ── OVERVIEW ── */}
               <div ref={overviewRef}>
                 {detail?.description && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-3">About</p>
-                    <p className="text-[13px] leading-relaxed text-gray-700 whitespace-pre-line">{detail.description}</p>
+                    <p className="text-[13px] font-medium text-gray-900 whitespace-pre-line">{detail.description}</p>
                   </div>
                 )}
                 {(d.employees_count != null || d.company_employee_reviews_aggregate_score != null || d.active_job_postings != null) && (
@@ -387,7 +504,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                   </div>
                 )}
                 {!detail?.description && d.employees_count == null && d.company_employee_reviews_aggregate_score == null && d.active_job_postings == null && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Overview</p>
                     <Empty icon={<Building2 className="h-7 w-7" />} text="No overview available" />
                   </div>
@@ -399,7 +516,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 {specialtiesArr.length > 0 ? (
                   <ChipsSection title="Specialties" items={specialtiesArr} />
                 ) : (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Specialties</p>
                     <Empty icon={<Layers className="h-7 w-7" />} text="No specialties listed" />
                   </div>
@@ -411,7 +528,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 {techArr.length > 0 ? (
                   <ChipsSection title="Tech Stack" items={techArr} colorize />
                 ) : (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Tech Stack</p>
                     <Empty icon={<Zap className="h-7 w-7" />} text="No technologies listed" />
                   </div>
@@ -421,7 +538,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               {/* ── METRICS ── */}
               <div ref={metricsRef} className="space-y-4">
                 {(d.employees_count != null || d.size_range) && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[15px] font-bold text-gray-900">Headcount</p>
                       {d.employees_count_change?.change_yearly_percentage != null && (
@@ -434,10 +551,10 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                           ? d.employees_count.toLocaleString("en-US")
                           : d.size_range ?? "—"}
                       </p>
-                      <p className="mb-1 text-[12px] text-gray-400">employees</p>
+                      <p className="mb-1 text-[12px] font-semibold text-gray-800">employees</p>
                     </div>
                     {d.employees_count_change?.change_yearly_percentage != null && (
-                      <p className="mt-1.5 text-[11.5px] text-gray-400">
+                      <p className="mt-1.5 text-[12px] font-semibold text-gray-800">
                         {d.employees_count_change.change_yearly_percentage >= 0 ? "+" : ""}
                         {d.employees_count_change.change_yearly_percentage.toFixed(1)}% year-over-year
                       </p>
@@ -446,7 +563,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
 
                 {d.total_website_visits_monthly != null && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[15px] font-bold text-gray-900">Monthly Web Traffic</p>
                       {d.total_website_visits_change?.change_monthly_percentage != null && (
@@ -461,7 +578,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                           ? `${(d.total_website_visits_monthly / 1000).toFixed(0)}K`
                           : d.total_website_visits_monthly.toLocaleString("en-US")}
                       </p>
-                      <p className="mb-1 text-[12px] text-gray-400">visits / mo</p>
+                      <p className="mb-1 text-[12px] font-semibold text-gray-800">visits / mo</p>
                     </div>
                   </div>
                 )}
@@ -480,7 +597,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 </div>
 
                 {!d.employees_count && !d.total_website_visits_monthly && !revenueLabel && d.active_job_postings == null && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Metrics</p>
                     <Empty icon={<BarChart2 className="h-7 w-7" />} text="No metrics available" />
                   </div>
@@ -490,7 +607,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               {/* ── ABOUT ── */}
               <div ref={aboutRef} className="space-y-4">
                 {d.last_funding_round && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Last Funding Round</p>
                     <div className="flex items-center gap-3 flex-wrap">
                       {d.last_funding_round.type && (
@@ -499,19 +616,19 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                         </span>
                       )}
                       {d.last_funding_round.amount_raised != null && (
-                        <span className="text-[22px] font-extrabold text-gray-900">
+                        <span className="text-[26px] font-extrabold text-gray-900">
                           {fmtMoney(d.last_funding_round.amount_raised)}
                         </span>
                       )}
                     </div>
                     {!!((d.last_funding_round as Record<string, unknown>)["date"]) && (
-                      <p className="mt-2 text-[12px] text-gray-400">{String((d.last_funding_round as Record<string, unknown>)["date"])}</p>
+                      <p className="mt-2 text-[12px] font-semibold text-gray-800">{String((d.last_funding_round as Record<string, unknown>)["date"])}</p>
                     )}
                   </div>
                 )}
 
                 {awardsArr.length > 0 && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Awards & Certifications</p>
                     <div className="space-y-2">
                       {awardsArr.map((a, i) => (
@@ -519,7 +636,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                           <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-50 border border-amber-200">
                             <Award className="h-3 w-3 text-amber-500" />
                           </div>
-                          <p className="text-[13px] text-gray-700 leading-snug">{a}</p>
+                          <p className="text-[13px] font-semibold text-gray-900 leading-snug">{a}</p>
                         </div>
                       ))}
                     </div>
@@ -527,18 +644,11 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
 
                 {keywordsArr.length > 0 && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <p className="text-[15px] font-bold text-gray-900 mb-4">Categories & Keywords</p>
-                    <div className="flex flex-wrap gap-2">
-                      {keywordsArr.map((k, i) => (
-                        <span key={i} className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[12px] font-medium text-gray-600">{k}</span>
-                      ))}
-                    </div>
-                  </div>
+                  <KeywordsSection items={keywordsArr} />
                 )}
 
                 {d.company_status && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-3">Status</p>
                     <div className="flex items-center gap-2">
                       <div className={`h-2 w-2 rounded-full ${d.company_status.toLowerCase() === "active" ? "bg-emerald-400" : "bg-gray-300"}`} />
@@ -548,7 +658,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
 
                 {!d.last_funding_round && !awardsArr.length && !keywordsArr.length && !d.company_status && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">About</p>
                     <Empty icon={<Layers className="h-7 w-7" />} text="No additional info available" />
                   </div>

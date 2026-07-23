@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -7,6 +7,12 @@ import { AuthProvider } from "@/contexts/AuthContext";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta-sans",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -24,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}>
         <AuthProvider>{children}</AuthProvider>
         <Toaster position="top-right" richColors />
       </body>

@@ -4,7 +4,7 @@ import {
   X, MapPin, Mail, Phone, Globe, Briefcase,
   GraduationCap, Loader2, ExternalLink, Award, Clock,
   BookOpen, FlaskConical, FolderGit2, Heart, Building, Quote,
-  Trophy, FileText, ChevronDown,
+  Trophy, FileText, ChevronDown, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api";
@@ -75,13 +75,13 @@ function Avatar({ name, src }: { name: string; src?: string | null }) {
   if (src && !err)
     return (
       <img src={src} alt={name}
-        className="h-[60px] w-[60px] shrink-0 rounded-xl object-cover"
+        className="h-[96px] w-[96px] shrink-0 rounded-xl object-cover"
         onError={() => setErr(true)} />
     );
   const letters = name.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?";
   const colorSet = AVATAR_COLOR_SETS[(name.charCodeAt(0) || 0) % AVATAR_COLOR_SETS.length];
   return (
-    <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-xl text-[20px] font-bold ${colorSet.bg} ${colorSet.text}`}>
+    <div className={`flex h-[96px] w-[96px] shrink-0 items-center justify-center rounded-xl text-[26px] font-bold ${colorSet.bg} ${colorSet.text}`}>
       {letters}
     </div>
   );
@@ -169,23 +169,23 @@ function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 function TimelineEntry({
   dot = "outline", title, subtitle, subtitleHref, locationText,
-  startDate, endDate, isCurrent, description, isLast,
+  startDate, endDate, isCurrent, description, isLast, titleColor = "text-gray-900",
 }: {
   dot?: "filled" | "outline"; title: string; subtitle?: string | null;
   subtitleHref?: string | null; locationText?: string | null;
   startDate?: string | null; endDate?: string | null;
-  isCurrent?: boolean; description?: string | null; isLast?: boolean;
+  isCurrent?: boolean; description?: string | null; isLast?: boolean; titleColor?: string;
 }) {
   return (
-    <div className="flex gap-3.5">
+    <div className="flex gap-3">
       <div className="flex flex-col items-center">
-        <div className={`mt-0.5 h-5 w-5 rounded-full border-2 flex-shrink-0 ${
+        <div className={`mt-1 h-3 w-3 rounded-full border flex-shrink-0 ${
           dot === "filled" ? "bg-red-500 border-red-500" : "bg-white border-gray-300"
         }`} />
-        {!isLast && <div className="w-px bg-gray-200 flex-1 mt-1.5 mb-1.5 min-h-[20px]" />}
+        {!isLast && <div className="w-px bg-gray-200 flex-1 mt-1 mb-1 min-h-[20px]" />}
       </div>
       <div className={`flex-1 min-w-0 ${!isLast ? "pb-5" : "pb-1"}`}>
-        <p className="text-[14px] font-bold text-gray-900 leading-tight">{title}</p>
+        <p className={`text-[14px] font-bold leading-tight ${titleColor}`}>{title}</p>
         {subtitle && (
           subtitleHref ? (
             <a href={subtitleHref.startsWith("http") ? subtitleHref : `https://${subtitleHref}`}
@@ -198,23 +198,23 @@ function TimelineEntry({
           )
         )}
         {locationText !== undefined && (
-          <p className="mt-0.5 text-[12px] text-gray-400">{locationText ?? "Location not specified"}</p>
+          <p className="mt-0.5 text-[13px] font-medium text-gray-800">{locationText ?? "Location not specified"}</p>
         )}
         {(startDate || endDate || isCurrent) && (
           <div className="mt-2 flex items-center gap-1.5 flex-wrap">
             {fmtMo(startDate) && (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">
+              <span className="rounded-full bg-[#ECEBF2] px-3 py-1 text-[12px] font-semibold text-gray-900">
                 {fmtMo(startDate)}
               </span>
             )}
-            <span className="text-gray-400 text-[11px]">–</span>
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">
+            <span className="text-gray-700 text-[12px]">–</span>
+            <span className="rounded-full bg-[#ECEBF2] px-3 py-1 text-[12px] font-semibold text-gray-900">
               {isCurrent ? "Current" : (fmtMo(endDate) || "Present")}
             </span>
           </div>
         )}
         {description && (
-          <p className="mt-2 text-[12px] leading-relaxed text-gray-500 line-clamp-3">{description}</p>
+          <p className="mt-2 text-[13px] leading-relaxed font-medium text-gray-800 line-clamp-3">{description}</p>
         )}
       </div>
     </div>
@@ -225,9 +225,9 @@ function YearRange({ start, end }: { start?: string | null; end?: string | null 
   if (!start && !end) return null;
   return (
     <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-      {start && <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">{start}</span>}
-      {start && end && <span className="text-gray-400 text-[11px]">–</span>}
-      {end && <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">{end}</span>}
+      {start && <span className="rounded-full bg-[#ECEBF2] px-3 py-1 text-[12px] font-semibold text-gray-900">{start}</span>}
+      {start && end && <span className="text-gray-700 text-[12px]">–</span>}
+      {end && <span className="rounded-full bg-[#ECEBF2] px-3 py-1 text-[12px] font-semibold text-gray-900">{end}</span>}
     </div>
   );
 }
@@ -238,24 +238,24 @@ function SkillsSection({ skills }: { skills: string[] }) {
   const visible = showAll ? skills : skills.slice(0, VISIBLE);
   const remaining = skills.length - VISIBLE;
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+    <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
       <p className="text-[15px] font-bold text-gray-900 mb-4">Skills</p>
       {skills.length === 0 ? (
         <Empty icon={<Award className="h-7 w-7" />} text="No skills listed" />
       ) : (
         <div className="flex flex-wrap gap-2">
           {visible.map((s, i) => (
-            <span key={i} className="rounded-full bg-gray-100 px-4 py-2 text-[13px] font-medium text-gray-700">{s}</span>
+            <span key={i} className="rounded-lg border border-gray-300 px-4 py-2 text-[13px] font-semibold text-gray-900" style={{ backgroundColor: "#ECEBF2" }}>{s}</span>
           ))}
           {!showAll && remaining > 0 && (
             <button type="button" onClick={() => setShowAll(true)}
-              className="rounded-full bg-red-50 border border-red-200 px-4 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
               +{remaining} more
             </button>
           )}
           {showAll && skills.length > VISIBLE && (
             <button type="button" onClick={() => setShowAll(false)}
-              className="rounded-full bg-gray-100 px-4 py-2 text-[13px] font-medium text-gray-500 hover:bg-gray-200 transition-colors">
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-[13px] font-semibold text-red-500 hover:bg-red-100 transition-colors">
               Show less
             </button>
           )}
@@ -275,7 +275,7 @@ function InfoCard({ icon, iconColor, iconBg, title, subtitle, meta, description,
   actionLabel?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white px-3.5 py-3 shadow-sm">
+    <div className="rounded-xl border border-gray-100 bg-white px-3.5 py-3 shadow-md">
       <div className="flex items-start gap-3">
         <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
           <span className={iconColor}>{icon}</span>
@@ -291,11 +291,11 @@ function InfoCard({ icon, iconColor, iconBg, title, subtitle, meta, description,
               </a>
             )}
           </div>
-          {subtitle && <p className="mt-0.5 text-[12px] text-gray-500">{subtitle}</p>}
+          {subtitle && <p className="mt-0.5 text-[13px] font-medium text-gray-800">{subtitle}</p>}
           {meta && meta.filter(Boolean).length > 0 && (
-            <p className="mt-1 text-[11px] text-gray-400">{meta.filter(Boolean).join(" · ")}</p>
+            <p className="mt-1 text-[12px] font-semibold text-gray-800">{meta.filter(Boolean).join(" · ")}</p>
           )}
-          {description && <p className="mt-1.5 text-[11.5px] leading-relaxed text-gray-500 line-clamp-3">{description}</p>}
+          {description && <p className="mt-1.5 text-[13px] leading-relaxed font-medium text-gray-800 line-clamp-3">{description}</p>}
           {extra}
         </div>
       </div>
@@ -306,7 +306,7 @@ function InfoCard({ icon, iconColor, iconBg, title, subtitle, meta, description,
 function PillRow({ items, color = "gray" }: { items: string[]; color?: "gray" | "red" | "blue" | "emerald" | "orange" }) {
   if (!items.length) return null;
   const cls = {
-    gray: "bg-gray-100 text-gray-600",
+    gray: "bg-[#ECEBF2] text-gray-600",
     red: "bg-red-50 text-red-600 border border-red-100",
     blue: "bg-blue-50 text-blue-600 border border-blue-100",
     emerald: "bg-emerald-50 text-emerald-700 border border-emerald-100",
@@ -325,6 +325,9 @@ function PillRow({ items, color = "gray" }: { items: string[]; color?: "gray" | 
 export default function PersonDetailPanel({ person, onClose }: Props) {
   const [detail, setDetail] = useState<PersonDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("Skills");
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   const skillsRef   = useRef<HTMLDivElement>(null);
   const expRef      = useRef<HTMLDivElement>(null);
@@ -332,6 +335,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const companyRef  = useRef<HTMLDivElement>(null);
   const summaryRef  = useRef<HTMLDivElement>(null);
   const projRef     = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const tabNavRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!person) { setDetail(null); return; }
@@ -348,8 +353,78 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       .finally(() => setLoading(false));
   }, [person?.id]);
 
-  const scrollTo = (ref: React.RefObject<HTMLDivElement | null>) => {
+  useEffect(() => {
+    const sectionRefs = [
+      { label: "Skills", ref: skillsRef },
+      { label: "Work Experience", ref: expRef },
+      { label: "Education", ref: eduRef },
+      { label: "Company Info", ref: companyRef },
+      { label: "Summary", ref: summaryRef },
+      { label: "Job Projects", ref: projRef },
+    ];
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const onScroll = () => {
+      const threshold = container.getBoundingClientRect().top + container.clientHeight * 0.25;
+      for (let i = sectionRefs.length - 1; i >= 0; i--) {
+        const el = sectionRefs[i].ref.current;
+        if (el && el.getBoundingClientRect().top <= threshold) {
+          setActiveTab(sectionRefs[i].label);
+          return;
+        }
+      }
+      setActiveTab(sectionRefs[0].label);
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [detail]);
+
+  const scrollTo = (label: string, ref: React.RefObject<HTMLDivElement | null>) => {
+    setActiveTab(label);
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const updateTabArrows = () => {
+    const el = tabNavRef.current;
+    if (!el) return;
+    setCanScrollLeft(Math.floor(el.scrollLeft) > 0);
+    setCanScrollRight(Math.ceil(el.scrollLeft) + el.clientWidth < el.scrollWidth);
+  };
+
+  useEffect(() => {
+    const el = tabNavRef.current;
+    if (!el) return;
+    updateTabArrows();
+    el.addEventListener("scroll", updateTabArrows, { passive: true });
+    const ro = new ResizeObserver(updateTabArrows);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", updateTabArrows);
+      ro.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const nav = tabNavRef.current;
+    if (!nav) return;
+    const btn = nav.querySelector(`[data-tab="${activeTab}"]`) as HTMLElement | null;
+    if (!btn) return;
+    const navRect = nav.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    const btnLeft = btnRect.left - navRect.left + nav.scrollLeft;
+    const btnRight = btnRect.right - navRect.left + nav.scrollLeft;
+    const navWidth = nav.clientWidth;
+    if (btnLeft < nav.scrollLeft) {
+      nav.scrollTo({ left: btnLeft, behavior: "smooth" });
+    } else if (btnRight > nav.scrollLeft + navWidth) {
+      nav.scrollTo({ left: btnRight - navWidth, behavior: "smooth" });
+    }
+  }, [activeTab]);
+
+  const scrollTabNav = (dir: "left" | "right") => {
+    tabNavRef.current?.scrollBy({ left: dir === "left" ? -120 : 120, behavior: "smooth" });
   };
 
   const isOpen = !!person;
@@ -385,7 +460,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       )}
 
       <aside className={[
-        "fixed right-0 top-0 bottom-0 z-50 flex w-[580px] max-w-full flex-col bg-[#f8f9fb] shadow-2xl border-l border-gray-200",
+        "fixed right-0 top-0 bottom-0 z-50 flex w-[680px] max-w-full flex-col bg-[#ECEBF2] shadow-2xl border-l border-gray-200 [font-family:var(--font-plus-jakarta-sans)]",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "translate-x-full",
       ].join(" ")}>
@@ -407,9 +482,9 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
           {/* Profile identity row */}
           <div className="flex items-start gap-4 px-5 pb-4">
             <Avatar name={fullName} src={d?.picture_url as string | null} />
-            <div className="min-w-0 flex-1 pt-1">
+            <div className="min-w-0 flex-1 pt-0.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-[16px] font-bold text-gray-900 leading-tight tracking-tight">{fullName}</h2>
+                <h2 className="text-[18px] font-bold text-gray-900 leading-tight tracking-tight">{fullName}</h2>
                 {d?.has_email && (
                   <span className="rounded-full border border-green-300 bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-600">
                     Revealed
@@ -417,10 +492,10 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
               </div>
               {titleLine && (
-                <p className="mt-0.5 text-[12.5px] text-gray-500 leading-snug">{titleLine}</p>
+                <p className="mt-0.5 text-[13px] text-gray-500 leading-snug">{titleLine}</p>
               )}
               {companyLine && (
-                <p className="mt-0.5 text-[12.5px] font-semibold text-red-500 leading-snug">{companyLine}</p>
+                <p className="mt-0.5 text-[13px] font-semibold text-blue-600 leading-snug">{companyLine}</p>
               )}
               {!titleLine && d?.headline && (
                 <p className="mt-0.5 text-[12.5px] text-gray-500 line-clamp-2 leading-snug">{d.headline as string}</p>
@@ -500,25 +575,39 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
         </div>
 
         {/* ══════════ SECTION NAV ══════════ */}
-        <div className="shrink-0 flex bg-white border-b border-gray-200 overflow-x-auto">
-          {NAV.map((item) => (
-            <button key={item.label} type="button" onClick={() => scrollTo(item.ref)}
-              className="shrink-0 whitespace-nowrap px-4 py-2.5 text-[12px] font-semibold text-gray-500 hover:text-red-500 hover:bg-gray-50 transition-all">
-              {item.label}
-              {item.count != null && item.count > 0 && (
-                <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  {item.count}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="shrink-0 relative flex items-stretch bg-white border-b border-gray-200">
+          <button type="button" onClick={() => scrollTabNav("left")}
+            className={`shrink-0 flex items-center justify-center w-7 bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors z-10 border-r border-gray-100 ${canScrollLeft ? "" : "invisible pointer-events-none"}`}>
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <div ref={tabNavRef} className="flex overflow-x-auto scrollbar-hide flex-1">
+            {NAV.map((item) => (
+              <button key={item.label} type="button" data-tab={item.label} onClick={() => scrollTo(item.label, item.ref)}
+                className={`shrink-0 whitespace-nowrap px-4 py-2.5 text-[13px] font-bold transition-all border-b-2 ${
+                  activeTab === item.label
+                    ? "text-red-500 border-red-500 bg-red-50"
+                    : "text-gray-800 border-transparent hover:text-red-500 hover:bg-gray-50"
+                }`}>
+                {item.label}
+                {item.count != null && item.count > 0 && (
+                  <span className="ml-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {item.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={() => scrollTabNav("right")}
+            className={`shrink-0 flex items-center justify-center w-7 bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors z-10 border-l border-gray-100 ${canScrollRight ? "" : "invisible pointer-events-none"}`}>
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
 
         {/* ══════════ CONTENT ══════════ */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {loading && (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
+              <div className="rounded-2xl bg-white p-4 shadow-md border border-gray-100">
                 <Loader2 className="h-6 w-6 animate-spin text-red-500" />
               </div>
               <p className="text-[12px] text-gray-400">Loading profile…</p>
@@ -535,13 +624,12 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
               {/* ── WORK EXPERIENCE ── */}
               <div ref={expRef}>
-                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
-                      <span className="text-[15px] font-bold text-gray-900">Work Experience</span>
-                      {detail?.total_experience && (
-                        <span className="text-[13px] font-normal text-gray-400">· {detail.total_experience}</span>
-                      )}
+                      <span className="text-[15px] font-bold text-gray-900">
+                        Work Experience{detail?.total_experience ? ` • ${detail.total_experience}` : ""}
+                      </span>
                     </div>
                   </div>
                   {!detail?.work_history?.length ? (
@@ -549,7 +637,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                   ) : (
                     detail.work_history.map((w, i) => (
                       <TimelineEntry key={i}
-                        dot={w.is_current ? "filled" : "outline"}
+                        dot={w.is_current ? "outline" : "filled"}
                         title={w.title ?? "—"}
                         subtitle={w.company_name}
                         subtitleHref={w.company_website}
@@ -565,7 +653,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 </div>
 
                 {detail?.volunteering && detail.volunteering.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <Heart className="h-4 w-4 text-red-400" />
                       <span className="text-[15px] font-bold text-gray-900">Volunteering</span>
@@ -587,7 +675,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
               {/* ── EDUCATION ── */}
               <div ref={eduRef}>
-                <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                   <div className="flex items-center gap-2 mb-5">
                     <GraduationCap className="h-4 w-4 text-blue-400" />
                     <span className="text-[15px] font-bold text-gray-900">Education</span>
@@ -596,22 +684,22 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                     <Empty icon={<GraduationCap className="h-7 w-7" />} text="No education listed" />
                   ) : (
                     detail.education.map((e, i) => (
-                      <div key={i} className="flex gap-3.5">
+                      <div key={i} className="flex gap-3">
                         <div className="flex flex-col items-center">
-                          <div className="mt-0.5 h-5 w-5 rounded-full border-2 bg-white border-gray-300 flex-shrink-0" />
+                          <div className="mt-1 h-3 w-3 rounded-full border bg-white border-gray-300 flex-shrink-0" />
                           {i < detail.education.length - 1 && (
-                            <div className="w-px bg-gray-200 flex-1 mt-1.5 mb-1.5 min-h-[20px]" />
+                            <div className="w-px bg-gray-200 flex-1 mt-1 mb-1 min-h-[20px]" />
                           )}
                         </div>
                         <div className={`flex-1 min-w-0 ${i < detail.education.length - 1 ? "pb-5" : "pb-1"}`}>
-                          <p className="text-[14px] font-bold text-gray-900 leading-tight">{e.school ?? "—"}</p>
+                          {e.school && <p className="text-[14px] font-bold text-gray-900 leading-tight">{e.school}</p>}
                           {(e.degree || e.field) && (
-                            <p className="mt-0.5 text-[13px] font-semibold text-red-500">
+                            <p className="mt-0.5 text-[13px] font-semibold text-gray-900">
                               {[e.degree, e.field].filter(Boolean).join(" · ")}
                             </p>
                           )}
                           <YearRange start={e.start_year} end={e.end_year} />
-                          {e.activities && <p className="mt-2 text-[12px] text-gray-500 line-clamp-2">{e.activities}</p>}
+                          {e.activities && <p className="mt-2 text-[13px] font-medium text-gray-800 line-clamp-2">{e.activities}</p>}
                         </div>
                       </div>
                     ))
@@ -619,7 +707,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 </div>
 
                 {detail?.organizations && detail.organizations.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <Building className="h-4 w-4 text-indigo-400" />
                       <span className="text-[15px] font-bold text-gray-900">Organizations</span>
@@ -638,15 +726,15 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {detail?.test_scores && detail.test_scores.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Test Scores</p>
                     <div className="divide-y divide-gray-50">
                       {detail.test_scores.map((ts, i) => (
                         <div key={i} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                           <div className="min-w-0">
                             <p className="text-[13px] font-semibold text-gray-900">{ts.title}</p>
-                            {ts.date && <p className="text-[11px] text-gray-400 mt-0.5">{fmtMo(ts.date)}</p>}
-                            {ts.description && <p className="mt-1 text-[11.5px] text-gray-500 line-clamp-2">{ts.description}</p>}
+                            {ts.date && <p className="text-[12px] font-semibold text-gray-800 mt-0.5">{fmtMo(ts.date)}</p>}
+                            {ts.description && <p className="mt-1 text-[13px] font-medium text-gray-800 line-clamp-2">{ts.description}</p>}
                           </div>
                           {ts.score && (
                             <span className="ml-4 shrink-0 rounded-xl border border-green-200 bg-green-50 px-3 py-1.5 text-[16px] font-bold text-green-600">
@@ -663,7 +751,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               {/* ── COMPANY INFO ── */}
               <div ref={companyRef}>
                 {d?.active_experience_company_name ? (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Company Info</p>
                     <div className="flex items-center gap-3 mb-4">
                       {d.active_experience_company_logo_url ? (
@@ -715,7 +803,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Company Info</p>
                     <Empty icon={<Building className="h-7 w-7" />} text="No company info available" />
                   </div>
@@ -723,7 +811,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
                 {/* Certifications under company info area */}
                 {detail?.certifications && detail.certifications.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <Award className="h-4 w-4 text-yellow-500" />
                       <span className="text-[15px] font-bold text-gray-900">Certifications</span>
@@ -741,7 +829,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {detail?.courses && detail.courses.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <BookOpen className="h-4 w-4 text-teal-500" />
                       <span className="text-[15px] font-bold text-gray-900">Courses</span>
@@ -754,7 +842,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                           </div>
                           <div>
                             <p className="text-[13px] font-semibold text-gray-900">{c.title}</p>
-                            {c.organizer && <p className="text-[12px] text-gray-500 mt-0.5">{c.organizer}</p>}
+                            {c.organizer && <p className="text-[13px] font-medium text-gray-800 mt-0.5">{c.organizer}</p>}
                           </div>
                         </div>
                       ))}
@@ -763,7 +851,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {detail?.awards && detail.awards.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <Trophy className="h-4 w-4 text-amber-500" />
                       <span className="text-[15px] font-bold text-gray-900">Awards</span>
@@ -782,7 +870,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                                 <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-600">{fmtMo(a.date)}</span>
                               </div>
                             )}
-                            {a.description && <p className="mt-1.5 text-[12px] text-gray-500">{a.description}</p>}
+                            {a.description && <p className="mt-1.5 text-[13px] font-medium text-gray-800">{a.description}</p>}
                           </div>
                         </div>
                       ))}
@@ -794,26 +882,26 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               {/* ── SUMMARY / ABOUT ── */}
               <div ref={summaryRef} className="space-y-4">
                 {detail?.summary ? (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-3">Summary</p>
-                    <p className="text-[13px] leading-relaxed text-gray-700 whitespace-pre-line">{detail.summary}</p>
+                    <p className="text-[13px] font-medium text-gray-900 whitespace-pre-line">{detail.summary}</p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Summary</p>
                     <Empty icon={<Globe className="h-7 w-7" />} text="No summary available" />
                   </div>
                 )}
 
                 {detail?.languages && detail.languages.length > 0 && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Languages</p>
                     <div className="grid grid-cols-2 gap-2">
                       {detail.languages.map((l, i) => (
                         <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
                           <span className="text-[13px] font-semibold text-gray-800">{l.language}</span>
                           {l.proficiency && (
-                            <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-500 shadow-sm">
+                            <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-800 shadow-sm">
                               {l.proficiency}
                             </span>
                           )}
@@ -827,13 +915,13 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                   <div className="space-y-3">
                     <p className="text-[15px] font-bold text-gray-900 px-1">Recommendations</p>
                     {detail.recommendations.map((r, i) => (
-                      <div key={i} className="rounded-2xl border border-gray-100 bg-white shadow-sm p-4">
+                      <div key={i} className="rounded-2xl border border-gray-100 bg-white shadow-md p-4">
                         <div className="mb-2 flex items-center gap-1.5">
                           <div className="h-px flex-1 bg-red-100" />
                           <Quote className="h-4 w-4 text-red-300" />
                           <div className="h-px flex-1 bg-red-100" />
                         </div>
-                        <p className="text-[12.5px] leading-relaxed text-gray-600 italic">{r.text}</p>
+                        <p className="text-[13px] font-medium text-gray-900 italic">{r.text}</p>
                         {r.from_name && (
                           <div className="mt-3 flex items-center gap-2 border-t border-gray-50 pt-2.5">
                             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-red-50 text-[12px] font-bold text-red-500">
@@ -844,7 +932,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                                 target="_blank" rel="noopener noreferrer"
                                 className="text-[12px] font-semibold text-blue-600 hover:underline">{r.from_name}</a>
                             ) : (
-                              <span className="text-[12px] font-semibold text-gray-700">{r.from_name}</span>
+                              <span className="text-[13px] font-bold text-gray-900">{r.from_name}</span>
                             )}
                           </div>
                         )}
@@ -857,75 +945,66 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               {/* ── JOB PROJECTS ── */}
               <div ref={projRef}>
                 {detail?.projects && detail.projects.length > 0 && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <div className="flex items-center gap-2 mb-4">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                    <div className="flex items-center gap-2 mb-5">
                       <FolderGit2 className="h-4 w-4 text-violet-500" />
                       <span className="text-[15px] font-bold text-gray-900">Projects</span>
                     </div>
-                    <div className="space-y-2.5">
-                      {detail.projects.map((p, i) => (
-                        <InfoCard key={i}
-                          icon={<FolderGit2 className="h-4 w-4" />} iconColor="text-violet-600" iconBg="bg-violet-50"
-                          title={p.name ?? "—"} meta={[fmtRange(p.start_date, p.end_date)]}
-                          description={p.description} actionUrl={p.url} actionLabel="View"
-                          extra={<PillRow items={p.members} color="gray" />}
-                        />
-                      ))}
-                    </div>
+                    {detail.projects.map((p, i) => (
+                      <TimelineEntry key={i}
+                        title={p.name ?? "—"}
+                        titleColor="text-red-500"
+                        subtitle={p.url ? "View Project" : null}
+                        subtitleHref={p.url}
+                        startDate={p.start_date}
+                        endDate={p.end_date}
+                        description={p.description}
+                        isLast={i === detail.projects.length - 1}
+                      />
+                    ))}
                   </div>
                 )}
 
                 {detail?.publications && detail.publications.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <div className="flex items-center gap-2 mb-4">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                    <div className="flex items-center gap-2 mb-5">
                       <FileText className="h-4 w-4 text-emerald-500" />
                       <span className="text-[15px] font-bold text-gray-900">Publications</span>
                     </div>
-                    <div className="space-y-2.5">
-                      {detail.publications.map((p, i) => (
-                        <InfoCard key={i}
-                          icon={<FileText className="h-4 w-4" />} iconColor="text-emerald-600" iconBg="bg-emerald-50"
-                          title={p.title ?? "—"}
-                          subtitle={metaStr([p.publisher, p.date ? fmtMo(p.date) : null]) || null}
-                          description={p.description} actionUrl={p.url} actionLabel="Read"
-                          extra={<PillRow items={p.authors} color="emerald" />}
-                        />
-                      ))}
-                    </div>
+                    {detail.publications.map((p, i) => (
+                      <TimelineEntry key={i}
+                        title={p.title ?? "—"}
+                        subtitle={p.publisher ?? null}
+                        subtitleHref={p.url}
+                        startDate={p.date}
+                        description={p.description}
+                        isLast={i === detail.publications.length - 1}
+                      />
+                    ))}
                   </div>
                 )}
 
                 {detail?.patents && detail.patents.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
-                    <div className="flex items-center gap-2 mb-4">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                    <div className="flex items-center gap-2 mb-5">
                       <FlaskConical className="h-4 w-4 text-orange-500" />
                       <span className="text-[15px] font-bold text-gray-900">Patents</span>
                     </div>
-                    <div className="space-y-2.5">
-                      {detail.patents.map((p, i) => (
-                        <InfoCard key={i}
-                          icon={<FlaskConical className="h-4 w-4" />} iconColor="text-orange-500" iconBg="bg-orange-50"
-                          title={p.title ?? "—"}
-                          subtitle={metaStr([p.patent_number, p.date ? fmtMo(p.date) : null]) || null}
-                          description={p.description} actionUrl={p.url} actionLabel="View"
-                          extra={
-                            <>
-                              {p.status && (
-                                <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ${p.status.toLowerCase() === "granted" ? "bg-green-50 border border-green-200 text-green-700" : "bg-gray-100 text-gray-600"}`}>
-                                  {p.status}
-                                </span>
-                              )}
-                              <PillRow items={p.inventors} color="orange" />
-                            </>
-                          }
-                        />
-                      ))}
-                    </div>
+                    {detail.patents.map((p, i) => (
+                      <TimelineEntry key={i}
+                        title={p.title ?? "—"}
+                        subtitle={p.patent_number ?? null}
+                        subtitleHref={p.url}
+                        startDate={p.date}
+                        description={p.description}
+                        isLast={i === detail.patents.length - 1}
+                      />
+                    ))}
                   </div>
                 )}
 
                 {!detail?.projects?.length && !detail?.publications?.length && !detail?.patents?.length && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Job Projects</p>
                     <Empty icon={<FolderGit2 className="h-7 w-7" />} text="No projects, publications or patents" />
                   </div>
