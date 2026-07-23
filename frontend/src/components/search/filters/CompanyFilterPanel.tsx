@@ -8,7 +8,7 @@ import {
 import FilterSection, { FilterPreviewChips } from "../FilterSection";
 import type { ChipItem } from "../FilterSection";
 import MultiChipSelect from "../MultiChipSelect";
-import MultiChipAutocomplete from "../MultiChipAutocomplete";
+import TechnologyAutocomplete from "./TechnologyAutocomplete";
 import BulkCompanyInput from "./BulkCompanyInput";
 import LocationAutocomplete from "./LocationAutocomplete";
 import CountrySelect from "./CountrySelect";
@@ -311,10 +311,9 @@ export default function CompanyFilterPanel({ filters, onChange }: Props) {
         onClear={() => onChange({ technologies: [] })}
         preview={<FilterPreviewChips items={techPreview} />}
       >
-        <MultiChipAutocomplete
+        <TechnologyAutocomplete
           label="Skills / Technologies"
           placeholder="e.g. React, AWS, Salesforce…"
-          field="skill"
           values={filters.technologies}
           onChange={(v) => onChange({ technologies: v })}
         />

@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import FilterSection, { FilterPreviewChips } from "../FilterSection";
 import type { ChipItem } from "../FilterSection";
-import MultiChipAutocomplete from "../MultiChipAutocomplete";
+import TechnologyAutocomplete from "./TechnologyAutocomplete";
 import JobTitleAutocomplete from "./JobTitleAutocomplete";
 import BulkCompanyInput from "./BulkCompanyInput";
 import InlineDepartmentSelect from "./InlineDepartmentSelect";
@@ -459,10 +459,9 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         onClear={() => onChange({ technologies: [] })}
         preview={<FilterPreviewChips items={techPreview} />}
       >
-        <MultiChipAutocomplete
+        <TechnologyAutocomplete
           label="Skills / Technologies"
           placeholder="e.g. React, AWS, Python…"
-          field="skill"
           values={filters.technologies}
           onChange={(v) => onChange({ technologies: v })}
         />

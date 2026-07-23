@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
+from app.models.technology_intent import TechnologyIntent
 from app.schemas.search import (
     AgenticSearchRequest,
     CompanySearchRequest,
@@ -351,3 +352,39 @@ async def autocomplete_titles(
             return TitleAutocompleteResponse(suggestions=[])
     names = [item["name"] for item in resp.json().get("data", [])]
     return TitleAutocompleteResponse(suggestions=names)
+
+
+@router.get("/autocomplete/technologies", response_model=TitleAutocompleteResponse, summary="Technology autocomplete from DB")
+async def autocomplete_technologies(
+    text: str = Query(..., min_length=1, max_length=100),
+    size: int = Query(default=10, ge=1, le=25),
+    db: AsyncSession = Depends(get_db),
+) -> TitleAutocompleteResponse:
+    stmt = (
+        select(TechnologyIntent.technology)
+        .where(TechnologyIntent.technology.ilike(f"%{text}%"))
+        .where(TechnologyIntent.technology.isnot(None))
+        .distinct()
+        .limit(size)
+    )
+    result = await db.execute(stmt)
+    suggestions = [row[0] for row in result.all() if row[0]]
+    return TitleAutocompleteResponse(suggestions=suggestions)
+
+
+@router.get("/autocomplete/intents", response_model=TitleAutocompleteResponse, summary="Intent/keyword autocomplete from DB")
+async def autocomplete_intents(
+    text: str = Query(..., min_length=1, max_length=100),
+    size: int = Query(default=10, ge=1, le=25),
+    db: AsyncSession = Depends(get_db),
+) -> TitleAutocompleteResponse:
+    stmt = (
+        select(TechnologyIntent.intent)
+        .where(TechnologyIntent.intent.ilike(f"%{text}%"))
+        .where(TechnologyIntent.intent.isnot(None))
+        .distinct()
+        .limit(size)
+    )
+    result = await db.execute(stmt)
+    suggestions = [row[0] for row in result.all() if row[0]]
+    return TitleAutocompleteResponse(suggestions=suggestions)
