@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Building2, List, LogOut, ChevronLeft, ChevronRight, UserCircle, Briefcase } from "lucide-react";
+import { Users, Building2, List, LogOut, ChevronLeft, ChevronRight, UserCircle, Briefcase, BarChart2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMobileSidebar } from "@/contexts/MobileSidebarContext";
 
@@ -26,6 +26,7 @@ const BASE_NAV_SECTIONS: NavSection[] = [
       { href: "/search/people", label: "People", icon: <Users className="h-4 w-4 shrink-0" /> },
       { href: "/search/companies", label: "Companies", icon: <Building2 className="h-4 w-4 shrink-0" /> },
       { href: "/search/lists", label: "Lists", icon: <List className="h-4 w-4 shrink-0" /> },
+      { href: "/search/usage", label: "Usage", icon: <BarChart2 className="h-4 w-4 shrink-0" /> },
     ],
   },
 ];

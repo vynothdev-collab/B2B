@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Shield, LogOut, KeyRound, Check, Loader2, Eye, EyeOff, Building2, CreditCard } from "lucide-react";
+import { User, Mail, Shield, LogOut, KeyRound, Check, Loader2, Eye, EyeOff, Building2, CreditCard, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiClient } from "@/lib/api";
@@ -179,36 +180,22 @@ export default function ProfileClient() {
                   </div>
                 )}
 
-                {(user?.allocated_credits ?? 0) > 0 && (
-                  <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-                    <CreditCard className="h-4 w-4 shrink-0 text-gray-400" />
-                    <div className="min-w-0 w-full">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Search Credits</p>
-                      <div className="flex items-center gap-4 mt-0.5">
-                        <span className="text-sm font-medium text-gray-800">
-                          {(user?.remaining_credits ?? 0).toLocaleString()} remaining
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {(user?.used_credits ?? 0).toLocaleString()} used of {(user?.allocated_credits ?? 0).toLocaleString()} allocated
-                        </span>
-                      </div>
-                      <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200">
-                        <div
-                          className="h-1.5 rounded-full transition-all"
-                          style={{
-                            width: `${user && user.allocated_credits > 0 ? Math.min(100, (user.used_credits / user.allocated_credits) * 100) : 0}%`,
-                            background:
-                              (user?.remaining_credits ?? 0) <= 0
-                                ? "#dc2626"
-                                : user && user.remaining_credits / user.allocated_credits < 0.2
-                                ? "#f59e0b"
-                                : "#10b981",
-                          }}
-                        />
-                      </div>
-                    </div>
+                <Link
+                  href="/search/usage"
+                  className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 hover:border-gray-200 hover:bg-gray-100 transition-colors"
+                >
+                  <CreditCard className="h-4 w-4 shrink-0 text-gray-400" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Search Credits</p>
+                    <p className="mt-0.5 text-sm font-medium text-gray-800">
+                      {(user?.remaining_credits ?? 0).toLocaleString()} remaining
+                      <span className="ml-2 text-xs font-normal text-gray-400">
+                        of {(user?.allocated_credits ?? 0).toLocaleString()} allocated
+                      </span>
+                    </p>
                   </div>
-                )}
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                </Link>
               </div>
             </div>
           </div>

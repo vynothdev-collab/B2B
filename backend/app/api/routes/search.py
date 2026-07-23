@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.models.search_log import SearchLog
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
 from app.models.user import User
 from app.models.technology_intent import TechnologyIntent
@@ -33,6 +34,10 @@ def _check_credits(user: User) -> None:
         )
 
 
+def _log_search(db: AsyncSession, user_id: str, search_type: str) -> None:
+    db.add(SearchLog(user_id=user_id, search_type=search_type))
+
+
 @router.post("/persons", response_model=SearchResponse, summary="Search people")
 async def person_search(
     body: PersonSearchRequest,
@@ -42,6 +47,7 @@ async def person_search(
     _check_credits(current_user)
     result = await coresignal_service.search_persons(body, db=db)
     current_user.used_credits += 1
+    _log_search(db, current_user.id, "person")
     await db.flush()
     return result
 
@@ -55,6 +61,7 @@ async def company_search(
     _check_credits(current_user)
     result = await coresignal_service.search_companies(body, db=db)
     current_user.used_credits += 1
+    _log_search(db, current_user.id, "company")
     await db.flush()
     return result
 
@@ -68,6 +75,7 @@ async def agentic_search(
     _check_credits(current_user)
     result = await coresignal_service.agentic_search(body, db=db)
     current_user.used_credits += 1
+    _log_search(db, current_user.id, "agentic")
     await db.flush()
     return result
 
