@@ -62,6 +62,7 @@ export interface PersonFilters {
   otherCompliance: string[];
   foundedMin: string;
   foundedMax: string;
+  linkedinUrl: string[];
 }
 
 export const DEFAULT_PERSON_FILTERS: PersonFilters = {
@@ -125,6 +126,7 @@ export const DEFAULT_PERSON_FILTERS: PersonFilters = {
   otherCompliance: [],
   foundedMin: "",
   foundedMax: "",
+  linkedinUrl: [],
 };
 
 

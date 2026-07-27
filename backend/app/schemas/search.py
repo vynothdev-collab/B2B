@@ -74,6 +74,8 @@ class PersonSearchRequest(BaseModel):
     # Job posting keywords — company-level prefetch filter
     job_posting_keywords: Optional[list[str]] = None
 
+    linkedin_url: Optional[list[str]] = None
+
     scroll_token: Optional[str] = None
     page_size: int = Field(default=10, ge=1, le=1000)
 
