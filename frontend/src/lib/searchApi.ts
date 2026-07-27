@@ -165,6 +165,8 @@ export async function searchPersons(
     certifications: listOrUndef(filters.certifications),
     other_compliance: listOrUndef(filters.otherCompliance),
 
+    linkedin_url: listOrUndef(filters.linkedinUrl),
+
     scroll_token: scrollToken,
     page_size: pageSize,
   };

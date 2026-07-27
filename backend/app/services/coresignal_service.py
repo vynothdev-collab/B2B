@@ -904,6 +904,11 @@ def build_person_query(f: PersonSearchRequest) -> dict:
         should = [{"match_phrase": {"full_name": n.lower()}} for n in f.name]
         must.append({"bool": {"should": should, "minimum_should_match": 1}})
 
+    if f.linkedin_url:
+        normalized = [u.strip().rstrip("/").lower() for u in f.linkedin_url]
+        should = [{"match_phrase": {"url": u}} for u in normalized]
+        must.append({"bool": {"should": should, "minimum_should_match": 1}})
+
     _add_multi_match(
         must, "active_experience_title", f.job_title,
         phrase=(f.job_title_match_type == "exact"),

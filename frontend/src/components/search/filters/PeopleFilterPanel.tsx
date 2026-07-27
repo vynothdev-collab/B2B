@@ -94,7 +94,8 @@ export function countPeopleFilters(f: PersonFilters): number {
     (f.experienceYearsMin || f.experienceYearsMax ? 1 : 0) +
     (f.jobChangeTimeframe ? 1 : 0) +
     f.jobPostingKeywords.length +
-    f.certifications.length + f.otherCompliance.length
+    f.certifications.length + f.otherCompliance.length +
+    f.linkedinUrl.length
   );
 }
 
@@ -137,6 +138,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
   const jobChangeCount = filters.jobChangeTimeframe ? 1 : 0;
   const jobPostingCount = filters.jobPostingKeywords.length;
   const certsCount = filters.certifications.length + filters.otherCompliance.length;
+  const linkedinCount = filters.linkedinUrl.length;
 
   // ── preview chip lists ──────────────────────────────────────────────────────
   const namePreview = chips(filters.name, (v) => onChange({ name: filters.name.filter((x) => x !== v) }));
@@ -201,6 +203,7 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
     ...chips(filters.certifications, (v) => onChange({ certifications: filters.certifications.filter((x) => x !== v) })),
     ...chips(filters.otherCompliance, (v) => onChange({ otherCompliance: filters.otherCompliance.filter((x) => x !== v) })),
   ];
+  const linkedinPreview = chips(filters.linkedinUrl, (v) => onChange({ linkedinUrl: filters.linkedinUrl.filter((x) => x !== v) }));
 
   return (
     <>
@@ -216,9 +219,9 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
         icon={<User className="h-4 w-4" />}
         isOpen={open === "people"}
         onToggle={() => toggle("people")}
-        count={nameCount}
-        onClear={() => onChange({ name: [] })}
-        preview={<FilterPreviewChips items={namePreview} />}
+        count={nameCount + linkedinCount}
+        onClear={() => onChange({ name: [], linkedinUrl: [] })}
+        preview={<FilterPreviewChips items={[...namePreview, ...linkedinPreview]} />}
       >
         <BulkCompanyInput
           label="Name"
@@ -226,6 +229,13 @@ export default function PeopleFilterPanel({ filters, onChange }: Props) {
           values={filters.name}
           onChange={(v) => onChange({ name: v })}
         />
+        <BulkCompanyInput
+          label="LinkedIn Profile URL"
+          placeholder="Paste LinkedIn profile URLs, one per line…"
+          values={filters.linkedinUrl}
+          onChange={(v) => onChange({ linkedinUrl: v })}
+        />
+        <p className="text-[11px] text-gray-400 -mt-1">e.g. linkedin.com/in/username</p>
       </FilterSection>
 
       <FilterSection
