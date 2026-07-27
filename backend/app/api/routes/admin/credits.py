@@ -1,10 +1,12 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_super_admin
+from app.models.credit_transaction import CreditTransaction
 from app.models.enterprise import Enterprise
 from app.models.user import User, UserRole
 
@@ -60,6 +62,28 @@ class AddCreditsPayload(BaseModel):
     credits: int
 
 
+class CreditTransactionRecord(BaseModel):
+    id:               str
+    account_name:     str
+    account_type:     str
+    transaction_type: str
+    reason:           str
+    delta:            int
+    balance_after:    int
+    reference_type:   str | None
+    reference_id:     str | None
+    description:      str | None
+    created_at:       datetime
+
+
+class PagedCreditTransactions(BaseModel):
+    items:     list[CreditTransactionRecord]
+    total:     int
+    page:      int
+    page_size: int
+    stats:     CreditStats
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _credit_status(allocated: int, remaining: int) -> str:
@@ -68,6 +92,38 @@ def _credit_status(allocated: int, remaining: int) -> str:
     if allocated > 0 and remaining / allocated < 0.2:
         return "low"
     return "healthy"
+
+
+def log_credit_tx(
+    db: AsyncSession,
+    *,
+    user_id: str | None,
+    enterprise_id: str | None,
+    account_name: str,
+    account_type: str,
+    transaction_type: str,
+    reason: str,
+    delta: int,
+    balance_after: int,
+    reference_type: str | None = None,
+    reference_id: str | None = None,
+    description: str | None = None,
+) -> None:
+    db.add(
+        CreditTransaction(
+            user_id=user_id,
+            enterprise_id=enterprise_id,
+            account_name=account_name,
+            account_type=account_type,
+            transaction_type=transaction_type,
+            reason=reason,
+            delta=delta,
+            balance_after=balance_after,
+            reference_type=reference_type,
+            reference_id=reference_id,
+            description=description,
+        )
+    )
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
@@ -111,7 +167,6 @@ async def list_individual_credits(
     total = len(all_records)
     items = all_records[(page - 1) * page_size : page * page_size]
 
-    # aggregate stats across all individual users (not just this page)
     all_users = (
         await db.execute(select(User).where(User.role == UserRole.INDIVIDUAL))
     ).scalars().all()
@@ -149,7 +204,6 @@ async def list_enterprise_credits(
         await db.execute(stmt.order_by(Enterprise.created_at.desc()))
     ).scalars().all()
 
-    # load per-enterprise user credit aggregates
     ent_ids = [e.id for e in all_enterprises]
     user_aggs: dict[str, dict] = {eid: {"allocated": 0, "used": 0} for eid in ent_ids}
     if ent_ids:
@@ -190,7 +244,6 @@ async def list_enterprise_credits(
     total = len(all_records)
     items = all_records[(page - 1) * page_size : page * page_size]
 
-    # global stats
     all_ents = (await db.execute(select(Enterprise))).scalars().all()
     all_ent_ids = [e.id for e in all_ents]
     global_agg_rows = (
@@ -217,6 +270,101 @@ async def list_enterprise_credits(
     )
 
 
+@router.get("/transactions", response_model=PagedCreditTransactions)
+async def list_credit_transactions(
+    page:             int = Query(default=1, ge=1),
+    page_size:        int = Query(default=20, ge=1, le=100),
+    q:                str | None = Query(default=None),
+    account_type:     str | None = Query(default=None),
+    transaction_type: str | None = Query(default=None, alias="type"),
+    db: AsyncSession = Depends(get_db),
+) -> PagedCreditTransactions:
+    stmt = select(CreditTransaction)
+
+    if q:
+        like = f"%{q.strip()}%"
+        stmt = stmt.where(
+            or_(
+                CreditTransaction.account_name.ilike(like),
+                CreditTransaction.description.ilike(like),
+                CreditTransaction.reason.ilike(like),
+            )
+        )
+    if account_type and account_type != "all":
+        stmt = stmt.where(CreditTransaction.account_type == account_type)
+    if transaction_type and transaction_type != "all":
+        stmt = stmt.where(CreditTransaction.transaction_type == transaction_type)
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = (await db.execute(count_stmt)).scalar_one()
+
+    items_rows = (
+        await db.execute(
+            stmt.order_by(desc(CreditTransaction.created_at))
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+    ).scalars().all()
+
+    # stats: sum across all transactions (unfiltered by type, just by account_type if set)
+    base_stat_stmt = select(CreditTransaction)
+    if account_type and account_type != "all":
+        base_stat_stmt = base_stat_stmt.where(CreditTransaction.account_type == account_type)
+
+    alloc_total = (
+        await db.execute(
+            select(func.coalesce(func.sum(CreditTransaction.delta), 0)).where(
+                CreditTransaction.transaction_type == "allocation",
+                *(
+                    [CreditTransaction.account_type == account_type]
+                    if account_type and account_type != "all"
+                    else []
+                ),
+            )
+        )
+    ).scalar_one()
+
+    used_total = (
+        await db.execute(
+            select(func.coalesce(func.abs(func.sum(CreditTransaction.delta)), 0)).where(
+                CreditTransaction.transaction_type == "deduction",
+                *(
+                    [CreditTransaction.account_type == account_type]
+                    if account_type and account_type != "all"
+                    else []
+                ),
+            )
+        )
+    ).scalar_one()
+
+    return PagedCreditTransactions(
+        items=[
+            CreditTransactionRecord(
+                id=tx.id,
+                account_name=tx.account_name,
+                account_type=tx.account_type,
+                transaction_type=tx.transaction_type,
+                reason=tx.reason,
+                delta=tx.delta,
+                balance_after=tx.balance_after,
+                reference_type=tx.reference_type,
+                reference_id=tx.reference_id,
+                description=tx.description,
+                created_at=tx.created_at,
+            )
+            for tx in items_rows
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
+        stats=CreditStats(
+            total_allocated=int(alloc_total),
+            total_used=int(used_total),
+            total_remaining=int(alloc_total) - int(used_total),
+        ),
+    )
+
+
 @router.post("/enterprises/{enterprise_id}/add-credits")
 async def add_credits_to_enterprise(
     enterprise_id: str,
@@ -237,4 +385,19 @@ async def add_credits_to_enterprise(
     ent.credits += payload.credits
     await db.flush()
     await db.refresh(ent)
+
+    log_credit_tx(
+        db,
+        user_id=None,
+        enterprise_id=ent.id,
+        account_name=ent.name,
+        account_type="enterprise",
+        transaction_type="allocation",
+        reason="Admin Allocation",
+        delta=payload.credits,
+        balance_after=ent.credits,
+        reference_type="admin",
+        description=f"Admin added {payload.credits:,} credits to enterprise pool",
+    )
+
     return {"id": ent.id, "name": ent.name, "credits": ent.credits}

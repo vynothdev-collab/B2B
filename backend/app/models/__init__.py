@@ -4,6 +4,7 @@ from app.models.enterprise import Enterprise, EnterpriseStatus
 from app.models.list import List, ListItem
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
 from app.models.search_log import SearchLog
+from app.models.credit_transaction import CreditTransaction
 
 __all__ = [
     "User",
@@ -16,4 +17,5 @@ __all__ = [
     "PersonSearchRecord",
     "CompanySearchRecord",
     "SearchLog",
+    "CreditTransaction",
 ]

@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.security import hash_password, require_super_admin
 from app.models.enterprise import Enterprise
 from app.models.user import User, UserRole
+from app.api.routes.admin.credits import log_credit_tx
 
 router = APIRouter(dependencies=[Depends(require_super_admin)])
 
@@ -368,4 +369,20 @@ async def allocate_credits_to_customer(
     user.allocated_credits += payload.credits
     await db.flush()
     await db.refresh(user)
+
+    account_type = "individual" if user.enterprise_id is None else "enterprise"
+    log_credit_tx(
+        db,
+        user_id=user.id,
+        enterprise_id=user.enterprise_id,
+        account_name=user.name,
+        account_type=account_type,
+        transaction_type="allocation",
+        reason="Admin Allocation",
+        delta=payload.credits,
+        balance_after=user.allocated_credits - user.used_credits,
+        reference_type="admin",
+        description=f"Admin allocated {payload.credits:,} credits",
+    )
+
     return await _serialize(db, user)

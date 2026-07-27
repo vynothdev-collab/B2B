@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.security import hash_password, require_enterprise_admin, require_enterprise_member
 from app.models.enterprise import Enterprise
 from app.models.user import User, UserRole
+from app.api.routes.admin.credits import log_credit_tx
 
 router = APIRouter()
 
@@ -250,6 +251,21 @@ async def allocate_credits_to_member(
     member.allocated_credits += payload.credits
     await db.flush()
     await db.refresh(member)
+
+    log_credit_tx(
+        db,
+        user_id=member.id,
+        enterprise_id=ent.id,
+        account_name=member.name,
+        account_type="enterprise",
+        transaction_type="allocation",
+        reason="Enterprise Allocation",
+        delta=payload.credits,
+        balance_after=member.allocated_credits - member.used_credits,
+        reference_type="admin",
+        description=f"Enterprise admin allocated {payload.credits:,} credits to member",
+    )
+
     return _to_member(member)
 
 

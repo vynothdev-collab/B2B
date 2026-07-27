@@ -11,8 +11,9 @@ from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.search_log import SearchLog
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.technology_intent import TechnologyIntent
+from app.api.routes.admin.credits import log_credit_tx
 from app.schemas.search import (
     AgenticSearchRequest,
     CompanySearchRequest,
@@ -49,6 +50,20 @@ async def person_search(
     current_user.used_credits += 1
     _log_search(db, current_user.id, "person")
     await db.flush()
+    account_type = "individual" if current_user.enterprise_id is None else "enterprise"
+    log_credit_tx(
+        db,
+        user_id=current_user.id,
+        enterprise_id=current_user.enterprise_id,
+        account_name=current_user.name,
+        account_type=account_type,
+        transaction_type="deduction",
+        reason="People Search",
+        delta=-1,
+        balance_after=current_user.allocated_credits - current_user.used_credits,
+        reference_type="search",
+        description="People search — 1 credit deducted",
+    )
     return result
 
 
@@ -63,6 +78,20 @@ async def company_search(
     current_user.used_credits += 1
     _log_search(db, current_user.id, "company")
     await db.flush()
+    account_type = "individual" if current_user.enterprise_id is None else "enterprise"
+    log_credit_tx(
+        db,
+        user_id=current_user.id,
+        enterprise_id=current_user.enterprise_id,
+        account_name=current_user.name,
+        account_type=account_type,
+        transaction_type="deduction",
+        reason="Company Search",
+        delta=-1,
+        balance_after=current_user.allocated_credits - current_user.used_credits,
+        reference_type="search",
+        description="Company search — 1 credit deducted",
+    )
     return result
 
 
@@ -77,6 +106,20 @@ async def agentic_search(
     current_user.used_credits += 1
     _log_search(db, current_user.id, "agentic")
     await db.flush()
+    account_type = "individual" if current_user.enterprise_id is None else "enterprise"
+    log_credit_tx(
+        db,
+        user_id=current_user.id,
+        enterprise_id=current_user.enterprise_id,
+        account_name=current_user.name,
+        account_type=account_type,
+        transaction_type="deduction",
+        reason="AI Search",
+        delta=-1,
+        balance_after=current_user.allocated_credits - current_user.used_credits,
+        reference_type="search",
+        description="AI search — 1 credit deducted",
+    )
     return result
 
 
