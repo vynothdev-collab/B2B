@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   X, MapPin, Mail, Phone, Globe, Briefcase,
-  GraduationCap, Loader2, ExternalLink, Award, Clock,
+  GraduationCap, ExternalLink, Award, Clock,
   BookOpen, FlaskConical, FolderGit2, Heart, Building, Quote,
   Trophy, FileText, ChevronDown, ChevronLeft, ChevronRight,
 } from "lucide-react";
@@ -158,6 +158,10 @@ function metaStr(parts: (string | null | undefined)[]) {
   return parts.filter(Boolean).join("  ·  ");
 }
 
+function Skel({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-gray-200 ${className ?? ""}`} />;
+}
+
 function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-8 gap-2.5 text-gray-300">
@@ -168,21 +172,19 @@ function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
 }
 
 function TimelineEntry({
-  dot = "outline", title, subtitle, subtitleHref, locationText,
-  startDate, endDate, isCurrent, description, isLast, titleColor = "text-gray-900",
+  title, subtitle, subtitleHref, locationText,
+  startDate, endDate, isCurrent, description, isLast, titleColor = "text-gray-900", highlight = false,
 }: {
-  dot?: "filled" | "outline"; title: string; subtitle?: string | null;
+  title: string; subtitle?: string | null;
   subtitleHref?: string | null; locationText?: string | null;
   startDate?: string | null; endDate?: string | null;
-  isCurrent?: boolean; description?: string | null; isLast?: boolean; titleColor?: string;
+  isCurrent?: boolean; description?: string | null; isLast?: boolean; titleColor?: string; highlight?: boolean;
 }) {
   return (
     <div className="flex gap-3">
       <div className="flex flex-col items-center">
-        <div className={`mt-1 h-3 w-3 rounded-full border flex-shrink-0 ${
-          dot === "filled" ? "bg-red-500 border-red-500" : "bg-white border-gray-300"
-        }`} />
-        {!isLast && <div className="w-px bg-gray-200 flex-1 mt-1 mb-1 min-h-[20px]" />}
+        <div className={`mt-1 h-3 w-3 rounded-full border-2 flex-shrink-0 border-red-500 ${highlight ? "bg-red-500" : "bg-white"}`} />
+        {!isLast && <div className="w-px flex-1 mt-1 mb-1 min-h-[20px] bg-red-300" />}
       </div>
       <div className={`flex-1 min-w-0 ${!isLast ? "pb-5" : "pb-1"}`}>
         <p className={`text-[14px] font-bold leading-tight ${titleColor}`}>{title}</p>
@@ -203,12 +205,12 @@ function TimelineEntry({
         {(startDate || endDate || isCurrent) && (
           <div className="mt-2 flex items-center gap-1.5 flex-wrap">
             {fmtMo(startDate) && (
-              <span className="rounded-full bg-[#ECEBF2] px-3 py-1 text-[12px] font-semibold text-gray-900">
+              <span className="rounded-full bg-red-100 px-3 py-1 text-[12px] font-semibold text-red-600">
                 {fmtMo(startDate)}
               </span>
             )}
-            <span className="text-gray-700 text-[12px]">–</span>
-            <span className="rounded-full bg-[#ECEBF2] px-3 py-1 text-[12px] font-semibold text-gray-900">
+            <span className="text-[12px] text-red-400">–</span>
+            <span className="rounded-full bg-red-500 px-3 py-1 text-[12px] font-semibold text-white">
               {isCurrent ? "Current" : (fmtMo(endDate) || "Present")}
             </span>
           </div>
@@ -225,9 +227,9 @@ function YearRange({ start, end }: { start?: string | null; end?: string | null 
   if (!start && !end) return null;
   return (
     <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-      {start && <span className="rounded-full bg-[#ECEBF2] px-3 py-1 text-[12px] font-semibold text-gray-900">{start}</span>}
+      {start && <span className="rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-gray-900">{start}</span>}
       {start && end && <span className="text-gray-700 text-[12px]">–</span>}
-      {end && <span className="rounded-full bg-[#ECEBF2] px-3 py-1 text-[12px] font-semibold text-gray-900">{end}</span>}
+      {end && <span className="rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-gray-900">{end}</span>}
     </div>
   );
 }
@@ -238,14 +240,14 @@ function SkillsSection({ skills }: { skills: string[] }) {
   const visible = showAll ? skills : skills.slice(0, VISIBLE);
   const remaining = skills.length - VISIBLE;
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+    <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
       <p className="text-[15px] font-bold text-gray-900 mb-4">Skills</p>
       {skills.length === 0 ? (
         <Empty icon={<Award className="h-7 w-7" />} text="No skills listed" />
       ) : (
         <div className="flex flex-wrap gap-2">
           {visible.map((s, i) => (
-            <span key={i} className="rounded-lg border border-gray-300 px-4 py-2 text-[13px] font-semibold text-gray-900" style={{ backgroundColor: "#ECEBF2" }}>{s}</span>
+            <span key={i} className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-900 bg-white">{s}</span>
           ))}
           {!showAll && remaining > 0 && (
             <button type="button" onClick={() => setShowAll(true)}
@@ -275,7 +277,7 @@ function InfoCard({ icon, iconColor, iconBg, title, subtitle, meta, description,
   actionLabel?: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white px-3.5 py-3 shadow-md">
+    <div className="rounded-xl border border-gray-100 bg-[#F5F4F9] px-3.5 py-3">
       <div className="flex items-start gap-3">
         <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
           <span className={iconColor}>{icon}</span>
@@ -460,7 +462,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       )}
 
       <aside className={[
-        "fixed right-0 top-0 bottom-0 z-50 flex w-[680px] max-w-full flex-col bg-[#ECEBF2] shadow-2xl border-l border-gray-200 [font-family:var(--font-plus-jakarta-sans)]",
+        "fixed right-0 top-0 bottom-0 z-50 flex w-[680px] max-w-full flex-col bg-white shadow-2xl border-l border-gray-200 [font-family:var(--font-plus-jakarta-sans)]",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "translate-x-full",
       ].join(" ")}>
@@ -586,7 +588,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 className={`shrink-0 whitespace-nowrap px-4 py-2.5 text-[13px] font-bold transition-all border-b-2 ${
                   activeTab === item.label
                     ? "text-red-500 border-red-500 bg-red-50"
-                    : "text-gray-800 border-transparent hover:text-red-500 hover:bg-gray-50"
+                    : "text-gray-800 border-transparent hover:text-red-500 hover:bg-[#d8d7e0]"
                 }`}>
                 {item.label}
                 {item.count != null && item.count > 0 && (
@@ -606,11 +608,80 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
         {/* ══════════ CONTENT ══════════ */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="rounded-2xl bg-white p-4 shadow-md border border-gray-100">
-                <Loader2 className="h-6 w-6 animate-spin text-red-500" />
+            <div className="px-4 py-5 space-y-5">
+              {/* Skills skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-16 mb-4" />
+                <div className="flex flex-wrap gap-2">
+                  {[72, 56, 104, 80, 64, 96].map((w, i) => (
+                    <div key={i} className="animate-pulse rounded-lg bg-gray-200" style={{ height: 36, width: w }} />
+                  ))}
+                </div>
               </div>
-              <p className="text-[12px] text-gray-400">Loading profile…</p>
+              {/* Work Experience skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-40 mb-5" />
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="mt-1 h-3 w-3 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
+                      {i < 2 && <div className="w-px bg-gray-200 animate-pulse flex-1 mt-1 mb-1 min-h-[70px]" />}
+                    </div>
+                    <div className={`flex-1 space-y-2 ${i < 2 ? "pb-5" : "pb-1"}`}>
+                      <Skel className="h-4 w-44" />
+                      <Skel className="h-3 w-28" />
+                      <Skel className="h-3 w-36" />
+                      <div className="flex gap-2 pt-1">
+                        <Skel className="h-6 w-20 rounded-full" />
+                        <Skel className="h-6 w-16 rounded-full" />
+                      </div>
+                      <Skel className="h-3 w-full" />
+                      <Skel className="h-3 w-4/5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Education skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-24 mb-5" />
+                {[0, 1].map((i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className="mt-1 h-3 w-3 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
+                      {i < 1 && <div className="w-px bg-gray-200 animate-pulse flex-1 mt-1 mb-1 min-h-[50px]" />}
+                    </div>
+                    <div className={`flex-1 space-y-2 ${i < 1 ? "pb-5" : "pb-1"}`}>
+                      <Skel className="h-4 w-48" />
+                      <Skel className="h-3 w-32" />
+                      <div className="flex gap-2 pt-1">
+                        <Skel className="h-6 w-14 rounded-full" />
+                        <Skel className="h-6 w-14 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Company Info skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-28 mb-4" />
+                <div className="flex items-center gap-3">
+                  <Skel className="h-10 w-10 rounded-lg flex-shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <Skel className="h-4 w-36" />
+                    <Skel className="h-3 w-24" />
+                  </div>
+                </div>
+              </div>
+              {/* Summary skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-20 mb-3" />
+                <div className="space-y-2">
+                  <Skel className="h-3 w-full" />
+                  <Skel className="h-3 w-full" />
+                  <Skel className="h-3 w-4/5" />
+                  <Skel className="h-3 w-3/5" />
+                </div>
+              </div>
             </div>
           )}
 
@@ -624,7 +695,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
               {/* ── WORK EXPERIENCE ── */}
               <div ref={expRef}>
-                <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                   <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
                       <span className="text-[15px] font-bold text-gray-900">
@@ -637,7 +708,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                   ) : (
                     detail.work_history.map((w, i) => (
                       <TimelineEntry key={i}
-                        dot={w.is_current ? "outline" : "filled"}
+                        highlight={w.is_current}
                         title={w.title ?? "—"}
                         subtitle={w.company_name}
                         subtitleHref={w.company_website}
@@ -653,7 +724,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 </div>
 
                 {detail?.volunteering && detail.volunteering.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <Heart className="h-4 w-4 text-red-400" />
                       <span className="text-[15px] font-bold text-gray-900">Volunteering</span>
@@ -675,7 +746,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
               {/* ── EDUCATION ── */}
               <div ref={eduRef}>
-                <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                   <div className="flex items-center gap-2 mb-5">
                     <GraduationCap className="h-4 w-4 text-blue-400" />
                     <span className="text-[15px] font-bold text-gray-900">Education</span>
@@ -686,9 +757,9 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                     detail.education.map((e, i) => (
                       <div key={i} className="flex gap-3">
                         <div className="flex flex-col items-center">
-                          <div className="mt-1 h-3 w-3 rounded-full border bg-white border-gray-300 flex-shrink-0" />
+                          <div className="mt-1 h-3 w-3 rounded-full border-2 bg-white border-red-500 flex-shrink-0" />
                           {i < detail.education.length - 1 && (
-                            <div className="w-px bg-gray-200 flex-1 mt-1 mb-1 min-h-[20px]" />
+                            <div className="w-px bg-red-300 flex-1 mt-1 mb-1 min-h-[20px]" />
                           )}
                         </div>
                         <div className={`flex-1 min-w-0 ${i < detail.education.length - 1 ? "pb-5" : "pb-1"}`}>
@@ -707,7 +778,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 </div>
 
                 {detail?.organizations && detail.organizations.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <Building className="h-4 w-4 text-indigo-400" />
                       <span className="text-[15px] font-bold text-gray-900">Organizations</span>
@@ -726,7 +797,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {detail?.test_scores && detail.test_scores.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Test Scores</p>
                     <div className="divide-y divide-gray-50">
                       {detail.test_scores.map((ts, i) => (
@@ -751,7 +822,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               {/* ── COMPANY INFO ── */}
               <div ref={companyRef}>
                 {d?.active_experience_company_name ? (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Company Info</p>
                     <div className="flex items-center gap-3 mb-4">
                       {d.active_experience_company_logo_url ? (
@@ -803,7 +874,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Company Info</p>
                     <Empty icon={<Building className="h-7 w-7" />} text="No company info available" />
                   </div>
@@ -811,7 +882,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
                 {/* Certifications under company info area */}
                 {detail?.certifications && detail.certifications.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <Award className="h-4 w-4 text-yellow-500" />
                       <span className="text-[15px] font-bold text-gray-900">Certifications</span>
@@ -829,7 +900,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {detail?.courses && detail.courses.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <BookOpen className="h-4 w-4 text-teal-500" />
                       <span className="text-[15px] font-bold text-gray-900">Courses</span>
@@ -851,7 +922,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {detail?.awards && detail.awards.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center gap-2 mb-4">
                       <Trophy className="h-4 w-4 text-amber-500" />
                       <span className="text-[15px] font-bold text-gray-900">Awards</span>
@@ -882,26 +953,26 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               {/* ── SUMMARY / ABOUT ── */}
               <div ref={summaryRef} className="space-y-4">
                 {detail?.summary ? (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-3">Summary</p>
                     <p className="text-[13px] font-medium text-gray-900 whitespace-pre-line">{detail.summary}</p>
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Summary</p>
                     <Empty icon={<Globe className="h-7 w-7" />} text="No summary available" />
                   </div>
                 )}
 
                 {detail?.languages && detail.languages.length > 0 && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Languages</p>
                     <div className="grid grid-cols-2 gap-2">
                       {detail.languages.map((l, i) => (
-                        <div key={i} className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5">
+                        <div key={i} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2.5">
                           <span className="text-[13px] font-semibold text-gray-800">{l.language}</span>
                           {l.proficiency && (
-                            <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-800 shadow-sm">
+                            <span className="rounded-full bg-[#F5F4F9] border border-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-800 shadow-sm">
                               {l.proficiency}
                             </span>
                           )}
@@ -915,7 +986,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                   <div className="space-y-3">
                     <p className="text-[15px] font-bold text-gray-900 px-1">Recommendations</p>
                     {detail.recommendations.map((r, i) => (
-                      <div key={i} className="rounded-2xl border border-gray-100 bg-white shadow-md p-4">
+                      <div key={i} className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-4">
                         <div className="mb-2 flex items-center gap-1.5">
                           <div className="h-px flex-1 bg-red-100" />
                           <Quote className="h-4 w-4 text-red-300" />
@@ -945,7 +1016,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               {/* ── JOB PROJECTS ── */}
               <div ref={projRef}>
                 {detail?.projects && detail.projects.length > 0 && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <FolderGit2 className="h-4 w-4 text-violet-500" />
                       <span className="text-[15px] font-bold text-gray-900">Projects</span>
@@ -966,7 +1037,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {detail?.publications && detail.publications.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <FileText className="h-4 w-4 text-emerald-500" />
                       <span className="text-[15px] font-bold text-gray-900">Publications</span>
@@ -985,7 +1056,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {detail?.patents && detail.patents.length > 0 && (
-                  <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="mt-4 rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center gap-2 mb-5">
                       <FlaskConical className="h-4 w-4 text-orange-500" />
                       <span className="text-[15px] font-bold text-gray-900">Patents</span>
@@ -1004,7 +1075,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 )}
 
                 {!detail?.projects?.length && !detail?.publications?.length && !detail?.patents?.length && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Job Projects</p>
                     <Empty icon={<FolderGit2 className="h-7 w-7" />} text="No projects, publications or patents" />
                   </div>

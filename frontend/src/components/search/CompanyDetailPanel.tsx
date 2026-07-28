@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   X, MapPin, Briefcase, Users, DollarSign,
-  Award, Loader2, ExternalLink, Star, Zap, BarChart2, Building2,
+  Award, Star, Zap, BarChart2, Building2,
   ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Layers,
 } from "lucide-react";
 
@@ -90,6 +90,10 @@ function WebsiteSVG() {
   );
 }
 
+function Skel({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-gray-200 ${className ?? ""}`} />;
+}
+
 function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-8 gap-2.5 text-gray-300">
@@ -103,7 +107,7 @@ function MetricCard({ icon, label, value, sub, accent = false }: {
   icon: React.ReactNode; label: string; value: string; sub?: string; accent?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border px-3 py-3 ${accent ? "border-red-100 bg-red-50" : "border-gray-100 bg-white shadow-md"}`}>
+    <div className={`rounded-xl border px-3 py-3 ${accent ? "border-red-100 bg-red-50" : "border-gray-100 bg-[#F5F4F9]"}`}>
       <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${accent ? "text-red-400" : "text-gray-700"}`}>
         {icon}{label}
       </div>
@@ -130,11 +134,11 @@ function ChipsSection({ title, items, colorize = false }: { title: string; items
   const remaining = items.length - VISIBLE;
   if (items.length === 0) return null;
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+    <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
       <p className="text-[15px] font-bold text-gray-900 mb-4">{title}</p>
       <div className="flex flex-wrap gap-2">
         {visible.map((s, i) => (
-          <span key={i} className={`rounded-full border px-4 py-2 text-[13px] font-semibold ${colorize ? CHIP_COLORS[i % CHIP_COLORS.length] : "bg-[#ECEBF2] text-gray-900 border-[#ECEBF2]"}`}>
+          <span key={i} className={`rounded-full border px-4 py-2 text-[13px] font-semibold ${colorize ? CHIP_COLORS[i % CHIP_COLORS.length] : "bg-white text-gray-900 border-gray-200"}`}>
             {s}
           </span>
         ))}
@@ -155,17 +159,17 @@ function ChipsSection({ title, items, colorize = false }: { title: string; items
   );
 }
 
-function KeywordsSection({ items }: { items: string[] }) {
+function KeywordsSection({ items, title = "Categories & Keywords" }: { items: string[]; title?: string }) {
   const [showAll, setShowAll] = useState(false);
   const VISIBLE = 3;
   const visible = showAll ? items : items.slice(0, VISIBLE);
   const remaining = items.length - VISIBLE;
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
-      <p className="text-[15px] font-bold text-gray-900 mb-4">Categories & Keywords</p>
+    <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+      <p className="text-[15px] font-bold text-gray-900 mb-4">{title}</p>
       <div className="flex flex-wrap gap-2">
         {visible.map((k, i) => (
-          <span key={i} className="rounded-lg border border-gray-300 px-4 py-2 text-[13px] font-semibold text-gray-900" style={{ backgroundColor: "#ECEBF2" }}>{k}</span>
+          <span key={i} className="rounded-lg border border-gray-200 px-4 py-2 text-[13px] font-semibold text-gray-900 bg-white">{k}</span>
         ))}
         {!showAll && remaining > 0 && (
           <button type="button" onClick={() => setShowAll(true)}
@@ -333,7 +337,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
       )}
 
       <aside className={[
-        "fixed right-0 top-0 bottom-0 z-50 flex w-[680px] max-w-full flex-col bg-[#ECEBF2] shadow-2xl border-l border-gray-200 [font-family:var(--font-plus-jakarta-sans)]",
+        "fixed right-0 top-0 bottom-0 z-50 flex w-[680px] max-w-full flex-col bg-white shadow-2xl border-l border-gray-200 [font-family:var(--font-plus-jakarta-sans)]",
         "transition-transform duration-300 ease-in-out",
         isOpen ? "translate-x-0" : "translate-x-full",
       ].join(" ")}>
@@ -466,11 +470,58 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
         {/* ══════════ CONTENT ══════════ */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="rounded-2xl bg-white p-4 shadow-md border border-gray-100">
-                <Loader2 className="h-6 w-6 animate-spin text-red-500" />
+            <div className="px-4 py-5 space-y-5">
+              {/* About skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-16 mb-3" />
+                <div className="space-y-2">
+                  <Skel className="h-3 w-full" />
+                  <Skel className="h-3 w-full" />
+                  <Skel className="h-3 w-4/5" />
+                  <Skel className="h-3 w-3/5" />
+                </div>
               </div>
-              <p className="text-[12px] text-gray-400">Loading company…</p>
+              {/* Metrics grid skeleton */}
+              <div className="grid grid-cols-3 gap-2">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="rounded-xl border border-gray-100 bg-[#F5F4F9] px-3 py-3">
+                    <Skel className="h-3 w-16 mb-2" />
+                    <Skel className="h-6 w-20" />
+                  </div>
+                ))}
+              </div>
+              {/* Specialties skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-24 mb-4" />
+                <div className="flex flex-wrap gap-2">
+                  {[88, 64, 104, 72, 96].map((w, i) => (
+                    <div key={i} className="animate-pulse rounded-full bg-gray-200" style={{ height: 36, width: w }} />
+                  ))}
+                </div>
+              </div>
+              {/* Tech Stack skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-24 mb-4" />
+                <div className="flex flex-wrap gap-2">
+                  {[80, 60, 96, 72].map((w, i) => (
+                    <div key={i} className="animate-pulse rounded-full bg-gray-200" style={{ height: 36, width: w }} />
+                  ))}
+                </div>
+              </div>
+              {/* Headcount skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-28 mb-3" />
+                <Skel className="h-8 w-32 mb-1" />
+                <Skel className="h-3 w-40" />
+              </div>
+              {/* Funding skeleton */}
+              <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
+                <Skel className="h-4 w-36 mb-4" />
+                <div className="flex items-center gap-3">
+                  <Skel className="h-7 w-20 rounded-full" />
+                  <Skel className="h-8 w-28" />
+                </div>
+              </div>
             </div>
           )}
 
@@ -480,7 +531,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               {/* ── OVERVIEW ── */}
               <div ref={overviewRef}>
                 {detail?.description && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-3">About</p>
                     <p className="text-[13px] font-medium text-gray-900 whitespace-pre-line">{detail.description}</p>
                   </div>
@@ -504,7 +555,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                   </div>
                 )}
                 {!detail?.description && d.employees_count == null && d.company_employee_reviews_aggregate_score == null && d.active_job_postings == null && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Overview</p>
                     <Empty icon={<Building2 className="h-7 w-7" />} text="No overview available" />
                   </div>
@@ -516,7 +567,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 {specialtiesArr.length > 0 ? (
                   <ChipsSection title="Specialties" items={specialtiesArr} />
                 ) : (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Specialties</p>
                     <Empty icon={<Layers className="h-7 w-7" />} text="No specialties listed" />
                   </div>
@@ -526,9 +577,9 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               {/* ── TECH STACK ── */}
               <div ref={techRef}>
                 {techArr.length > 0 ? (
-                  <ChipsSection title="Tech Stack" items={techArr} colorize />
+                  <KeywordsSection title="Tech Stack" items={techArr} />
                 ) : (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Tech Stack</p>
                     <Empty icon={<Zap className="h-7 w-7" />} text="No technologies listed" />
                   </div>
@@ -538,7 +589,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               {/* ── METRICS ── */}
               <div ref={metricsRef} className="space-y-4">
                 {(d.employees_count != null || d.size_range) && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[15px] font-bold text-gray-900">Headcount</p>
                       {d.employees_count_change?.change_yearly_percentage != null && (
@@ -563,7 +614,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
 
                 {d.total_website_visits_monthly != null && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[15px] font-bold text-gray-900">Monthly Web Traffic</p>
                       {d.total_website_visits_change?.change_monthly_percentage != null && (
@@ -597,7 +648,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 </div>
 
                 {!d.employees_count && !d.total_website_visits_monthly && !revenueLabel && d.active_job_postings == null && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Metrics</p>
                     <Empty icon={<BarChart2 className="h-7 w-7" />} text="No metrics available" />
                   </div>
@@ -607,7 +658,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               {/* ── ABOUT ── */}
               <div ref={aboutRef} className="space-y-4">
                 {d.last_funding_round && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Last Funding Round</p>
                     <div className="flex items-center gap-3 flex-wrap">
                       {d.last_funding_round.type && (
@@ -628,7 +679,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
 
                 {awardsArr.length > 0 && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">Awards & Certifications</p>
                     <div className="space-y-2">
                       {awardsArr.map((a, i) => (
@@ -648,7 +699,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
 
                 {d.company_status && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-3">Status</p>
                     <div className="flex items-center gap-2">
                       <div className={`h-2 w-2 rounded-full ${d.company_status.toLowerCase() === "active" ? "bg-emerald-400" : "bg-gray-300"}`} />
@@ -658,7 +709,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
 
                 {!d.last_funding_round && !awardsArr.length && !keywordsArr.length && !d.company_status && (
-                  <div className="rounded-2xl border border-gray-100 bg-white shadow-md p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                     <p className="text-[15px] font-bold text-gray-900 mb-4">About</p>
                     <Empty icon={<Layers className="h-7 w-7" />} text="No additional info available" />
                   </div>
