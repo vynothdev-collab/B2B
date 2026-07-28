@@ -333,6 +333,7 @@ export default function CreditsPage() {
       <AddCreditsModal
         open={addCreditsOpen}
         target={null}
+        defaultType={isIndividual ? "individual" : "enterprise"}
         onClose={() => setAddCreditsOpen(false)}
         onSuccess={() => {
           setAddCreditsOpen(false);
