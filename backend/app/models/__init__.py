@@ -5,6 +5,8 @@ from app.models.list import List, ListItem
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
 from app.models.search_log import SearchLog
 from app.models.credit_transaction import CreditTransaction
+from app.models.plan import Plan, PlanType
+from app.models.user_plan import UserPlan, UserPlanStatus
 
 __all__ = [
     "User",
@@ -18,4 +20,8 @@ __all__ = [
     "CompanySearchRecord",
     "SearchLog",
     "CreditTransaction",
+    "Plan",
+    "PlanType",
+    "UserPlan",
+    "UserPlanStatus",
 ]

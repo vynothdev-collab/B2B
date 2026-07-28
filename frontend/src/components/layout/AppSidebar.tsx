@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Building2, List, LogOut, ChevronLeft, ChevronRight, UserCircle, Briefcase, BarChart2 } from "lucide-react";
+import { Users, Building2, List, LogOut, ChevronLeft, ChevronRight, UserCircle, Briefcase, BarChart2, CreditCard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMobileSidebar } from "@/contexts/MobileSidebarContext";
 
@@ -27,6 +27,7 @@ const BASE_NAV_SECTIONS: NavSection[] = [
       { href: "/search/companies", label: "Companies", icon: <Building2 className="h-4 w-4 shrink-0" /> },
       { href: "/search/lists", label: "Lists", icon: <List className="h-4 w-4 shrink-0" /> },
       { href: "/search/usage", label: "Usage", icon: <BarChart2 className="h-4 w-4 shrink-0" /> },
+      { href: "/search/plans", label: "Plans", icon: <CreditCard className="h-4 w-4 shrink-0" /> },
     ],
   },
 ];
@@ -50,9 +51,18 @@ export default function AppSidebar() {
 
   const showLabels = mobileOpen || !collapsed;
 
-  const navSections = user?.role === "enterprise_admin"
-    ? [...BASE_NAV_SECTIONS, ENTERPRISE_ADMIN_SECTION]
-    : BASE_NAV_SECTIONS;
+  const navSections = (() => {
+    const sections = BASE_NAV_SECTIONS.map((section) => {
+      if (section.title !== "Search") return section;
+      return {
+        ...section,
+        items: section.items.filter(
+          (item) => item.href !== "/search/plans" || user?.role !== "enterprise_user"
+        ),
+      };
+    });
+    return user?.role === "enterprise_admin" ? [...sections, ENTERPRISE_ADMIN_SECTION] : sections;
+  })();
 
   return (
     <>

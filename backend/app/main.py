@@ -76,6 +76,10 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(
             _add_column_if_missing, "list_items", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
         )
+        # plans table — soft delete
+        await conn.run_sync(
+            _add_column_if_missing, "plans", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
+        )
     yield
 
 

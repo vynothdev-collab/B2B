@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.core.security import get_current_user, hash_password, verify_password
 from app.models.search_log import SearchLog
 from app.models.user import User
+from app.models.user_plan import UserPlan, UserPlanStatus
 
 router = APIRouter()
 
@@ -38,7 +39,27 @@ class ChangePasswordRequest(BaseModel):
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse:
+async def get_me(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserResponse:
+    now = datetime.now(timezone.utc)
+    active_plans = (
+        await db.execute(
+            select(UserPlan).where(
+                UserPlan.user_id == current_user.id,
+                UserPlan.status == UserPlanStatus.ACTIVE,
+            )
+        )
+    ).scalars().all()
+    validity_rem = sum(
+        p.credits_remaining for p in active_plans
+        if p.plan_type == "validity" and (p.expires_at is None or p.expires_at > now)
+    )
+    payg_rem = sum(p.credits_remaining for p in active_plans if p.plan_type == "payg")
+    legacy_rem = max(0, current_user.allocated_credits - current_user.used_credits)
+    total_rem = validity_rem + payg_rem + legacy_rem
+
     return UserResponse(
         id=current_user.id,
         email=current_user.email,
@@ -48,7 +69,7 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserResponse
         enterprise_id=current_user.enterprise_id,
         allocated_credits=current_user.allocated_credits,
         used_credits=current_user.used_credits,
-        remaining_credits=current_user.allocated_credits - current_user.used_credits,
+        remaining_credits=total_rem,
     )
 
 
