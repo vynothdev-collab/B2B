@@ -12,8 +12,18 @@ interface Props {
   onPage: (p: number) => void;
 }
 
-export default function Pagination({ page, total, pageSize, count, totalPages, hasNext, loading, onPage }: Props) {
-  const computedTotalPages = totalPages ?? Math.max(1, Math.ceil(total / pageSize));
+export default function Pagination({
+  page,
+  total,
+  pageSize,
+  count,
+  totalPages,
+  hasNext,
+  loading,
+  onPage,
+}: Props) {
+  const computedTotalPages =
+    totalPages ?? Math.max(1, Math.ceil(total / pageSize));
   if (computedTotalPages <= 1 && !hasNext) return null;
 
   const from = (page - 1) * pageSize + 1;
@@ -22,11 +32,15 @@ export default function Pagination({ page, total, pageSize, count, totalPages, h
   return (
     <div className="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
       <p className="text-xs text-gray-500">
-        <span className="font-medium text-gray-700">{from.toLocaleString()}</span>
+        <span className="font-medium text-gray-700">
+          {from.toLocaleString()}
+        </span>
         {"–"}
         <span className="font-medium text-gray-700">{to.toLocaleString()}</span>
         {" of "}
-        <span className="font-medium text-gray-700">{total.toLocaleString()}</span>
+        <span className="font-medium text-gray-700">
+          {total.toLocaleString()}
+        </span>
       </p>
 
       <div className="flex items-center gap-1">
@@ -41,7 +55,10 @@ export default function Pagination({ page, total, pageSize, count, totalPages, h
         </button>
 
         <span className="px-3 py-1 text-xs font-semibold text-gray-700">
-          Page {page}{computedTotalPages > 1 ? ` of ${computedTotalPages.toLocaleString()}` : ""}
+          Page {page}
+          {computedTotalPages > 1
+            ? ` of ${computedTotalPages.toLocaleString()}`
+            : ""}
         </span>
 
         <button

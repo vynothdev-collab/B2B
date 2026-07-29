@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Optional
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import bcrypt
 from fastapi import Depends, HTTPException, status
@@ -27,7 +27,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(subject: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     payload = {"sub": subject, "exp": expire, "type": "access"}
@@ -35,7 +35,7 @@ def create_access_token(subject: str) -> str:
 
 
 def create_refresh_token(subject: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         days=settings.REFRESH_TOKEN_EXPIRE_DAYS
     )
     payload = {"sub": subject, "exp": expire, "type": "refresh"}
@@ -113,7 +113,7 @@ async def get_current_admin(
 
 
 async def get_current_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> "User":
     from app.models.user import User

@@ -19,13 +19,23 @@ export default function JobChangeFilter({ filters, onChange }: Props) {
           <button
             key={opt.value}
             type="button"
-            onClick={() => onChange({ jobChangeTimeframe: selected ? "" : opt.value })}
+            onClick={() =>
+              onChange({ jobChangeTimeframe: selected ? "" : opt.value })
+            }
             className={`flex w-full items-center gap-2.5 rounded px-1 py-1.5 text-left transition-colors hover:bg-gray-50 ${selected ? "text-red-700" : "text-gray-700"}`}
           >
-            <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${selected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"}`}>
-              {selected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+            <span
+              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${selected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"}`}
+            >
+              {selected && (
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              )}
             </span>
-            <span className={`flex-1 text-[12px] ${selected ? "font-medium" : ""}`}>{opt.label}</span>
+            <span
+              className={`flex-1 text-[12px] ${selected ? "font-medium" : ""}`}
+            >
+              {opt.label}
+            </span>
           </button>
         );
       })}

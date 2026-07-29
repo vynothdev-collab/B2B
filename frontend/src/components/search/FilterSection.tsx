@@ -19,7 +19,10 @@ export function FilterPreviewChips({ items }: { items: ChipItem[] }) {
           {item.label}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); item.onRemove(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              item.onRemove();
+            }}
             className="opacity-70 hover:opacity-100"
           >
             <X className="h-2.5 w-2.5" />
@@ -43,7 +46,15 @@ interface Props {
 }
 
 export default function FilterSection({
-  title, icon, info, children, isOpen, onToggle, count, onClear, preview,
+  title,
+  icon,
+  info,
+  children,
+  isOpen,
+  onToggle,
+  count,
+  onClear,
+  preview,
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const prevOpenRef = useRef(isOpen);
@@ -54,7 +65,10 @@ export default function FilterSection({
       setPreviewVisible(false);
       if (!prevOpenRef.current && wrapRef.current) {
         const t = window.setTimeout(() => {
-          wrapRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          wrapRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }, 60);
         prevOpenRef.current = true;
         return () => window.clearTimeout(t);
@@ -79,7 +93,6 @@ export default function FilterSection({
             : "mx-1.5 my-1 overflow-hidden rounded-xl border-2 border-gray-100 transition-colors hover:border-gray-200"
       }
     >
-      {/* Header row — single flex row, badge before chevron, chevron at far right */}
       <div
         role="button"
         tabIndex={0}
@@ -94,18 +107,24 @@ export default function FilterSection({
               : "text-gray-800 hover:bg-gray-50/60"
         }`}
       >
-        <span className={`shrink-0 ${hasActive || isOpen ? "text-red-500" : "text-gray-400"}`}>{icon}</span>
+        <span
+          className={`shrink-0 ${hasActive || isOpen ? "text-red-500" : "text-gray-400"}`}
+        >
+          {icon}
+        </span>
         <span className="min-w-0 flex-1 truncate text-left">{title}</span>
         {info && (
           <span title={info}>
             <Info className="h-3 w-3 shrink-0 text-gray-300" />
           </span>
         )}
-        {/* Count badge — left of chevron */}
         {hasActive && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onClear?.(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear?.();
+            }}
             title="Clear filters"
             className="flex shrink-0 items-center gap-1 rounded-full bg-red-100 py-0.5 pl-2 pr-1.5 text-[11px] font-semibold text-red-700 transition-colors hover:bg-red-200"
           >
@@ -113,18 +132,19 @@ export default function FilterSection({
             <X className="h-2.5 w-2.5" />
           </button>
         )}
-        {/* Chevron — always at far right edge */}
         <ChevronDown
           className={`h-4 w-4 shrink-0 transition-transform duration-500 ${
-            isOpen ? "rotate-180 text-red-500" : hasActive ? "text-red-400" : "text-gray-400"
+            isOpen
+              ? "rotate-180 text-red-500"
+              : hasActive
+                ? "text-red-400"
+                : "text-gray-400"
           }`}
         />
       </div>
 
-      {/* Preview chips — visible only after close animation completes */}
       {!isOpen && previewVisible && hasActive && preview}
 
-      {/* Expandable content */}
       <div
         className={`grid transition-all duration-500 ease-in-out ${
           isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"

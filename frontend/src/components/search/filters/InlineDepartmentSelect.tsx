@@ -19,7 +19,11 @@ function matchesSearch(opt: DepartmentOption, q: string): boolean {
   return opt.children?.some((c) => matchesSearch(c, q)) ?? false;
 }
 
-export default function InlineDepartmentSelect({ values, onChange, options }: Props) {
+export default function InlineDepartmentSelect({
+  values,
+  onChange,
+  options,
+}: Props) {
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -40,13 +44,17 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
       onChange(values.filter((v) => !leaves.includes(v)));
     } else {
       const next = [...values];
-      leaves.forEach((v) => { if (!next.includes(v)) next.push(v); });
+      leaves.forEach((v) => {
+        if (!next.includes(v)) next.push(v);
+      });
       onChange(next);
     }
   };
 
   const toggleLeaf = (val: string) =>
-    onChange(values.includes(val) ? values.filter((v) => v !== val) : [...values, val]);
+    onChange(
+      values.includes(val) ? values.filter((v) => v !== val) : [...values, val],
+    );
 
   const renderOption = (opt: DepartmentOption, depth = 0) => {
     const hasChildren = !!opt.children?.length;
@@ -57,7 +65,9 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
       const selectedCount = leaves.filter((v) => values.includes(v)).length;
       const allSelected = selectedCount === leaves.length;
       const someSelected = selectedCount > 0 && !allSelected;
-      const visibleChildren = q ? opt.children!.filter((c) => matchesSearch(c, q)) : opt.children!;
+      const visibleChildren = q
+        ? opt.children!.filter((c) => matchesSearch(c, q))
+        : opt.children!;
 
       return (
         <div key={opt.value}>
@@ -65,41 +75,66 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
             className="flex min-h-0 items-center gap-1 py-[3px] rounded hover:bg-gray-50"
             style={{ paddingLeft: `${depth * 12 + 4}px` }}
           >
-            {/* Checkbox — only this toggles selection */}
             <button
               type="button"
               onClick={() => toggleParent(opt)}
               className="shrink-0 flex h-3.5 w-3.5 items-center justify-center rounded border transition-colors focus:outline-none"
               style={{
-                borderColor: allSelected ? "#ef4444" : someSelected ? "#f87171" : "#d1d5db",
-                backgroundColor: allSelected ? "#ef4444" : someSelected ? "#fee2e2" : "#ffffff",
+                borderColor: allSelected
+                  ? "#ef4444"
+                  : someSelected
+                    ? "#f87171"
+                    : "#d1d5db",
+                backgroundColor: allSelected
+                  ? "#ef4444"
+                  : someSelected
+                    ? "#fee2e2"
+                    : "#ffffff",
               }}
             >
               {allSelected && (
-                <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <svg
+                  className="h-2.5 w-2.5 text-white"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
-              {someSelected && <span className="block h-1.5 w-1.5 rounded-sm bg-red-500" />}
+              {someSelected && (
+                <span className="block h-1.5 w-1.5 rounded-sm bg-red-500" />
+              )}
             </button>
 
-            {/* Label + chevron — clicking either expands/collapses */}
             <button
               type="button"
-              onClick={() => { if (!q) toggleExpand(opt.value); }}
+              onClick={() => {
+                if (!q) toggleExpand(opt.value);
+              }}
               className="flex flex-1 items-center justify-between min-w-0 pl-1.5 text-left"
             >
-              <span className={`text-[12px] leading-none truncate ${allSelected || someSelected ? "text-red-700 font-medium" : "text-gray-700"}`}>
+              <span
+                className={`text-[12px] leading-none truncate ${allSelected || someSelected ? "text-red-700 font-medium" : "text-gray-700"}`}
+              >
                 {opt.label}
               </span>
               {!q && (
                 <span className="shrink-0 pl-1 pr-1 text-gray-400">
-                  {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                  {isExpanded ? (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  )}
                 </span>
               )}
             </button>
           </div>
-          {isExpanded && visibleChildren.map((child) => renderOption(child, depth + 1))}
+          {isExpanded &&
+            visibleChildren.map((child) => renderOption(child, depth + 1))}
         </div>
       );
     }
@@ -119,12 +154,22 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
           }`}
         >
           {selected && (
-            <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            <svg
+              className="h-2 w-2 text-white"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
             </svg>
           )}
         </span>
-        <span className={`text-[12px] leading-none truncate ${selected ? "text-red-700 font-medium" : "text-gray-600"}`}>
+        <span
+          className={`text-[12px] leading-none truncate ${selected ? "text-red-700 font-medium" : "text-gray-600"}`}
+        >
           {opt.label}
         </span>
       </button>
@@ -142,7 +187,9 @@ export default function InlineDepartmentSelect({ values, onChange, options }: Pr
       />
       <div className="max-h-64 overflow-y-auto mt-0.5">
         {filtered.length === 0 ? (
-          <p className="px-1 py-2 text-[12px] text-gray-400">No departments found</p>
+          <p className="px-1 py-2 text-[12px] text-gray-400">
+            No departments found
+          </p>
         ) : (
           filtered.map((o) => renderOption(o))
         )}

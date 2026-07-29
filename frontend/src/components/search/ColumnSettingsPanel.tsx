@@ -33,7 +33,9 @@ export default function ColumnSettingsPanel({
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div className="fixed right-4 top-16 z-50 w-64 rounded-xl border border-gray-200 bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2.5">
-          <span className="text-[12px] font-semibold text-gray-800">Column settings</span>
+          <span className="text-[12px] font-semibold text-gray-800">
+            Column settings
+          </span>
           <button
             type="button"
             onClick={onClose}
@@ -58,7 +60,9 @@ export default function ColumnSettingsPanel({
 
         <div className="max-h-72 overflow-y-auto py-1">
           {filtered.map((col) => {
-            const checked = col.locked ? true : (visible[col.key] ?? col.defaultVisible);
+            const checked = col.locked
+              ? true
+              : (visible[col.key] ?? col.defaultVisible);
             return (
               <div
                 key={col.key}
@@ -69,7 +73,9 @@ export default function ColumnSettingsPanel({
                 }`}
                 onClick={() => !col.locked && onToggle(col.key)}
               >
-                <span className="select-none text-[11px] text-gray-700">{col.label}</span>
+                <span className="select-none text-[11px] text-gray-700">
+                  {col.label}
+                </span>
                 <div className="flex items-center gap-2">
                   {col.locked && (
                     <span className="text-[9px] font-medium uppercase tracking-wide text-gray-400">
@@ -89,7 +95,9 @@ export default function ColumnSettingsPanel({
             );
           })}
           {filtered.length === 0 && (
-            <p className="px-3 py-3 text-center text-[11px] text-gray-400">No columns match</p>
+            <p className="px-3 py-3 text-center text-[11px] text-gray-400">
+              No columns match
+            </p>
           )}
         </div>
 

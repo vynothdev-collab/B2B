@@ -106,74 +106,81 @@ export default function RangeDropdown({
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 transition-colors focus:border-red-500 focus:outline-none"
       >
-        <span className={minValue || maxValue ? "" : "text-gray-400"}>{buttonLabel}</span>
+        <span className={minValue || maxValue ? "" : "text-gray-400"}>
+          {buttonLabel}
+        </span>
         <ChevronDown
           className={`h-3.5 w-3.5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
 
-      {open && typeof document !== "undefined" && createPortal(
-        <div
-          ref={dropdownRef}
-          className="fixed z-[9999] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
-          style={{
-            top: pos.top,
-            bottom: pos.bottom,
-            left: pos.left,
-            width: pos.width,
-            maxHeight: pos.maxH,
-          }}
-        >
-          <div className="border-b border-gray-100 px-2 py-1.5">
-            <div className="grid grid-cols-2 gap-1">
-              <input
-                type="number"
-                placeholder="Min"
-                value={minValue}
-                onChange={(e) => onMinChange(e.target.value)}
-                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[12px] text-gray-900 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <input
-                type="number"
-                placeholder="Max"
-                value={maxValue}
-                onChange={(e) => onMaxChange(e.target.value)}
-                className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[12px] text-gray-900 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="fixed z-[9999] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg"
+            style={{
+              top: pos.top,
+              bottom: pos.bottom,
+              left: pos.left,
+              width: pos.width,
+              maxHeight: pos.maxH,
+            }}
+          >
+            <div className="border-b border-gray-100 px-2 py-1.5">
+              <div className="grid grid-cols-2 gap-1">
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={minValue}
+                  onChange={(e) => onMinChange(e.target.value)}
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[12px] text-gray-900 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={maxValue}
+                  onChange={(e) => onMaxChange(e.target.value)}
+                  className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[12px] text-gray-900 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
-          </div>
-          <div className="overflow-y-auto py-1" style={{ maxHeight: pos.maxH - 80 }}>
-            {presets.map((p) => (
+            <div
+              className="overflow-y-auto py-1"
+              style={{ maxHeight: pos.maxH - 80 }}
+            >
+              {presets.map((p) => (
+                <button
+                  key={p.label}
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onMinChange(p.min != null ? String(p.min) : "");
+                    onMaxChange(p.max != null ? String(p.max) : "");
+                    setOpen(false);
+                  }}
+                  className="block w-full px-2.5 py-1 text-left text-[12px] text-gray-700 hover:bg-red-50 hover:bg-red-500"
+                >
+                  {p.label}
+                </button>
+              ))}
               <button
-                key={p.label}
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  onMinChange(p.min != null ? String(p.min) : "");
-                  onMaxChange(p.max != null ? String(p.max) : "");
+                  onMinChange("");
+                  onMaxChange("");
                   setOpen(false);
                 }}
-                className="block w-full px-2.5 py-1 text-left text-[12px] text-gray-700 hover:bg-red-50 hover:bg-red-500"
+                className="block w-full border-t border-gray-100 px-2.5 py-1 text-left text-[12px] font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
               >
-                {p.label}
+                Clear
               </button>
-            ))}
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onMinChange("");
-                onMaxChange("");
-                setOpen(false);
-              }}
-              className="block w-full border-t border-gray-100 px-2.5 py-1 text-left text-[12px] font-medium text-gray-400 hover:bg-gray-50 hover:text-gray-600"
-            >
-              Clear
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

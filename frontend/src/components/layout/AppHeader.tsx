@@ -15,7 +15,9 @@ export default function AppHeader({ title }: { title: string }) {
       >
         <Menu className="h-4 w-4" />
       </button>
-      <h1 className="min-w-0 truncate text-lg font-semibold text-gray-900 sm:text-xl">{title}</h1>
+      <h1 className="min-w-0 truncate text-lg font-semibold text-gray-900 sm:text-xl">
+        {title}
+      </h1>
     </header>
   );
 }

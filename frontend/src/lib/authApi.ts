@@ -1,7 +1,7 @@
 import { apiClient } from "./api";
 import { clearTokens, storeTokens, updateAccessToken } from "./tokens";
 
-export type { };
+export type {};
 export { storeTokens, updateAccessToken, clearTokens };
 
 export type UserRole = "individual" | "enterprise_admin" | "enterprise_user" | string;
@@ -24,8 +24,14 @@ export interface AuthResponse {
   user: UserInfo;
 }
 
-export async function apiLogin(email: string, password: string): Promise<AuthResponse> {
-  const res = await apiClient.post<AuthResponse>("/auth/login", { email, password });
+export async function apiLogin(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
+  const res = await apiClient.post<AuthResponse>("/auth/login", {
+    email,
+    password,
+  });
   return res.data;
 }
 
@@ -37,9 +43,13 @@ export async function apiGoogleLogin(accessToken: string): Promise<AuthResponse>
 export async function apiRegister(
   name: string,
   email: string,
-  password: string
+  password: string,
 ): Promise<AuthResponse> {
-  const res = await apiClient.post<AuthResponse>("/auth/register", { name, email, password });
+  const res = await apiClient.post<AuthResponse>("/auth/register", {
+    name,
+    email,
+    password,
+  });
   return res.data;
 }
 

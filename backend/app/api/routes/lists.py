@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
@@ -7,10 +7,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.list import List as ListModel, ListItem
+from app.models.list import List as ListModel
+from app.models.list import ListItem
 from app.models.search_record import CompanySearchRecord, PersonSearchRecord
 from app.models.user import User
-from app.schemas.list import AddToListRequest, AddToListResponse, ListCreate, ListItemOut, ListItemsPageResponse, ListResponse, ListUpdate
+from app.schemas.list import (
+    AddToListRequest,
+    AddToListResponse,
+    ListCreate,
+    ListItemOut,
+    ListItemsPageResponse,
+    ListResponse,
+    ListUpdate,
+)
 from app.services.coresignal_service import _map_company, _map_person
 
 router = APIRouter(prefix="/lists", tags=["lists"])
@@ -73,7 +82,9 @@ async def get_lists(
     responses = []
     for lst in lists:
         count_result = await db.execute(
-            select(func.count(ListItem.id)).where(ListItem.list_id == lst.id, ListItem.deleted_at == None)
+            select(func.count(ListItem.id)).where(
+                ListItem.list_id == lst.id, ListItem.deleted_at == None
+            )
         )
         count = count_result.scalar() or 0
         responses.append(
@@ -142,7 +153,10 @@ async def add_items_to_list(
             raise HTTPException(status_code=404, detail="List not found")
     else:
         if not data.list_name:
-            raise HTTPException(status_code=400, detail="list_name required when list_id is not provided")
+            raise HTTPException(
+                status_code=400,
+                detail="list_name required when list_id is not provided",
+            )
         existing_result = await db.execute(
             select(ListModel).where(
                 ListModel.user_id == current_user.id,
@@ -167,18 +181,21 @@ async def add_items_to_list(
     default_list = next((d for d in defaults if d.list_type == list_type), None)
 
     existing_in_target_result = await db.execute(
-        select(ListItem.record_id).where(ListItem.list_id == target_list.id, ListItem.deleted_at == None)
+        select(ListItem.record_id).where(
+            ListItem.list_id == target_list.id, ListItem.deleted_at == None
+        )
     )
     existing_in_target = {row[0] for row in existing_in_target_result.fetchall()}
 
     existing_in_default: set[str] = set()
     if default_list and default_list.id != target_list.id:
         existing_in_default_result = await db.execute(
-            select(ListItem.record_id).where(ListItem.list_id == default_list.id, ListItem.deleted_at == None)
+            select(ListItem.record_id).where(
+                ListItem.list_id == default_list.id, ListItem.deleted_at == None
+            )
         )
         existing_in_default = {row[0] for row in existing_in_default_result.fetchall()}
 
-    # Bulk-fetch raw data for all record_ids from the appropriate cache table
     record_ids = [item.record_id for item in data.items]
     raw_data_map: dict[str, dict] = {}
     if item_type == "person":
@@ -190,9 +207,9 @@ async def add_items_to_list(
         raw_data_map = {row[0]: row[1] for row in raw_result.fetchall()}
     else:
         raw_result = await db.execute(
-            select(CompanySearchRecord.coresignal_id, CompanySearchRecord.raw_data).where(
-                CompanySearchRecord.coresignal_id.in_(record_ids)
-            )
+            select(
+                CompanySearchRecord.coresignal_id, CompanySearchRecord.raw_data
+            ).where(CompanySearchRecord.coresignal_id.in_(record_ids))
         )
         raw_data_map = {row[0]: row[1] for row in raw_result.fetchall()}
 
@@ -219,7 +236,11 @@ async def add_items_to_list(
             )
             added_count += 1
 
-        if default_list and default_list.id != target_list.id and item.record_id not in existing_in_default:
+        if (
+            default_list
+            and default_list.id != target_list.id
+            and item.record_id not in existing_in_default
+        ):
             db.add(
                 ListItem(
                     id=str(uuid.uuid4()),
@@ -230,7 +251,7 @@ async def add_items_to_list(
                 )
             )
 
-    target_list.updated_at = datetime.now(timezone.utc)
+    target_list.updated_at = datetime.now(UTC)
     await db.flush()
 
     return AddToListResponse(
@@ -259,7 +280,7 @@ async def delete_list(
     if lst.is_default:
         raise HTTPException(status_code=400, detail="Cannot delete default lists")
 
-    lst.deleted_at = datetime.now(timezone.utc)
+    lst.deleted_at = datetime.now(UTC)
     return {"ok": True}
 
 
@@ -284,11 +305,13 @@ async def rename_list(
         raise HTTPException(status_code=400, detail="Cannot rename default lists")
 
     lst.name = data.name.strip()
-    lst.updated_at = datetime.now(timezone.utc)
+    lst.updated_at = datetime.now(UTC)
     await db.flush()
 
     count_result = await db.execute(
-        select(func.count(ListItem.id)).where(ListItem.list_id == lst.id, ListItem.deleted_at == None)
+        select(func.count(ListItem.id)).where(
+            ListItem.list_id == lst.id, ListItem.deleted_at == None
+        )
     )
     return ListResponse(
         id=lst.id,
@@ -320,14 +343,18 @@ async def remove_list_item(
         raise HTTPException(status_code=404, detail="List not found")
 
     item_result = await db.execute(
-        select(ListItem).where(ListItem.id == item_id, ListItem.list_id == list_id, ListItem.deleted_at == None)
+        select(ListItem).where(
+            ListItem.id == item_id,
+            ListItem.list_id == list_id,
+            ListItem.deleted_at == None,
+        )
     )
     item = item_result.scalar_one_or_none()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    item.deleted_at = datetime.now(timezone.utc)
-    lst.updated_at = datetime.now(timezone.utc)
+    item.deleted_at = datetime.now(UTC)
+    lst.updated_at = datetime.now(UTC)
     await db.flush()
     return {"ok": True}
 
@@ -367,7 +394,6 @@ async def get_list_items(
     )
     items = items_result.scalars().all()
 
-    # Bulk-fetch raw data from search records cache so we can apply proper mapping
     person_ids = [i.record_id for i in items if i.item_type == "person"]
     company_ids = [i.record_id for i in items if i.item_type == "company"]
 
@@ -376,15 +402,17 @@ async def get_list_items(
 
     if person_ids:
         pr = await db.execute(
-            select(PersonSearchRecord.coresignal_id, PersonSearchRecord.raw_data)
-            .where(PersonSearchRecord.coresignal_id.in_(person_ids))
+            select(PersonSearchRecord.coresignal_id, PersonSearchRecord.raw_data).where(
+                PersonSearchRecord.coresignal_id.in_(person_ids)
+            )
         )
         person_raw_map = {row[0]: row[1] for row in pr.fetchall()}
 
     if company_ids:
         cr = await db.execute(
-            select(CompanySearchRecord.coresignal_id, CompanySearchRecord.raw_data)
-            .where(CompanySearchRecord.coresignal_id.in_(company_ids))
+            select(
+                CompanySearchRecord.coresignal_id, CompanySearchRecord.raw_data
+            ).where(CompanySearchRecord.coresignal_id.in_(company_ids))
         )
         company_raw_map = {row[0]: row[1] for row in cr.fetchall()}
 
@@ -392,16 +420,16 @@ async def get_list_items(
         stored = item.data if isinstance(item.data, dict) else {}
 
         if item.item_type == "person":
-            # Prefer fresh raw data from search records cache
             raw = person_raw_map.get(item.record_id)
             if raw:
                 mapped = _map_person(raw)
                 mapped["email"] = raw.get("primary_professional_email")
                 return mapped
-            # Fallback: if stored data looks like raw CoreSignal format (has
-            # nested 'experiences' array but no already-mapped top-level fields),
-            # apply mapping so old items display correctly too.
-            if stored and "experiences" in stored and "active_experience_title" not in stored:
+            if (
+                stored
+                and "experiences" in stored
+                and "active_experience_title" not in stored
+            ):
                 mapped = _map_person(stored)
                 mapped["email"] = stored.get("primary_professional_email")
                 return mapped
@@ -409,7 +437,6 @@ async def get_list_items(
             raw = company_raw_map.get(item.record_id)
             if raw:
                 return _map_company(raw)
-            # Fallback: raw company format uses 'founded_year'; mapped uses 'founded'
             if stored and "founded_year" in stored and "founded" not in stored:
                 return _map_company(stored)
 

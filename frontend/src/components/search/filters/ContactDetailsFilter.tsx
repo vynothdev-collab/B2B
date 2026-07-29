@@ -8,8 +8,16 @@ interface Props {
 }
 
 function Checkbox({
-  icon, label, checked, onChange,
-}: { icon: React.ReactNode; label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  icon,
+  label,
+  checked,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 has-[:checked]:border-red-300 has-[:checked]:bg-red-50">
       <input
@@ -25,7 +33,10 @@ function Checkbox({
   );
 }
 
-export default function ContactDetailsFilter({ requireWorkEmail, onChange }: Props) {
+export default function ContactDetailsFilter({
+  requireWorkEmail,
+  onChange,
+}: Props) {
   const [hasEmail, setHasEmail] = useState(false);
   const [hasMobile, setHasMobile] = useState(false);
 

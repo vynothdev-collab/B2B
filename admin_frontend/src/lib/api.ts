@@ -1,5 +1,10 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "./cookies";
+import {
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+  clearTokens,
+} from "./cookies";
 
 const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "") + "/api/v1";
 
@@ -8,15 +13,11 @@ export const api = axios.create({
   withCredentials: false,
 });
 
-// ── Request interceptor — attach access token ──────────────────────────────
-
 api.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) config.headers["Authorization"] = `Bearer ${token}`;
   return config;
 });
-
-// ── Response interceptor — auto-refresh on 401 ────────────────────────────
 
 let isRefreshing = false;
 let refreshQueue: Array<(token: string) => void> = [];
@@ -29,7 +30,9 @@ function processQueue(newToken: string) {
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const original = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     if (error.response?.status !== 401 || original._retry) {
       return Promise.reject(error);
@@ -58,7 +61,7 @@ api.interceptors.response.use(
     try {
       const { data } = await axios.post<{ access_token: string }>(
         `${BASE_URL}/admin/auth/refresh`,
-        { refresh_token: refreshToken }
+        { refresh_token: refreshToken },
       );
       const newAccess = data.access_token;
       setTokens(newAccess, refreshToken);
@@ -72,5 +75,5 @@ api.interceptors.response.use(
     } finally {
       isRefreshing = false;
     }
-  }
+  },
 );

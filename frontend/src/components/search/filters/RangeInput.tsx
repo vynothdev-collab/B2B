@@ -29,7 +29,11 @@ export default function RangeInput({
     <div>
       {label && <span className={labelCls}>{label}</span>}
       <div className="flex items-center gap-1.5">
-        {prefix && <span className="text-[11px] font-semibold text-gray-400">{prefix}</span>}
+        {prefix && (
+          <span className="text-[11px] font-semibold text-gray-400">
+            {prefix}
+          </span>
+        )}
         <input
           type="number"
           placeholder={minPlaceholder}
@@ -38,7 +42,11 @@ export default function RangeInput({
           className={inputCls}
         />
         <span className="text-[11px] text-gray-400">—</span>
-        {prefix && <span className="text-[11px] font-semibold text-gray-400">{prefix}</span>}
+        {prefix && (
+          <span className="text-[11px] font-semibold text-gray-400">
+            {prefix}
+          </span>
+        )}
         <input
           type="number"
           placeholder={maxPlaceholder}

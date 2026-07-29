@@ -7,15 +7,18 @@ interface Props {
   placeholder: string;
   values: string[];
   onChange: (values: string[]) => void;
-  /** Deprecated — kept so existing callers compile; no longer triggers any API lookup. */
   field?: string;
-  /** Deprecated — kept for backward compatibility with existing callers. */
   size?: number;
 }
 
 const labelCls = "mb-1 block text-[12px] text-gray-500";
 
-export default function MultiChipAutocomplete({ label, placeholder, values, onChange }: Props) {
+export default function MultiChipAutocomplete({
+  label,
+  placeholder,
+  values,
+  onChange,
+}: Props) {
   const [inputText, setInputText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +33,8 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
     inputRef.current?.focus();
   };
 
-  const removeValue = (val: string) => onChange(values.filter((v) => v !== val));
+  const removeValue = (val: string) =>
+    onChange(values.filter((v) => v !== val));
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") {
@@ -63,7 +67,10 @@ export default function MultiChipAutocomplete({ label, placeholder, values, onCh
               {val}
               <button
                 type="button"
-                onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  removeValue(val);
+                }}
                 className="hover:opacity-70"
               >
                 <X className="h-2.5 w-2.5" />

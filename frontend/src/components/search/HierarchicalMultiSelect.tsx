@@ -32,11 +32,22 @@ function flatLabel(opts: DepartmentOption[], val: string): string {
   return val;
 }
 
-export default function HierarchicalMultiSelect({ label, placeholder, values, onChange, options }: Props) {
+export default function HierarchicalMultiSelect({
+  label,
+  placeholder,
+  values,
+  onChange,
+  options,
+}: Props) {
   const [inputText, setInputText] = useState("");
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
+  const [pos, setPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxH: DROPDOWN_MAX_H,
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,10 +58,18 @@ export default function HierarchicalMultiSelect({ label, placeholder, values, on
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
     const avail = Math.max(80, window.innerHeight - r.bottom - 8);
-    setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxH: Math.min(DROPDOWN_MAX_H, avail) });
+    setPos({
+      top: r.bottom + 4,
+      left: r.left,
+      width: r.width,
+      maxH: Math.min(DROPDOWN_MAX_H, avail),
+    });
   };
 
-  const openDropdown = () => { calcPos(); setOpen(true); };
+  const openDropdown = () => {
+    calcPos();
+    setOpen(true);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -75,7 +94,9 @@ export default function HierarchicalMultiSelect({ label, placeholder, values, on
   };
 
   const toggleValue = (val: string) =>
-    onChange(values.includes(val) ? values.filter((v) => v !== val) : [...values, val]);
+    onChange(
+      values.includes(val) ? values.filter((v) => v !== val) : [...values, val],
+    );
 
   const toggleParent = (opt: DepartmentOption) => {
     const leaves = allLeafValues(opt);
@@ -84,15 +105,19 @@ export default function HierarchicalMultiSelect({ label, placeholder, values, on
       onChange(values.filter((v) => !leaves.includes(v)));
     } else {
       const next = [...values];
-      leaves.forEach((v) => { if (!next.includes(v)) next.push(v); });
+      leaves.forEach((v) => {
+        if (!next.includes(v)) next.push(v);
+      });
       onChange(next);
     }
   };
 
-  const removeValue = (val: string) => onChange(values.filter((v) => v !== val));
+  const removeValue = (val: string) =>
+    onChange(values.filter((v) => v !== val));
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !inputText && values.length > 0) removeValue(values[values.length - 1]);
+    if (e.key === "Backspace" && !inputText && values.length > 0)
+      removeValue(values[values.length - 1]);
     else if (e.key === "Escape") setOpen(false);
   };
 
@@ -115,44 +140,75 @@ export default function HierarchicalMultiSelect({ label, placeholder, values, on
       const allSelected = selectedCount === leaves.length;
       const someSelected = selectedCount > 0 && !allSelected;
 
-      const visibleChildren = q ? opt.children!.filter(matchesSearch) : opt.children!;
+      const visibleChildren = q
+        ? opt.children!.filter(matchesSearch)
+        : opt.children!;
 
       return (
         <div key={opt.value}>
           <div
             className={`flex w-full items-center gap-1.5 px-2.5 py-1.5 text-[11px] transition-colors cursor-pointer sm:px-3 sm:py-2 sm:text-xs ${
-              allSelected ? "bg-red-50 text-red-700" : someSelected ? "bg-red-50/50 text-gray-800" : "text-gray-700 hover:bg-gray-50"
+              allSelected
+                ? "bg-red-50 text-red-700"
+                : someSelected
+                  ? "bg-red-50/50 text-gray-800"
+                  : "text-gray-700 hover:bg-gray-50"
             }`}
             style={{ paddingLeft: `${(depth + 1) * 10}px` }}
           >
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); if (!q) toggleExpand(opt.value); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                if (!q) toggleExpand(opt.value);
+              }}
               className="shrink-0 text-gray-400 hover:text-gray-600"
             >
-              {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
             </button>
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); toggleParent(opt); }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                toggleParent(opt);
+              }}
               className="flex flex-1 items-center gap-1.5 text-left"
             >
               <span
                 className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border ${
-                  allSelected ? "border-red-500 bg-red-500" : someSelected ? "border-red-400 bg-red-100" : "border-gray-300 bg-white"
+                  allSelected
+                    ? "border-red-500 bg-red-500"
+                    : someSelected
+                      ? "border-red-400 bg-red-100"
+                      : "border-gray-300 bg-white"
                 }`}
               >
                 {allSelected && (
-                  <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <svg
+                    className="h-2.5 w-2.5 text-white"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 )}
-                {someSelected && <span className="block h-1.5 w-1.5 rounded-sm bg-red-500" />}
+                {someSelected && (
+                  <span className="block h-1.5 w-1.5 rounded-sm bg-red-500" />
+                )}
               </span>
               <span className="font-medium">{opt.label}</span>
             </button>
           </div>
-          {isExpanded && visibleChildren.map((child) => renderOption(child, depth + 1))}
+          {isExpanded &&
+            visibleChildren.map((child) => renderOption(child, depth + 1))}
         </div>
       );
     }
@@ -162,7 +218,10 @@ export default function HierarchicalMultiSelect({ label, placeholder, values, on
       <button
         key={opt.value}
         type="button"
-        onMouseDown={(e) => { e.preventDefault(); toggleValue(opt.value); }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          toggleValue(opt.value);
+        }}
         className={`flex w-full items-center gap-1.5 px-2.5 py-1.5 text-[11px] transition-colors sm:px-3 sm:py-2 sm:text-xs ${
           selected ? "bg-red-50 text-red-700" : "text-gray-600 hover:bg-gray-50"
         }`}
@@ -174,8 +233,16 @@ export default function HierarchicalMultiSelect({ label, placeholder, values, on
           }`}
         >
           {selected && (
-            <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            <svg
+              className="h-2.5 w-2.5 text-white"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
             </svg>
           )}
         </span>
@@ -198,7 +265,10 @@ export default function HierarchicalMultiSelect({ label, placeholder, values, on
               {getLabel(val)}
               <button
                 type="button"
-                onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  removeValue(val);
+                }}
                 className="hover:opacity-70"
               >
                 <X className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
@@ -225,25 +295,37 @@ export default function HierarchicalMultiSelect({ label, placeholder, values, on
         />
       </div>
 
-      {open && typeof document !== "undefined" && createPortal(
-        <>
-          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
-          <div
-            ref={dropdownRef}
-            className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH }}
-          >
-            <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
-              {filteredOptions.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-gray-400">No options found</div>
-              ) : (
-                filteredOptions.map((o) => renderOption(o))
-              )}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[9998]"
+              onClick={() => setOpen(false)}
+            />
+            <div
+              ref={dropdownRef}
+              className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                width: pos.width,
+                maxHeight: pos.maxH,
+              }}
+            >
+              <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
+                {filteredOptions.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-gray-400">
+                    No options found
+                  </div>
+                ) : (
+                  filteredOptions.map((o) => renderOption(o))
+                )}
+              </div>
             </div>
-          </div>
-        </>,
-        document.body
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

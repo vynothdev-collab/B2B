@@ -43,7 +43,9 @@ export default function TabbedLocationFilter({
           type="button"
           onClick={() => setTab("people")}
           className={`relative flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold transition-colors ${
-            tab === "people" ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+            tab === "people"
+              ? "text-gray-900"
+              : "text-gray-400 hover:text-gray-600"
           }`}
         >
           <User className="h-3.5 w-3.5" />
@@ -71,31 +73,69 @@ export default function TabbedLocationFilter({
         {tab === "people" ? (
           <>
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1">Country</p>
-              <LocationAutocomplete kind="country" values={personCountries} onChange={onPersonCountriesChange} />
+              <p className="text-[11px] font-medium text-gray-500 mb-1">
+                Country
+              </p>
+              <LocationAutocomplete
+                kind="country"
+                values={personCountries}
+                onChange={onPersonCountriesChange}
+              />
             </div>
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1">State / Region</p>
-              <LocationAutocomplete kind="state" values={personStates} onChange={onPersonStatesChange} filterCountries={personCountries} />
+              <p className="text-[11px] font-medium text-gray-500 mb-1">
+                State / Region
+              </p>
+              <LocationAutocomplete
+                kind="state"
+                values={personStates}
+                onChange={onPersonStatesChange}
+                filterCountries={personCountries}
+              />
             </div>
             <div>
               <p className="text-[11px] font-medium text-gray-500 mb-1">City</p>
-              <LocationAutocomplete kind="city" values={personCities} onChange={onPersonCitiesChange} filterCountries={personCountries} filterStates={personStates} />
+              <LocationAutocomplete
+                kind="city"
+                values={personCities}
+                onChange={onPersonCitiesChange}
+                filterCountries={personCountries}
+                filterStates={personStates}
+              />
             </div>
           </>
         ) : (
           <>
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1">Country</p>
-              <LocationAutocomplete kind="country" values={hqCountries} onChange={onHqCountriesChange} />
+              <p className="text-[11px] font-medium text-gray-500 mb-1">
+                Country
+              </p>
+              <LocationAutocomplete
+                kind="country"
+                values={hqCountries}
+                onChange={onHqCountriesChange}
+              />
             </div>
             <div>
-              <p className="text-[11px] font-medium text-gray-500 mb-1">State / Region</p>
-              <LocationAutocomplete kind="state" values={hqStates} onChange={onHqStatesChange} filterCountries={hqCountries} />
+              <p className="text-[11px] font-medium text-gray-500 mb-1">
+                State / Region
+              </p>
+              <LocationAutocomplete
+                kind="state"
+                values={hqStates}
+                onChange={onHqStatesChange}
+                filterCountries={hqCountries}
+              />
             </div>
             <div>
               <p className="text-[11px] font-medium text-gray-500 mb-1">City</p>
-              <LocationAutocomplete kind="city" values={hqCities} onChange={onHqCitiesChange} filterCountries={hqCountries} filterStates={hqStates} />
+              <LocationAutocomplete
+                kind="city"
+                values={hqCities}
+                onChange={onHqCitiesChange}
+                filterCountries={hqCountries}
+                filterStates={hqStates}
+              />
             </div>
           </>
         )}

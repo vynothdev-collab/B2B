@@ -35,14 +35,19 @@ function buildPeopleColumns({
       label: "Name",
       minWidth: 200,
       render: (person) => {
-        const fullName = person.full_name || `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim();
+        const fullName =
+          person.full_name ||
+          `${person.first_name ?? ""} ${person.last_name ?? ""}`.trim();
         const name = fullName || "—";
         return (
           <div className="flex items-center gap-2 overflow-hidden">
             <Avatar name={name} pictureUrl={person.picture_url} size="sm" />
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onNameClick?.(person); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNameClick?.(person);
+              }}
               className="truncate text-[13px] font-semibold text-gray-900 hover:underline cursor-pointer text-left"
               title={name}
             >
@@ -67,7 +72,9 @@ function buildPeopleColumns({
               website={person.active_experience_company_website}
               size="sm"
             />
-            <p className="truncate text-[13px] font-medium text-gray-800 max-w-[130px]">{companyName}</p>
+            <p className="truncate text-[13px] font-medium text-gray-800 max-w-[130px]">
+              {companyName}
+            </p>
           </div>
         );
       },
@@ -81,14 +88,21 @@ function buildPeopleColumns({
         const jobDepartment = person.active_experience_department;
         return jobTitle ? (
           <div>
-            <p className="truncate text-[13px] text-gray-800 max-w-[140px]" title={jobTitle}>{jobTitle}</p>
+            <p
+              className="truncate text-[13px] text-gray-800 max-w-[140px]"
+              title={jobTitle}
+            >
+              {jobTitle}
+            </p>
             {!isCol("department") && jobDepartment && (
               <span className="mt-0.5 inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium capitalize text-gray-600">
                 {jobDepartment}
               </span>
             )}
           </div>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -99,9 +113,13 @@ function buildPeopleColumns({
         const revealedEmail = revealedEmails.get(person.id);
         const isRevealing = revealingIds.has(person.id);
         return revealedEmails.has(person.id) ? (
-          revealedEmail
-            ? <span className="block max-w-[160px] truncate text-[13px] font-medium text-gray-800">{revealedEmail}</span>
-            : <span className="text-xs text-gray-500">No email</span>
+          revealedEmail ? (
+            <span className="block max-w-[160px] truncate text-[13px] font-medium text-gray-800">
+              {revealedEmail}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-500">No email</span>
+          )
         ) : person.has_email ? (
           <button
             type="button"
@@ -112,7 +130,9 @@ function buildPeopleColumns({
             <Mail className="h-3 w-3" />
             {isRevealing ? "Revealing…" : "Reveal"}
           </button>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -127,11 +147,15 @@ function buildPeopleColumns({
       minWidth: 130,
       render: (person) => (
         <div className="min-w-0">
-            <p className="truncate text-[13px] text-gray-800">{person.location_country ?? "—"}</p>
-            {person.location_city && (
-              <p className="truncate text-xs text-gray-500">{person.location_city}</p>
-            )}
-          </div>
+          <p className="truncate text-[13px] text-gray-800">
+            {person.location_country ?? "—"}
+          </p>
+          {person.location_city && (
+            <p className="truncate text-xs text-gray-500">
+              {person.location_city}
+            </p>
+          )}
+        </div>
       ),
     },
     {
@@ -145,7 +169,9 @@ function buildPeopleColumns({
       label: "Country",
       minWidth: 135,
       render: (person) => (
-        <span className="text-[13px] capitalize text-gray-700">{person.location_country ?? "—"}</span>
+        <span className="text-[13px] capitalize text-gray-700">
+          {person.location_country ?? "—"}
+        </span>
       ),
     },
     {
@@ -153,7 +179,9 @@ function buildPeopleColumns({
       label: "City",
       minWidth: 140,
       render: (person) => (
-        <span className="text-[13px] capitalize text-gray-700">{person.location_city ?? "—"}</span>
+        <span className="text-[13px] capitalize text-gray-700">
+          {person.location_city ?? "—"}
+        </span>
       ),
     },
     {
@@ -161,7 +189,9 @@ function buildPeopleColumns({
       label: "State",
       minWidth: 150,
       render: (person) => (
-        <span className="text-[13px] text-gray-800">{person.location_state ?? "—"}</span>
+        <span className="text-[13px] text-gray-800">
+          {person.location_state ?? "—"}
+        </span>
       ),
     },
     {
@@ -171,25 +201,36 @@ function buildPeopleColumns({
       render: (person) => {
         const raw = person.active_experience_department ?? "";
         const dept = raw.split(/[·,]/)[0].trim();
-        return dept
-          ? <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">{dept}</span>
-          : <Dash />;
+        return dept ? (
+          <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">
+            {dept}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
       key: "seniority",
       label: "Seniority",
       minWidth: 100,
-      render: (person) => person.active_experience_management_level
-        ? <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">{String(person.active_experience_management_level)}</span>
-        : <Dash />,
+      render: (person) =>
+        person.active_experience_management_level ? (
+          <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">
+            {String(person.active_experience_management_level)}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "job_started",
       label: "Job Started",
       minWidth: 85,
       render: (person) => (
-        <span className="text-[13px] text-gray-800 whitespace-nowrap">{fmtDate(person.active_experience_start_date)}</span>
+        <span className="text-[13px] text-gray-800 whitespace-nowrap">
+          {fmtDate(person.active_experience_start_date)}
+        </span>
       ),
     },
     {
@@ -197,24 +238,39 @@ function buildPeopleColumns({
       label: "In Role",
       minWidth: 80,
       render: (person) => (
-        <span className="text-[13px] font-medium text-gray-700">{fmtDuration(person.active_experience_start_date)}</span>
+        <span className="text-[13px] font-medium text-gray-700">
+          {fmtDuration(person.active_experience_start_date)}
+        </span>
       ),
     },
     {
       key: "exp_years",
       label: "Exp.",
       minWidth: 70,
-      render: (person) => person.total_experience_duration_months != null
-        ? <span className="text-[13px] font-medium text-gray-700">{Math.floor(person.total_experience_duration_months / 12)} yrs</span>
-        : <Dash />,
+      render: (person) =>
+        person.total_experience_duration_months != null ? (
+          <span className="text-[13px] font-medium text-gray-700">
+            {Math.floor(person.total_experience_duration_months / 12)} yrs
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "headline",
       label: "Headline",
       minWidth: 180,
-      render: (person) => person.headline
-        ? <span className="block max-w-[180px] truncate text-[13px] text-gray-600" title={person.headline}>{person.headline}</span>
-        : <Dash />,
+      render: (person) =>
+        person.headline ? (
+          <span
+            className="block max-w-[180px] truncate text-[13px] text-gray-600"
+            title={person.headline}
+          >
+            {person.headline}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "skills",
@@ -226,47 +282,70 @@ function buildPeopleColumns({
       key: "awards_certs",
       label: "Awards & Certs",
       minWidth: 140,
-      render: (person) => <ChipList items={toStringArr(person.awards_certifications)} />,
+      render: (person) => (
+        <ChipList items={toStringArr(person.awards_certifications)} />
+      ),
     },
     {
       key: "connections",
       label: "Connections",
       minWidth: 90,
-      render: (person) => person.connections_count != null
-        ? <span className="text-[13px] text-gray-800">{person.connections_count.toLocaleString()}</span>
-        : <Dash />,
+      render: (person) =>
+        person.connections_count != null ? (
+          <span className="text-[13px] text-gray-800">
+            {person.connections_count.toLocaleString()}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "followers",
       label: "Followers",
       minWidth: 80,
-      render: (person) => person.followers_count != null
-        ? <span className="text-[13px] text-gray-800">{person.followers_count.toLocaleString()}</span>
-        : <Dash />,
+      render: (person) =>
+        person.followers_count != null ? (
+          <span className="text-[13px] text-gray-800">
+            {person.followers_count.toLocaleString()}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "salary",
       label: "Est. Salary",
       minWidth: 85,
-      render: (person) => person.projected_base_salary_median != null
-        ? <span className="text-[13px] font-semibold text-gray-700">{(person.projected_base_salary_currency ?? "USD") === "USD" ? "$" : ""}{Math.round(person.projected_base_salary_median / 1000)}K</span>
-        : <Dash />,
+      render: (person) =>
+        person.projected_base_salary_median != null ? (
+          <span className="text-[13px] font-semibold text-gray-700">
+            {(person.projected_base_salary_currency ?? "USD") === "USD"
+              ? "$"
+              : ""}
+            {Math.round(person.projected_base_salary_median / 1000)}K
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "linkedin",
       label: "LinkedIn",
       minWidth: 80,
-      render: (person) => person.linkedin_url ? (
-        <a
-          href={`https://${person.linkedin_url.replace(/^https?:\/\//, "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[13px] text-blue-500 hover:underline whitespace-nowrap"
-        >
-          <Globe className="h-3 w-3 shrink-0" />
-          LinkedIn
-        </a>
-      ) : <Dash />,
+      render: (person) =>
+        person.linkedin_url ? (
+          <a
+            href={`https://${person.linkedin_url.replace(/^https?:\/\//, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-[13px] text-blue-500 hover:underline whitespace-nowrap"
+          >
+            <Globe className="h-3 w-3 shrink-0" />
+            LinkedIn
+          </a>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "co_website",
@@ -275,7 +354,9 @@ function buildPeopleColumns({
       render: (person) => {
         const website = person.active_experience_company_website;
         if (!website) return <Dash />;
-        const href = website.startsWith("http") ? website : `https://${website}`;
+        const href = website.startsWith("http")
+          ? website
+          : `https://${website}`;
         const display = website.replace(/^https?:\/\//, "").replace(/\/$/, "");
         return (
           <a
@@ -294,9 +375,14 @@ function buildPeopleColumns({
       key: "co_industry",
       label: "Co. Industry",
       minWidth: 140,
-      render: (person) => person.active_experience_company_industry
-        ? <span className="inline-block max-w-[120px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">{String(person.active_experience_company_industry)}</span>
-        : <Dash />,
+      render: (person) =>
+        person.active_experience_company_industry ? (
+          <span className="inline-block max-w-[120px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">
+            {String(person.active_experience_company_industry)}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "co_employees",
@@ -305,38 +391,56 @@ function buildPeopleColumns({
       render: (person) => {
         const coEmployees = person.active_experience_company_employees_count;
         const coSize = person.active_experience_company_size;
-        return coEmployees != null
-          ? <span className="text-[13px] text-gray-800">{coEmployees.toLocaleString()}</span>
-          : coSize
-            ? <span className="text-[13px] text-gray-800">{coSize}</span>
-            : <Dash />;
+        return coEmployees != null ? (
+          <span className="text-[13px] text-gray-800">
+            {coEmployees.toLocaleString()}
+          </span>
+        ) : coSize ? (
+          <span className="text-[13px] text-gray-800">{coSize}</span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
       key: "co_type",
       label: "Co. Type",
       minWidth: 90,
-      render: (person) => person.active_experience_company_type
-        ? <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">{String(person.active_experience_company_type)}</span>
-        : <Dash />,
+      render: (person) =>
+        person.active_experience_company_type ? (
+          <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">
+            {String(person.active_experience_company_type)}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "co_status",
       label: "Co. Status",
       minWidth: 90,
-      render: (person) => person.active_experience_company_status
-        ? <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">{String(person.active_experience_company_status)}</span>
-        : <Dash />,
+      render: (person) =>
+        person.active_experience_company_status ? (
+          <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">
+            {String(person.active_experience_company_status)}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "co_founded",
       label: "Founded",
       minWidth: 70,
       render: (person) => {
-        const coFounded = person.active_experience_company_founded ?? person.active_experience_company_founded_year;
-        return coFounded != null
-          ? <span className="text-[13px] text-gray-800">{coFounded}</span>
-          : <Dash />;
+        const coFounded =
+          person.active_experience_company_founded ??
+          person.active_experience_company_founded_year;
+        return coFounded != null ? (
+          <span className="text-[13px] text-gray-800">{coFounded}</span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -344,7 +448,9 @@ function buildPeopleColumns({
       label: "Co. Country",
       minWidth: 135,
       render: (person) => (
-        <span className="text-[13px] capitalize text-gray-700">{person.active_experience_company_hq_country ?? "—"}</span>
+        <span className="text-[13px] capitalize text-gray-700">
+          {person.active_experience_company_hq_country ?? "—"}
+        </span>
       ),
     },
     {
@@ -352,7 +458,9 @@ function buildPeopleColumns({
       label: "Co. City",
       minWidth: 140,
       render: (person) => (
-        <span className="text-[13px] capitalize text-gray-700">{person.active_experience_company_hq_city ?? "—"}</span>
+        <span className="text-[13px] capitalize text-gray-700">
+          {person.active_experience_company_hq_city ?? "—"}
+        </span>
       ),
     },
     {
@@ -360,36 +468,63 @@ function buildPeopleColumns({
       label: "Co. State",
       minWidth: 150,
       render: (person) => (
-        <span className="text-[13px] text-gray-800">{person.active_experience_company_hq_region ?? "—"}</span>
+        <span className="text-[13px] text-gray-800">
+          {person.active_experience_company_hq_region ?? "—"}
+        </span>
       ),
     },
     {
       key: "co_address",
       label: "Co. Address",
       minWidth: 180,
-      render: (person) => person.active_experience_company_hq_location
-        ? <span className="block max-w-[160px] truncate text-[13px] text-gray-800" title={String(person.active_experience_company_hq_location)}>{String(person.active_experience_company_hq_location)}</span>
-        : <Dash />,
+      render: (person) =>
+        person.active_experience_company_hq_location ? (
+          <span
+            className="block max-w-[160px] truncate text-[13px] text-gray-800"
+            title={String(person.active_experience_company_hq_location)}
+          >
+            {String(person.active_experience_company_hq_location)}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
     {
       key: "co_keywords",
       label: "Keywords",
       minWidth: 160,
-      render: (person) => <ChipList items={toStringArr(person.active_experience_company_categories_and_keywords)} />,
+      render: (person) => (
+        <ChipList
+          items={toStringArr(
+            person.active_experience_company_categories_and_keywords,
+          )}
+        />
+      ),
     },
     {
       key: "products_services",
       label: "Products & Services",
       minWidth: 170,
-      render: (person) => <ChipList items={toStringArr(person.active_experience_company_categories_and_keywords)} />,
+      render: (person) => (
+        <ChipList
+          items={toStringArr(
+            person.active_experience_company_categories_and_keywords,
+          )}
+        />
+      ),
     },
     {
       key: "co_revenue",
       label: "Revenue",
       minWidth: 120,
-      render: (person) => person.active_experience_company_annual_revenue != null
-        ? <span className="text-[13px] text-gray-800">{String(person.active_experience_company_annual_revenue)}</span>
-        : <Dash />,
+      render: (person) =>
+        person.active_experience_company_annual_revenue != null ? (
+          <span className="text-[13px] text-gray-800">
+            {String(person.active_experience_company_annual_revenue)}
+          </span>
+        ) : (
+          <Dash />
+        ),
     },
   ];
 
@@ -398,10 +533,6 @@ function buildPeopleColumns({
     visible: col.key === "name" ? true : visibleColumns[col.key] !== false,
   }));
 }
-
-// ---------------------------------------------------------------------------
-// Skeleton
-// ---------------------------------------------------------------------------
 
 export function PeopleTableSkeleton({
   rows = 8,
@@ -427,10 +558,6 @@ export function PeopleTableSkeleton({
     />
   );
 }
-
-// ---------------------------------------------------------------------------
-// Main table
-// ---------------------------------------------------------------------------
 
 interface Props {
   data: PersonResult[];
@@ -459,7 +586,13 @@ export default function PeopleTable({
   onRowClick,
   onNameClick,
 }: Props) {
-  const cols = buildPeopleColumns({ visibleColumns, revealedEmails, onRevealEmail, revealingIds, onNameClick });
+  const cols = buildPeopleColumns({
+    visibleColumns,
+    revealedEmails,
+    onRevealEmail,
+    revealingIds,
+    onNameClick,
+  });
   return (
     <DataTable
       columns={cols}

@@ -3,8 +3,17 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft, ArrowRightLeft, Building2, ChevronLeft, ChevronRight, Globe,
-  Loader2, MoreHorizontal, Trash2, Users, X,
+  ArrowLeft,
+  ArrowRightLeft,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  Globe,
+  Loader2,
+  MoreHorizontal,
+  Trash2,
+  Users,
+  X,
 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -24,28 +33,36 @@ import {
   toStringArr,
   TYPE_COLORS,
 } from "@/components/common/tableHelpers";
-import { addToList, getListItems, getLists, removeListItem, type ListItemRecord, type ListItemsPage, type ListRecord } from "@/lib/listsApi";
-import { useColumnSettings, COMPANY_COLUMNS, PEOPLE_COLUMNS } from "@/hooks/useColumnSettings";
+import {
+  addToList,
+  getListItems,
+  getLists,
+  removeListItem,
+  type ListItemRecord,
+  type ListItemsPage,
+  type ListRecord,
+} from "@/lib/listsApi";
+import {
+  useColumnSettings,
+  COMPANY_COLUMNS,
+  PEOPLE_COLUMNS,
+} from "@/hooks/useColumnSettings";
 import { toast } from "@/lib/toast";
 import PersonDetailPanel from "@/components/search/PersonDetailPanel";
 import CompanyDetailPanel from "@/components/search/CompanyDetailPanel";
 import type { PersonResult, CompanyResult } from "@/types/search";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function getItemDisplayName(item: ListItemRecord): string {
   const d = item.data as Record<string, unknown>;
   if (item.item_type === "person") {
-    return (d.full_name as string) || `${(d.first_name as string) ?? ""} ${(d.last_name as string) ?? ""}`.trim() || "this person";
+    return (
+      (d.full_name as string) ||
+      `${(d.first_name as string) ?? ""} ${(d.last_name as string) ?? ""}`.trim() ||
+      "this person"
+    );
   }
   return (d.company_name as string) || "this company";
 }
-
-// ---------------------------------------------------------------------------
-// ActionMenu / MoveToListModal
-// ---------------------------------------------------------------------------
 
 function ActionMenu({
   removing,
@@ -65,7 +82,9 @@ function ActionMenu({
     if (!open) return;
     function handle(e: MouseEvent) {
       const target = e.target as Node;
-      const insideToggle = btnRef.current?.closest("[data-action-menu]")?.contains(target);
+      const insideToggle = btnRef.current
+        ?.closest("[data-action-menu]")
+        ?.contains(target);
       const insideDrop = dropRef.current?.contains(target);
       if (!insideToggle && !insideDrop) setOpen(false);
     }
@@ -91,34 +110,49 @@ function ActionMenu({
         title="Actions"
         className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-all disabled:opacity-50"
       >
-        {removing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MoreHorizontal className="h-3.5 w-3.5" />}
+        {removing ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <MoreHorizontal className="h-3.5 w-3.5" />
+        )}
       </button>
-      {open && createPortal(
-        <div
-          ref={dropRef}
-          style={{ position: "fixed", top: dropPos.top, right: dropPos.right }}
-          className="z-[9999] w-48 rounded-lg border border-gray-100 bg-white py-1 shadow-xl"
-        >
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onMoveToList(); }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+      {open &&
+        createPortal(
+          <div
+            ref={dropRef}
+            style={{
+              position: "fixed",
+              top: dropPos.top,
+              right: dropPos.right,
+            }}
+            className="z-[9999] w-48 rounded-lg border border-gray-100 bg-white py-1 shadow-xl"
           >
-            <ArrowRightLeft className="h-3.5 w-3.5 text-gray-400" />
-            Move to another list
-          </button>
-          <div className="my-1 border-t border-gray-100" />
-          <button
-            type="button"
-            onClick={() => { setOpen(false); onRemove(); }}
-            className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Remove from list
-          </button>
-        </div>,
-        document.body
-      )}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onMoveToList();
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50"
+            >
+              <ArrowRightLeft className="h-3.5 w-3.5 text-gray-400" />
+              Move to another list
+            </button>
+            <div className="my-1 border-t border-gray-100" />
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onRemove();
+              }}
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Remove from list
+            </button>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -141,8 +175,12 @@ function MoveToListModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
       <div className="w-full max-w-sm rounded-xl border border-gray-100 bg-white shadow-2xl">
         <div className="border-b border-gray-100 px-4 py-3">
-          <p className="text-[13px] font-semibold text-gray-900">Move to another list</p>
-          <p className="text-xs text-gray-500 mt-0.5">Select a destination list</p>
+          <p className="text-[13px] font-semibold text-gray-900">
+            Move to another list
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Select a destination list
+          </p>
         </div>
         <div className="max-h-64 overflow-y-auto py-1">
           {loading && (
@@ -151,19 +189,24 @@ function MoveToListModal({
             </div>
           )}
           {!loading && availableLists.length === 0 && (
-            <p className="px-4 py-6 text-center text-xs text-gray-500">No other lists available.</p>
+            <p className="px-4 py-6 text-center text-xs text-gray-500">
+              No other lists available.
+            </p>
           )}
-          {!loading && availableLists.map((lst) => (
-            <button
-              key={lst.id}
-              type="button"
-              onClick={() => onMove(lst.id, lst.name)}
-              className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50"
-            >
-              <span className="truncate font-medium">{lst.name}</span>
-              <span className="shrink-0 text-gray-400">{lst.record_count} items</span>
-            </button>
-          ))}
+          {!loading &&
+            availableLists.map((lst) => (
+              <button
+                key={lst.id}
+                type="button"
+                onClick={() => onMove(lst.id, lst.name)}
+                className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-xs text-gray-700 hover:bg-gray-50"
+              >
+                <span className="truncate font-medium">{lst.name}</span>
+                <span className="shrink-0 text-gray-400">
+                  {lst.record_count} items
+                </span>
+              </button>
+            ))}
         </div>
         <div className="border-t border-gray-100 px-4 py-3">
           <button
@@ -179,11 +222,10 @@ function MoveToListModal({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Company columns
-// ---------------------------------------------------------------------------
-
-function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onNameClick?: (item: ListItemRecord) => void): DataTableColumn<ListItemRecord>[] {
+function buildCompanyListColumns(
+  visibleColumns: Record<string, boolean>,
+  onNameClick?: (item: ListItemRecord) => void,
+): DataTableColumn<ListItemRecord>[] {
   const isCol = (key: string) => visibleColumns[key] !== false;
 
   const rawCols: DataTableColumn<ListItemRecord>[] = [
@@ -194,8 +236,14 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         const name = (d.company_name as string) ?? "—";
-        const typeLabel = d.is_public === true ? "public" : d.is_public === false ? "private" : ((d.type as string) ?? "");
-        const typeBadgeClass = TYPE_COLORS[typeLabel.toLowerCase()] ?? "bg-gray-100 text-gray-500";
+        const typeLabel =
+          d.is_public === true
+            ? "public"
+            : d.is_public === false
+              ? "private"
+              : ((d.type as string) ?? "");
+        const typeBadgeClass =
+          TYPE_COLORS[typeLabel.toLowerCase()] ?? "bg-gray-100 text-gray-500";
         return (
           <div className="flex items-center gap-2.5 overflow-hidden">
             <CompanyLogo
@@ -206,14 +254,19 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
             <div className="min-w-0 overflow-hidden">
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onNameClick?.(item); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNameClick?.(item);
+                }}
                 className="truncate text-[13px] font-semibold text-gray-900 hover:underline cursor-pointer text-left"
                 title={name}
               >
                 {name}
               </button>
               {!isCol("type") && typeLabel && (
-                <span className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize ${typeBadgeClass}`}>
+                <span
+                  className={`mt-0.5 inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize ${typeBadgeClass}`}
+                >
                   {typeLabel}
                 </span>
               )}
@@ -232,7 +285,9 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
           <span className="inline-block max-w-[140px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">
             {d.industry as string}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -272,16 +327,24 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
         const d = item.data as Record<string, unknown>;
         return d.website ? (
           <a
-            href={(d.website as string).startsWith("http") ? (d.website as string) : `https://${d.website}`}
+            href={
+              (d.website as string).startsWith("http")
+                ? (d.website as string)
+                : `https://${d.website}`
+            }
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 max-w-[120px] truncate text-[13px] text-blue-500 hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
             <Globe className="h-3 w-3 shrink-0" />
-            {(d.website as string).replace(/^https?:\/\//, "").replace(/\/$/, "")}
+            {(d.website as string)
+              .replace(/^https?:\/\//, "")
+              .replace(/\/$/, "")}
           </a>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -294,9 +357,15 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
         const city = (d.hq_city as string) ?? "";
         return (
           <div className="min-w-0">
-              <p className="truncate text-[13px] capitalize text-gray-700">{country || "—"}</p>
-              {city && <p className="truncate text-xs capitalize text-gray-400">{city}</p>}
-            </div>
+            <p className="truncate text-[13px] capitalize text-gray-700">
+              {country || "—"}
+            </p>
+            {city && (
+              <p className="truncate text-xs capitalize text-gray-400">
+                {city}
+              </p>
+            )}
+          </div>
         );
       },
     },
@@ -306,13 +375,23 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 100,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const typeLabel = d.is_public === true ? "public" : d.is_public === false ? "private" : ((d.type as string) ?? "");
-        const typeBadgeClass = TYPE_COLORS[typeLabel.toLowerCase()] ?? "bg-gray-100 text-gray-500";
+        const typeLabel =
+          d.is_public === true
+            ? "public"
+            : d.is_public === false
+              ? "private"
+              : ((d.type as string) ?? "");
+        const typeBadgeClass =
+          TYPE_COLORS[typeLabel.toLowerCase()] ?? "bg-gray-100 text-gray-500";
         return typeLabel ? (
-          <span className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${typeBadgeClass}`}>
+          <span
+            className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${typeBadgeClass}`}
+          >
             {typeLabel}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -321,12 +400,18 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 80,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const statusBadgeClass = STATUS_COLORS[((d.company_status as string) ?? "").toLowerCase()] ?? "bg-gray-100 text-gray-500";
+        const statusBadgeClass =
+          STATUS_COLORS[((d.company_status as string) ?? "").toLowerCase()] ??
+          "bg-gray-100 text-gray-500";
         return d.company_status ? (
-          <span className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${statusBadgeClass}`}>
+          <span
+            className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${statusBadgeClass}`}
+          >
             {d.company_status as string}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -335,8 +420,13 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 70,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const founded = (d.founded ?? d.founded_year) as string | number | undefined;
-        return founded ? <span className="text-[13px] text-gray-800">{String(founded)}</span> : <Dash />;
+        const founded = (d.founded ?? d.founded_year) as
+          string | number | undefined;
+        return founded ? (
+          <span className="text-[13px] text-gray-800">{String(founded)}</span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -346,8 +436,12 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.company_legal_name ? (
-          <span className="block max-w-[160px] truncate text-[13px] text-gray-800">{d.company_legal_name as string}</span>
-        ) : <Dash />;
+          <span className="block max-w-[160px] truncate text-[13px] text-gray-800">
+            {d.company_legal_name as string}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -358,7 +452,9 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
         const d = item.data as Record<string, unknown>;
         const country = (d.hq_country as string) ?? "";
         return (
-          <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
+          <span className="text-[13px] capitalize text-gray-700">
+            {country || "—"}
+          </span>
         );
       },
     },
@@ -369,7 +465,11 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         const city = (d.hq_city as string) ?? "";
-        return <span className="text-[13px] capitalize text-gray-700">{city || "—"}</span>;
+        return (
+          <span className="text-[13px] capitalize text-gray-700">
+            {city || "—"}
+          </span>
+        );
       },
     },
     {
@@ -378,7 +478,11 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 100,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <span className="text-[13px] text-gray-800">{(d.hq_state as string) ?? "—"}</span>;
+        return (
+          <span className="text-[13px] text-gray-800">
+            {(d.hq_state as string) ?? "—"}
+          </span>
+        );
       },
     },
     {
@@ -388,10 +492,15 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.hq_location ? (
-          <span className="block max-w-[160px] truncate text-[13px] text-gray-800" title={d.hq_location as string}>
+          <span
+            className="block max-w-[160px] truncate text-[13px] text-gray-800"
+            title={d.hq_location as string}
+          >
             {d.hq_location as string}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -400,7 +509,13 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 160,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <ChipList items={toStringArr(d.categories_and_keywords as string | string[] | undefined)} />;
+        return (
+          <ChipList
+            items={toStringArr(
+              d.categories_and_keywords as string | string[] | undefined,
+            )}
+          />
+        );
       },
     },
     {
@@ -409,7 +524,13 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 170,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <ChipList items={toStringArr(d.categories_and_keywords as string | string[] | undefined)} />;
+        return (
+          <ChipList
+            items={toStringArr(
+              d.categories_and_keywords as string | string[] | undefined,
+            )}
+          />
+        );
       },
     },
     {
@@ -418,7 +539,13 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 155,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <ChipList items={toStringArr(d.awards_certifications as string | string[] | undefined)} />;
+        return (
+          <ChipList
+            items={toStringArr(
+              d.awards_certifications as string | string[] | undefined,
+            )}
+          />
+        );
       },
     },
     {
@@ -427,12 +554,18 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 80,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const empChange = d.employees_count_change as Record<string, number> | null;
+        const empChange = d.employees_count_change as Record<
+          string,
+          number
+        > | null;
         return empChange?.change_yearly_percentage != null ? (
           <span className="text-[13px] font-medium text-gray-800">
-            {empChange.change_yearly_percentage >= 0 ? "+" : ""}{empChange.change_yearly_percentage.toFixed(1)}%
+            {empChange.change_yearly_percentage >= 0 ? "+" : ""}
+            {empChange.change_yearly_percentage.toFixed(1)}%
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -445,7 +578,9 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
           <span className="text-[13px] text-gray-800">
             {(d.total_website_visits_monthly as number).toLocaleString("en-US")}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -454,12 +589,18 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 90,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const visitChange = d.total_website_visits_change as Record<string, number> | null;
+        const visitChange = d.total_website_visits_change as Record<
+          string,
+          number
+        > | null;
         return visitChange?.change_yearly_percentage != null ? (
           <span className="text-[13px] font-medium text-gray-800">
-            {visitChange.change_yearly_percentage >= 0 ? "+" : ""}{visitChange.change_yearly_percentage.toFixed(1)}%
+            {visitChange.change_yearly_percentage >= 0 ? "+" : ""}
+            {visitChange.change_yearly_percentage.toFixed(1)}%
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -468,15 +609,35 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       minWidth: 100,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const revenue = d.revenue_annual_range as Record<string, unknown> | null;
+        const revenue = d.revenue_annual_range as Record<
+          string,
+          unknown
+        > | null;
         if (!revenue) return <Dash />;
-        const src = (revenue["source_4_annual_revenue_range"] ?? revenue["source_6_annual_revenue_range"]) as Record<string, number> | undefined;
+        const src = (revenue["source_4_annual_revenue_range"] ??
+          revenue["source_6_annual_revenue_range"]) as
+          Record<string, number> | undefined;
         if (!src) return <Dash />;
         const lo = src.annual_revenue_range_from;
         const hi = src.annual_revenue_range_to;
-        if (lo != null && hi != null) return <span className="text-[13px] text-gray-800 whitespace-nowrap">{fmtMoney(lo)} – {fmtMoney(hi)}</span>;
-        if (lo != null) return <span className="text-[13px] text-gray-800">&gt;{fmtMoney(lo)}</span>;
-        if (hi != null) return <span className="text-[13px] text-gray-800">&lt;{fmtMoney(hi)}</span>;
+        if (lo != null && hi != null)
+          return (
+            <span className="text-[13px] text-gray-800 whitespace-nowrap">
+              {fmtMoney(lo)} – {fmtMoney(hi)}
+            </span>
+          );
+        if (lo != null)
+          return (
+            <span className="text-[13px] text-gray-800">
+              &gt;{fmtMoney(lo)}
+            </span>
+          );
+        if (hi != null)
+          return (
+            <span className="text-[13px] text-gray-800">
+              &lt;{fmtMoney(hi)}
+            </span>
+          );
         return <Dash />;
       },
     },
@@ -495,10 +656,14 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
               </span>
             )}
             {funding.amount_raised != null && (
-              <span className="shrink-0 text-xs text-gray-500 whitespace-nowrap">{fmtMoney(funding.amount_raised as number)}</span>
+              <span className="shrink-0 text-xs text-gray-500 whitespace-nowrap">
+                {fmtMoney(funding.amount_raised as number)}
+              </span>
             )}
           </div>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -508,8 +673,13 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.company_employee_reviews_aggregate_score != null ? (
-          <span className="text-[13px] text-gray-800">★ {(d.company_employee_reviews_aggregate_score as number).toFixed(1)}</span>
-        ) : <Dash />;
+          <span className="text-[13px] text-gray-800">
+            ★{" "}
+            {(d.company_employee_reviews_aggregate_score as number).toFixed(1)}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -520,9 +690,13 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
         const d = item.data as Record<string, unknown>;
         return d.active_job_postings != null ? (
           <span className="text-[13px] text-gray-800">
-            {Array.isArray(d.active_job_postings) ? d.active_job_postings.length : "—"}
+            {Array.isArray(d.active_job_postings)
+              ? d.active_job_postings.length
+              : "—"}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -532,7 +706,11 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         const techs = ((d.technologies_used as unknown[]) ?? [])
-          .map((t) => typeof t === "string" ? t : ((t as Record<string, string>)?.technology ?? ""))
+          .map((t) =>
+            typeof t === "string"
+              ? t
+              : ((t as Record<string, string>)?.technology ?? ""),
+          )
           .filter(Boolean);
         return <ChipList items={techs} />;
       },
@@ -551,9 +729,12 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
             className="flex items-center gap-1 text-[13px] text-blue-500 hover:underline whitespace-nowrap"
             onClick={(e) => e.stopPropagation()}
           >
-            <Globe className="h-3 w-3 shrink-0" />LinkedIn
+            <Globe className="h-3 w-3 shrink-0" />
+            LinkedIn
           </a>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
   ];
@@ -564,11 +745,10 @@ function buildCompanyListColumns(visibleColumns: Record<string, boolean>, onName
   }));
 }
 
-// ---------------------------------------------------------------------------
-// People columns
-// ---------------------------------------------------------------------------
-
-function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameClick?: (item: ListItemRecord) => void): DataTableColumn<ListItemRecord>[] {
+function buildPeopleListColumns(
+  visibleColumns: Record<string, boolean>,
+  onNameClick?: (item: ListItemRecord) => void,
+): DataTableColumn<ListItemRecord>[] {
   const isCol = (key: string) => visibleColumns[key] !== false;
 
   const rawCols: DataTableColumn<ListItemRecord>[] = [
@@ -578,13 +758,23 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 200,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const name = (d.full_name as string) || `${(d.first_name as string) ?? ""} ${(d.last_name as string) ?? ""}`.trim() || "—";
+        const name =
+          (d.full_name as string) ||
+          `${(d.first_name as string) ?? ""} ${(d.last_name as string) ?? ""}`.trim() ||
+          "—";
         return (
           <div className="flex items-center gap-2 overflow-hidden">
-            <Avatar name={name} pictureUrl={d.picture_url as string | undefined} size="sm" />
+            <Avatar
+              name={name}
+              pictureUrl={d.picture_url as string | undefined}
+              size="sm"
+            />
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onNameClick?.(item); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNameClick?.(item);
+              }}
               className="truncate text-[13px] font-semibold text-gray-900 hover:underline cursor-pointer text-left"
               title={name}
             >
@@ -600,17 +790,25 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 170,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const companyName = d.active_experience_company_name as string | undefined;
+        const companyName = d.active_experience_company_name as
+          string | undefined;
         if (!companyName) return <Dash />;
         return (
           <div className="flex items-center gap-2 overflow-hidden">
             <CompanyLogo
               name={companyName}
-              logoUrl={d.active_experience_company_logo_url as string | undefined}
-              website={d.active_experience_company_website as string | undefined}
+              logoUrl={
+                d.active_experience_company_logo_url as string | undefined
+              }
+              website={
+                d.active_experience_company_website as string | undefined
+              }
               size="sm"
             />
-            <p className="truncate text-[13px] font-medium text-gray-800" title={companyName}>
+            <p
+              className="truncate text-[13px] font-medium text-gray-800"
+              title={companyName}
+            >
               {companyName}
             </p>
           </div>
@@ -624,17 +822,25 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         const jobTitle = d.active_experience_title as string | undefined;
-        const jobDepartment = d.active_experience_department as string | undefined;
+        const jobDepartment = d.active_experience_department as
+          string | undefined;
         return jobTitle ? (
           <div>
-            <p className="truncate text-[13px] text-gray-800 max-w-[140px]" title={jobTitle}>{jobTitle}</p>
+            <p
+              className="truncate text-[13px] text-gray-800 max-w-[140px]"
+              title={jobTitle}
+            >
+              {jobTitle}
+            </p>
             {!isCol("department") && jobDepartment && (
               <span className="mt-0.5 inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium capitalize text-gray-600">
                 {jobDepartment}
               </span>
             )}
           </div>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -643,10 +849,13 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 160,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const email = (d.email as string) ?? (d.primary_professional_email as string) ?? "";
+        const email =
+          (d.email as string) ?? (d.primary_professional_email as string) ?? "";
         return email ? (
           <span className="text-[13px] font-medium text-gray-800">{email}</span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -659,9 +868,15 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
         const city = (d.location_city as string) ?? "";
         return (
           <div className="min-w-0">
-              <p className="truncate text-[13px] capitalize text-gray-700">{country || "—"}</p>
-              {city && <p className="truncate text-xs capitalize text-gray-400">{city}</p>}
-            </div>
+            <p className="truncate text-[13px] capitalize text-gray-700">
+              {country || "—"}
+            </p>
+            {city && (
+              <p className="truncate text-xs capitalize text-gray-400">
+                {city}
+              </p>
+            )}
+          </div>
         );
       },
     },
@@ -672,8 +887,12 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.mobile_phone ? (
-          <span className="text-[13px] text-gray-800">{d.mobile_phone as string}</span>
-        ) : <Dash />;
+          <span className="text-[13px] text-gray-800">
+            {d.mobile_phone as string}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -684,7 +903,9 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
         const d = item.data as Record<string, unknown>;
         const country = (d.location_country as string) ?? "";
         return (
-          <span className="text-[13px] capitalize text-gray-700">{country || "—"}</span>
+          <span className="text-[13px] capitalize text-gray-700">
+            {country || "—"}
+          </span>
         );
       },
     },
@@ -695,7 +916,11 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         const city = (d.location_city as string) ?? "";
-        return <span className="text-[13px] capitalize text-gray-700">{city || "—"}</span>;
+        return (
+          <span className="text-[13px] capitalize text-gray-700">
+            {city || "—"}
+          </span>
+        );
       },
     },
     {
@@ -704,7 +929,11 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 100,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <span className="text-[13px] text-gray-800">{(d.location_state as string) ?? "—"}</span>;
+        return (
+          <span className="text-[13px] text-gray-800">
+            {(d.location_state as string) ?? "—"}
+          </span>
+        );
       },
     },
     {
@@ -719,7 +948,9 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
           <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600 whitespace-nowrap">
             {dept}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -732,7 +963,9 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
           <span className="inline-block rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-medium capitalize text-gray-600">
             {d.active_experience_management_level as string}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -767,10 +1000,15 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 70,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const expMonths = d.total_experience_duration_months as number | undefined;
-        return expMonths != null
-          ? <span className="text-[13px] font-medium text-gray-700">{Math.floor(expMonths / 12)} yrs</span>
-          : <Dash />;
+        const expMonths = d.total_experience_duration_months as
+          number | undefined;
+        return expMonths != null ? (
+          <span className="text-[13px] font-medium text-gray-700">
+            {Math.floor(expMonths / 12)} yrs
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -780,10 +1018,15 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.headline ? (
-          <span className="block max-w-[180px] truncate text-[13px] text-gray-600" title={d.headline as string}>
+          <span
+            className="block max-w-[180px] truncate text-[13px] text-gray-600"
+            title={d.headline as string}
+          >
             {d.headline as string}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -792,7 +1035,13 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 150,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <ChipList items={toStringArr(d.inferred_skills as string | string[] | undefined)} />;
+        return (
+          <ChipList
+            items={toStringArr(
+              d.inferred_skills as string | string[] | undefined,
+            )}
+          />
+        );
       },
     },
     {
@@ -801,7 +1050,13 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 140,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <ChipList items={toStringArr(d.awards_certifications as string | string[] | undefined)} />;
+        return (
+          <ChipList
+            items={toStringArr(
+              d.awards_certifications as string | string[] | undefined,
+            )}
+          />
+        );
       },
     },
     {
@@ -810,9 +1065,13 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 90,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.connections_count != null
-          ? <span className="text-[13px] text-gray-800">{(d.connections_count as number).toLocaleString("en-US")}</span>
-          : <Dash />;
+        return d.connections_count != null ? (
+          <span className="text-[13px] text-gray-800">
+            {(d.connections_count as number).toLocaleString("en-US")}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -821,9 +1080,13 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 80,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.followers_count != null
-          ? <span className="text-[13px] text-gray-800">{(d.followers_count as number).toLocaleString("en-US")}</span>
-          : <Dash />;
+        return d.followers_count != null ? (
+          <span className="text-[13px] text-gray-800">
+            {(d.followers_count as number).toLocaleString("en-US")}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -832,9 +1095,17 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 85,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.projected_base_salary_median != null
-          ? <span className="text-[13px] font-semibold text-gray-700">{new Intl.NumberFormat("en-US", { style: "currency", currency: (d.projected_base_salary_currency as string) ?? "USD", maximumFractionDigits: 0 }).format(d.projected_base_salary_median as number)}</span>
-          : <Dash />;
+        return d.projected_base_salary_median != null ? (
+          <span className="text-[13px] font-semibold text-gray-700">
+            {new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: (d.projected_base_salary_currency as string) ?? "USD",
+              maximumFractionDigits: 0,
+            }).format(d.projected_base_salary_median as number)}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -851,9 +1122,12 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
             className="flex items-center gap-1 text-[13px] text-blue-500 hover:underline whitespace-nowrap"
             onClick={(e) => e.stopPropagation()}
           >
-            <Globe className="h-3 w-3 shrink-0" />LinkedIn
+            <Globe className="h-3 w-3 shrink-0" />
+            LinkedIn
           </a>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -862,9 +1136,12 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 150,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const website = d.active_experience_company_website as string | undefined;
+        const website = d.active_experience_company_website as
+          string | undefined;
         if (!website) return <Dash />;
-        const href = website.startsWith("http") ? website : `https://${website}`;
+        const href = website.startsWith("http")
+          ? website
+          : `https://${website}`;
         const display = website.replace(/^https?:\/\//, "").replace(/\/$/, "");
         return (
           <a
@@ -890,7 +1167,9 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
           <span className="inline-block max-w-[140px] truncate rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-600">
             {d.active_experience_company_industry as string}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -899,14 +1178,18 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 90,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return d.active_experience_company_employees_count != null || d.active_experience_company_size ? (
+        return d.active_experience_company_employees_count != null ||
+          d.active_experience_company_size ? (
           <div className="flex items-center gap-1 text-[13px] text-gray-800">
             <Users className="h-3 w-3 shrink-0 text-gray-400" />
             {d.active_experience_company_size
-              ? (SIZE_LABEL[d.active_experience_company_size as string] ?? d.active_experience_company_size as string)
+              ? (SIZE_LABEL[d.active_experience_company_size as string] ??
+                (d.active_experience_company_size as string))
               : String(d.active_experience_company_employees_count)}
           </div>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -915,13 +1198,20 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 100,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const coTypeLabel = d.active_experience_company_type as string | undefined;
-        const coTypeClass = TYPE_COLORS[(coTypeLabel ?? "").toLowerCase()] ?? "bg-gray-100 text-gray-500";
+        const coTypeLabel = d.active_experience_company_type as
+          string | undefined;
+        const coTypeClass =
+          TYPE_COLORS[(coTypeLabel ?? "").toLowerCase()] ??
+          "bg-gray-100 text-gray-500";
         return coTypeLabel ? (
-          <span className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${coTypeClass}`}>
+          <span
+            className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${coTypeClass}`}
+          >
             {coTypeLabel}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -930,13 +1220,20 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 80,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        const coStatusLabel = d.active_experience_company_status as string | undefined;
-        const coStatusClass = STATUS_COLORS[(coStatusLabel ?? "").toLowerCase()] ?? "bg-gray-100 text-gray-500";
+        const coStatusLabel = d.active_experience_company_status as
+          string | undefined;
+        const coStatusClass =
+          STATUS_COLORS[(coStatusLabel ?? "").toLowerCase()] ??
+          "bg-gray-100 text-gray-500";
         return coStatusLabel ? (
-          <span className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${coStatusClass}`}>
+          <span
+            className={`inline-block rounded-full px-1.5 py-0.5 text-xs font-medium capitalize whitespace-nowrap ${coStatusClass}`}
+          >
             {coStatusLabel}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -946,8 +1243,12 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.active_experience_company_founded != null ? (
-          <span className="text-[13px] text-gray-800">{String(d.active_experience_company_founded)}</span>
-        ) : <Dash />;
+          <span className="text-[13px] text-gray-800">
+            {String(d.active_experience_company_founded)}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -957,7 +1258,9 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return (
-          <span className="text-[13px] capitalize text-gray-700">{(d.active_experience_company_hq_country as string) ?? "—"}</span>
+          <span className="text-[13px] capitalize text-gray-700">
+            {(d.active_experience_company_hq_country as string) ?? "—"}
+          </span>
         );
       },
     },
@@ -967,7 +1270,11 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 100,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <span className="text-[13px] capitalize text-gray-700">{(d.active_experience_company_hq_city as string) ?? "—"}</span>;
+        return (
+          <span className="text-[13px] capitalize text-gray-700">
+            {(d.active_experience_company_hq_city as string) ?? "—"}
+          </span>
+        );
       },
     },
     {
@@ -976,7 +1283,11 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 100,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <span className="text-[13px] text-gray-800">{(d.active_experience_company_hq_region as string) ?? "—"}</span>;
+        return (
+          <span className="text-[13px] text-gray-800">
+            {(d.active_experience_company_hq_region as string) ?? "—"}
+          </span>
+        );
       },
     },
     {
@@ -986,10 +1297,15 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.active_experience_company_hq_location ? (
-          <span className="block max-w-[160px] truncate text-[13px] text-gray-800" title={d.active_experience_company_hq_location as string}>
+          <span
+            className="block max-w-[160px] truncate text-[13px] text-gray-800"
+            title={d.active_experience_company_hq_location as string}
+          >
             {d.active_experience_company_hq_location as string}
           </span>
-        ) : <Dash />;
+        ) : (
+          <Dash />
+        );
       },
     },
     {
@@ -998,7 +1314,14 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 160,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <ChipList items={toStringArr(d.active_experience_company_categories_and_keywords as string | string[] | undefined)} />;
+        return (
+          <ChipList
+            items={toStringArr(
+              d.active_experience_company_categories_and_keywords as
+                string | string[] | undefined,
+            )}
+          />
+        );
       },
     },
     {
@@ -1007,7 +1330,14 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       minWidth: 170,
       render: (item) => {
         const d = item.data as Record<string, unknown>;
-        return <ChipList items={toStringArr(d.active_experience_company_categories_and_keywords as string | string[] | undefined)} />;
+        return (
+          <ChipList
+            items={toStringArr(
+              d.active_experience_company_categories_and_keywords as
+                string | string[] | undefined,
+            )}
+          />
+        );
       },
     },
     {
@@ -1017,8 +1347,12 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
       render: (item) => {
         const d = item.data as Record<string, unknown>;
         return d.active_experience_company_annual_revenue != null ? (
-          <span className="text-[13px] text-gray-800">{fmtMoney(d.active_experience_company_annual_revenue as number)}</span>
-        ) : <Dash />;
+          <span className="text-[13px] text-gray-800">
+            {fmtMoney(d.active_experience_company_annual_revenue as number)}
+          </span>
+        ) : (
+          <Dash />
+        );
       },
     },
   ];
@@ -1029,17 +1363,19 @@ function buildPeopleListColumns(visibleColumns: Record<string, boolean>, onNameC
   }));
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
 export default function ListDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [list, setList] = useState<ListRecord | null>(null);
-  const [pageData, setPageData] = useState<ListItemsPage>({ total: 0, page: 1, page_size: 25, items: [] });
+  const [pageData, setPageData] = useState<ListItemsPage>({
+    total: 0,
+    page: 1,
+    page_size: 25,
+    items: [],
+  });
   const [loading, setLoading] = useState(true);
-  const [deleteConfirmItem, setDeleteConfirmItem] = useState<ListItemRecord | null>(null);
+  const [deleteConfirmItem, setDeleteConfirmItem] =
+    useState<ListItemRecord | null>(null);
   const [deleteConfirming, setDeleteConfirming] = useState(false);
   const [listsLoading, setListsLoading] = useState(false);
   const [bulkDeletePending, setBulkDeletePending] = useState(false);
@@ -1051,10 +1387,14 @@ export default function ListDetailPage() {
   const [bulkMoveOpen, setBulkMoveOpen] = useState(false);
   const [bulkMovingToList, setBulkMovingToList] = useState<string | null>(null);
   const [pendingMoveTarget, setPendingMoveTarget] = useState<{
-    id: string; name: string; bulk: boolean; item?: ListItemRecord;
+    id: string;
+    name: string;
+    bulk: boolean;
+    item?: ListItemRecord;
   } | null>(null);
   const [moveConfirming, setMoveConfirming] = useState(false);
-  const [selectedListItem, setSelectedListItem] = useState<ListItemRecord | null>(null);
+  const [selectedListItem, setSelectedListItem] =
+    useState<ListItemRecord | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const listFetched = useRef(false);
@@ -1092,7 +1432,7 @@ export default function ListDetailPage() {
         .catch(() => toast.error("Failed to load list"));
     }
     fetchItems.current(page, pageSize);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, page, pageSize]);
 
   const toggleSelect = (itemId: string) =>
@@ -1103,7 +1443,11 @@ export default function ListDetailPage() {
     });
 
   const toggleSelectAll = (all: boolean) =>
-    setSelected(all ? new Set(pageData.items.map((i: ListItemRecord) => i.id)) : new Set());
+    setSelected(
+      all
+        ? new Set(pageData.items.map((i: ListItemRecord) => i.id))
+        : new Set(),
+    );
 
   async function handleConfirmDelete() {
     if (!deleteConfirmItem) return;
@@ -1125,7 +1469,9 @@ export default function ListDetailPage() {
     setBulkRemoving(true);
     const count = selected.size;
     try {
-      await Promise.all([...selected].map((itemId) => removeListItem(id, itemId)));
+      await Promise.all(
+        [...selected].map((itemId) => removeListItem(id, itemId)),
+      );
       toast.success(`${count} item${count !== 1 ? "s" : ""} removed`);
       await fetchItems.current(page, pageSize);
     } catch {
@@ -1141,7 +1487,9 @@ export default function ListDetailPage() {
     try {
       const allLists = await getLists();
       const listType = item.item_type === "person" ? "people" : "companies";
-      setAvailableLists(allLists.filter((l) => l.id !== id && l.list_type === listType));
+      setAvailableLists(
+        allLists.filter((l) => l.id !== id && l.list_type === listType),
+      );
     } catch {
       toast.error("Failed to load lists");
     } finally {
@@ -1154,9 +1502,13 @@ export default function ListDetailPage() {
     setListsLoading(true);
     try {
       const allLists = await getLists();
-      const first = pageData.items.find((i: ListItemRecord) => selected.has(i.id));
+      const first = pageData.items.find((i: ListItemRecord) =>
+        selected.has(i.id),
+      );
       const listType = first?.item_type === "person" ? "people" : "companies";
-      setAvailableLists(allLists.filter((l) => l.id !== id && l.list_type === listType));
+      setAvailableLists(
+        allLists.filter((l) => l.id !== id && l.list_type === listType),
+      );
     } catch {
       toast.error("Failed to load lists");
     } finally {
@@ -1164,14 +1516,23 @@ export default function ListDetailPage() {
     }
   }
 
-  function handleSelectMoveTarget(targetListId: string, targetListName: string, bulk: boolean) {
+  function handleSelectMoveTarget(
+    targetListId: string,
+    targetListName: string,
+    bulk: boolean,
+  ) {
     if (bulk) {
       setBulkMoveOpen(false);
       setPendingMoveTarget({ id: targetListId, name: targetListName, bulk });
     } else {
       const capturedItem = moveItem;
       setMoveItem(null);
-      setPendingMoveTarget({ id: targetListId, name: targetListName, bulk, item: capturedItem ?? undefined });
+      setPendingMoveTarget({
+        id: targetListId,
+        name: targetListName,
+        bulk,
+        item: capturedItem ?? undefined,
+      });
     }
   }
 
@@ -1180,21 +1541,37 @@ export default function ListDetailPage() {
     setMoveConfirming(true);
     try {
       if (pendingMoveTarget.bulk) {
-        const selectedItems = pageData.items.filter((i: ListItemRecord) => selected.has(i.id));
+        const selectedItems = pageData.items.filter((i: ListItemRecord) =>
+          selected.has(i.id),
+        );
         setBulkMovingToList(pendingMoveTarget.id);
         await addToList({
           list_id: pendingMoveTarget.id,
-          items: selectedItems.map((i: ListItemRecord) => ({ record_id: i.record_id, item_type: i.item_type, data: i.data })),
+          items: selectedItems.map((i: ListItemRecord) => ({
+            record_id: i.record_id,
+            item_type: i.item_type,
+            data: i.data,
+          })),
         });
-        await Promise.all(selectedItems.map((i: ListItemRecord) => removeListItem(id, i.id)));
-        toast.success(`${selectedItems.length} item${selectedItems.length !== 1 ? "s" : ""} moved`);
+        await Promise.all(
+          selectedItems.map((i: ListItemRecord) => removeListItem(id, i.id)),
+        );
+        toast.success(
+          `${selectedItems.length} item${selectedItems.length !== 1 ? "s" : ""} moved`,
+        );
         setBulkMovingToList(null);
         await fetchItems.current(page, pageSize);
       } else if (pendingMoveTarget.item) {
         const item = pendingMoveTarget.item;
         await addToList({
           list_id: pendingMoveTarget.id,
-          items: [{ record_id: item.record_id, item_type: item.item_type, data: item.data }],
+          items: [
+            {
+              record_id: item.record_id,
+              item_type: item.item_type,
+              data: item.data,
+            },
+          ],
         });
         await removeListItem(id, item.id);
         toast.success("Moved to list");
@@ -1214,16 +1591,18 @@ export default function ListDetailPage() {
   const pageEnd = Math.min(pageStart + pageSize, total);
 
   const tableColumns = isPeople
-    ? buildPeopleListColumns(visibleColumns, (item) => setSelectedListItem(item))
-    : buildCompanyListColumns(visibleColumns, (item) => setSelectedListItem(item));
+    ? buildPeopleListColumns(visibleColumns, (item) =>
+        setSelectedListItem(item),
+      )
+    : buildCompanyListColumns(visibleColumns, (item) =>
+        setSelectedListItem(item),
+      );
 
   return (
     <>
       <AppHeader title={list?.name ?? "List"} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-2 py-2 sm:px-3">
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white">
-
-          {/* Toolbar */}
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-3 py-2.5 sm:px-4">
             <div className="flex min-w-0 items-center gap-2">
               <button
@@ -1234,41 +1613,52 @@ export default function ListDetailPage() {
                 <ArrowLeft className="h-4 w-4" />
               </button>
               <span className="text-gray-400">
-                {isPeople ? <Users className="h-4 w-4" /> : <Building2 className="h-4 w-4" />}
+                {isPeople ? (
+                  <Users className="h-4 w-4" />
+                ) : (
+                  <Building2 className="h-4 w-4" />
+                )}
               </span>
-              <span className="min-w-0 truncate text-[13px] font-semibold text-gray-900">{list?.name ?? "—"}</span>
+              <span className="min-w-0 truncate text-[13px] font-semibold text-gray-900">
+                {list?.name ?? "—"}
+              </span>
             </div>
             {!loading && (
               <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                {total.toLocaleString("en-US")} {isPeople ? "people" : "companies"}
+                {total.toLocaleString("en-US")}{" "}
+                {isPeople ? "people" : "companies"}
               </span>
             )}
           </div>
 
-          {/* Table */}
           <div className="relative flex flex-1 flex-col overflow-hidden">
             <DataTable
-                columns={tableColumns}
-                data={loading ? [] : pageItems}
-                rowKey={(item) => item.id}
-                minTableWidth={580}
-                loading={loading}
-                onOpenColumnSettings={() => setColSettingsOpen(true)}
-                emptyMessage="No records in this list yet."
-                selection={{ selected, onSelect: toggleSelect, onSelectAll: toggleSelectAll }}
-                onRowClick={undefined}
-                actions={{
-                  render: (item) => (
-                    <ActionMenu
-                      removing={deleteConfirming && deleteConfirmItem?.id === item.id}
-                      onRemove={() => setDeleteConfirmItem(item)}
-                      onMoveToList={() => handleOpenMoveToList(item)}
-                    />
-                  ),
-                }}
-              />
+              columns={tableColumns}
+              data={loading ? [] : pageItems}
+              rowKey={(item) => item.id}
+              minTableWidth={580}
+              loading={loading}
+              onOpenColumnSettings={() => setColSettingsOpen(true)}
+              emptyMessage="No records in this list yet."
+              selection={{
+                selected,
+                onSelect: toggleSelect,
+                onSelectAll: toggleSelectAll,
+              }}
+              onRowClick={undefined}
+              actions={{
+                render: (item) => (
+                  <ActionMenu
+                    removing={
+                      deleteConfirming && deleteConfirmItem?.id === item.id
+                    }
+                    onRemove={() => setDeleteConfirmItem(item)}
+                    onMoveToList={() => handleOpenMoveToList(item)}
+                  />
+                ),
+              }}
+            />
 
-            {/* Floating bulk action bar */}
             {selected.size > 0 && (
               <div className="absolute bottom-2 left-2 right-2 z-30 flex flex-wrap items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 shadow-2xl sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:flex-nowrap sm:px-4">
                 <span className="whitespace-nowrap text-[11px] font-semibold text-white sm:text-xs">
@@ -1290,9 +1680,11 @@ export default function ListDetailPage() {
                   onClick={() => setBulkDeletePending(true)}
                   className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 disabled:opacity-60 sm:px-3 sm:text-xs"
                 >
-                  {bulkRemoving
-                    ? <Loader2 className="h-3 w-3 animate-spin" />
-                    : <Trash2 className="h-3 w-3" />}
+                  {bulkRemoving ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-3 w-3" />
+                  )}
                   Remove
                 </button>
                 <button
@@ -1304,94 +1696,121 @@ export default function ListDetailPage() {
                 </button>
               </div>
             )}
-            </div>
           </div>
-
-          {/* Pagination bar */}
-          {!loading && total > 0 && (
-            <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white px-4 py-2.5">
-              {/* Left: count + page-size picker */}
-              <div className="flex items-center gap-3">
-                <span className="text-[12px] text-gray-500">
-                  {pageStart + 1}–{pageEnd} of {total.toLocaleString("en-US")} {isPeople ? "people" : "companies"}
-                </span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
-                  className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-[12px] text-gray-600 focus:outline-none focus:ring-1 focus:ring-red-400"
-                >
-                  {[10, 25, 50, 100].map((n) => (
-                    <option key={n} value={n}>{n} / page</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Right: page buttons */}
-              {totalPages > 1 && (
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => p - 1)}
-                    disabled={page === 1}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                  </button>
-
-                  {(() => {
-                    const pages: (number | "...")[] = [];
-                    if (totalPages <= 7) {
-                      for (let i = 1; i <= totalPages; i++) pages.push(i);
-                    } else {
-                      pages.push(1);
-                      if (page > 3) pages.push("...");
-                      for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) pages.push(i);
-                      if (page < totalPages - 2) pages.push("...");
-                      pages.push(totalPages);
-                    }
-                    return pages.map((p, i) =>
-                      p === "..." ? (
-                        <span key={`ellipsis-${i}`} className="px-1 text-[12px] text-gray-400">…</span>
-                      ) : (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => setPage(p as number)}
-                          className={[
-                            "flex h-7 min-w-[28px] items-center justify-center rounded-lg px-1 text-[12px] font-medium border transition-colors",
-                            page === p
-                              ? "border-red-500 bg-red-500 text-white"
-                              : "border-gray-200 text-gray-600 hover:bg-gray-50",
-                          ].join(" ")}
-                        >
-                          {p}
-                        </button>
-                      )
-                    );
-                  })()}
-
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => p + 1)}
-                    disabled={page === totalPages}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
+
+        {!loading && total > 0 && (
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-white px-4 py-2.5">
+            <div className="flex items-center gap-3">
+              <span className="text-[12px] text-gray-500">
+                {pageStart + 1}–{pageEnd} of {total.toLocaleString("en-US")}{" "}
+                {isPeople ? "people" : "companies"}
+              </span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-[12px] text-gray-600 focus:outline-none focus:ring-1 focus:ring-red-400"
+              >
+                {[10, 25, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n} / page
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={page === 1}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+
+                {(() => {
+                  const pages: (number | "...")[] = [];
+                  if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (page > 3) pages.push("...");
+                    for (
+                      let i = Math.max(2, page - 1);
+                      i <= Math.min(totalPages - 1, page + 1);
+                      i++
+                    )
+                      pages.push(i);
+                    if (page < totalPages - 2) pages.push("...");
+                    pages.push(totalPages);
+                  }
+                  return pages.map((p, i) =>
+                    p === "..." ? (
+                      <span
+                        key={`ellipsis-${i}`}
+                        className="px-1 text-[12px] text-gray-400"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPage(p as number)}
+                        className={[
+                          "flex h-7 min-w-[28px] items-center justify-center rounded-lg px-1 text-[12px] font-medium border transition-colors",
+                          page === p
+                            ? "border-red-500 bg-red-500 text-white"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50",
+                        ].join(" ")}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  );
+                })()}
+
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page === totalPages}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {isPeople ? (
         <PersonDetailPanel
-          person={selectedListItem ? { id: selectedListItem.record_id, ...(selectedListItem.data as Record<string, unknown>) } as PersonResult : null}
+          person={
+            selectedListItem
+              ? ({
+                  id: selectedListItem.record_id,
+                  ...(selectedListItem.data as Record<string, unknown>),
+                } as PersonResult)
+              : null
+          }
           onClose={() => setSelectedListItem(null)}
         />
       ) : (
         <CompanyDetailPanel
-          company={selectedListItem ? { id: selectedListItem.record_id, ...(selectedListItem.data as Record<string, unknown>) } as CompanyResult : null}
+          company={
+            selectedListItem
+              ? ({
+                  id: selectedListItem.record_id,
+                  ...(selectedListItem.data as Record<string, unknown>),
+                } as CompanyResult)
+              : null
+          }
           onClose={() => setSelectedListItem(null)}
         />
       )}
@@ -1409,16 +1828,26 @@ export default function ListDetailPage() {
         open={moveItem !== null}
         availableLists={availableLists}
         loading={listsLoading}
-        onClose={() => { setMoveItem(null); setListsLoading(false); }}
-        onMove={(targetId, targetName) => handleSelectMoveTarget(targetId, targetName, false)}
+        onClose={() => {
+          setMoveItem(null);
+          setListsLoading(false);
+        }}
+        onMove={(targetId, targetName) =>
+          handleSelectMoveTarget(targetId, targetName, false)
+        }
       />
 
       <MoveToListModal
         open={bulkMoveOpen}
         availableLists={availableLists}
         loading={listsLoading}
-        onClose={() => { setBulkMoveOpen(false); setListsLoading(false); }}
-        onMove={(targetId, targetName) => handleSelectMoveTarget(targetId, targetName, true)}
+        onClose={() => {
+          setBulkMoveOpen(false);
+          setListsLoading(false);
+        }}
+        onMove={(targetId, targetName) =>
+          handleSelectMoveTarget(targetId, targetName, true)
+        }
       />
 
       <ConfirmDialog
@@ -1426,7 +1855,13 @@ export default function ListDetailPage() {
         title="Remove from list"
         message={
           <span>
-            Remove <strong>{deleteConfirmItem ? getItemDisplayName(deleteConfirmItem) : "this item"}</strong> from the list?
+            Remove{" "}
+            <strong>
+              {deleteConfirmItem
+                ? getItemDisplayName(deleteConfirmItem)
+                : "this item"}
+            </strong>{" "}
+            from the list?
           </span>
         }
         icon={<Trash2 className="h-4 w-4 text-red-500" />}
@@ -1456,7 +1891,15 @@ export default function ListDetailPage() {
         title="Move to list"
         message={
           <span>
-            Move <strong>{pendingMoveTarget?.bulk ? `${selected.size} item${selected.size !== 1 ? "s" : ""}` : (pendingMoveTarget?.item ? getItemDisplayName(pendingMoveTarget.item) : "this item")}</strong> to <strong>{pendingMoveTarget?.name}</strong>?
+            Move{" "}
+            <strong>
+              {pendingMoveTarget?.bulk
+                ? `${selected.size} item${selected.size !== 1 ? "s" : ""}`
+                : pendingMoveTarget?.item
+                  ? getItemDisplayName(pendingMoveTarget.item)
+                  : "this item"}
+            </strong>{" "}
+            to <strong>{pendingMoveTarget?.name}</strong>?
           </span>
         }
         icon={<ArrowRightLeft className="h-4 w-4 text-gray-500" />}

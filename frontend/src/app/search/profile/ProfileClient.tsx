@@ -60,7 +60,11 @@ export default function ProfileClient() {
   }, [user?.enterprise_id]);
 
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
-  const [showPw, setShowPw] = useState({ current: false, next: false, confirm: false });
+  const [showPw, setShowPw] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
   const [savingPw, setSavingPw] = useState(false);
   const [pwSaved, setPwSaved] = useState(false);
 
@@ -111,16 +115,14 @@ export default function ProfileClient() {
       <AppHeader title="Profile" />
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-2 py-4 sm:px-4">
         <div className="mx-auto w-full max-w-2xl space-y-4">
-
-          {/* Profile card */}
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            {/* Banner */}
             <div className="h-24 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900" />
 
             <div className="px-6 pb-6">
-              {/* Avatar */}
               <div className="-mt-10 mb-4 flex items-end justify-between">
-                <div className={`flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} text-2xl font-bold text-white shadow-lg ring-4 ring-white`}>
+                <div
+                  className={`flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} text-2xl font-bold text-white shadow-lg ring-4 ring-white`}
+                >
                   {initials}
                 </div>
                 <button
@@ -133,7 +135,6 @@ export default function ProfileClient() {
                 </button>
               </div>
 
-              {/* Name + role */}
               <div className="mb-5">
                 <h1 className="text-xl font-bold text-gray-900">{name}</h1>
                 <span className={`mt-1.5 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadge}`}>
@@ -141,21 +142,28 @@ export default function ProfileClient() {
                 </span>
               </div>
 
-              {/* Info fields */}
               <div className="space-y-3">
                 <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
                   <User className="h-4 w-4 shrink-0 text-gray-400" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Full name</p>
-                    <p className="truncate text-sm font-medium text-gray-800">{name}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                      Full name
+                    </p>
+                    <p className="truncate text-sm font-medium text-gray-800">
+                      {name}
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
                   <Mail className="h-4 w-4 shrink-0 text-gray-400" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Email address</p>
-                    <p className="truncate text-sm font-medium text-gray-800">{email}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                      Email address
+                    </p>
+                    <p className="truncate text-sm font-medium text-gray-800">
+                      {email}
+                    </p>
                   </div>
                 </div>
 
@@ -200,24 +208,36 @@ export default function ProfileClient() {
             </div>
           </div>
 
-          {/* Change password card */}
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4">
               <KeyRound className="h-4 w-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-900">Change password</h2>
+              <h2 className="text-sm font-semibold text-gray-900">
+                Change password
+              </h2>
             </div>
 
-            <form onSubmit={handleChangePassword} className="space-y-3 px-5 py-4">
+            <form
+              onSubmit={handleChangePassword}
+              className="space-y-3 px-5 py-4"
+            >
               {(["current", "next", "confirm"] as const).map((field) => {
-                const labels = { current: "Current password", next: "New password", confirm: "Confirm new password" };
+                const labels = {
+                  current: "Current password",
+                  next: "New password",
+                  confirm: "Confirm new password",
+                };
                 return (
                   <div key={field}>
-                    <label className="mb-1 block text-xs font-medium text-gray-600">{labels[field]}</label>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">
+                      {labels[field]}
+                    </label>
                     <div className="relative">
                       <input
                         type={showPw[field] ? "text" : "password"}
                         value={pwForm[field]}
-                        onChange={(e) => setPwForm((p) => ({ ...p, [field]: e.target.value }))}
+                        onChange={(e) =>
+                          setPwForm((p) => ({ ...p, [field]: e.target.value }))
+                        }
                         placeholder="••••••••"
                         className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-10 text-sm text-gray-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-100"
                       />
@@ -227,7 +247,11 @@ export default function ProfileClient() {
                         onClick={() => toggleShow(field)}
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
-                        {showPw[field] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPw[field] ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -237,7 +261,12 @@ export default function ProfileClient() {
               <div className="flex justify-end pt-1">
                 <button
                   type="submit"
-                  disabled={savingPw || !pwForm.current || !pwForm.next || !pwForm.confirm}
+                  disabled={
+                    savingPw ||
+                    !pwForm.current ||
+                    !pwForm.next ||
+                    !pwForm.confirm
+                  }
                   className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {savingPw ? (
@@ -250,7 +279,6 @@ export default function ProfileClient() {
               </div>
             </form>
           </div>
-
         </div>
       </div>
     </>
