@@ -38,7 +38,8 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
 }
 
-const TH = "border-b border-gray-200 bg-white px-4 py-3.5 text-left text-sm font-bold text-gray-900 whitespace-nowrap";
+const TH =
+  "border-b border-gray-200 bg-white px-4 py-3.5 text-left text-sm font-bold text-gray-900 whitespace-nowrap";
 const STICKY_TH_CONTENT = "sticky z-30 bg-white border-r border-gray-200";
 const STICKY_TD_CONTENT = "sticky z-20 border-r border-gray-200";
 
@@ -56,19 +57,29 @@ function Checkbox({
       type="button"
       role="checkbox"
       aria-checked={indeterminate ? "mixed" : checked}
-      onClick={(e) => { e.stopPropagation(); onChange(!checked); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onChange(!checked);
+      }}
       className={`
         group relative flex h-4 w-4 shrink-0 items-center justify-center rounded
         border transition-all duration-150
-        ${checked || indeterminate
-          ? "border-red-500 bg-red-500"
-          : "border-gray-300 bg-white hover:border-red-400 hover:bg-red-50"
+        ${
+          checked || indeterminate
+            ? "border-red-500 bg-red-500"
+            : "border-gray-300 bg-white hover:border-red-400 hover:bg-red-50"
         }
       `}
     >
       {checked && !indeterminate && (
         <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 8" fill="none">
-          <path d="M1 4L3.5 6.5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M1 4L3.5 6.5L9 1"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       )}
       {indeterminate && (
@@ -90,8 +101,13 @@ export function Cell({
   style?: React.CSSProperties;
 }) {
   return (
-    <td className={`border-b border-gray-200 px-4 py-0 align-middle ${className}`} style={style}>
-      <div className={`flex h-[54px] items-center ${overflowVisible ? "overflow-visible" : "overflow-hidden"}`}>
+    <td
+      className={`border-b border-gray-200 px-4 py-0 align-middle ${className}`}
+      style={style}
+    >
+      <div
+        className={`flex h-[54px] items-center ${overflowVisible ? "overflow-visible" : "overflow-hidden"}`}
+      >
         {children}
       </div>
     </td>
@@ -114,9 +130,13 @@ export default function DataTable<T>({
 }: DataTableProps<T>) {
   const visibleCols = columns.filter((c) => c.visible !== false);
 
-  const selectedCount = selection ? data.filter((r) => selection.selected.has(rowKey(r))).length : 0;
-  const allSelected = !!selection && data.length > 0 && selectedCount === data.length;
-  const someSelected = !!selection && selectedCount > 0 && selectedCount < data.length;
+  const selectedCount = selection
+    ? data.filter((r) => selection.selected.has(rowKey(r))).length
+    : 0;
+  const allSelected =
+    !!selection && data.length > 0 && selectedCount === data.length;
+  const someSelected =
+    !!selection && selectedCount > 0 && selectedCount < data.length;
 
   const stickyOffsets: number[] = [];
   {
@@ -172,7 +192,9 @@ export default function DataTable<T>({
                 >
                   <div className="flex items-center gap-1.5 text-gray-500">
                     <Settings className="h-3.5 w-3.5" />
-                    <span className="text-sm font-bold text-gray-900">Settings</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      Settings
+                    </span>
                   </div>
                 </th>
               )}
@@ -185,13 +207,29 @@ export default function DataTable<T>({
                   {visibleCols.map((col, idx) => {
                     const isSticky = idx < stickyLeftColumns;
                     const stickyClass = isSticky ? STICKY_TD_CONTENT : "";
-                    const barWidths = ["w-28", "w-20", "w-16", "w-24", "w-14", "w-20", "w-16", "w-10"];
+                    const barWidths = [
+                      "w-28",
+                      "w-20",
+                      "w-16",
+                      "w-24",
+                      "w-14",
+                      "w-20",
+                      "w-16",
+                      "w-10",
+                    ];
                     const barW = barWidths[idx % barWidths.length];
                     return (
                       <td
                         key={col.key}
                         className={`border-b border-gray-200 px-4 py-0 align-middle ${stickyClass}`}
-                        style={isSticky ? { left: `${stickyOffsets[idx]}px`, backgroundColor: "#fff" } : undefined}
+                        style={
+                          isSticky
+                            ? {
+                                left: `${stickyOffsets[idx]}px`,
+                                backgroundColor: "#fff",
+                              }
+                            : undefined
+                        }
                       >
                         <div className="flex h-[54px] items-center overflow-hidden">
                           {idx === 0 && selection ? (
@@ -206,7 +244,9 @@ export default function DataTable<T>({
                               <div className="h-3 w-24 rounded bg-gray-200" />
                             </div>
                           ) : (
-                            <div className={`h-3 ${barW} rounded bg-gray-200`} />
+                            <div
+                              className={`h-3 ${barW} rounded bg-gray-200`}
+                            />
                           )}
                         </div>
                       </td>
@@ -239,7 +279,14 @@ export default function DataTable<T>({
                         <td
                           key={col.key}
                           className={`border-b border-gray-200 px-4 py-0 align-middle ${col.className ?? ""} ${stickyClass}`}
-                          style={isSticky ? { left: `${stickyOffsets[idx]}px`, backgroundColor: "#fff" } : undefined}
+                          style={
+                            isSticky
+                              ? {
+                                  left: `${stickyOffsets[idx]}px`,
+                                  backgroundColor: "#fff",
+                                }
+                              : undefined
+                          }
                         >
                           <div className="flex h-[54px] items-center overflow-hidden">
                             {idx === 0 && selection ? (

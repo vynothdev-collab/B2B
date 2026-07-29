@@ -13,7 +13,12 @@ const inputCls =
   "w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[12px] text-gray-800 placeholder-gray-400 transition-colors focus:border-red-500 focus:outline-none";
 const labelCls = "mb-1 block text-[12px] text-gray-500";
 
-export default function BulkCompanyInput({ label, placeholder, values, onChange }: Props) {
+export default function BulkCompanyInput({
+  label,
+  placeholder,
+  values,
+  onChange,
+}: Props) {
   const [text, setText] = useState("");
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
@@ -92,7 +97,9 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKey}
-          onBlur={() => { if (text.trim()) add(text); }}
+          onBlur={() => {
+            if (text.trim()) add(text);
+          }}
           className={inputCls + " flex-1"}
         />
         <button
@@ -117,7 +124,10 @@ export default function BulkCompanyInput({ label, placeholder, values, onChange 
           <div className="mt-2 flex justify-end gap-1.5">
             <button
               type="button"
-              onClick={() => { setBulkOpen(false); setBulkText(""); }}
+              onClick={() => {
+                setBulkOpen(false);
+                setBulkText("");
+              }}
               className="rounded-md border border-gray-200 px-2.5 py-1 text-[12px] font-medium text-gray-600 hover:bg-gray-50"
             >
               Cancel

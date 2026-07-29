@@ -33,9 +33,10 @@ export default function CompanyNewsFilter({ filters, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* News Keywords */}
       <div>
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">News Keywords</p>
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+          News Keywords
+        </p>
         {filters.companyNewsKeywords.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-1">
             {filters.companyNewsKeywords.map((kw) => (
@@ -46,7 +47,13 @@ export default function CompanyNewsFilter({ filters, onChange }: Props) {
                 {kw}
                 <button
                   type="button"
-                  onClick={() => onChange({ companyNewsKeywords: filters.companyNewsKeywords.filter((v) => v !== kw) })}
+                  onClick={() =>
+                    onChange({
+                      companyNewsKeywords: filters.companyNewsKeywords.filter(
+                        (v) => v !== kw,
+                      ),
+                    })
+                  }
                   className="hover:opacity-70 leading-none"
                 >
                   ×
@@ -63,9 +70,10 @@ export default function CompanyNewsFilter({ filters, onChange }: Props) {
         />
       </div>
 
-      {/* Timeframe */}
       <div>
-        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Timeframe</p>
+        <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+          Timeframe
+        </p>
         <div className="flex flex-col">
           {COMPANY_NEWS_TIMEFRAMES.map((opt) => {
             const selected = filters.companyNewsTimeframe === opt.value;
@@ -73,7 +81,9 @@ export default function CompanyNewsFilter({ filters, onChange }: Props) {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => onChange({ companyNewsTimeframe: selected ? "" : opt.value })}
+                onClick={() =>
+                  onChange({ companyNewsTimeframe: selected ? "" : opt.value })
+                }
                 className={`flex w-full items-center gap-2 rounded px-1 py-[3px] text-left transition-colors hover:bg-gray-50 ${selected ? "text-red-700" : "text-gray-700"}`}
               >
                 <span
@@ -81,9 +91,15 @@ export default function CompanyNewsFilter({ filters, onChange }: Props) {
                     selected ? "border-red-500" : "border-gray-300"
                   }`}
                 >
-                  {selected && <span className="h-2 w-2 rounded-full bg-red-500" />}
+                  {selected && (
+                    <span className="h-2 w-2 rounded-full bg-red-500" />
+                  )}
                 </span>
-                <span className={`text-[12px] leading-none ${selected ? "font-medium" : ""}`}>{opt.label}</span>
+                <span
+                  className={`text-[12px] leading-none ${selected ? "font-medium" : ""}`}
+                >
+                  {opt.label}
+                </span>
               </button>
             );
           })}

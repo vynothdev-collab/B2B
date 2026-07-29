@@ -1,5 +1,10 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
-import { clearTokens, getAccessToken, getRefreshToken, updateAccessToken } from "./tokens";
+import {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  updateAccessToken,
+} from "./tokens";
 import { toast } from "./toast";
 
 export const apiClient = axios.create({
@@ -74,7 +79,7 @@ apiClient.interceptors.response.use(
 
       const { data } = await refreshClient.post<{ access_token: string }>(
         "/auth/refresh",
-        { refresh_token: refreshToken }
+        { refresh_token: refreshToken },
       );
 
       const newToken = data.access_token;
@@ -95,5 +100,5 @@ apiClient.interceptors.response.use(
     } finally {
       isRefreshing = false;
     }
-  }
+  },
 );

@@ -30,7 +30,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}>
+      <body
+        className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}
+      >
         <AuthProvider>{children}</AuthProvider>
         <Toaster position="top-right" richColors />
       </body>

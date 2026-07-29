@@ -1,7 +1,15 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2, Search, Users, Building2, Zap } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Search,
+  Users,
+  Building2,
+  Zap,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
@@ -19,7 +27,9 @@ export default function LoginPage() {
     try {
       await login(email, password);
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { status?: number; data?: { detail?: string } } };
+      const axiosErr = err as {
+        response?: { status?: number; data?: { detail?: string } };
+      };
       const status = axiosErr?.response?.status;
       const detail = axiosErr?.response?.data?.detail;
       if (!status) {
@@ -36,9 +46,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen">
-
       <div className="hidden lg:flex lg:w-[52%] flex-col justify-between bg-gradient-to-br from-red-700 via-red-600 to-indigo-700 p-12 relative overflow-hidden">
-
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-white/5" />
           <div className="absolute top-1/2 -right-24 h-80 w-80 rounded-full bg-white/5" />
@@ -49,25 +57,42 @@ export default function LoginPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm">
             LB
           </div>
-          <span className="text-white font-bold text-lg tracking-tight">leadsbuddy.ai</span>
+          <span className="text-white font-bold text-lg tracking-tight">
+            leadsbuddy.ai
+          </span>
         </div>
 
         <div className="relative space-y-8">
           <div>
             <h2 className="text-4xl font-bold text-white leading-tight">
-              Find the right people.<br />Close more deals.
+              Find the right people.
+              <br />
+              Close more deals.
             </h2>
             <p className="mt-4 text-red-200 text-base leading-relaxed max-w-sm">
-              Search 800M+ professional profiles and 35M+ companies with precision filters and real-time data enrichment.
+              Search 800M+ professional profiles and 35M+ companies with
+              precision filters and real-time data enrichment.
             </p>
           </div>
 
           <div className="space-y-4">
             {[
-              { icon: <Search className="h-4 w-4" />, text: "Advanced people & company search" },
-              { icon: <Users className="h-4 w-4" />, text: "800M+ verified professional profiles" },
-              { icon: <Building2 className="h-4 w-4" />, text: "35M+ company records with live data" },
-              { icon: <Zap className="h-4 w-4" />, text: "Instant contact reveal & CRM export" },
+              {
+                icon: <Search className="h-4 w-4" />,
+                text: "Advanced people & company search",
+              },
+              {
+                icon: <Users className="h-4 w-4" />,
+                text: "800M+ verified professional profiles",
+              },
+              {
+                icon: <Building2 className="h-4 w-4" />,
+                text: "35M+ company records with live data",
+              },
+              {
+                icon: <Zap className="h-4 w-4" />,
+                text: "Instant contact reveal & CRM export",
+              },
             ].map((f) => (
               <div key={f.text} className="flex items-center gap-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
@@ -94,7 +119,9 @@ export default function LoginPage() {
 
         <div className="relative rounded-2xl bg-white/10 backdrop-blur-sm p-5 border border-white/10">
           <p className="text-sm text-red-100 leading-relaxed">
-            &ldquo;leadsbuddy.ai cut our prospecting time in half. The data quality is outstanding and the filters are incredibly precise.&rdquo;
+            &ldquo;leadsbuddy.ai cut our prospecting time in half. The data
+            quality is outstanding and the filters are incredibly
+            precise.&rdquo;
           </p>
           <div className="mt-3 flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-full bg-red-400 flex items-center justify-center text-white text-xs font-bold">
@@ -102,7 +129,9 @@ export default function LoginPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-white">Sarah Mitchell</p>
-              <p className="text-[11px] text-red-300">Head of Sales, TechCorp</p>
+              <p className="text-[11px] text-red-300">
+                Head of Sales, TechCorp
+              </p>
             </div>
           </div>
         </div>
@@ -110,7 +139,6 @@ export default function LoginPage() {
 
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-white">
         <div className="w-full max-w-[380px]">
-
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white font-bold text-xs">
               LB
@@ -120,7 +148,9 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-            <p className="mt-1.5 text-sm text-gray-500">Sign in to your account to continue</p>
+            <p className="mt-1.5 text-sm text-gray-500">
+              Sign in to your account to continue
+            </p>
           </div>
 
           {error && (
@@ -150,7 +180,9 @@ export default function LoginPage() {
 
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-xs font-semibold text-gray-700">Password</label>
+                <label className="text-xs font-semibold text-gray-700">
+                  Password
+                </label>
                 <span className="text-xs text-red-600 hover:text-red-700 cursor-pointer font-medium">
                   Forgot password?
                 </span>
@@ -171,7 +203,11 @@ export default function LoginPage() {
                   onClick={() => setShowPassword((p) => !p)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -181,9 +217,13 @@ export default function LoginPage() {
               disabled={loading}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-red-200 hover:bg-red-500 active:scale-[0.98] disabled:opacity-60 transition-all"
             >
-              {loading
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in…</>
-                : "Sign in to your account"}
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Signing in…
+                </>
+              ) : (
+                "Sign in to your account"
+              )}
             </button>
           </form>
 
@@ -195,7 +235,10 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-semibold text-red-600 hover:text-red-700 transition-colors">
+            <Link
+              href="/register"
+              className="font-semibold text-red-600 hover:text-red-700 transition-colors"
+            >
               Create a free account
             </Link>
           </p>

@@ -66,7 +66,9 @@ class AccessTokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED
+)
 async def register(
     payload: RegisterRequest, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:

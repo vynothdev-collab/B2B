@@ -24,28 +24,42 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (password !== confirmPassword) { setError("Passwords do not match"); return; }
-    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
     setLoading(true);
     try {
       await register(name, email, password);
     } catch (err: unknown) {
-      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      const detail = (err as { response?: { data?: { detail?: string } } })
+        ?.response?.data?.detail;
       setError(detail ?? "Failed to create account. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const pwStrength = password.length === 0 ? 0 : password.length < 8 ? 1 : password.length < 12 ? 2 : 3;
+  const pwStrength =
+    password.length === 0
+      ? 0
+      : password.length < 8
+        ? 1
+        : password.length < 12
+          ? 2
+          : 3;
   const strengthLabel = ["", "Weak", "Good", "Strong"][pwStrength];
-  const strengthColor = ["", "bg-red-400", "bg-amber-400", "bg-emerald-500"][pwStrength];
+  const strengthColor = ["", "bg-red-400", "bg-amber-400", "bg-emerald-500"][
+    pwStrength
+  ];
 
   return (
     <div className="flex min-h-screen">
-
       <div className="hidden lg:flex lg:w-[44%] flex-col justify-between bg-gradient-to-br from-red-700 via-red-600 to-indigo-700 p-12 relative overflow-hidden">
-
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-white/5" />
           <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-white/5" />
@@ -55,16 +69,21 @@ export default function RegisterPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm">
             LB
           </div>
-          <span className="text-white font-bold text-lg tracking-tight">leadsbuddy.ai</span>
+          <span className="text-white font-bold text-lg tracking-tight">
+            leadsbuddy.ai
+          </span>
         </div>
 
         <div className="relative space-y-8">
           <div>
             <h2 className="text-4xl font-bold text-white leading-tight">
-              Start closing<br />more deals today.
+              Start closing
+              <br />
+              more deals today.
             </h2>
             <p className="mt-4 text-red-200 text-base leading-relaxed">
-              Join thousands of sales teams who use leadsbuddy.ai to find and connect with their ideal customers.
+              Join thousands of sales teams who use leadsbuddy.ai to find and
+              connect with their ideal customers.
             </p>
           </div>
 
@@ -79,22 +98,31 @@ export default function RegisterPage() {
 
           <div className="rounded-2xl bg-white/10 border border-white/10 p-5">
             <div className="flex items-center gap-1 mb-2">
-              {[1,2,3,4,5].map((i) => (
-                <svg key={i} className="h-4 w-4 text-amber-400 fill-current" viewBox="0 0 20 20">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <svg
+                  key={i}
+                  className="h-4 w-4 text-amber-400 fill-current"
+                  viewBox="0 0 20 20"
+                >
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
               ))}
             </div>
             <p className="text-sm text-red-100 leading-relaxed">
-              &ldquo;We onboarded on Monday and booked 12 demos by Friday. The data quality is unmatched.&rdquo;
+              &ldquo;We onboarded on Monday and booked 12 demos by Friday. The
+              data quality is unmatched.&rdquo;
             </p>
             <div className="mt-3 flex items-center gap-2.5">
               <div className="h-8 w-8 rounded-full bg-indigo-400 flex items-center justify-center text-white text-xs font-bold">
                 JR
               </div>
               <div>
-                <p className="text-xs font-semibold text-white">James Reynolds</p>
-                <p className="text-[11px] text-red-300">VP of Sales, Growthly</p>
+                <p className="text-xs font-semibold text-white">
+                  James Reynolds
+                </p>
+                <p className="text-[11px] text-red-300">
+                  VP of Sales, Growthly
+                </p>
               </div>
             </div>
           </div>
@@ -110,7 +138,6 @@ export default function RegisterPage() {
 
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-white overflow-y-auto">
         <div className="w-full max-w-[400px]">
-
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white font-bold text-xs">
               LB
@@ -119,8 +146,12 @@ export default function RegisterPage() {
           </div>
 
           <div className="mb-7">
-            <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
-            <p className="mt-1.5 text-sm text-gray-500">Free forever · No credit card needed</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Create your account
+            </h1>
+            <p className="mt-1.5 text-sm text-gray-500">
+              Free forever · No credit card needed
+            </p>
           </div>
 
           {error && (
@@ -134,7 +165,9 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">Full name</label>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+                Full name
+              </label>
               <input
                 type="text"
                 autoComplete="name"
@@ -147,7 +180,9 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">Work email</label>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+                Work email
+              </label>
               <input
                 type="email"
                 autoComplete="email"
@@ -160,7 +195,9 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">Password</label>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -177,7 +214,11 @@ export default function RegisterPage() {
                   onClick={() => setShowPassword((p) => !p)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
               {password.length > 0 && (
@@ -192,9 +233,15 @@ export default function RegisterPage() {
                       />
                     ))}
                   </div>
-                  <span className={`text-[10px] font-semibold ${
-                    pwStrength === 1 ? "text-red-500" : pwStrength === 2 ? "text-amber-500" : "text-emerald-600"
-                  }`}>
+                  <span
+                    className={`text-[10px] font-semibold ${
+                      pwStrength === 1
+                        ? "text-red-500"
+                        : pwStrength === 2
+                          ? "text-amber-500"
+                          : "text-emerald-600"
+                    }`}
+                  >
                     {strengthLabel}
                   </span>
                 </div>
@@ -202,7 +249,9 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-gray-700">Confirm password</label>
+              <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+                Confirm password
+              </label>
               <input
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
@@ -217,7 +266,9 @@ export default function RegisterPage() {
                 }`}
               />
               {confirmPassword && confirmPassword !== password && (
-                <p className="mt-1 text-[11px] text-red-500">Passwords don&apos;t match</p>
+                <p className="mt-1 text-[11px] text-red-500">
+                  Passwords don&apos;t match
+                </p>
               )}
             </div>
 
@@ -226,24 +277,36 @@ export default function RegisterPage() {
               disabled={loading}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-red-200 hover:bg-red-500 active:scale-[0.98] disabled:opacity-60 transition-all"
             >
-              {loading
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating account…</>
-                : "Create free account"}
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Creating account…
+                </>
+              ) : (
+                "Create free account"
+              )}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-red-600 hover:text-red-700 transition-colors">
+            <Link
+              href="/login"
+              className="font-semibold text-red-600 hover:text-red-700 transition-colors"
+            >
               Sign in
             </Link>
           </p>
 
           <p className="mt-4 text-center text-[10px] text-gray-400 leading-relaxed">
             By creating an account you agree to our{" "}
-            <span className="underline cursor-pointer hover:text-gray-600">Terms of Service</span>{" "}
+            <span className="underline cursor-pointer hover:text-gray-600">
+              Terms of Service
+            </span>{" "}
             and{" "}
-            <span className="underline cursor-pointer hover:text-gray-600">Privacy Policy</span>.
+            <span className="underline cursor-pointer hover:text-gray-600">
+              Privacy Policy
+            </span>
+            .
           </p>
         </div>
       </div>

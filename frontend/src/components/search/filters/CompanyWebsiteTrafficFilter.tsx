@@ -12,10 +12,12 @@ interface Props {
   onChange: (patch: Partial<CompanyFilters>) => void;
 }
 
-export default function CompanyWebsiteTrafficFilter({ filters, onChange }: Props) {
+export default function CompanyWebsiteTrafficFilter({
+  filters,
+  onChange,
+}: Props) {
   return (
     <div className="flex flex-col gap-3">
-      {/* Total Monthly Visits */}
       <div>
         <span className={labelCls}>Total Monthly Visits</span>
         <div className="flex items-center gap-2">
@@ -39,7 +41,6 @@ export default function CompanyWebsiteTrafficFilter({ filters, onChange }: Props
         </div>
       </div>
 
-      {/* Visit Change */}
       <div>
         <span className={labelCls}>Visit Change (%)</span>
         <div className="mb-2 flex gap-1">
@@ -47,7 +48,12 @@ export default function CompanyWebsiteTrafficFilter({ filters, onChange }: Props
             <button
               key={opt.value}
               type="button"
-              onClick={() => onChange({ visitChangeTimeframe: opt.value as CompanyFilters["visitChangeTimeframe"] })}
+              onClick={() =>
+                onChange({
+                  visitChangeTimeframe:
+                    opt.value as CompanyFilters["visitChangeTimeframe"],
+                })
+              }
               className={`flex-1 rounded-md border px-2 py-1 text-[12px] transition-colors ${
                 filters.visitChangeTimeframe === opt.value
                   ? "border-red-500 bg-red-50 text-red-700 font-medium"
@@ -77,7 +83,6 @@ export default function CompanyWebsiteTrafficFilter({ filters, onChange }: Props
         </div>
       </div>
 
-      {/* Audience by Country */}
       <div>
         <span className={labelCls}>Audience by Country</span>
         <CountrySelect

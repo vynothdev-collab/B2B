@@ -66,7 +66,9 @@ function buildStateIndex(): LocOption[] {
 }
 
 function buildCityIndex(): LocOption[] {
-  const countryMap = new Map(Country.getAllCountries().map((c) => [c.isoCode, c.name]));
+  const countryMap = new Map(
+    Country.getAllCountries().map((c) => [c.isoCode, c.name]),
+  );
   const stateMap = new Map<string, string>();
   for (const c of Country.getAllCountries()) {
     for (const s of State.getStatesOfCountry(c.isoCode)) {
@@ -75,7 +77,8 @@ function buildCityIndex(): LocOption[] {
   }
   return City.getAllCities().map((city) => {
     const countryName = countryMap.get(city.countryCode) ?? city.countryCode;
-    const stateName = stateMap.get(`${city.countryCode}-${city.stateCode}`) ?? city.stateCode;
+    const stateName =
+      stateMap.get(`${city.countryCode}-${city.stateCode}`) ?? city.stateCode;
     return {
       display: `${city.name}, ${stateName}, ${countryName}`,
       stored: city.name.toLowerCase(),
@@ -107,7 +110,12 @@ export default function LocationAutocomplete({
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
+  const [pos, setPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxH: DROPDOWN_MAX_H,
+  });
   const [activeIdx, setActiveIdx] = useState(-1);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -118,7 +126,12 @@ export default function LocationAutocomplete({
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
     const avail = Math.max(80, window.innerHeight - r.bottom - 8);
-    setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxH: Math.min(DROPDOWN_MAX_H, avail) });
+    setPos({
+      top: r.bottom + 4,
+      left: r.left,
+      width: r.width,
+      maxH: Math.min(DROPDOWN_MAX_H, avail),
+    });
   }, []);
 
   useEffect(() => {
@@ -145,8 +158,18 @@ export default function LocationAutocomplete({
     const out: LocOption[] = [];
     for (const item of index) {
       if (values.includes(item.stored)) continue;
-      if (hasCountryFilter && item.countryStored && !filterCountries!.includes(item.countryStored)) continue;
-      if (hasStateFilter && item.stateStored && !filterStates!.includes(item.stateStored)) continue;
+      if (
+        hasCountryFilter &&
+        item.countryStored &&
+        !filterCountries!.includes(item.countryStored)
+      )
+        continue;
+      if (
+        hasStateFilter &&
+        item.stateStored &&
+        !filterStates!.includes(item.stateStored)
+      )
+        continue;
       if (!q || item.display.toLowerCase().includes(q)) {
         out.push(item);
         if (out.length >= 60) break;
@@ -161,7 +184,15 @@ export default function LocationAutocomplete({
       });
     }
     return out.slice(0, 20);
-  }, [text, values, kind, filterCountries, filterStates, hasCountryFilter, hasStateFilter]);
+  }, [
+    text,
+    values,
+    kind,
+    filterCountries,
+    filterStates,
+    hasCountryFilter,
+    hasStateFilter,
+  ]);
 
   useEffect(() => {
     if (focused) {
@@ -212,8 +243,12 @@ export default function LocationAutocomplete({
       }
       return;
     }
-    if (e.key === "Escape") { setOpen(false); return; }
-    if (e.key === "Backspace" && !text && values.length) onChange(values.slice(0, -1));
+    if (e.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+    if (e.key === "Backspace" && !text && values.length)
+      onChange(values.slice(0, -1));
   };
 
   const isDisabled =
@@ -223,18 +258,23 @@ export default function LocationAutocomplete({
 
   const effectivePlaceholder =
     placeholder ??
-    (isDisabled
-      ? "Select a country first…"
-      : DEFAULT_PLACEHOLDER[kind]);
+    (isDisabled ? "Select a country first…" : DEFAULT_PLACEHOLDER[kind]);
 
   return (
     <div>
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-1.5">
           {values.map((v) => (
-            <span key={v} className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-1.5 py-0.5 text-[11px] font-medium capitalize text-[#2d5a3d]">
+            <span
+              key={v}
+              className="inline-flex items-center gap-1 rounded-md bg-[#D9E8DB] px-1.5 py-0.5 text-[11px] font-medium capitalize text-[#2d5a3d]"
+            >
               {v}
-              <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} className="hover:opacity-70">
+              <button
+                type="button"
+                onClick={() => onChange(values.filter((x) => x !== v))}
+                className="hover:opacity-70"
+              >
                 <X className="h-2.5 w-2.5" />
               </button>
             </span>
@@ -248,65 +288,108 @@ export default function LocationAutocomplete({
           type="text"
           placeholder={effectivePlaceholder}
           value={text}
-          onChange={(e) => { if (!isDisabled) { setText(e.target.value); setActiveIdx(-1); } }}
+          onChange={(e) => {
+            if (!isDisabled) {
+              setText(e.target.value);
+              setActiveIdx(-1);
+            }
+          }}
           onKeyDown={handleKey}
-          onFocus={() => { if (!isDisabled) { setFocused(true); reposition(); setOpen(true); } }}
+          onFocus={() => {
+            if (!isDisabled) {
+              setFocused(true);
+              reposition();
+              setOpen(true);
+            }
+          }}
           onBlur={() => setTimeout(() => setFocused(false), 150)}
           className={`${inputCls} ${isDisabled ? "cursor-not-allowed bg-gray-50 text-gray-400 placeholder-gray-300" : ""}`}
           disabled={isDisabled}
         />
       </div>
 
-      {open && typeof document !== "undefined" && createPortal(
-        <>
-          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
-          <div
-            ref={dropdownRef}
-            className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH }}
-          >
-            <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
-              {suggestions.length === 0 ? (
-                <div className="px-3 py-2 text-[12px] text-gray-400">
-                  {kind === "state" && hasCountryFilter ? "No states for selected country" :
-                   kind === "city" && (hasCountryFilter || hasStateFilter) ? "No cities found" :
-                   kind !== "country" ? "Select a country to filter results" :
-                   "No matches"}
-                </div>
-              ) : (
-                suggestions.map((s, i) => {
-                  const checked = values.includes(s.display);
-                  return (
-                    <button
-                      key={s.display}
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); add(s); }}
-                      className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
-                        i === activeIdx ? "bg-red-50 text-red-700" : checked ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
-                        checked ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
-                      }`}>
-                        {checked && (
-                          <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </span>
-                      <span className="truncate flex-1">{s.display}</span>
-                      <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-gray-500">
-                        {KIND_LABEL[s.kind]}
-                      </span>
-                    </button>
-                  );
-                })
-              )}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[9998]"
+              onClick={() => setOpen(false)}
+            />
+            <div
+              ref={dropdownRef}
+              className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                width: pos.width,
+                maxHeight: pos.maxH,
+              }}
+            >
+              <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
+                {suggestions.length === 0 ? (
+                  <div className="px-3 py-2 text-[12px] text-gray-400">
+                    {kind === "state" && hasCountryFilter
+                      ? "No states for selected country"
+                      : kind === "city" && (hasCountryFilter || hasStateFilter)
+                        ? "No cities found"
+                        : kind !== "country"
+                          ? "Select a country to filter results"
+                          : "No matches"}
+                  </div>
+                ) : (
+                  suggestions.map((s, i) => {
+                    const checked = values.includes(s.display);
+                    return (
+                      <button
+                        key={s.display}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          add(s);
+                        }}
+                        className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
+                          i === activeIdx
+                            ? "bg-red-50 text-red-700"
+                            : checked
+                              ? "text-red-700 hover:bg-gray-50"
+                              : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                            checked
+                              ? "border-red-500 bg-red-500"
+                              : "border-gray-300 bg-white"
+                          }`}
+                        >
+                          {checked && (
+                            <svg
+                              className="h-2 w-2 text-white"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </span>
+                        <span className="truncate flex-1">{s.display}</span>
+                        <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-gray-500">
+                          {KIND_LABEL[s.kind]}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
-          </div>
-        </>,
-        document.body
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

@@ -11,11 +11,22 @@ interface Props {
   totalCount?: number;
 }
 
-export default function FilterPanelShell({ children, onReset, onApply, open, onClose, loading, totalCount }: Props) {
+export default function FilterPanelShell({
+  children,
+  onReset,
+  onApply,
+  open,
+  onClose,
+  loading,
+  totalCount,
+}: Props) {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={onClose} />
+        <div
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          onClick={onClose}
+        />
       )}
 
       <aside
@@ -25,13 +36,17 @@ export default function FilterPanelShell({ children, onReset, onApply, open, onC
           "flex w-[min(22rem,calc(100vw-1rem))] lg:w-64 xl:w-80 shrink-0 flex-col border border-gray-200 bg-white overflow-hidden",
           "lg:rounded-xl lg:shadow-sm",
           "transition-transform duration-300 ease-in-out",
-          open ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0",
+          open
+            ? "translate-x-0 shadow-2xl"
+            : "-translate-x-full lg:translate-x-0",
         ].join(" ")}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 sm:px-5 sm:py-3.5">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-3.5 w-3.5 text-red-600 sm:h-4 sm:w-4" />
-            <span className="text-sm font-semibold text-gray-800 sm:text-base">Filters</span>
+            <span className="text-sm font-semibold text-gray-800 sm:text-base">
+              Filters
+            </span>
             {totalCount != null && totalCount > 0 && (
               <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
                 {totalCount}
@@ -70,7 +85,10 @@ export default function FilterPanelShell({ children, onReset, onApply, open, onC
           </button>
           <button
             type="button"
-            onClick={() => { onApply(); onClose?.(); }}
+            onClick={() => {
+              onApply();
+              onClose?.();
+            }}
             disabled={loading}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-500 disabled:opacity-70 sm:py-2 sm:text-sm"
           >

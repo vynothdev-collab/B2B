@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -37,7 +37,7 @@ class ListItemOut(BaseModel):
     record_id: str
     item_type: str
     data: dict[str, Any] = {}
-    added_at: Optional[datetime] = None
+    added_at: datetime | None = None
 
 
 class ListItemsPageResponse(BaseModel):
@@ -48,9 +48,9 @@ class ListItemsPageResponse(BaseModel):
 
 
 class AddToListRequest(BaseModel):
-    list_id: Optional[str] = None
-    list_name: Optional[str] = None
-    list_type: Optional[str] = None
+    list_id: str | None = None
+    list_name: str | None = None
+    list_type: str | None = None
     items: list[ListItemPayload]
 
 

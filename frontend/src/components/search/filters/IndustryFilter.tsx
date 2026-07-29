@@ -25,11 +25,13 @@ export default function IndustryFilter({ values, onChange }: Props) {
   const q = query.toLowerCase().trim();
 
   const suggestions = ALL_INDUSTRIES.filter(
-    (o) => !q || o.label.toLowerCase().includes(q)
+    (o) => !q || o.label.toLowerCase().includes(q),
   ).slice(0, 50);
 
   const toggle = (val: string) => {
-    onChange(values.includes(val) ? values.filter((v) => v !== val) : [...values, val]);
+    onChange(
+      values.includes(val) ? values.filter((v) => v !== val) : [...values, val],
+    );
   };
 
   const remove = (val: string) => onChange(values.filter((v) => v !== val));
@@ -38,7 +40,6 @@ export default function IndustryFilter({ values, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-1">
-      {/* Selected chips */}
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {values.map((v) => (
@@ -59,7 +60,6 @@ export default function IndustryFilter({ values, onChange }: Props) {
         </div>
       )}
 
-      {/* Search input */}
       <div className="relative">
         <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400 pointer-events-none" />
         <input
@@ -73,11 +73,12 @@ export default function IndustryFilter({ values, onChange }: Props) {
         />
       </div>
 
-      {/* Results list — inline (not absolutely positioned) so no overflow-hidden clipping */}
       {showList && (
         <div className="max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           {suggestions.length === 0 ? (
-            <p className="px-3 py-3 text-[12px] text-gray-400">{q ? `No results for "${query}"` : "No industries"}</p>
+            <p className="px-3 py-3 text-[12px] text-gray-400">
+              {q ? `No results for "${query}"` : "No industries"}
+            </p>
           ) : (
             <ul>
               {suggestions.map((opt) => {
@@ -89,19 +90,37 @@ export default function IndustryFilter({ values, onChange }: Props) {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => toggle(opt.value)}
                       className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
-                        checked ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
+                        checked
+                          ? "text-red-700 hover:bg-gray-50"
+                          : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
-                        checked ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
-                      }`}>
+                      <span
+                        className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                          checked
+                            ? "border-red-500 bg-red-500"
+                            : "border-gray-300 bg-white"
+                        }`}
+                      >
                         {checked && (
-                          <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <svg
+                            className="h-2 w-2 text-white"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         )}
                       </span>
-                      <span className={`flex-1 truncate ${checked ? "font-medium" : ""}`}>{opt.label}</span>
+                      <span
+                        className={`flex-1 truncate ${checked ? "font-medium" : ""}`}
+                      >
+                        {opt.label}
+                      </span>
                     </button>
                   </li>
                 );

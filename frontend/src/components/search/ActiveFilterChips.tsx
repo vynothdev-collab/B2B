@@ -12,7 +12,12 @@ export default function ActiveFilterChips({ chips }: { chips: FilterChip[] }) {
   return (
     <div
       className="flex h-8 shrink-0 items-center gap-1 overflow-x-auto border-b border-gray-100 px-3 sm:h-9 sm:gap-1.5 sm:px-4"
-      style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+      style={
+        {
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        } as React.CSSProperties
+      }
     >
       {chips.map((chip) => (
         <span

@@ -16,15 +16,27 @@ const inputCls =
 const labelCls = "mb-1 block text-[12px] text-gray-500";
 const DROPDOWN_MAX_H = 220;
 
-export default function CountrySelect({ label, placeholder, value, onChange }: Props) {
+export default function CountrySelect({
+  label,
+  placeholder,
+  value,
+  onChange,
+}: Props) {
   const allCountries = useMemo<string[]>(() => {
-    const sorted = Country.getAllCountries().map((c) => c.name).sort();
+    const sorted = Country.getAllCountries()
+      .map((c) => c.name)
+      .sort();
     return ["United States", ...sorted.filter((c) => c !== "United States")];
   }, []);
 
   const [text, setText] = useState(value);
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
+  const [pos, setPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxH: DROPDOWN_MAX_H,
+  });
   const [activeIdx, setActiveIdx] = useState(-1);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +44,9 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
 
   useEffect(() => {
     if (value && value !== text.toLowerCase()) {
-      const match = allCountries.find((c) => c.toLowerCase() === value.toLowerCase());
+      const match = allCountries.find(
+        (c) => c.toLowerCase() === value.toLowerCase(),
+      );
       setText(match ?? value);
     }
   }, [value, allCountries, text]);
@@ -41,7 +55,12 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
     if (!inputRef.current) return;
     const r = inputRef.current.getBoundingClientRect();
     const avail = Math.max(80, window.innerHeight - r.bottom - 8);
-    setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxH: Math.min(DROPDOWN_MAX_H, avail) });
+    setPos({
+      top: r.bottom + 4,
+      left: r.left,
+      width: r.width,
+      maxH: Math.min(DROPDOWN_MAX_H, avail),
+    });
   }, []);
 
   useEffect(() => {
@@ -79,10 +98,16 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!open) return;
-    if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1)); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); }
-    else if (e.key === "Enter" && activeIdx >= 0) { e.preventDefault(); select(suggestions[activeIdx]); }
-    else if (e.key === "Escape") setOpen(false);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" && activeIdx >= 0) {
+      e.preventDefault();
+      select(suggestions[activeIdx]);
+    } else if (e.key === "Escape") setOpen(false);
   };
 
   return (
@@ -101,12 +126,23 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
             setOpen(true);
           }}
           onKeyDown={handleKey}
-          onFocus={() => { reposition(); setOpen(true); }}
+          onFocus={() => {
+            reposition();
+            setOpen(true);
+          }}
           onBlur={() => {
-            const match = allCountries.find((c) => c.toLowerCase() === text.trim().toLowerCase());
+            const match = allCountries.find(
+              (c) => c.toLowerCase() === text.trim().toLowerCase(),
+            );
             if (!match) {
               if (!text.trim()) onChange("");
-              else setText(value ? allCountries.find((c) => c.toLowerCase() === value) ?? "" : "");
+              else
+                setText(
+                  value
+                    ? (allCountries.find((c) => c.toLowerCase() === value) ??
+                        "")
+                    : "",
+                );
             }
           }}
           className={inputCls}
@@ -122,36 +158,53 @@ export default function CountrySelect({ label, placeholder, value, onChange }: P
         )}
       </div>
 
-      {open && typeof document !== "undefined" && createPortal(
-        <>
-          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
-          <div
-            ref={dropdownRef}
-            className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH }}
-          >
-            <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
-              {suggestions.length === 0 ? (
-                <div className="px-3 py-2 text-[12px] text-gray-400">No matches</div>
-              ) : (
-                suggestions.map((name, i) => (
-                  <button
-                    key={name}
-                    type="button"
-                    onMouseDown={(e) => { e.preventDefault(); select(name); }}
-                    className={`flex w-full items-center px-2.5 py-1 text-left text-[12px] transition-colors ${
-                      i === activeIdx ? "bg-red-50 text-red-700" : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    {name}
-                  </button>
-                ))
-              )}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[9998]"
+              onClick={() => setOpen(false)}
+            />
+            <div
+              ref={dropdownRef}
+              className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                width: pos.width,
+                maxHeight: pos.maxH,
+              }}
+            >
+              <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
+                {suggestions.length === 0 ? (
+                  <div className="px-3 py-2 text-[12px] text-gray-400">
+                    No matches
+                  </div>
+                ) : (
+                  suggestions.map((name, i) => (
+                    <button
+                      key={name}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        select(name);
+                      }}
+                      className={`flex w-full items-center px-2.5 py-1 text-left text-[12px] transition-colors ${
+                        i === activeIdx
+                          ? "bg-red-50 text-red-700"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {name}
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        </>,
-        document.body
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

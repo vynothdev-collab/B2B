@@ -1,6 +1,6 @@
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB
@@ -18,19 +18,24 @@ class List(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     list_type: Mapped[str] = mapped_column(String(50), nullable=False)
     user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
         nullable=False,
     )
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None
     )
 
@@ -42,14 +47,19 @@ class ListItem(Base):
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     list_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("lists.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("lists.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     record_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     item_type: Mapped[str] = mapped_column(String(50), nullable=False)
     data: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
     added_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
     )
-    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None
     )

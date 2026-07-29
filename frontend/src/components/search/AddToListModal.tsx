@@ -1,7 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { X, Search, Plus, Users, Building2, Loader2, Info } from "lucide-react";
-import { getLists, addToList, type ListRecord, type ListItemPayload } from "@/lib/listsApi";
+import {
+  getLists,
+  addToList,
+  type ListRecord,
+  type ListItemPayload,
+} from "@/lib/listsApi";
 import { toast } from "@/lib/toast";
 
 interface Props {
@@ -11,7 +16,12 @@ interface Props {
   itemType: "person" | "company";
 }
 
-export default function AddToListModal({ open, onClose, items, itemType }: Props) {
+export default function AddToListModal({
+  open,
+  onClose,
+  items,
+  itemType,
+}: Props) {
   const [lists, setLists] = useState<ListRecord[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,9 +48,11 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
   if (!open) return null;
 
   const listType = itemType === "person" ? "people" : "companies";
-  const userLists = lists.filter((l) => !l.is_default && l.list_type === listType);
+  const userLists = lists.filter(
+    (l) => !l.is_default && l.list_type === listType,
+  );
   const filtered = userLists.filter((l) =>
-    l.name.toLowerCase().includes(query.toLowerCase())
+    l.name.toLowerCase().includes(query.toLowerCase()),
   );
   const showCreate =
     query.trim().length > 0 &&
@@ -56,7 +68,9 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
         list_type: listType,
         items,
       });
-      toast.success(`${res.added} item${res.added !== 1 ? "s" : ""} added to "${res.list_name}"`);
+      toast.success(
+        `${res.added} item${res.added !== 1 ? "s" : ""} added to "${res.list_name}"`,
+      );
       onClose();
     } catch {
       toast.error("Failed to add to list");
@@ -71,8 +85,6 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
     <>
       <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose} />
       <div className="fixed left-1/2 top-1/2 z-50 w-[calc(100vw-1.5rem)] max-w-[380px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl">
-
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3.5">
           <h2 className="text-sm font-semibold text-gray-900">
             Add to {itemType === "person" ? "People" : "Company"} List
@@ -86,15 +98,14 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
           </button>
         </div>
 
-        {/* Info banner */}
         <div className="mx-4 mt-3 flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 px-3 py-2.5">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
           <p className="text-[11px] leading-snug text-red-700">
-            {items.length} lead{items.length !== 1 ? "s" : ""} selected. Choose an existing list or type a name to create a new one.
+            {items.length} lead{items.length !== 1 ? "s" : ""} selected. Choose
+            an existing list or type a name to create a new one.
           </p>
         </div>
 
-        {/* Search input */}
         <div className="px-4 pb-2 pt-3">
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 transition-colors focus-within:border-red-400 focus-within:bg-white">
             <Search className="h-3.5 w-3.5 shrink-0 text-gray-400" />
@@ -106,18 +117,17 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
               placeholder="Search or create a list..."
               className="min-w-0 flex-1 bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && showCreate) handleAdd(undefined, query.trim());
+                if (e.key === "Enter" && showCreate)
+                  handleAdd(undefined, query.trim());
               }}
             />
           </div>
         </div>
 
-        {/* Section label */}
         <p className="px-4 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
           Your Lists
         </p>
 
-        {/* List rows */}
         <div className="max-h-56 overflow-y-auto px-4 pb-2">
           {loading && (
             <div className="flex items-center justify-center py-8">
@@ -156,36 +166,40 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
             </div>
           )}
 
-          {!loading && filtered.map((list) => (
-            <div
-              key={list.id}
-              className="flex items-center justify-between rounded-xl px-2 py-2.5 transition-colors hover:bg-gray-50"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500">
-                  <Icon className="h-4 w-4 text-white" />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-medium text-gray-800">{list.name}</p>
-                  <p className="text-[10px] text-gray-400">
-                    {list.record_count ?? 0} record{(list.record_count ?? 0) !== 1 ? "s" : ""}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleAdd(list.id)}
-                disabled={adding !== null}
-                className="ml-2 flex shrink-0 items-center gap-1 rounded-full bg-red-500 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-60"
+          {!loading &&
+            filtered.map((list) => (
+              <div
+                key={list.id}
+                className="flex items-center justify-between rounded-xl px-2 py-2.5 transition-colors hover:bg-gray-50"
               >
-                {adding === list.id ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  "Add"
-                )}
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500">
+                    <Icon className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-medium text-gray-800">
+                      {list.name}
+                    </p>
+                    <p className="text-[10px] text-gray-400">
+                      {list.record_count ?? 0} record
+                      {(list.record_count ?? 0) !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleAdd(list.id)}
+                  disabled={adding !== null}
+                  className="ml-2 flex shrink-0 items-center gap-1 rounded-full bg-red-500 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-60"
+                >
+                  {adding === list.id ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    "Add"
+                  )}
+                </button>
+              </div>
+            ))}
 
           {!loading && filtered.length === 0 && !showCreate && (
             <p className="py-6 text-center text-xs text-gray-400">
@@ -196,7 +210,6 @@ export default function AddToListModal({ open, onClose, items, itemType }: Props
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex gap-2 border-t border-gray-100 px-4 py-3">
           <button
             type="button"

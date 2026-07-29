@@ -18,29 +18,52 @@ const CHIP_CLS = "bg-[#D9E8DB] text-[#2d5a3d]";
 
 const DROPDOWN_MAX_H = 220;
 
-export default function MultiChipSelect({ label, placeholder, values, onChange, options, noCheckbox }: Props) {
+export default function MultiChipSelect({
+  label,
+  placeholder,
+  values,
+  onChange,
+  options,
+  noCheckbox,
+}: Props) {
   const [inputText, setInputText] = useState("");
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
+  const [pos, setPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxH: DROPDOWN_MAX_H,
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const getLabel = (val: string) => options.find((o) => o.value === val)?.label ?? val;
+  const getLabel = (val: string) =>
+    options.find((o) => o.value === val)?.label ?? val;
 
   const filteredOptions = options.filter((o) => {
     const q = inputText.toLowerCase();
-    return o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q);
+    return (
+      o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q)
+    );
   });
 
   const calcPos = () => {
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
     const avail = Math.max(80, window.innerHeight - r.bottom - 8);
-    setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxH: Math.min(DROPDOWN_MAX_H, avail) });
+    setPos({
+      top: r.bottom + 4,
+      left: r.left,
+      width: r.width,
+      maxH: Math.min(DROPDOWN_MAX_H, avail),
+    });
   };
 
-  const openDropdown = () => { calcPos(); setOpen(true); };
+  const openDropdown = () => {
+    calcPos();
+    setOpen(true);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -57,12 +80,16 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
   }, [open]);
 
   const toggleValue = (val: string) =>
-    onChange(values.includes(val) ? values.filter((v) => v !== val) : [...values, val]);
+    onChange(
+      values.includes(val) ? values.filter((v) => v !== val) : [...values, val],
+    );
 
-  const removeValue = (val: string) => onChange(values.filter((v) => v !== val));
+  const removeValue = (val: string) =>
+    onChange(values.filter((v) => v !== val));
 
   const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !inputText && values.length > 0) removeValue(values[values.length - 1]);
+    if (e.key === "Backspace" && !inputText && values.length > 0)
+      removeValue(values[values.length - 1]);
     else if (e.key === "Escape") setOpen(false);
   };
 
@@ -80,7 +107,10 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
               {getLabel(val)}
               <button
                 type="button"
-                onMouseDown={(e) => { e.preventDefault(); removeValue(val); }}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  removeValue(val);
+                }}
                 className="hover:opacity-70"
               >
                 <X className="h-2.5 w-2.5" />
@@ -107,50 +137,83 @@ export default function MultiChipSelect({ label, placeholder, values, onChange, 
         />
       </div>
 
-      {open && typeof document !== "undefined" && createPortal(
-        <>
-          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
-          <div
-            ref={dropdownRef}
-            className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH }}
-          >
-            <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
-              {filteredOptions.length === 0 ? (
-                <div className="px-3 py-2 text-[12px] text-gray-400">No options found</div>
-              ) : (
-                filteredOptions.map((o) => {
-                  const selected = values.includes(o.value);
-                  return (
-                    <button
-                      key={o.value}
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); toggleValue(o.value); }}
-                      className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
-                        selected ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {!noCheckbox && (
-                        <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
-                          selected ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
-                        }`}>
-                          {selected && (
-                            <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[9998]"
+              onClick={() => setOpen(false)}
+            />
+            <div
+              ref={dropdownRef}
+              className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                width: pos.width,
+                maxHeight: pos.maxH,
+              }}
+            >
+              <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
+                {filteredOptions.length === 0 ? (
+                  <div className="px-3 py-2 text-[12px] text-gray-400">
+                    No options found
+                  </div>
+                ) : (
+                  filteredOptions.map((o) => {
+                    const selected = values.includes(o.value);
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          toggleValue(o.value);
+                        }}
+                        className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
+                          selected
+                            ? "text-red-700 hover:bg-gray-50"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {!noCheckbox && (
+                          <span
+                            className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                              selected
+                                ? "border-red-500 bg-red-500"
+                                : "border-gray-300 bg-white"
+                            }`}
+                          >
+                            {selected && (
+                              <svg
+                                className="h-2 w-2 text-white"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                          </span>
+                        )}
+                        <span
+                          className={`flex-1 truncate ${selected ? "font-medium" : ""}`}
+                        >
+                          {o.label}
                         </span>
-                      )}
-                      <span className={`flex-1 truncate ${selected ? "font-medium" : ""}`}>{o.label}</span>
-                    </button>
-                  );
-                })
-              )}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
-          </div>
-        </>,
-        document.body
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

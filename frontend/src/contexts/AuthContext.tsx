@@ -1,8 +1,19 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { apiGetMe, apiLogin, apiRegister, type UserInfo } from "@/lib/authApi";
-import { clearTokens, getAccessToken, getRefreshToken, storeTokens } from "@/lib/tokens";
+import {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  storeTokens,
+} from "@/lib/tokens";
 import { toast } from "@/lib/toast";
 
 interface AuthContextValue {
@@ -49,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.success(`Welcome back, ${res.user.name}!`);
       router.replace("/search");
     },
-    [router]
+    [router],
   );
 
   const register = useCallback(
@@ -60,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toast.success("Account created! Welcome.");
       router.replace("/search");
     },
-    [router]
+    [router],
   );
 
   const logout = useCallback(() => {

@@ -16,13 +16,23 @@ const inputCls =
 
 const DROPDOWN_MAX_H = 260;
 
-export default function JobTitleAutocomplete({ label, placeholder, values, onChange }: Props) {
+export default function JobTitleAutocomplete({
+  label,
+  placeholder,
+  values,
+  onChange,
+}: Props) {
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0, maxH: DROPDOWN_MAX_H });
+  const [pos, setPos] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxH: DROPDOWN_MAX_H,
+  });
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,7 +43,12 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
     if (!containerRef.current) return;
     const r = containerRef.current.getBoundingClientRect();
     const avail = Math.max(80, window.innerHeight - r.bottom - 8);
-    setPos({ top: r.bottom + 4, left: r.left, width: r.width, maxH: Math.min(DROPDOWN_MAX_H, avail) });
+    setPos({
+      top: r.bottom + 4,
+      left: r.left,
+      width: r.width,
+      maxH: Math.min(DROPDOWN_MAX_H, avail),
+    });
   }, []);
 
   useEffect(() => {
@@ -66,13 +81,17 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
   const toggleValue = (val: string) => {
     const trimmed = val.trim();
     if (!trimmed) return;
-    onChange(values.includes(trimmed) ? values.filter((x) => x !== trimmed) : [...values, trimmed]);
+    onChange(
+      values.includes(trimmed)
+        ? values.filter((x) => x !== trimmed)
+        : [...values, trimmed],
+    );
     setActiveIdx(-1);
     inputRef.current?.focus();
   };
@@ -97,16 +116,23 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
       }
       return;
     }
-    if (e.key === "Escape") { setOpen(false); return; }
-    if (e.key === "Backspace" && !text && values.length) onChange(values.slice(0, -1));
+    if (e.key === "Escape") {
+      setOpen(false);
+      return;
+    }
+    if (e.key === "Backspace" && !text && values.length)
+      onChange(values.slice(0, -1));
   };
 
-  const showDropdown = open && (loading || suggestions.length > 0 || text.trim().length >= 2);
+  const showDropdown =
+    open && (loading || suggestions.length > 0 || text.trim().length >= 2);
 
   return (
     <div>
       {label && (
-        <label className="mb-1 block text-[11px] font-medium text-gray-500">{label}</label>
+        <label className="mb-1 block text-[11px] font-medium text-gray-500">
+          {label}
+        </label>
       )}
 
       {values.length > 0 && (
@@ -141,59 +167,97 @@ export default function JobTitleAutocomplete({ label, placeholder, values, onCha
             reposition();
             setOpen(true);
           }}
-          onFocus={() => { reposition(); setOpen(true); }}
+          onFocus={() => {
+            reposition();
+            setOpen(true);
+          }}
           onKeyDown={handleKey}
           className={inputCls}
         />
       </div>
 
-      {showDropdown && typeof document !== "undefined" && createPortal(
-        <>
-          <div className="fixed inset-0 z-[9998]" onClick={() => setOpen(false)} />
-          <div
-            ref={dropdownRef}
-            className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
-            style={{ top: pos.top, left: pos.left, width: pos.width, maxHeight: pos.maxH }}
-          >
-            <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
-              {loading ? (
-                <div className="flex items-center gap-2 px-3 py-2 text-[12px] text-gray-400">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Searching…
-                </div>
-              ) : suggestions.length === 0 ? (
-                <div className="px-3 py-2 text-[12px] text-gray-400">No matches</div>
-              ) : (
-                suggestions.map((s, i) => {
-                  const checked = values.includes(s);
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); toggleValue(s); }}
-                      className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
-                        i === activeIdx ? "bg-red-50 text-red-700" : checked ? "text-red-700 hover:bg-gray-50" : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
-                        checked ? "border-red-500 bg-red-500" : "border-gray-300 bg-white"
-                      }`}>
-                        {checked && (
-                          <svg className="h-2 w-2 text-white" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </span>
-                      <span className={`flex-1 truncate ${checked ? "font-medium" : ""}`}>{s}</span>
-                    </button>
-                  );
-                })
-              )}
+      {showDropdown &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[9998]"
+              onClick={() => setOpen(false)}
+            />
+            <div
+              ref={dropdownRef}
+              className="fixed z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                width: pos.width,
+                maxHeight: pos.maxH,
+              }}
+            >
+              <div className="overflow-y-auto" style={{ maxHeight: pos.maxH }}>
+                {loading ? (
+                  <div className="flex items-center gap-2 px-3 py-2 text-[12px] text-gray-400">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Searching…
+                  </div>
+                ) : suggestions.length === 0 ? (
+                  <div className="px-3 py-2 text-[12px] text-gray-400">
+                    No matches
+                  </div>
+                ) : (
+                  suggestions.map((s, i) => {
+                    const checked = values.includes(s);
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          toggleValue(s);
+                        }}
+                        className={`flex w-full items-center gap-2 px-2.5 py-1 text-left text-[12px] transition-colors ${
+                          i === activeIdx
+                            ? "bg-red-50 text-red-700"
+                            : checked
+                              ? "text-red-700 hover:bg-gray-50"
+                              : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-colors ${
+                            checked
+                              ? "border-red-500 bg-red-500"
+                              : "border-gray-300 bg-white"
+                          }`}
+                        >
+                          {checked && (
+                            <svg
+                              className="h-2 w-2 text-white"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                        </span>
+                        <span
+                          className={`flex-1 truncate ${checked ? "font-medium" : ""}`}
+                        >
+                          {s}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
-          </div>
-        </>,
-        document.body
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   );
 }

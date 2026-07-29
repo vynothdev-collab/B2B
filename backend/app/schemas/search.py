@@ -1,165 +1,155 @@
-from typing import Any, Literal, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Literal
 
+from pydantic import BaseModel, Field
 
 PAGE_SIZE = 10
 
 
 class PersonSearchRequest(BaseModel):
-    name: Optional[list[str]] = None
-    job_title: Optional[list[str]] = None
+    name: list[str] | None = None
+    job_title: list[str] | None = None
     job_title_match_type: Literal["contains", "exact"] = "contains"
-    departments: Optional[list[str]] = None
-    seniority: Optional[list[str]] = None
-    companies: Optional[list[str]] = None
+    departments: list[str] | None = None
+    seniority: list[str] | None = None
+    companies: list[str] | None = None
 
-    person_location_countries: Optional[list[str]] = None
-    person_location_states: Optional[list[str]] = None
-    person_location_cities: Optional[list[str]] = None
-    hq_countries: Optional[list[str]] = None
-    hq_states: Optional[list[str]] = None
-    hq_cities: Optional[list[str]] = None
+    person_location_countries: list[str] | None = None
+    person_location_states: list[str] | None = None
+    person_location_cities: list[str] | None = None
+    hq_countries: list[str] | None = None
+    hq_states: list[str] | None = None
+    hq_cities: list[str] | None = None
 
     require_work_email: bool = False
 
-    company_type: Optional[list[str]] = None
-    company_status: Optional[list[str]] = None
-    industries: Optional[list[str]] = None
-    technologies: Optional[list[str]] = None
-    revenue_buckets: Optional[list[str]] = None
-    revenue_min: Optional[float] = None
-    revenue_max: Optional[float] = None
+    company_type: list[str] | None = None
+    company_status: list[str] | None = None
+    industries: list[str] | None = None
+    technologies: list[str] | None = None
+    revenue_buckets: list[str] | None = None
+    revenue_min: float | None = None
+    revenue_max: float | None = None
 
-    funding_min: Optional[float] = None
-    funding_max: Optional[float] = None
-    headcount_growth_min: Optional[float] = None
-    headcount_growth_max: Optional[float] = None
+    funding_min: float | None = None
+    funding_max: float | None = None
+    headcount_growth_min: float | None = None
+    headcount_growth_max: float | None = None
 
-    founded_min: Optional[int] = None
-    founded_max: Optional[int] = None
+    founded_min: int | None = None
+    founded_max: int | None = None
 
-    employee_count_min: Optional[int] = None
-    employee_count_max: Optional[int] = None
+    employee_count_min: int | None = None
+    employee_count_max: int | None = None
 
-    # Keyword search — matched against company description fields
-    keywords_include: Optional[list[str]] = None
+    keywords_include: list[str] | None = None
     keywords_match_mode: Literal["any", "all"] = "any"
-    keywords_scope: Optional[list[str]] = None   # None / empty = search everywhere
-    keywords_exclude: Optional[list[str]] = None
+    keywords_scope: list[str] | None = None
+    keywords_exclude: list[str] | None = None
 
-    # Company news filters — requires separate news API integration (not yet wired to CoreSignal)
-    company_news_keywords: Optional[list[str]] = None
-    company_news_categories: Optional[list[str]] = None
-    company_news_timeframe: Optional[str] = None
+    company_news_keywords: list[str] | None = None
+    company_news_categories: list[str] | None = None
+    company_news_timeframe: str | None = None
 
-    certifications: Optional[list[str]] = None
-    other_compliance: Optional[list[str]] = None
+    certifications: list[str] | None = None
+    other_compliance: list[str] | None = None
 
-    # Duplicate control
-    exclude_person_ids: Optional[list[str]] = None
-    exclude_company_ids: Optional[list[str]] = None
-    exclude_company_names: Optional[list[str]] = None
+    exclude_person_ids: list[str] | None = None
+    exclude_company_ids: list[str] | None = None
+    exclude_company_names: list[str] | None = None
 
-    # Time-based experience filters
-    # time_in_role / time_in_company: total months min/max in current role or company
-    time_in_role_min_months: Optional[int] = None
-    time_in_role_max_months: Optional[int] = None
-    time_in_company_min_months: Optional[int] = None
-    time_in_company_max_months: Optional[int] = None
+    time_in_role_min_months: int | None = None
+    time_in_role_max_months: int | None = None
+    time_in_company_min_months: int | None = None
+    time_in_company_max_months: int | None = None
 
-    # Total years of experience → maps to total_experience_in_months
-    experience_years_min: Optional[float] = None
-    experience_years_max: Optional[float] = None
+    experience_years_min: float | None = None
+    experience_years_max: float | None = None
 
-    # Job posting keywords — company-level prefetch filter
-    job_posting_keywords: Optional[list[str]] = None
+    job_posting_keywords: list[str] | None = None
 
-    linkedin_url: Optional[list[str]] = None
+    linkedin_url: list[str] | None = None
 
-    scroll_token: Optional[str] = None
+    scroll_token: str | None = None
     page_size: int = Field(default=10, ge=1, le=1000)
 
 
 class CompanySearchRequest(BaseModel):
-    companies: Optional[list[str]] = None
-    location_countries: Optional[list[str]] = None
-    location_states: Optional[list[str]] = None
-    location_cities: Optional[list[str]] = None
+    companies: list[str] | None = None
+    location_countries: list[str] | None = None
+    location_states: list[str] | None = None
+    location_cities: list[str] | None = None
 
-    type: Optional[list[str]] = None
+    type: list[str] | None = None
 
-    employee_count_min: Optional[int] = None
-    employee_count_max: Optional[int] = None
+    employee_count_min: int | None = None
+    employee_count_max: int | None = None
 
-    industries: Optional[list[str]] = None
-    technologies: Optional[list[str]] = None
-    revenue_buckets: Optional[list[str]] = None
-    revenue_min: Optional[float] = None
-    revenue_max: Optional[float] = None
+    industries: list[str] | None = None
+    technologies: list[str] | None = None
+    revenue_buckets: list[str] | None = None
+    revenue_min: float | None = None
+    revenue_max: float | None = None
 
-    funding_min: Optional[float] = None
-    funding_max: Optional[float] = None
-    funding_stages: Optional[list[str]] = None
+    funding_min: float | None = None
+    funding_max: float | None = None
+    funding_stages: list[str] | None = None
 
-    headcount_growth_timeframe: Literal["3_month", "6_month", "12_month", "24_month"] = "12_month"
-    headcount_growth_min: Optional[float] = None
-    headcount_growth_max: Optional[float] = None
+    headcount_growth_timeframe: Literal[
+        "3_month", "6_month", "12_month", "24_month"
+    ] = "12_month"
+    headcount_growth_min: float | None = None
+    headcount_growth_max: float | None = None
 
-    headcount_by_location_country: Optional[str] = None
-    headcount_by_location_min: Optional[int] = None
-    headcount_by_location_max: Optional[int] = None
+    headcount_by_location_country: str | None = None
+    headcount_by_location_min: int | None = None
+    headcount_by_location_max: int | None = None
 
-    headcount_by_department: Optional[str] = None
-    headcount_by_department_min: Optional[int] = None
-    headcount_by_department_max: Optional[int] = None
+    headcount_by_department: str | None = None
+    headcount_by_department_min: int | None = None
+    headcount_by_department_max: int | None = None
 
-    founded_min: Optional[int] = None
-    founded_max: Optional[int] = None
+    founded_min: int | None = None
+    founded_max: int | None = None
 
-    # Website traffic
-    website_visits_min: Optional[int] = None
-    website_visits_max: Optional[int] = None
+    website_visits_min: int | None = None
+    website_visits_max: int | None = None
     visit_change_timeframe: Literal["monthly", "quarterly", "yearly"] = "monthly"
-    visit_change_min: Optional[float] = None
-    visit_change_max: Optional[float] = None
-    traffic_country: Optional[str] = None
-    traffic_country_min: Optional[float] = None
-    traffic_country_max: Optional[float] = None
+    visit_change_min: float | None = None
+    visit_change_max: float | None = None
+    traffic_country: str | None = None
+    traffic_country_min: float | None = None
+    traffic_country_max: float | None = None
 
-    # Email provider — matched via technologies_used nested field
-    email_providers: Optional[list[str]] = None
+    email_providers: list[str] | None = None
 
-    # Awards & certifications — matched via short_description text search
-    awards: Optional[list[str]] = None
-    certifications: Optional[list[str]] = None
-    other_compliance: Optional[list[str]] = None
+    awards: list[str] | None = None
+    certifications: list[str] | None = None
+    other_compliance: list[str] | None = None
 
-    # Job posting keyword search
-    job_posting_keywords: Optional[list[str]] = None
+    job_posting_keywords: list[str] | None = None
 
-    # Keyword search — matched against company description fields
-    keywords_include: Optional[list[str]] = None
+    keywords_include: list[str] | None = None
     keywords_match_mode: Literal["any", "all"] = "any"
-    keywords_scope: Optional[list[str]] = None
-    keywords_exclude: Optional[list[str]] = None
+    keywords_scope: list[str] | None = None
+    keywords_exclude: list[str] | None = None
 
-    company_status: Optional[list[str]] = None
-    company_how_they_sell: Optional[list[str]] = None
-    company_more_flags: Optional[list[str]] = None
-    company_revenue_model: Optional[list[str]] = None
-    company_news_keywords: Optional[list[str]] = None
-    company_news_categories: Optional[list[str]] = None
-    company_news_timeframe: Optional[str] = None
+    company_status: list[str] | None = None
+    company_how_they_sell: list[str] | None = None
+    company_more_flags: list[str] | None = None
+    company_revenue_model: list[str] | None = None
+    company_news_keywords: list[str] | None = None
+    company_news_categories: list[str] | None = None
+    company_news_timeframe: str | None = None
 
-    scroll_token: Optional[str] = None
+    scroll_token: str | None = None
     page_size: int = Field(default=10, ge=1, le=1000)
 
 
 class SearchMeta(BaseModel):
     total: int
-    total_pages: Optional[int] = None
-    scroll_token: Optional[str] = None
-    es_query: Optional[dict] = None  # Returned by agentic search so frontend can cache it
+    total_pages: int | None = None
+    scroll_token: str | None = None
+    es_query: dict | None = None
 
 
 class SearchResponse(BaseModel):
@@ -170,14 +160,14 @@ class SearchResponse(BaseModel):
 class AgenticSearchRequest(BaseModel):
     prompt: str
     entity: Literal["employee", "company"] = "employee"
-    scroll_token: Optional[str] = None
+    scroll_token: str | None = None
     page_size: int = Field(default=10, ge=1, le=1000)
-    es_query: Optional[dict] = None  # Cached ES-DSL query for page 2+ (skips agentic re-call)
+    es_query: dict | None = None
 
 
 class EmailRevealResponse(BaseModel):
     record_id: str
-    email: Optional[str] = None
+    email: str | None = None
     has_email: bool
 
 

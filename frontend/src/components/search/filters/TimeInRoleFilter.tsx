@@ -16,7 +16,9 @@ interface RangeRowProps {
 function RangeRow({ label, years, months, onYears, onMonths }: RangeRowProps) {
   return (
     <div>
-      <span className="mb-1 block text-[12px] font-medium text-gray-600">{label}</span>
+      <span className="mb-1 block text-[12px] font-medium text-gray-600">
+        {label}
+      </span>
       <div className="grid grid-cols-2 gap-2">
         <div>
           <span className={labelCls}>Years</span>
@@ -54,10 +56,14 @@ interface Props {
 
 export default function TimeInRoleFilter({ mode, filters, onChange }: Props) {
   const isRole = mode === "role";
-  const minYearsKey  = isRole ? "timeInRoleMinYears"    : "timeInCompanyMinYears";
-  const minMonthsKey = isRole ? "timeInRoleMinMonths"   : "timeInCompanyMinMonths";
-  const maxYearsKey  = isRole ? "timeInRoleMaxYears"    : "timeInCompanyMaxYears";
-  const maxMonthsKey = isRole ? "timeInRoleMaxMonths"   : "timeInCompanyMaxMonths";
+  const minYearsKey = isRole ? "timeInRoleMinYears" : "timeInCompanyMinYears";
+  const minMonthsKey = isRole
+    ? "timeInRoleMinMonths"
+    : "timeInCompanyMinMonths";
+  const maxYearsKey = isRole ? "timeInRoleMaxYears" : "timeInCompanyMaxYears";
+  const maxMonthsKey = isRole
+    ? "timeInRoleMaxMonths"
+    : "timeInCompanyMaxMonths";
 
   return (
     <div className="flex flex-col gap-3">

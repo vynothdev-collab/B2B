@@ -4,10 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text
 
+import app.models  # noqa: F401
 from app.api.router import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
-import app.models  # noqa: F401 — registers all ORM models with Base.metadata
 
 
 def _add_column_if_missing(sync_conn, table: str, column: str, definition: str) -> None:
@@ -21,34 +21,46 @@ def _drop_not_null_if_exists(sync_conn, table: str, column: str) -> None:
     insp = inspect(sync_conn)
     cols = {c["name"]: c for c in insp.get_columns(table)}
     if column in cols and not cols[column]["nullable"]:
-        sync_conn.execute(text(f"ALTER TABLE {table} ALTER COLUMN {column} DROP NOT NULL"))
+        sync_conn.execute(
+            text(f"ALTER TABLE {table} ALTER COLUMN {column} DROP NOT NULL")
+        )
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # lists table migrations
         await conn.run_sync(
             _add_column_if_missing, "lists", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
         )
-        # list_items table migrations
         await conn.run_sync(_drop_not_null_if_exists, "list_items", "pdl_id")
         await conn.run_sync(_drop_not_null_if_exists, "list_items", "user_id")
         await conn.run_sync(
-            _add_column_if_missing, "list_items", "record_id", "VARCHAR(255) NOT NULL DEFAULT ''"
+            _add_column_if_missing,
+            "list_items",
+            "record_id",
+            "VARCHAR(255) NOT NULL DEFAULT ''",
         )
         await conn.run_sync(
-            _add_column_if_missing, "list_items", "item_type", "VARCHAR(50) NOT NULL DEFAULT ''"
+            _add_column_if_missing,
+            "list_items",
+            "item_type",
+            "VARCHAR(50) NOT NULL DEFAULT ''",
         )
         await conn.run_sync(
             _add_column_if_missing, "list_items", "data", "JSONB NOT NULL DEFAULT '{}'"
         )
         await conn.run_sync(
-            _add_column_if_missing, "list_items", "added_at", "TIMESTAMPTZ NOT NULL DEFAULT NOW()"
+            _add_column_if_missing,
+            "list_items",
+            "added_at",
+            "TIMESTAMPTZ NOT NULL DEFAULT NOW()",
         )
         await conn.run_sync(
-            _add_column_if_missing, "list_items", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
+            _add_column_if_missing,
+            "list_items",
+            "deleted_at",
+            "TIMESTAMPTZ DEFAULT NULL",
         )
     yield
 
