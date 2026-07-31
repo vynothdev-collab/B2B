@@ -37,8 +37,8 @@ async def person_search(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    await deduct_credit(current_user, db, reason="People Search", description="People search — 1 credit deducted")
     result = await coresignal_service.search_persons(body, db=db)
+    await deduct_credit(current_user, db, reason="People Search", description="People search — 1 credit deducted")
     _log_search(db, current_user.id, "person")
     await db.flush()
     return result
@@ -50,8 +50,8 @@ async def company_search(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    await deduct_credit(current_user, db, reason="Company Search", description="Company search — 1 credit deducted")
     result = await coresignal_service.search_companies(body, db=db)
+    await deduct_credit(current_user, db, reason="Company Search", description="Company search — 1 credit deducted")
     _log_search(db, current_user.id, "company")
     await db.flush()
     return result
@@ -63,8 +63,8 @@ async def agentic_search(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    await deduct_credit(current_user, db, reason="AI Search", description="AI search — 1 credit deducted")
     result = await coresignal_service.agentic_search(body, db=db)
+    await deduct_credit(current_user, db, reason="AI Search", description="AI search — 1 credit deducted")
     _log_search(db, current_user.id, "agentic")
     await db.flush()
     return result

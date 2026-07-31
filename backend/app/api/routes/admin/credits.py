@@ -9,6 +9,7 @@ from app.core.security import require_super_admin
 from app.models.credit_transaction import CreditTransaction
 from app.models.enterprise import Enterprise
 from app.models.user import User, UserRole
+from app.services.credit_service import log_credit_tx
 
 router = APIRouter(dependencies=[Depends(require_super_admin)])
 
@@ -92,38 +93,6 @@ def _credit_status(allocated: int, remaining: int) -> str:
     if allocated > 0 and remaining / allocated < 0.2:
         return "low"
     return "healthy"
-
-
-def log_credit_tx(
-    db: AsyncSession,
-    *,
-    user_id: str | None,
-    enterprise_id: str | None,
-    account_name: str,
-    account_type: str,
-    transaction_type: str,
-    reason: str,
-    delta: int,
-    balance_after: int,
-    reference_type: str | None = None,
-    reference_id: str | None = None,
-    description: str | None = None,
-) -> None:
-    db.add(
-        CreditTransaction(
-            user_id=user_id,
-            enterprise_id=enterprise_id,
-            account_name=account_name,
-            account_type=account_type,
-            transaction_type=transaction_type,
-            reason=reason,
-            delta=delta,
-            balance_after=balance_after,
-            reference_type=reference_type,
-            reference_id=reference_id,
-            description=description,
-        )
-    )
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────

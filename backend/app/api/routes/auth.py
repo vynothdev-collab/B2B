@@ -219,16 +219,16 @@ async def google_auth(
     user = result.scalar_one_or_none()
 
     if not user:
-        # 2) Look up by email — existing email/password account → link to Google
+        # 2) Look up by email — existing account with no provider yet → link to Google
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
 
-        if user:
+        if user and user.oauth_provider is None:
             user.oauth_provider = "google"
             user.oauth_provider_id = google_id
             user.email_verified = True
             await db.flush()
-        else:
+        elif not user:
             # 3) Brand-new user — create account via Google
             user = User(
                 id=str(uuid.uuid4()),
@@ -285,9 +285,9 @@ async def logout() -> dict:
     return {"message": "Logged out successfully"}
 
 
-# ── LinkedIn OAuth helpers ──────────────────────────────────────────────────────
+# ── OAuth CSRF state helpers ────────────────────────────────────────────────────
 
-def _linkedin_make_state() -> str:
+def _make_oauth_state() -> str:
     nonce = secrets.token_hex(16)
     ts = str(int(time.time()))
     sig = hmac.new(settings.SECRET_KEY.encode(), f"{nonce}:{ts}".encode(), hashlib.sha256).hexdigest()
@@ -295,7 +295,7 @@ def _linkedin_make_state() -> str:
     return base64.urlsafe_b64encode(raw.encode()).decode()
 
 
-def _linkedin_verify_state(state: str, max_age: int = 600) -> bool:
+def _verify_oauth_state(state: str, max_age: int = 600) -> bool:
     try:
         raw = base64.urlsafe_b64decode(state.encode()).decode()
         nonce, ts, sig = raw.split(":", 2)
@@ -320,7 +320,7 @@ async def linkedin_auth() -> RedirectResponse:
         "response_type": "code",
         "client_id": settings.LINKEDIN_CLIENT_ID,
         "redirect_uri": settings.LINKEDIN_CALLBACK_URL,
-        "state": _linkedin_make_state(),
+        "state": _make_oauth_state(),
         "scope": "openid profile email",
     })
     return RedirectResponse(
@@ -342,7 +342,7 @@ async def microsoft_auth() -> RedirectResponse:
         "redirect_uri": settings.MICROSOFT_CALLBACK_URL,
         "response_mode": "query",
         "scope": "openid profile email offline_access User.Read",
-        "state": _linkedin_make_state(),
+        "state": _make_oauth_state(),
     })
     return RedirectResponse(
         url=f"https://login.microsoftonline.com/{settings.MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize?{params}",
@@ -363,7 +363,7 @@ async def microsoft_callback(
     if error:
         return RedirectResponse(url=f"{frontend_cb}?error=cancelled", status_code=302)
 
-    if not state or not _linkedin_verify_state(state):
+    if not state or not _verify_oauth_state(state):
         return RedirectResponse(url=f"{frontend_cb}?error=invalid_state", status_code=302)
 
     if not code:
@@ -426,16 +426,16 @@ async def microsoft_callback(
     user = result.scalar_one_or_none()
 
     if not user:
-        # 2) Look up by email — existing account → link to Microsoft
+        # 2) Look up by email — existing account with no provider yet → link to Microsoft
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
 
-        if user:
+        if user and user.oauth_provider is None:
             user.oauth_provider = "microsoft"
             user.oauth_provider_id = microsoft_id
             user.email_verified = True
             await db.flush()
-        else:
+        elif not user:
             # 3) Brand-new user — create account via Microsoft
             user = User(
                 id=str(uuid.uuid4()),
@@ -474,7 +474,7 @@ async def linkedin_callback(
     if error:
         return RedirectResponse(url=f"{frontend_cb}?error=cancelled", status_code=302)
 
-    if not state or not _linkedin_verify_state(state):
+    if not state or not _verify_oauth_state(state):
         return RedirectResponse(url=f"{frontend_cb}?error=invalid_state", status_code=302)
 
     if not code:
@@ -532,16 +532,16 @@ async def linkedin_callback(
     user = result.scalar_one_or_none()
 
     if not user:
-        # 2) Look up by email — existing account → link to LinkedIn
+        # 2) Look up by email — existing account with no provider yet → link to LinkedIn
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
 
-        if user:
+        if user and user.oauth_provider is None:
             user.oauth_provider = "linkedin"
             user.oauth_provider_id = linkedin_id
             user.email_verified = True
             await db.flush()
-        else:
+        elif not user:
             # 3) Brand-new user — create account via LinkedIn
             user = User(
                 id=str(uuid.uuid4()),

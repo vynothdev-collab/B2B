@@ -4,9 +4,42 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.credit_transaction import CreditTransaction
 from app.models.user import User
 from app.models.user_plan import UserPlan, UserPlanStatus
 from app.models.plan import Plan
+
+
+def log_credit_tx(
+    db: AsyncSession,
+    *,
+    user_id: str | None,
+    enterprise_id: str | None,
+    account_name: str,
+    account_type: str,
+    transaction_type: str,
+    reason: str,
+    delta: int,
+    balance_after: int,
+    reference_type: str | None = None,
+    reference_id: str | None = None,
+    description: str | None = None,
+) -> None:
+    db.add(
+        CreditTransaction(
+            user_id=user_id,
+            enterprise_id=enterprise_id,
+            account_name=account_name,
+            account_type=account_type,
+            transaction_type=transaction_type,
+            reason=reason,
+            delta=delta,
+            balance_after=balance_after,
+            reference_type=reference_type,
+            reference_id=reference_id,
+            description=description,
+        )
+    )
 
 
 async def _maybe_activate_queued_plan(user_id: str, db: AsyncSession) -> None:
@@ -70,8 +103,6 @@ async def deduct_credit(
     reason: str,
     description: str,
 ) -> str:
-    from app.api.routes.admin.credits import log_credit_tx
-
     now = datetime.now(timezone.utc)
 
     # Mark expired validity plans

@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,6 +8,14 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def _require_secrets(self) -> "Settings":
+        if not self.SECRET_KEY:
+            raise ValueError("SECRET_KEY must be set in environment")
+        if not self.ADMIN_SECRET_KEY:
+            raise ValueError("ADMIN_SECRET_KEY must be set in environment")
+        return self
 
     APP_NAME: str = ""
     APP_VERSION: str = ""
