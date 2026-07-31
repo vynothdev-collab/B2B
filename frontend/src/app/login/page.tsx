@@ -1,17 +1,59 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, Search, Users, Building2, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
+import { LinkedInSignInButton } from "@/components/ui/LinkedInSignInButton";
+import { storeTokens } from "@/lib/tokens";
+import { apiGetMe } from "@/lib/authApi";
 
-export default function LoginPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  cancelled: "LinkedIn sign-in was cancelled. Please try again.",
+  invalid_state: "Authentication request expired. Please try again.",
+  auth_failed: "LinkedIn authentication failed. Please try again.",
+  no_email: "Your LinkedIn account has no verified email address.",
+  account_disabled: "Your account has been disabled. Please contact support.",
+};
+
+function LoginForm() {
+  const router = useRouter();
+  const params = useSearchParams();
   const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Handle OAuth callback tokens or errors landing on this page
+  useEffect(() => {
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const oauthError = params.get("error");
+
+    if (oauthError) {
+      setError(ERROR_MESSAGES[oauthError] ?? "Sign-in failed. Please try again.");
+      // Clean the URL without triggering a re-render loop
+      window.history.replaceState({}, "", "/login");
+      return;
+    }
+
+    if (accessToken && refreshToken) {
+      setOauthLoading(true);
+      storeTokens(accessToken, refreshToken);
+      apiGetMe()
+        .then(() => router.replace("/search"))
+        .catch(() => {
+          setError("Authentication failed. Please try again.");
+          setOauthLoading(false);
+          window.history.replaceState({}, "", "/login");
+        });
+    }
+  }, [params, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +76,17 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (oauthLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3 text-gray-500">
+          <Loader2 className="h-7 w-7 animate-spin text-red-600" />
+          <p className="text-sm font-medium">Signing you in…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -194,10 +247,16 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-gray-100" />
           </div>
 
-          <GoogleSignInButton
-            label="Continue with Google"
-            onError={(msg) => setError(msg)}
-          />
+          <div className="space-y-3">
+            <GoogleSignInButton
+              label="Continue with Google"
+              onError={(msg) => setError(msg)}
+            />
+            <LinkedInSignInButton
+              label="Continue with LinkedIn"
+              onError={(msg) => setError(msg)}
+            />
+          </div>
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Don&apos;t have an account?{" "}
@@ -208,5 +267,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white">
+          <Loader2 className="h-7 w-7 animate-spin text-red-600" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

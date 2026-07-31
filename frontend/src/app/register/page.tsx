@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
+import { LinkedInSignInButton } from "@/components/ui/LinkedInSignInButton";
 
 const PERKS = [
   "Search 800M+ people & 35M+ companies",
@@ -241,6 +242,11 @@ export default function RegisterPage() {
 
           <GoogleSignInButton
             label="Sign up with Google"
+            onError={(msg) => setError(msg)}
+          />
+
+          <LinkedInSignInButton
+            label="Sign up with LinkedIn"
             onError={(msg) => setError(msg)}
           />
 

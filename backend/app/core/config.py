@@ -45,5 +45,11 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str = ""
 
+    # LinkedIn OAuth
+    LINKEDIN_CLIENT_ID: str = ""
+    LINKEDIN_CLIENT_SECRET: str = ""
+    LINKEDIN_CALLBACK_URL: str = ""  # e.g. http://localhost:8000/api/v1/auth/linkedin/callback
+    FRONTEND_URL: str = ""           # e.g. http://localhost:3000
+
 
 settings = Settings()
