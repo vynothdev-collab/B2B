@@ -241,19 +241,10 @@ export default function RegisterPage() {
             <div className="h-px flex-1 bg-gray-100" />
           </div>
 
-          <div className="space-y-3">
-            <GoogleSignInButton
-              label="Sign up with Google"
-              onError={(msg) => setError(msg)}
-            />
-            <LinkedInSignInButton
-              label="Sign up with LinkedIn"
-              onError={(msg) => setError(msg)}
-            />
-            <MicrosoftSignInButton
-              label="Sign up with Microsoft"
-              onError={(msg) => setError(msg)}
-            />
+          <div className="flex items-center justify-center gap-3">
+            <GoogleSignInButton onError={(msg) => setError(msg)} />
+            <LinkedInSignInButton onError={(msg) => setError(msg)} />
+            <MicrosoftSignInButton onError={(msg) => setError(msg)} />
           </div>
 
           <p className="mt-6 text-center text-sm text-gray-500">

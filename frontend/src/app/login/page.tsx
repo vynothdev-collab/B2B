@@ -248,19 +248,10 @@ function LoginForm() {
             <div className="h-px flex-1 bg-gray-100" />
           </div>
 
-          <div className="space-y-3">
-            <GoogleSignInButton
-              label="Continue with Google"
-              onError={(msg) => setError(msg)}
-            />
-            <LinkedInSignInButton
-              label="Continue with LinkedIn"
-              onError={(msg) => setError(msg)}
-            />
-            <MicrosoftSignInButton
-              label="Continue with Microsoft"
-              onError={(msg) => setError(msg)}
-            />
+          <div className="flex items-center justify-center gap-3">
+            <GoogleSignInButton onError={(msg) => setError(msg)} />
+            <LinkedInSignInButton onError={(msg) => setError(msg)} />
+            <MicrosoftSignInButton onError={(msg) => setError(msg)} />
           </div>
 
           <p className="mt-6 text-center text-sm text-gray-500">

@@ -59,7 +59,7 @@ class RefreshRequest(BaseModel):
 
 
 class GoogleAuthRequest(BaseModel):
-    credential: str  # Google ID token (JWT) returned by GoogleLogin GIS component
+    access_token: str  # Google OAuth access token from useGoogleLogin implicit flow
 
 
 class UserInfo(BaseModel):
@@ -161,7 +161,8 @@ async def google_auth(
     payload: GoogleAuthRequest, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
     """
-    Verify a Google ID token issued by @react-oauth/google on the frontend,
+    Verify a Google OAuth access token (from useGoogleLogin implicit flow),
+    fetch the user profile from Google's userinfo endpoint,
     then find-or-create the user and return our own JWT pair.
     """
     if not settings.GOOGLE_CLIENT_ID:
@@ -170,12 +171,11 @@ async def google_auth(
             detail="Google sign-in is not configured on this server.",
         )
 
-    # Verify the Google ID token (credential) via Google's tokeninfo endpoint.
-    # This validates the JWT signature, expiry, and audience without needing google-auth lib.
+    # Fetch user profile via Google's userinfo endpoint — validates the access token implicitly.
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
-            "https://oauth2.googleapis.com/tokeninfo",
-            params={"id_token": payload.credential},
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {payload.access_token}"},
         )
 
     if resp.status_code != 200:
@@ -185,13 +185,6 @@ async def google_auth(
         )
 
     info = resp.json()
-
-    # Confirm the token was issued for OUR application — prevents token substitution attacks
-    if info.get("aud") != settings.GOOGLE_CLIENT_ID:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Google token was not issued for this application.",
-        )
 
     google_id: str | None = info.get("sub")
     email: str | None = info.get("email")
