@@ -12,6 +12,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   googleLogin: (credential: string) => Promise<void>;
+  applyOAuth: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -78,6 +79,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [_applyAuth]
   );
 
+  const applyOAuth = useCallback(
+    async (accessToken: string, refreshToken: string) => {
+      storeTokens(accessToken, refreshToken);
+      const u = await apiGetMe();
+      setUser(u);
+      toast.success(`Welcome, ${u.name}!`);
+      router.replace("/search");
+    },
+    [router]
+  );
+
   const logout = useCallback(() => {
     clearTokens();
     setUser(null);
@@ -86,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user, login, register, googleLogin, logout }}
+      value={{ user, isLoading, isAuthenticated: !!user, login, register, googleLogin, applyOAuth, logout }}
     >
       {children}
     </AuthContext.Provider>

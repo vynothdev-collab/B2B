@@ -7,8 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 import { LinkedInSignInButton } from "@/components/ui/LinkedInSignInButton";
 import { MicrosoftSignInButton } from "@/components/ui/MicrosoftSignInButton";
-import { storeTokens } from "@/lib/tokens";
-import { apiGetMe } from "@/lib/authApi";
 
 const ERROR_MESSAGES: Record<string, string> = {
   cancelled: "Sign-in was cancelled. Please try again.",
@@ -21,7 +19,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const { login } = useAuth();
+  const { login, applyOAuth } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,14 +43,11 @@ function LoginForm() {
 
     if (accessToken && refreshToken) {
       setOauthLoading(true);
-      storeTokens(accessToken, refreshToken);
-      apiGetMe()
-        .then(() => router.replace("/search"))
-        .catch(() => {
-          setError("Authentication failed. Please try again.");
-          setOauthLoading(false);
-          window.history.replaceState({}, "", "/login");
-        });
+      applyOAuth(accessToken, refreshToken).catch(() => {
+        setError("Authentication failed. Please try again.");
+        setOauthLoading(false);
+        window.history.replaceState({}, "", "/login");
+      });
     }
   }, [params, router]);
 

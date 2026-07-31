@@ -7,8 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 import { LinkedInSignInButton } from "@/components/ui/LinkedInSignInButton";
 import { MicrosoftSignInButton } from "@/components/ui/MicrosoftSignInButton";
-import { storeTokens } from "@/lib/tokens";
-import { apiGetMe } from "@/lib/authApi";
 
 const ERROR_MESSAGES: Record<string, string> = {
   cancelled: "Sign-in was cancelled. Please try again.",
@@ -28,7 +26,7 @@ const PERKS = [
 function RegisterForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const { register } = useAuth();
+  const { register, applyOAuth } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,14 +49,11 @@ function RegisterForm() {
 
     if (accessToken && refreshToken) {
       setOauthLoading(true);
-      storeTokens(accessToken, refreshToken);
-      apiGetMe()
-        .then(() => router.replace("/search"))
-        .catch(() => {
-          setError("Authentication failed. Please try again.");
-          setOauthLoading(false);
-          window.history.replaceState({}, "", "/register");
-        });
+      applyOAuth(accessToken, refreshToken).catch(() => {
+        setError("Authentication failed. Please try again.");
+        setOauthLoading(false);
+        window.history.replaceState({}, "", "/register");
+      });
     }
   }, [params, router]);
 

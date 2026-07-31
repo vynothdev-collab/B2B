@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Plus, Pencil, Ban, CheckCircle, Search, Users, Building2, CheckCircle2, MinusCircle, Clock, Infinity, Trash2 } from "lucide-react";
+import {
+  Plus, Pencil, Ban, CheckCircle, Search,
+  Users, Building2, CheckCircle2, MinusCircle,
+  Clock, Infinity, Trash2, AlertCircle, RefreshCw, Layers,
+} from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import CreatePlanModal from "@/components/modals/CreatePlanModal";
 import EditPlanModal from "@/components/modals/EditPlanModal";
+import { StatCardSkeleton, PlanTableRowSkeleton } from "@/components/ui/Skeleton";
 import { listPlans, getPlansSummary, togglePlan, deletePlan, type Plan } from "@/services/plans";
 import { useToast } from "@/components/ui/Toast";
 
@@ -15,6 +20,7 @@ const TABS = ["Individual Plans", "Enterprise Plans"] as const;
 type Tab = typeof TABS[number];
 
 const PER_PAGE = 10;
+const SKELETON_ROWS = 5;
 
 function formatPrice(price_cents: number): string {
   if (price_cents === 0) return "Free";
@@ -38,35 +44,120 @@ function PlanTypeBadge({ type }: { type: "validity" | "payg" }) {
   );
 }
 
+function TableEmptyState({
+  hasFilters,
+  accent,
+  onCreateClick,
+}: {
+  hasFilters: boolean;
+  accent: { bg: string; iconColor: string; dimBg: string; textColor: string };
+  onCreateClick: () => void;
+}) {
+  return (
+    <tr>
+      <td colSpan={7}>
+        <div className="flex flex-col items-center gap-3 py-16 px-5 text-center">
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-full"
+            style={{ background: accent.dimBg }}
+          >
+            <Layers className="h-6 w-6" style={{ color: accent.textColor }} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: accent.textColor }}>
+              {hasFilters ? "No plans match your filters" : "No plans yet"}
+            </p>
+            <p className="mt-1 text-xs" style={{ color: "var(--ink-faint)" }}>
+              {hasFilters
+                ? "Try adjusting your search or status filter"
+                : "Create your first plan to get started"}
+            </p>
+          </div>
+          {!hasFilters && (
+            <button
+              type="button"
+              onClick={onCreateClick}
+              className="mt-1 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-85"
+              style={{ background: accent.bg, color: accent.iconColor }}
+            >
+              <Plus className="h-3.5 w-3.5" /> Create Plan
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function TableErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <tr>
+      <td colSpan={7}>
+        <div className="flex flex-col items-center gap-3 py-16 px-5 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--rose-dim)]">
+            <AlertCircle className="h-6 w-6" style={{ color: "var(--rose)" }} />
+          </div>
+          <div>
+            <p className="text-sm font-medium" style={{ color: "var(--ink)" }}>
+              Failed to load plans
+            </p>
+            <p className="mt-1 text-xs" style={{ color: "var(--ink-faint)" }}>
+              Something went wrong. Please try again.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium transition-colors hover:bg-slate-50"
+            style={{ color: "var(--ink-dim)" }}
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Try Again
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 function PlansTable({
   plans,
   isIndividual,
   loading,
+  loadError,
   total,
   page,
   search,
   statusFilter,
+  accent,
   onSearchChange,
   onStatusChange,
   onPageChange,
   onEdit,
   onToggle,
   onDelete,
+  onRetry,
+  onCreateClick,
 }: {
   plans: Plan[];
   isIndividual: boolean;
   loading: boolean;
+  loadError: boolean;
   total: number;
   page: number;
   search: string;
   statusFilter: string;
+  accent: { bg: string; iconColor: string; dimBg: string; textColor: string; ringColor: string };
   onSearchChange: (v: string) => void;
   onStatusChange: (v: string) => void;
   onPageChange: (p: number) => void;
   onEdit: (plan: Plan) => void;
   onToggle: (plan: Plan) => void;
   onDelete: (plan: Plan) => void;
+  onRetry: () => void;
+  onCreateClick: () => void;
 }) {
+  const hasFilters = !!search || statusFilter !== "All Status";
+
   return (
     <>
       <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
@@ -102,7 +193,7 @@ function PlansTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" aria-busy={loading} aria-live="polite">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50">
@@ -116,21 +207,23 @@ function PlansTable({
             </tr>
           </thead>
           <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">
-                  Loading plans…
-                </td>
-              </tr>
+            {loading && Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+              <PlanTableRowSkeleton key={i} />
+            ))}
+
+            {!loading && loadError && (
+              <TableErrorState onRetry={onRetry} />
             )}
-            {!loading && plans.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">
-                  No plans found.
-                </td>
-              </tr>
+
+            {!loading && !loadError && plans.length === 0 && (
+              <TableEmptyState
+                hasFilters={hasFilters}
+                accent={accent}
+                onCreateClick={onCreateClick}
+              />
             )}
-            {!loading && plans.map((plan) => (
+
+            {!loading && !loadError && plans.map((plan) => (
               <tr key={plan.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
@@ -202,7 +295,10 @@ function PlansTable({
           </tbody>
         </table>
       </div>
-      <Pagination total={total} perPage={PER_PAGE} page={page} onChange={onPageChange} itemLabel="plans" />
+
+      {!loadError && (
+        <Pagination total={total} perPage={PER_PAGE} page={page} onChange={onPageChange} itemLabel="plans" />
+      )}
     </>
   );
 }
@@ -212,6 +308,8 @@ export default function PlansPage() {
   const [activeTab, setActiveTab] = useState<Tab>("Individual Plans");
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [summaryTotal, setSummaryTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
@@ -253,18 +351,32 @@ export default function PlansPage() {
   }, []);
 
   const fetchSummary = useCallback(async (signal?: AbortSignal) => {
+    setSummaryLoading(true);
     try {
       const s = await getPlansSummary(target, signal);
       setSummaryTotal(s.total);
       setActiveCount(s.active_count);
       setInactiveCount(s.inactive_count);
+      setSummaryLoading(false);
     } catch (err: unknown) {
       if ((err as { code?: string })?.code === "ERR_CANCELED") return;
+      setSummaryLoading(false);
     }
+  }, [target]);
+
+  // Silent summary refresh used after mutations — no skeleton flash
+  const refreshSummary = useCallback(async () => {
+    try {
+      const s = await getPlansSummary(target);
+      setSummaryTotal(s.total);
+      setActiveCount(s.active_count);
+      setInactiveCount(s.inactive_count);
+    } catch { /* ignore post-action refresh errors */ }
   }, [target]);
 
   const fetchPlans = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
+    setLoadError(false);
     const isActiveParam =
       statusFilter === "All Status" ? undefined : statusFilter === "Active";
     try {
@@ -281,6 +393,7 @@ export default function PlansPage() {
     } catch (err: unknown) {
       if ((err as { code?: string })?.code === "ERR_CANCELED") return;
       toast.error("Failed to load plans.");
+      setLoadError(true);
       setLoading(false);
     }
   }, [target, page, debouncedSearch, statusFilter]);
@@ -305,7 +418,7 @@ export default function PlansPage() {
       setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       toast.success(`Plan "${updated.name}" ${updated.is_active ? "enabled" : "disabled"}.`);
       setTogglingPlan(null);
-      fetchSummary();
+      refreshSummary();
     } catch {
       toast.error("Failed to update plan status.");
     } finally {
@@ -321,7 +434,7 @@ export default function PlansPage() {
       toast.success(`Plan "${deletingPlan.name}" deleted.`);
       setDeletingPlan(null);
       fetchPlans();
-      fetchSummary();
+      refreshSummary();
     } catch {
       toast.error("Failed to delete plan.");
     } finally {
@@ -335,6 +448,7 @@ export default function PlansPage() {
 
   return (
     <div className="space-y-5">
+      {/* Tab bar + Create button */}
       <div className="flex items-center justify-between border-b border-slate-200">
         <div className="flex gap-0">
           {TABS.map((tab) => {
@@ -369,62 +483,82 @@ export default function PlansPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: accent.dimBg }}>
-            {isIndividual
-              ? <Users className="h-5 w-5" style={{ color: accent.bg }} />
-              : <Building2 className="h-5 w-5" style={{ color: accent.textColor }} />}
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>
-              {isIndividual ? "Individual Plans" : "Enterprise Plans"}
-            </p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: accent.textColor }}>{summaryTotal}</p>
-            <p className="text-xs text-slate-400">{isIndividual ? "Personal account plans" : "Company account plans"}</p>
-          </div>
-        </div>
+      {/* Summary stat cards */}
+      <div
+        className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+        aria-busy={summaryLoading}
+        aria-label="Plan statistics"
+      >
+        {summaryLoading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: accent.dimBg }}>
+                {isIndividual
+                  ? <Users className="h-5 w-5" style={{ color: accent.bg }} />
+                  : <Building2 className="h-5 w-5" style={{ color: accent.textColor }} />}
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>
+                  {isIndividual ? "Individual Plans" : "Enterprise Plans"}
+                </p>
+                <p className="text-2xl font-bold mt-0.5" style={{ color: accent.textColor }}>{summaryTotal}</p>
+                <p className="text-xs text-slate-400">{isIndividual ? "Personal account plans" : "Company account plans"}</p>
+              </div>
+            </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--sage-dim)" }}>
-            <CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Active Plans</p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--sage-dark, #3E6A44)" }}>{activeCount}</p>
-            <p className="text-xs text-slate-400">
-              {summaryTotal > 0 ? `${Math.round((activeCount / summaryTotal) * 100)}% active` : "No plans yet"}
-            </p>
-          </div>
-        </div>
+            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--sage-dim)" }}>
+                <CheckCircle2 className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Active Plans</p>
+                <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--sage-dark, #3E6A44)" }}>{activeCount}</p>
+                <p className="text-xs text-slate-400">
+                  {summaryTotal > 0 ? `${Math.round((activeCount / summaryTotal) * 100)}% active` : "No plans yet"}
+                </p>
+              </div>
+            </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--line-soft)" }}>
-            <MinusCircle className="h-5 w-5" style={{ color: "var(--ink-faint)" }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Inactive Plans</p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--ink-dim)" }}>{inactiveCount}</p>
-            <p className="text-xs text-slate-400">Hidden from users</p>
-          </div>
-        </div>
+            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--line-soft)" }}>
+                <MinusCircle className="h-5 w-5" style={{ color: "var(--ink-faint)" }} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Inactive Plans</p>
+                <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--ink-dim)" }}>{inactiveCount}</p>
+                <p className="text-xs text-slate-400">Hidden from users</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
+      {/* Plans table card */}
       <div className="bg-white rounded-xl border border-slate-200">
         <PlansTable
           plans={plans}
           isIndividual={isIndividual}
           loading={loading}
+          loadError={loadError}
           total={total}
           page={page}
           search={search}
           statusFilter={statusFilter}
+          accent={accent}
           onSearchChange={handleSearchChange}
           onStatusChange={handleStatusChange}
           onPageChange={setPage}
           onEdit={(plan) => setEditPlan(plan)}
           onToggle={(plan) => setTogglingPlan(plan)}
           onDelete={(plan) => setDeletingPlan(plan)}
+          onRetry={() => fetchPlans()}
+          onCreateClick={() => setCreateOpen(true)}
         />
       </div>
 
@@ -432,7 +566,7 @@ export default function PlansPage() {
         open={createOpen}
         target={target}
         onClose={() => setCreateOpen(false)}
-        onCreated={(_plan) => { fetchPlans(); fetchSummary(); }}
+        onCreated={(_plan) => { fetchPlans(); refreshSummary(); }}
       />
 
       <EditPlanModal
