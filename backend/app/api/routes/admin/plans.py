@@ -20,6 +20,12 @@ class PagedPlansResponse(BaseModel):
     page_size: int
 
 
+class PlansSummaryResponse(BaseModel):
+    total: int
+    active_count: int
+    inactive_count: int
+
+
 def _plan_out(p: Plan) -> PlanOut:
     return PlanOut(
         id=p.id,
@@ -35,11 +41,33 @@ def _plan_out(p: Plan) -> PlanOut:
     )
 
 
-def _base_stmt(target: str | None):
+def _base_stmt(target: str | None, search: str | None = None, is_active: bool | None = None):
     stmt = select(Plan).where(Plan.deleted_at.is_(None))
     if target:
         stmt = stmt.where(Plan.target == target)
+    if search:
+        stmt = stmt.where(Plan.name.ilike(f"%{search}%"))
+    if is_active is not None:
+        stmt = stmt.where(Plan.is_active == is_active)
     return stmt.order_by(Plan.created_at.desc())
+
+
+@router.get("/summary", response_model=PlansSummaryResponse)
+async def get_plans_summary(
+    target: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> PlansSummaryResponse:
+    base = select(Plan).where(Plan.deleted_at.is_(None))
+    if target:
+        base = base.where(Plan.target == target)
+    total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar_one()
+    active_count = (
+        await db.execute(select(func.count()).select_from(base.where(Plan.is_active.is_(True)).subquery()))
+    ).scalar_one()
+    inactive_count = (
+        await db.execute(select(func.count()).select_from(base.where(Plan.is_active.is_(False)).subquery()))
+    ).scalar_one()
+    return PlansSummaryResponse(total=total, active_count=active_count, inactive_count=inactive_count)
 
 
 @router.get("", response_model=PagedPlansResponse)
@@ -47,9 +75,11 @@ async def list_plans(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     target: str | None = Query(default=None),
+    search: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> PagedPlansResponse:
-    stmt = _base_stmt(target)
+    stmt = _base_stmt(target, search, is_active)
     total = (await db.execute(select(func.count()).select_from(stmt.subquery()))).scalar_one()
     rows = (
         await db.execute(stmt.offset((page - 1) * page_size).limit(page_size))

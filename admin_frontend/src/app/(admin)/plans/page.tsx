@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Pencil, Ban, CheckCircle, Search, Users, Building2, CheckCircle2, MinusCircle, Clock, Infinity, Trash2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
@@ -8,13 +8,13 @@ import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import CreatePlanModal from "@/components/modals/CreatePlanModal";
 import EditPlanModal from "@/components/modals/EditPlanModal";
-import { listPlans, togglePlan, deletePlan, type Plan } from "@/services/plans";
+import { listPlans, getPlansSummary, togglePlan, deletePlan, type Plan } from "@/services/plans";
 import { useToast } from "@/components/ui/Toast";
 
 const TABS = ["Individual Plans", "Enterprise Plans"] as const;
 type Tab = typeof TABS[number];
 
-const PER_PAGE = 6;
+const PER_PAGE = 10;
 
 function formatPrice(price_cents: number): string {
   if (price_cents === 0) return "Free";
@@ -42,6 +42,13 @@ function PlansTable({
   plans,
   isIndividual,
   loading,
+  total,
+  page,
+  search,
+  statusFilter,
+  onSearchChange,
+  onStatusChange,
+  onPageChange,
   onEdit,
   onToggle,
   onDelete,
@@ -49,23 +56,17 @@ function PlansTable({
   plans: Plan[];
   isIndividual: boolean;
   loading: boolean;
+  total: number;
+  page: number;
+  search: string;
+  statusFilter: string;
+  onSearchChange: (v: string) => void;
+  onStatusChange: (v: string) => void;
+  onPageChange: (p: number) => void;
   onEdit: (plan: Plan) => void;
   onToggle: (plan: Plan) => void;
   onDelete: (plan: Plan) => void;
 }) {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All Status");
-  const [planPage, setPlanPage] = useState(1);
-
-  const filtered = plans.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchStatus =
-      statusFilter === "All Status" ||
-      (statusFilter === "Active" ? p.is_active : !p.is_active);
-    return matchSearch && matchStatus;
-  });
-  const paginated = filtered.slice((planPage - 1) * PER_PAGE, planPage * PER_PAGE);
-
   return (
     <>
       <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
@@ -73,7 +74,7 @@ function PlansTable({
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400 pointer-events-none" />
           <input
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPlanPage(1); }}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search plans by name…"
             className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-4 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors"
             onFocus={(e) => {
@@ -91,7 +92,7 @@ function PlansTable({
         <div className="ml-auto">
           <select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPlanPage(1); }}
+            onChange={(e) => onStatusChange(e.target.value)}
             className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:outline-none transition-colors"
           >
             <option>All Status</option>
@@ -122,14 +123,14 @@ function PlansTable({
                 </td>
               </tr>
             )}
-            {!loading && filtered.length === 0 && (
+            {!loading && plans.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-5 py-10 text-center text-sm text-slate-400">
                   No plans found.
                 </td>
               </tr>
             )}
-            {!loading && paginated.map((plan) => (
+            {!loading && plans.map((plan) => (
               <tr key={plan.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
@@ -201,7 +202,7 @@ function PlansTable({
           </tbody>
         </table>
       </div>
-      <Pagination total={filtered.length} perPage={PER_PAGE} page={planPage} onChange={setPlanPage} itemLabel="plans" />
+      <Pagination total={total} perPage={PER_PAGE} page={page} onChange={onPageChange} itemLabel="plans" />
     </>
   );
 }
@@ -209,8 +210,16 @@ function PlansTable({
 export default function PlansPage() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<Tab>("Individual Plans");
-  const [allPlans, setAllPlans] = useState<Plan[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [summaryTotal, setSummaryTotal] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [editPlan, setEditPlan] = useState<Plan | null>(null);
   const [togglingPlan, setTogglingPlan] = useState<Plan | null>(null);
@@ -218,31 +227,85 @@ export default function PlansPage() {
   const [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
 
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   const isIndividual = activeTab === "Individual Plans";
   const target = isIndividual ? "individual" : "enterprise";
 
-  const fetchPlans = useCallback(async () => {
-    setLoading(true);
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    setSearch("");
+    setDebouncedSearch("");
+    setStatusFilter("All Status");
+    setPage(1);
+  };
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => setDebouncedSearch(value), 300);
+  }, []);
+
+  const handleStatusChange = useCallback((value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  }, []);
+
+  const fetchSummary = useCallback(async (signal?: AbortSignal) => {
     try {
-      const result = await listPlans({ target });
-      setAllPlans(result.items);
-    } catch {
-      toast.error("Failed to load plans.");
-    } finally {
-      setLoading(false);
+      const s = await getPlansSummary(target, signal);
+      setSummaryTotal(s.total);
+      setActiveCount(s.active_count);
+      setInactiveCount(s.inactive_count);
+    } catch (err: unknown) {
+      if ((err as { code?: string })?.code === "ERR_CANCELED") return;
     }
   }, [target]);
 
-  useEffect(() => { fetchPlans(); }, [fetchPlans]);
+  const fetchPlans = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true);
+    const isActiveParam =
+      statusFilter === "All Status" ? undefined : statusFilter === "Active";
+    try {
+      const result = await listPlans({
+        target,
+        page,
+        page_size: PER_PAGE,
+        search: debouncedSearch || undefined,
+        is_active: isActiveParam,
+      }, signal);
+      setPlans(result.items);
+      setTotal(result.total);
+      setLoading(false);
+    } catch (err: unknown) {
+      if ((err as { code?: string })?.code === "ERR_CANCELED") return;
+      toast.error("Failed to load plans.");
+      setLoading(false);
+    }
+  }, [target, page, debouncedSearch, statusFilter]);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchSummary(ctrl.signal);
+    return () => ctrl.abort();
+  }, [fetchSummary]);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetchPlans(ctrl.signal);
+    return () => ctrl.abort();
+  }, [fetchPlans]);
 
   const handleToggleConfirm = async () => {
     if (!togglingPlan) return;
     setToggleInProgress(true);
     try {
       const updated = await togglePlan(togglingPlan.id);
-      setAllPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       toast.success(`Plan "${updated.name}" ${updated.is_active ? "enabled" : "disabled"}.`);
       setTogglingPlan(null);
+      fetchSummary();
     } catch {
       toast.error("Failed to update plan status.");
     } finally {
@@ -255,18 +318,16 @@ export default function PlansPage() {
     setDeleteInProgress(true);
     try {
       await deletePlan(deletingPlan.id);
-      setAllPlans((prev) => prev.filter((p) => p.id !== deletingPlan.id));
       toast.success(`Plan "${deletingPlan.name}" deleted.`);
       setDeletingPlan(null);
+      fetchPlans();
+      fetchSummary();
     } catch {
       toast.error("Failed to delete plan.");
     } finally {
       setDeleteInProgress(false);
     }
   };
-
-  const activePlans = allPlans.filter((p) => p.is_active).length;
-  const inactivePlans = allPlans.filter((p) => !p.is_active).length;
 
   const accent = isIndividual
     ? { bg: "var(--forest)", iconColor: "#EFEAD9", dimBg: "rgba(23,50,41,.08)", textColor: "var(--forest)", ringColor: "rgba(23,50,41,.10)" }
@@ -283,7 +344,7 @@ export default function PlansPage() {
               <button
                 key={tab}
                 type="button"
-                onClick={() => setActiveTab(tab)}
+                onClick={() => handleTabChange(tab)}
                 className="px-4 py-2.5 text-sm font-medium transition-colors"
                 style={
                   isActive
@@ -319,7 +380,7 @@ export default function PlansPage() {
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>
               {isIndividual ? "Individual Plans" : "Enterprise Plans"}
             </p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: accent.textColor }}>{allPlans.length}</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: accent.textColor }}>{summaryTotal}</p>
             <p className="text-xs text-slate-400">{isIndividual ? "Personal account plans" : "Company account plans"}</p>
           </div>
         </div>
@@ -330,9 +391,9 @@ export default function PlansPage() {
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Active Plans</p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--sage-dark, #3E6A44)" }}>{activePlans}</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--sage-dark, #3E6A44)" }}>{activeCount}</p>
             <p className="text-xs text-slate-400">
-              {allPlans.length > 0 ? `${Math.round((activePlans / allPlans.length) * 100)}% active` : "No plans yet"}
+              {summaryTotal > 0 ? `${Math.round((activeCount / summaryTotal) * 100)}% active` : "No plans yet"}
             </p>
           </div>
         </div>
@@ -343,7 +404,7 @@ export default function PlansPage() {
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Inactive Plans</p>
-            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--ink-dim)" }}>{inactivePlans}</p>
+            <p className="text-2xl font-bold mt-0.5" style={{ color: "var(--ink-dim)" }}>{inactiveCount}</p>
             <p className="text-xs text-slate-400">Hidden from users</p>
           </div>
         </div>
@@ -351,9 +412,16 @@ export default function PlansPage() {
 
       <div className="bg-white rounded-xl border border-slate-200">
         <PlansTable
-          plans={allPlans}
+          plans={plans}
           isIndividual={isIndividual}
           loading={loading}
+          total={total}
+          page={page}
+          search={search}
+          statusFilter={statusFilter}
+          onSearchChange={handleSearchChange}
+          onStatusChange={handleStatusChange}
+          onPageChange={setPage}
           onEdit={(plan) => setEditPlan(plan)}
           onToggle={(plan) => setTogglingPlan(plan)}
           onDelete={(plan) => setDeletingPlan(plan)}
@@ -364,9 +432,7 @@ export default function PlansPage() {
         open={createOpen}
         target={target}
         onClose={() => setCreateOpen(false)}
-        onCreated={(plan) => {
-          if (plan.target === target) setAllPlans((prev) => [plan, ...prev]);
-        }}
+        onCreated={(_plan) => { fetchPlans(); fetchSummary(); }}
       />
 
       <EditPlanModal
@@ -374,7 +440,7 @@ export default function PlansPage() {
         plan={editPlan}
         onClose={() => setEditPlan(null)}
         onUpdated={(updated) => {
-          setAllPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+          setPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
           setEditPlan(null);
         }}
       />

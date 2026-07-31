@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CreditCard, Clock, Infinity, CheckCircle2, AlertCircle, Loader2, ShoppingCart, ListOrdered } from "lucide-react";
+import {
+  CreditCard, Clock, Infinity, CheckCircle2, AlertCircle,
+  Loader2, ListOrdered, Zap,
+} from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -16,14 +19,15 @@ import {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function formatPrice(price_cents: number): string {
-  if (price_cents === 0) return "Free";
-  return `$${(price_cents / 100).toFixed(2)}`;
+  if (price_cents === 0) return "$0";
+  return `$${Math.round(price_cents / 100)}`;
 }
 
 function daysUntil(isoDate: string): number {
-  const diff = new Date(isoDate).getTime() - Date.now();
-  return Math.max(0, Math.ceil(diff / 86400000));
+  return Math.max(0, Math.ceil((new Date(isoDate).getTime() - Date.now()) / 86400000));
 }
+
+const ACCENT_COLORS = ["#6366f1", "#e94560", "#0ea5e9", "#f59e0b"];
 
 // ── Active Validity Plan Card ──────────────────────────────────────────────────
 
@@ -45,7 +49,6 @@ function ValidityPlanCard({ plan }: { plan: UserPlanOut }) {
           <CheckCircle2 className="h-3.5 w-3.5" /> Active
         </span>
       </div>
-
       <div className="flex items-end justify-between">
         <div>
           <p className="text-3xl font-bold text-gray-900">{plan.credits_remaining.toLocaleString()}</p>
@@ -60,12 +63,8 @@ function ValidityPlanCard({ plan }: { plan: UserPlanOut }) {
           </div>
         )}
       </div>
-
       <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, background: barColor }}
-        />
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
       </div>
       <p className="text-xs text-gray-400">{pct}% remaining</p>
     </div>
@@ -79,7 +78,7 @@ function PaygPlanCard({ plan }: { plan: UserPlanOut }) {
     <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-2">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Pay-as-you-go</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Pay As You Go</p>
           <p className="mt-0.5 font-semibold text-gray-900">{plan.plan_name}</p>
         </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
@@ -111,64 +110,103 @@ function QueuedPlanRow({ plan }: { plan: UserPlanOut }) {
   );
 }
 
-// ── Available Plan Purchase Card ───────────────────────────────────────────────
+// ── Pricing Card ───────────────────────────────────────────────────────────────
 
-function PlanPurchaseCard({
+function PricingCard({
   plan,
   onBuy,
   buying,
+  index,
 }: {
   plan: Plan;
   onBuy: (plan: Plan) => void;
   buying: boolean;
+  index: number;
 }) {
+  const accent = ACCENT_COLORS[index % ACCENT_COLORS.length];
+  const isFree = plan.price_cents === 0;
+
+  const creditsLine =
+    plan.plan_type === "payg"
+      ? `${plan.credits.toLocaleString()} credits`
+      : `${plan.credits.toLocaleString()} credits${plan.validity_days ? ` · ${plan.validity_days} days` : ""}`;
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 flex flex-col gap-4 hover:border-gray-300 transition-colors">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50">
-          {plan.plan_type === "payg" ? (
-            <Infinity className="h-5 w-5 text-red-600" />
-          ) : (
-            <Clock className="h-5 w-5 text-red-600" />
-          )}
+    <div className="relative flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden transition-shadow hover:shadow-md">
+      {/* Icon + name */}
+      <div className="px-6 pt-6 pb-4">
+        <div
+          className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
+          style={{ background: `${accent}1a` }}
+        >
+          {plan.plan_type === "payg"
+            ? <Zap className="h-6 w-6" style={{ color: accent }} />
+            : <Clock className="h-6 w-6" style={{ color: accent }} />}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-gray-900">{plan.name}</p>
-          {plan.description && (
-            <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">{plan.description}</p>
-          )}
-        </div>
+        <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+        {plan.description && (
+          <p className="mt-1 text-sm leading-snug text-gray-400">{plan.description}</p>
+        )}
       </div>
 
-      <div className="space-y-1.5 text-sm text-gray-600">
-        <div className="flex justify-between">
-          <span className="text-gray-400">Credits</span>
-          <span className="font-medium text-gray-900">{plan.credits.toLocaleString()}</span>
+      {/* Price block */}
+      <div className="border-b border-gray-100 px-6 pb-5">
+        <div className="flex items-end gap-1.5">
+          <span className="text-4xl font-bold text-gray-900">{formatPrice(plan.price_cents)}</span>
+          {!isFree && (
+            <span className="mb-1.5 text-sm text-gray-400">one-time</span>
+          )}
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Validity</span>
-          <span className="font-medium text-gray-900">
-            {plan.plan_type === "payg" ? "Lifetime" : `${plan.validity_days} days`}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Type</span>
-          <span className="font-medium text-gray-900 capitalize">{plan.plan_type === "payg" ? "Pay-as-you-go" : "Validity"}</span>
-        </div>
+        <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+          {creditsLine}
+        </p>
       </div>
 
-      <div className="flex items-center justify-between pt-1 border-t border-gray-100">
-        <span className="text-xl font-bold text-gray-900">{formatPrice(plan.price_cents)}</span>
+      {/* CTA */}
+      <div className="mt-auto px-6 py-5">
         <button
           type="button"
           onClick={() => onBuy(plan)}
           disabled={buying}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 transition-colors"
+          className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+          style={{ background: isFree ? "#111827" : accent }}
+          onMouseEnter={(e) => { if (!buying) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
         >
-          {buying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-          Buy
+          {buying && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isFree ? "Get started free" : "Get started"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── Plan Type Toggle ───────────────────────────────────────────────────────────
+
+function PlanTypeToggle({
+  value,
+  onChange,
+}: {
+  value: "validity" | "payg";
+  onChange: (v: "validity" | "payg") => void;
+}) {
+  return (
+    <div className="inline-flex items-center rounded-full border border-gray-100 bg-white p-1.5 shadow-md gap-0.5">
+      {(["validity", "payg"] as const).map((t) => (
+        <button
+          key={t}
+          type="button"
+          onClick={() => onChange(t)}
+          className={`inline-flex items-center rounded-full px-6 py-2 text-sm font-semibold transition-all ${
+            value === t
+              ? "text-white shadow-sm"
+              : "text-gray-400 hover:text-gray-700"
+          }`}
+          style={value === t ? { background: "#e94560" } : {}}
+        >
+          {t === "validity" ? "Validity Plans" : "Pay As You Go"}
+        </button>
+      ))}
     </div>
   );
 }
@@ -180,6 +218,7 @@ export default function PlansClient() {
   const [myPlans, setMyPlans] = useState<MyPlansResponse | null>(null);
   const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [planType, setPlanType] = useState<"validity" | "payg">("validity");
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [confirmPlan, setConfirmPlan] = useState<Plan | null>(null);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
@@ -212,11 +251,11 @@ export default function PlansClient() {
       showToast("ok", `Plan "${plan.name}" purchased successfully!`);
       await load();
     } catch (err: unknown) {
-      const msg =
+      const detail =
         err && typeof err === "object" && "response" in err
           ? ((err as { response?: { data?: { detail?: string } } }).response?.data?.detail ?? "Purchase failed.")
           : "Purchase failed.";
-      showToast("err", typeof msg === "string" ? msg : "Purchase failed.");
+      showToast("err", typeof detail === "string" ? detail : "Purchase failed.");
     } finally {
       setBuyingId(null);
     }
@@ -239,6 +278,9 @@ export default function PlansClient() {
 
   const hasActivePlans =
     myPlans && (myPlans.active_validity || myPlans.active_payg.length > 0 || myPlans.queued_validity.length > 0);
+
+  const validityPlans = availablePlans.filter((p) => p.plan_type === "validity");
+  const paygPlans = availablePlans.filter((p) => p.plan_type === "payg");
 
   return (
     <div className="flex flex-col h-full">
@@ -264,7 +306,7 @@ export default function PlansClient() {
               <strong>{formatPrice(confirmPlan.price_cents)}</strong>?
               {confirmPlan.plan_type === "validity" && myPlans?.active_validity && (
                 <span className="block mt-2 text-amber-600 text-xs">
-                  You already have an active validity plan. This plan will be added to the queue and activate automatically when the current one ends.
+                  You already have an active validity plan. This plan will be queued and activate when the current one ends.
                 </span>
               )}
             </p>
@@ -289,7 +331,7 @@ export default function PlansClient() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <div className="flex-1 overflow-y-auto p-6 space-y-10">
 
         {/* Credit summary banner */}
         {myPlans && (
@@ -312,19 +354,19 @@ export default function PlansClient() {
         <section>
           <div className="flex items-center gap-2 mb-3">
             <CreditCard className="h-4 w-4 text-gray-400" />
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">My Active Plans</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-700">My Active Plans</h2>
           </div>
 
           {loading && (
-            <div className="flex items-center gap-2 text-sm text-gray-400 py-6">
+            <div className="flex items-center gap-2 py-6 text-sm text-gray-400">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading your plans…
             </div>
           )}
 
           {!loading && !hasActivePlans && (
             <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 py-10 text-center">
-              <CreditCard className="mx-auto h-8 w-8 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">No active plans. Purchase one below to get started.</p>
+              <CreditCard className="mx-auto mb-2 h-8 w-8 text-gray-300" />
+              <p className="text-sm text-gray-500">No active plans. Choose one below to get started.</p>
             </div>
           )}
 
@@ -348,7 +390,7 @@ export default function PlansClient() {
           <section>
             <div className="flex items-center gap-2 mb-3">
               <ListOrdered className="h-4 w-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Queued Plans</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-700">Queued Plans</h2>
             </div>
             <div className="space-y-2">
               {myPlans.queued_validity.map((p) => (
@@ -360,34 +402,41 @@ export default function PlansClient() {
 
         {/* Available Plans */}
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <ShoppingCart className="h-4 w-4 text-gray-400" />
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Available Plans</h2>
+          <div className="mb-8 flex justify-center">
+            <PlanTypeToggle value={planType} onChange={setPlanType} />
           </div>
 
           {loading && (
-            <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+            <div className="flex items-center gap-2 py-6 text-sm text-gray-400">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading plans…
             </div>
           )}
 
           {!loading && availablePlans.length === 0 && (
-            <p className="text-sm text-gray-400 py-4">No plans available at this time.</p>
+            <p className="py-4 text-sm text-gray-400">No plans available at this time.</p>
           )}
 
-          {!loading && availablePlans.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {availablePlans.map((plan) => (
-                <PlanPurchaseCard
-                  key={plan.id}
-                  plan={plan}
-                  onBuy={(p) => setConfirmPlan(p)}
-                  buying={buyingId === plan.id}
-                />
-              ))}
-            </div>
-          )}
+          {!loading && availablePlans.length > 0 && (() => {
+            const shown = planType === "validity" ? validityPlans : paygPlans;
+            if (shown.length === 0) {
+              return <p className="py-4 text-sm text-gray-400">No plans available in this category.</p>;
+            }
+            return (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {shown.map((plan, i) => (
+                  <PricingCard
+                    key={plan.id}
+                    plan={plan}
+                    onBuy={(p: Plan) => setConfirmPlan(p)}
+                    buying={buyingId === plan.id}
+                    index={i}
+                  />
+                ))}
+              </div>
+            );
+          })()}
         </section>
+
       </div>
     </div>
   );

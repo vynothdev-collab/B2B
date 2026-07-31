@@ -20,6 +20,12 @@ export interface PagedPlans {
   page_size: number;
 }
 
+export interface PlansSummary {
+  total: number;
+  active_count: number;
+  inactive_count: number;
+}
+
 export interface CreatePlanPayload {
   name: string;
   description?: string;
@@ -38,8 +44,13 @@ export interface EditPlanPayload {
   validity_days?: number;
 }
 
+export async function getPlansSummary(target: string, signal?: AbortSignal): Promise<PlansSummary> {
+  const { data } = await api.get<PlansSummary>("/admin/plans/summary", { params: { target }, signal });
+  return data;
+}
+
 export async function listPlans(
-  params?: { target?: string; page?: number; page_size?: number },
+  params?: { target?: string; page?: number; page_size?: number; search?: string; is_active?: boolean },
   signal?: AbortSignal,
 ): Promise<PagedPlans> {
   const { data } = await api.get<PagedPlans>("/admin/plans", { params, signal });
