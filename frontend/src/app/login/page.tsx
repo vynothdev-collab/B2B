@@ -6,14 +6,15 @@ import { Eye, EyeOff, Loader2, Search, Users, Building2, Zap } from "lucide-reac
 import { useAuth } from "@/contexts/AuthContext";
 import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 import { LinkedInSignInButton } from "@/components/ui/LinkedInSignInButton";
+import { MicrosoftSignInButton } from "@/components/ui/MicrosoftSignInButton";
 import { storeTokens } from "@/lib/tokens";
 import { apiGetMe } from "@/lib/authApi";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  cancelled: "LinkedIn sign-in was cancelled. Please try again.",
+  cancelled: "Sign-in was cancelled. Please try again.",
   invalid_state: "Authentication request expired. Please try again.",
-  auth_failed: "LinkedIn authentication failed. Please try again.",
-  no_email: "Your LinkedIn account has no verified email address.",
+  auth_failed: "Authentication failed. Please try again.",
+  no_email: "Your account does not have a verified email address.",
   account_disabled: "Your account has been disabled. Please contact support.",
 };
 
@@ -254,6 +255,10 @@ function LoginForm() {
             />
             <LinkedInSignInButton
               label="Continue with LinkedIn"
+              onError={(msg) => setError(msg)}
+            />
+            <MicrosoftSignInButton
+              label="Continue with Microsoft"
               onError={(msg) => setError(msg)}
             />
           </div>

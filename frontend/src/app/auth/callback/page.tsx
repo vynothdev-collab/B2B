@@ -6,10 +6,10 @@ import Link from "next/link";
 import { storeTokens } from "@/lib/tokens";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  cancelled: "LinkedIn sign-in was cancelled. Please try again.",
+  cancelled: "Sign-in was cancelled. Please try again.",
   invalid_state: "The authentication request expired or was invalid. Please try again.",
-  auth_failed: "LinkedIn authentication failed. Please try again.",
-  no_email: "Your LinkedIn account does not have a verified email address.",
+  auth_failed: "Authentication failed. Please try again.",
+  no_email: "Your account does not have a verified email address.",
   account_disabled: "Your account has been disabled. Please contact support.",
 };
 

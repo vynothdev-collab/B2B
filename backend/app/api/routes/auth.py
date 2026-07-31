@@ -336,6 +336,138 @@ async def linkedin_auth() -> RedirectResponse:
     )
 
 
+@router.get("/microsoft")
+async def microsoft_auth() -> RedirectResponse:
+    if not settings.MICROSOFT_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Microsoft sign-in is not configured on this server.",
+        )
+    params = urlencode({
+        "client_id": settings.MICROSOFT_CLIENT_ID,
+        "response_type": "code",
+        "redirect_uri": settings.MICROSOFT_CALLBACK_URL,
+        "response_mode": "query",
+        "scope": "openid profile email offline_access User.Read",
+        "state": _linkedin_make_state(),
+    })
+    return RedirectResponse(
+        url=f"https://login.microsoftonline.com/{settings.MICROSOFT_TENANT_ID}/oauth2/v2.0/authorize?{params}",
+        status_code=307,
+    )
+
+
+@router.get("/microsoft/callback")
+async def microsoft_callback(
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> RedirectResponse:
+    base = (settings.FRONTEND_URL or "http://localhost:3000").rstrip("/")
+    frontend_cb = base + "/login"
+
+    if error:
+        return RedirectResponse(url=f"{frontend_cb}?error=cancelled", status_code=302)
+
+    if not state or not _linkedin_verify_state(state):
+        return RedirectResponse(url=f"{frontend_cb}?error=invalid_state", status_code=302)
+
+    if not code:
+        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
+
+    # Exchange authorization code for Microsoft tokens
+    async with httpx.AsyncClient(timeout=10) as client:
+        token_resp = await client.post(
+            f"https://login.microsoftonline.com/{settings.MICROSOFT_TENANT_ID}/oauth2/v2.0/token",
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": settings.MICROSOFT_CALLBACK_URL,
+                "client_id": settings.MICROSOFT_CLIENT_ID,
+                "client_secret": settings.MICROSOFT_CLIENT_SECRET,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+
+    if token_resp.status_code != 200:
+        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
+
+    ms_access_token: str = token_resp.json().get("access_token", "")
+    if not ms_access_token:
+        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
+
+    # Fetch user profile from Microsoft Graph
+    async with httpx.AsyncClient(timeout=10) as client:
+        profile_resp = await client.get(
+            "https://graph.microsoft.com/v1.0/me",
+            headers={"Authorization": f"Bearer {ms_access_token}"},
+        )
+
+    if profile_resp.status_code != 200:
+        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
+
+    profile = profile_resp.json()
+    microsoft_id: str | None = profile.get("id")
+    # Microsoft accounts may use "mail" (O365) or "userPrincipalName" (personal/AAD)
+    email: str | None = profile.get("mail") or profile.get("userPrincipalName")
+    name: str = profile.get("displayName") or ""
+
+    # userPrincipalName can be a federated format; skip if it contains a hash
+    if email and "#EXT#" in email:
+        email = profile.get("mail")
+
+    if not microsoft_id:
+        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
+
+    if not email:
+        return RedirectResponse(url=f"{frontend_cb}?error=no_email", status_code=302)
+
+    # 1) Look up by Microsoft provider ID (returning user)
+    result = await db.execute(
+        select(User).where(
+            User.oauth_provider == "microsoft",
+            User.oauth_provider_id == microsoft_id,
+        )
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        # 2) Look up by email — existing account → link to Microsoft
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+
+        if user:
+            user.oauth_provider = "microsoft"
+            user.oauth_provider_id = microsoft_id
+            user.email_verified = True
+            await db.flush()
+        else:
+            # 3) Brand-new user — create account via Microsoft
+            user = User(
+                id=str(uuid.uuid4()),
+                email=email,
+                name=name or email.split("@")[0],
+                hashed_password=None,
+                oauth_provider="microsoft",
+                oauth_provider_id=microsoft_id,
+                email_verified=True,
+            )
+            db.add(user)
+            await db.flush()
+
+    if not user.is_active:
+        return RedirectResponse(url=f"{frontend_cb}?error=account_disabled", status_code=302)
+
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+
+    return RedirectResponse(
+        url=f"{frontend_cb}?access_token={access_token}&refresh_token={refresh_token}",
+        status_code=302,
+    )
+
+
 @router.get("/linkedin/callback")
 async def linkedin_callback(
     code: str | None = None,

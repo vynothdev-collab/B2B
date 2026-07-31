@@ -51,5 +51,11 @@ class Settings(BaseSettings):
     LINKEDIN_CALLBACK_URL: str = ""  # e.g. http://localhost:8000/api/v1/auth/linkedin/callback
     FRONTEND_URL: str = ""           # e.g. http://localhost:3000
 
+    # Microsoft OAuth
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_SECRET: str = ""
+    MICROSOFT_TENANT_ID: str = "common"  # "common" = personal + work/school accounts
+    MICROSOFT_CALLBACK_URL: str = ""     # e.g. http://localhost:8000/api/v1/auth/microsoft/callback
+
 
 settings = Settings()
