@@ -29,6 +29,11 @@ export async function apiLogin(email: string, password: string): Promise<AuthRes
   return res.data;
 }
 
+export async function apiGoogleLogin(credential: string): Promise<AuthResponse> {
+  const res = await apiClient.post<AuthResponse>("/auth/google", { credential });
+  return res.data;
+}
+
 export async function apiRegister(
   name: string,
   email: string,

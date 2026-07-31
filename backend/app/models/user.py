@@ -23,11 +23,16 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
-    name:            Mapped[str]         = mapped_column(String(255), nullable=False)
-    hashed_password: Mapped[str]         = mapped_column(String(255), nullable=False)
-    role:            Mapped[str]         = mapped_column(String(50), default=UserRole.INDIVIDUAL, nullable=False)
-    is_active:       Mapped[bool]        = mapped_column(Boolean, default=True, nullable=False)
-    phone:           Mapped[str | None]  = mapped_column(String(50), nullable=True)
+    name:            Mapped[str]          = mapped_column(String(255), nullable=False)
+    hashed_password: Mapped[str | None]  = mapped_column(String(255), nullable=True)
+    role:            Mapped[str]          = mapped_column(String(50), default=UserRole.INDIVIDUAL, nullable=False)
+    is_active:       Mapped[bool]         = mapped_column(Boolean, default=True, nullable=False)
+    phone:           Mapped[str | None]   = mapped_column(String(50), nullable=True)
+
+    # OAuth fields — set when user signs in via a provider (e.g. Google)
+    oauth_provider:    Mapped[str | None] = mapped_column(String(50), nullable=True)
+    oauth_provider_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    email_verified:    Mapped[bool]       = mapped_column(Boolean, default=False, nullable=False)
 
     enterprise_id: Mapped[str | None] = mapped_column(
         String(36),

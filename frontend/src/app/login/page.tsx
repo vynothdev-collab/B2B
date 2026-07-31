@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2, Search, Users, Building2, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -193,7 +194,12 @@ export default function LoginPage() {
             <div className="h-px flex-1 bg-gray-100" />
           </div>
 
-          <p className="text-center text-sm text-gray-500">
+          <GoogleSignInButton
+            label="Continue with Google"
+            onError={(msg) => setError(msg)}
+          />
+
+          <p className="mt-6 text-center text-sm text-gray-500">
             Don&apos;t have an account?{" "}
             <Link href="/register" className="font-semibold text-red-600 hover:text-red-700 transition-colors">
               Create a free account

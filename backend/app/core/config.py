@@ -42,5 +42,8 @@ class Settings(BaseSettings):
     PDL_API_KEY: str = ""
     PDL_BASE_URL: str = ""
 
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+
 
 settings = Settings()

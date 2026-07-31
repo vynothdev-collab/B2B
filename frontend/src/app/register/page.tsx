@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
 
 const PERKS = [
   "Search 800M+ people & 35M+ companies",
@@ -231,6 +232,17 @@ export default function RegisterPage() {
                 : "Create free account"}
             </button>
           </form>
+
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gray-100" />
+            <span className="text-xs text-gray-400">or</span>
+            <div className="h-px flex-1 bg-gray-100" />
+          </div>
+
+          <GoogleSignInButton
+            label="Sign up with Google"
+            onError={(msg) => setError(msg)}
+          />
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Already have an account?{" "}

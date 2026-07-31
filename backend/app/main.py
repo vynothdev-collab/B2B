@@ -80,6 +80,20 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(
             _add_column_if_missing, "plans", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
         )
+        # users table — google oauth fields (idempotent; also handled by alembic 002)
+        await conn.run_sync(
+            _drop_not_null_if_exists, "users", "hashed_password"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "oauth_provider", "VARCHAR(50)"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "oauth_provider_id", "VARCHAR(255)"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "email_verified",
+            "BOOLEAN NOT NULL DEFAULT FALSE"
+        )
     yield
 
 

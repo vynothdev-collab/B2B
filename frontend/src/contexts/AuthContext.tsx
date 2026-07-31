@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiGetMe, apiLogin, apiRegister, type UserInfo } from "@/lib/authApi";
+import { apiGetMe, apiGoogleLogin, apiLogin, apiRegister, type UserInfo } from "@/lib/authApi";
 import { clearTokens, getAccessToken, getRefreshToken, storeTokens } from "@/lib/tokens";
 import { toast } from "@/lib/toast";
 
@@ -11,6 +11,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  googleLogin: (credential: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -21,29 +22,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Restore session from stored tokens on mount
   useEffect(() => {
     if (typeof window === "undefined") {
       setIsLoading(false);
       return;
     }
     const hasSession = !!getAccessToken() || !!getRefreshToken();
-
     if (!hasSession) {
       setIsLoading(false);
       return;
     }
-
     apiGetMe()
       .then((u) => setUser(u))
-      .catch(() => {
-        clearTokens();
-      })
+      .catch(() => clearTokens())
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = useCallback(
-    async (email: string, password: string) => {
-      const res = await apiLogin(email, password);
+  const _applyAuth = useCallback(
+    (res: Awaited<ReturnType<typeof apiLogin>>, welcomeMsg: string) => {
       storeTokens(res.access_token, res.refresh_token);
       setUser({
         ...res.user,
@@ -51,26 +48,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         used_credits: res.user.used_credits ?? 0,
         remaining_credits: res.user.remaining_credits ?? 0,
       });
-      toast.success(`Welcome back, ${res.user.name}!`);
+      toast.success(welcomeMsg);
       router.replace("/search");
     },
     [router]
   );
 
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const res = await apiLogin(email, password);
+      _applyAuth(res, `Welcome back, ${res.user.name}!`);
+    },
+    [_applyAuth]
+  );
+
   const register = useCallback(
     async (name: string, email: string, password: string) => {
       const res = await apiRegister(name, email, password);
-      storeTokens(res.access_token, res.refresh_token);
-      setUser({
-        ...res.user,
-        allocated_credits: res.user.allocated_credits ?? 0,
-        used_credits: res.user.used_credits ?? 0,
-        remaining_credits: res.user.remaining_credits ?? 0,
-      });
-      toast.success("Account created! Welcome.");
-      router.replace("/search");
+      _applyAuth(res, "Account created! Welcome.");
     },
-    [router]
+    [_applyAuth]
+  );
+
+  const googleLogin = useCallback(
+    async (credential: string) => {
+      const res = await apiGoogleLogin(credential);
+      _applyAuth(res, `Welcome, ${res.user.name}!`);
+    },
+    [_applyAuth]
   );
 
   const logout = useCallback(() => {
@@ -81,14 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
-        login,
-        register,
-        logout,
-      }}
+      value={{ user, isLoading, isAuthenticated: !!user, login, register, googleLogin, logout }}
     >
       {children}
     </AuthContext.Provider>
