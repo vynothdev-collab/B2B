@@ -1,8 +1,9 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy import func, or_, select, desc
+from sqlalchemy import Float, and_, cast, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 
 from app.core.database import get_db
 from app.core.security import require_super_admin
@@ -95,6 +96,48 @@ def _credit_status(allocated: int, remaining: int) -> str:
     return "healthy"
 
 
+def _individual_status_clause(status_: str) -> ColumnElement | None:
+    remaining = User.allocated_credits - User.used_credits
+    if status_ == "exceeded":
+        return remaining <= 0
+    if status_ == "low":
+        return and_(
+            remaining > 0,
+            User.allocated_credits > 0,
+            cast(remaining, Float) / cast(User.allocated_credits, Float) < 0.2,
+        )
+    if status_ == "healthy":
+        return and_(
+            remaining > 0,
+            or_(
+                User.allocated_credits == 0,
+                cast(remaining, Float) / cast(User.allocated_credits, Float) >= 0.2,
+            ),
+        )
+    return None
+
+
+def _enterprise_status_clause(status_: str, alloc_col: ColumnElement, used_col: ColumnElement) -> ColumnElement | None:
+    remaining = alloc_col - used_col
+    if status_ == "exceeded":
+        return remaining <= 0
+    if status_ == "low":
+        return and_(
+            remaining > 0,
+            alloc_col > 0,
+            cast(remaining, Float) / cast(alloc_col, Float) < 0.2,
+        )
+    if status_ == "healthy":
+        return and_(
+            remaining > 0,
+            or_(
+                alloc_col == 0,
+                cast(remaining, Float) / cast(alloc_col, Float) >= 0.2,
+            ),
+        )
+    return None
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @router.get("/individual", response_model=PagedIndividualCredits)
@@ -105,45 +148,50 @@ async def list_individual_credits(
     status_:   str | None = Query(default=None, alias="status"),
     db: AsyncSession = Depends(get_db),
 ) -> PagedIndividualCredits:
-    stmt = select(User).where(User.role == UserRole.INDIVIDUAL)
-
+    base = select(User).where(User.role == UserRole.INDIVIDUAL)
     if q:
         like = f"%{q.strip()}%"
-        stmt = stmt.where(or_(User.name.ilike(like), User.email.ilike(like)))
+        base = base.where(or_(User.name.ilike(like), User.email.ilike(like)))
 
-    all_matching = (
-        await db.execute(stmt.order_by(User.created_at.desc()))
+    status_clause = _individual_status_clause(status_) if status_ else None
+    filtered = base.where(status_clause) if status_clause is not None else base
+
+    total = (
+        await db.execute(select(func.count(User.id)).select_from(filtered.subquery()))
+    ).scalar_one()
+
+    rows = (
+        await db.execute(
+            filtered.order_by(User.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
     ).scalars().all()
 
-    all_records: list[IndividualCreditRecord] = []
-    for u in all_matching:
-        remaining = u.allocated_credits - u.used_credits
-        cstatus = _credit_status(u.allocated_credits, remaining)
-        if status_ and cstatus != status_:
-            continue
-        all_records.append(
+    stats_row = (
+        await db.execute(
+            select(
+                func.coalesce(func.sum(User.allocated_credits), 0),
+                func.coalesce(func.sum(User.used_credits), 0),
+            ).where(User.role == UserRole.INDIVIDUAL)
+        )
+    ).one()
+    total_alloc = int(stats_row[0])
+    total_used  = int(stats_row[1])
+
+    return PagedIndividualCredits(
+        items=[
             IndividualCreditRecord(
                 id=u.id,
                 name=u.name,
                 email=u.email,
                 allocated_credits=u.allocated_credits,
                 used_credits=u.used_credits,
-                remaining_credits=remaining,
-                status=cstatus,
+                remaining_credits=u.allocated_credits - u.used_credits,
+                status=_credit_status(u.allocated_credits, u.allocated_credits - u.used_credits),
             )
-        )
-
-    total = len(all_records)
-    items = all_records[(page - 1) * page_size : page * page_size]
-
-    all_users = (
-        await db.execute(select(User).where(User.role == UserRole.INDIVIDUAL))
-    ).scalars().all()
-    total_alloc = sum(u.allocated_credits for u in all_users)
-    total_used = sum(u.used_credits for u in all_users)
-
-    return PagedIndividualCredits(
-        items=items,
+            for u in rows
+        ],
         total=total,
         page=page,
         page_size=page_size,
@@ -163,41 +211,65 @@ async def list_enterprise_credits(
     status_:   str | None = Query(default=None, alias="status"),
     db: AsyncSession = Depends(get_db),
 ) -> PagedEnterpriseCredits:
-    stmt = select(Enterprise)
+    user_agg = (
+        select(
+            User.enterprise_id,
+            func.sum(User.allocated_credits).label("a"),
+            func.sum(User.used_credits).label("u"),
+        )
+        .where(User.enterprise_id.isnot(None))
+        .group_by(User.enterprise_id)
+        .subquery()
+    )
+    alloc_col    = func.coalesce(user_agg.c.a, 0)
+    used_col     = func.coalesce(user_agg.c.u, 0)
 
+    base = (
+        select(Enterprise, alloc_col.label("total_allocated"), used_col.label("total_used"))
+        .outerjoin(user_agg, Enterprise.id == user_agg.c.enterprise_id)
+    )
     if q:
-        like = f"%{q.strip()}%"
-        stmt = stmt.where(Enterprise.name.ilike(like))
+        base = base.where(Enterprise.name.ilike(f"%{q.strip()}%"))
 
-    all_enterprises = (
-        await db.execute(stmt.order_by(Enterprise.created_at.desc()))
-    ).scalars().all()
+    status_clause = _enterprise_status_clause(status_, alloc_col, used_col) if status_ else None
+    filtered = base.where(status_clause) if status_clause is not None else base
 
-    ent_ids = [e.id for e in all_enterprises]
-    user_aggs: dict[str, dict] = {eid: {"allocated": 0, "used": 0} for eid in ent_ids}
-    if ent_ids:
-        user_rows = (
-            await db.execute(
-                select(
-                    User.enterprise_id,
-                    func.sum(User.allocated_credits),
-                    func.sum(User.used_credits),
-                ).where(User.enterprise_id.in_(ent_ids)).group_by(User.enterprise_id)
-            )
-        ).all()
-        for row in user_rows:
-            user_aggs[row[0]] = {"allocated": int(row[1] or 0), "used": int(row[2] or 0)}
+    total = (
+        await db.execute(
+            select(func.count(Enterprise.id))
+            .select_from(Enterprise)
+            .outerjoin(user_agg, Enterprise.id == user_agg.c.enterprise_id)
+            .where(*([] if q is None else [Enterprise.name.ilike(f"%{q.strip()}%")]))
+            .where(*([] if status_clause is None else [status_clause]))
+        )
+    ).scalar_one()
 
-    all_records: list[EnterpriseCreditRecord] = []
-    for ent in all_enterprises:
-        agg = user_aggs.get(ent.id, {"allocated": 0, "used": 0})
-        total_alloc = agg["allocated"]
-        total_used = agg["used"]
-        total_remaining = total_alloc - total_used
-        cstatus = _credit_status(total_alloc, total_remaining)
-        if status_ and cstatus != status_:
-            continue
-        all_records.append(
+    rows = (
+        await db.execute(
+            filtered.order_by(Enterprise.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+    ).all()
+
+    g_row = (
+        await db.execute(
+            select(
+                func.coalesce(func.sum(User.allocated_credits), 0),
+                func.coalesce(func.sum(User.used_credits), 0),
+            ).where(User.enterprise_id.isnot(None))
+        )
+    ).one()
+    g_alloc = int(g_row[0])
+    g_used  = int(g_row[1])
+
+    items = []
+    for row in rows:
+        ent         = row[0]
+        total_alloc = int(row[1])
+        total_used  = int(row[2])
+        total_rem   = total_alloc - total_used
+        items.append(
             EnterpriseCreditRecord(
                 id=ent.id,
                 name=ent.name,
@@ -205,26 +277,10 @@ async def list_enterprise_credits(
                 pool_credits=ent.credits,
                 total_allocated=total_alloc,
                 total_used=total_used,
-                total_remaining=total_remaining,
-                status=cstatus,
+                total_remaining=total_rem,
+                status=_credit_status(total_alloc, total_rem),
             )
         )
-
-    total = len(all_records)
-    items = all_records[(page - 1) * page_size : page * page_size]
-
-    all_ents = (await db.execute(select(Enterprise))).scalars().all()
-    all_ent_ids = [e.id for e in all_ents]
-    global_agg_rows = (
-        await db.execute(
-            select(
-                func.sum(User.allocated_credits),
-                func.sum(User.used_credits),
-            ).where(User.enterprise_id.in_(all_ent_ids))
-        )
-    ).one()
-    g_alloc = int(global_agg_rows[0] or 0)
-    g_used = int(global_agg_rows[1] or 0)
 
     return PagedEnterpriseCredits(
         items=items,
