@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import bcrypt
 from fastapi import Depends, HTTPException, status

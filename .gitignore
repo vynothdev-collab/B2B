@@ -74,6 +74,38 @@ frontend/.nyc_output/
 frontend/storybook-static/
 
 # =============================================================================
+# ADMIN FRONTEND — Next.js 15 / Node.js
+# =============================================================================
+admin_frontend/node_modules/
+admin_frontend/.next/
+admin_frontend/out/
+admin_frontend/build/
+admin_frontend/dist/
+admin_frontend/.cache/
+admin_frontend/.turbo/
+
+# Vercel
+admin_frontend/.vercel/
+
+# TypeScript build info
+admin_frontend/*.tsbuildinfo
+admin_frontend/.tsbuildinfo
+admin_frontend/next-env.d.ts
+
+# Package managers
+admin_frontend/.pnp
+admin_frontend/.pnp.js
+admin_frontend/.yarn/install-state.gz
+admin_frontend/package-lock.json
+
+# Testing
+admin_frontend/coverage/
+admin_frontend/.nyc_output/
+
+# Storybook
+admin_frontend/storybook-static/
+
+# =============================================================================
 # BACKEND — Python / FastAPI
 # =============================================================================
 
