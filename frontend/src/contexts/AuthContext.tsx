@@ -7,13 +7,8 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { apiGetMe, apiLogin, apiRegister, type UserInfo } from "@/lib/authApi";
-import {
-  clearTokens,
-  getAccessToken,
-  getRefreshToken,
-  storeTokens,
-} from "@/lib/tokens";
+import { apiGetMe, apiGoogleLogin, apiLogin, apiRegister, type UserInfo } from "@/lib/authApi";
+import { clearTokens, getAccessToken, getRefreshToken, storeTokens } from "@/lib/tokens";
 import { toast } from "@/lib/toast";
 
 interface AuthContextValue {
@@ -22,6 +17,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  googleLogin: (credential: string) => Promise<void>;
+  applyOAuth: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -32,23 +29,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Restore session from stored tokens on mount
   useEffect(() => {
     if (typeof window === "undefined") {
       setIsLoading(false);
       return;
     }
     const hasSession = !!getAccessToken() || !!getRefreshToken();
-
     if (!hasSession) {
       setIsLoading(false);
       return;
     }
-
     apiGetMe()
       .then((u) => setUser(u))
-      .catch(() => {
-        clearTokens();
-      })
+      .catch(() => clearTokens())
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -85,20 +79,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       const res = await apiLogin(email, password);
-      storeTokens(res.access_token, res.refresh_token);
-      setUser(res.user);
-      toast.success(`Welcome back, ${res.user.name}!`);
-      router.replace("/search");
+      _applyAuth(res, `Welcome back, ${res.user.name}!`);
     },
-    [router],
+    [_applyAuth]
   );
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
       const res = await apiRegister(name, email, password);
-      storeTokens(res.access_token, res.refresh_token);
-      setUser(res.user);
-      toast.success("Account created! Welcome.");
+      _applyAuth(res, "Account created! Welcome.");
+    },
+    [_applyAuth]
+  );
+
+  const googleLogin = useCallback(
+    async (credential: string) => {
+      const res = await apiGoogleLogin(credential);
+      _applyAuth(res, `Welcome, ${res.user.name}!`);
+    },
+    [_applyAuth]
+  );
+
+  const applyOAuth = useCallback(
+    async (accessToken: string, refreshToken: string) => {
+      storeTokens(accessToken, refreshToken);
+      const u = await apiGetMe();
+      setUser(u);
+      toast.success(`Welcome, ${u.name}!`);
       router.replace("/search");
     },
     [router],
@@ -112,14 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
-        login,
-        register,
-        logout,
-      }}
+      value={{ user, isLoading, isAuthenticated: !!user, login, register, googleLogin, applyOAuth, logout }}
     >
       {children}
     </AuthContext.Provider>

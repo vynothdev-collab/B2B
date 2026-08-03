@@ -1,7 +1,7 @@
 import logging
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 logger = logging.getLogger(__name__)
 from sqlalchemy import select
@@ -9,7 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.models.search_record import CompanySearchRecord, PersonSearchRecord
+from app.core.security import get_current_user
+from app.models.search_log import SearchLog
+from app.models.search_record import PersonSearchRecord, CompanySearchRecord
+from app.models.user import User, UserRole
 from app.models.technology_intent import TechnologyIntent
 from app.schemas.search import (
     AgenticSearchRequest,
@@ -20,24 +23,39 @@ from app.schemas.search import (
     TitleAutocompleteResponse,
 )
 from app.services import coresignal_service
+from app.services.credit_service import deduct_credit
 
 router = APIRouter()
+
+
+def _log_search(db: AsyncSession, user_id: str, search_type: str) -> None:
+    db.add(SearchLog(user_id=user_id, search_type=search_type))
 
 
 @router.post("/persons", response_model=SearchResponse, summary="Search people")
 async def person_search(
     body: PersonSearchRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    return await coresignal_service.search_persons(body, db=db)
+    result = await coresignal_service.search_persons(body, db=db)
+    await deduct_credit(current_user, db, reason="People Search", description="People search — 1 credit deducted")
+    _log_search(db, current_user.id, "person")
+    await db.flush()
+    return result
 
 
 @router.post("/companies", response_model=SearchResponse, summary="Search companies")
 async def company_search(
     body: CompanySearchRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    return await coresignal_service.search_companies(body, db=db)
+    result = await coresignal_service.search_companies(body, db=db)
+    await deduct_credit(current_user, db, reason="Company Search", description="Company search — 1 credit deducted")
+    _log_search(db, current_user.id, "company")
+    await db.flush()
+    return result
 
 
 @router.post(
@@ -45,9 +63,14 @@ async def company_search(
 )
 async def agentic_search(
     body: AgenticSearchRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
-    return await coresignal_service.agentic_search(body, db=db)
+    result = await coresignal_service.agentic_search(body, db=db)
+    await deduct_credit(current_user, db, reason="AI Search", description="AI search — 1 credit deducted")
+    _log_search(db, current_user.id, "agentic")
+    await db.flush()
+    return result
 
 
 @router.get(

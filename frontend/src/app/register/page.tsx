@@ -1,8 +1,20 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { GoogleSignInButton } from "@/components/ui/GoogleSignInButton";
+import { LinkedInSignInButton } from "@/components/ui/LinkedInSignInButton";
+import { MicrosoftSignInButton } from "@/components/ui/MicrosoftSignInButton";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  cancelled: "Sign-in was cancelled. Please try again.",
+  invalid_state: "Authentication request expired. Please try again.",
+  auth_failed: "Authentication failed. Please try again.",
+  no_email: "Your account does not have a verified email address.",
+  account_disabled: "Your account has been disabled. Please contact support.",
+};
 
 const PERKS = [
   "Search 800M+ people & 35M+ companies",
@@ -11,15 +23,39 @@ const PERKS = [
   "Real-time data enrichment",
 ];
 
-export default function RegisterPage() {
-  const { register } = useAuth();
+function RegisterForm() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const { register, applyOAuth } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    const oauthError = params.get("error");
+
+    if (oauthError) {
+      setError(ERROR_MESSAGES[oauthError] ?? "Sign-in failed. Please try again.");
+      window.history.replaceState({}, "", "/register");
+      return;
+    }
+
+    if (accessToken && refreshToken) {
+      setOauthLoading(true);
+      applyOAuth(accessToken, refreshToken).catch(() => {
+        setError("Authentication failed. Please try again.");
+        setOauthLoading(false);
+        window.history.replaceState({}, "", "/register");
+      });
+    }
+  }, [params, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,10 +221,11 @@ export default function RegisterPage() {
                 type="text"
                 autoComplete="name"
                 required
+                disabled={isDisabled}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Jane Smith"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all disabled:opacity-60"
               />
             </div>
 
@@ -200,10 +237,11 @@ export default function RegisterPage() {
                 type="email"
                 autoComplete="email"
                 required
+                disabled={isDisabled}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all disabled:opacity-60"
               />
             </div>
 
@@ -216,16 +254,18 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
                   required
+                  disabled={isDisabled}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Min. 8 characters"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-all disabled:opacity-60"
                 />
                 <button
                   type="button"
                   tabIndex={-1}
+                  disabled={isDisabled}
                   onClick={() => setShowPassword((p) => !p)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-60"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -269,10 +309,11 @@ export default function RegisterPage() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
+                disabled={isDisabled}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
-                className={`w-full rounded-xl border bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition-all ${
+                className={`w-full rounded-xl border bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition-all disabled:opacity-60 ${
                   confirmPassword && confirmPassword !== password
                     ? "border-red-300 focus:border-red-400 focus:ring-red-400/20"
                     : "border-gray-200 focus:border-red-500 focus:ring-red-500/20"
@@ -287,7 +328,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={isDisabled}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-red-200 hover:bg-red-500 active:scale-[0.98] disabled:opacity-60 transition-all"
             >
               {loading ? (
@@ -299,6 +340,18 @@ export default function RegisterPage() {
               )}
             </button>
           </form>
+
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gray-100" />
+            <span className="text-xs text-gray-400">or</span>
+            <div className="h-px flex-1 bg-gray-100" />
+          </div>
+
+          <div className={`flex items-center justify-center gap-3 ${isDisabled ? "pointer-events-none opacity-50" : ""}`}>
+            <GoogleSignInButton onError={(msg) => setError(msg)} />
+            <LinkedInSignInButton onError={(msg) => setError(msg)} />
+            <MicrosoftSignInButton onError={(msg) => setError(msg)} />
+          </div>
 
           <p className="mt-6 text-center text-sm text-gray-500">
             Already have an account?{" "}
@@ -324,5 +377,19 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white">
+          <Loader2 className="h-7 w-7 animate-spin text-red-600" />
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

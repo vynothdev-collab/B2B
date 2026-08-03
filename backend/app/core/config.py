@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,6 +8,14 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def _require_secrets(self) -> "Settings":
+        if not self.SECRET_KEY:
+            raise ValueError("SECRET_KEY must be set in environment")
+        if not self.ADMIN_SECRET_KEY:
+            raise ValueError("ADMIN_SECRET_KEY must be set in environment")
+        return self
 
     APP_NAME: str = ""
     APP_VERSION: str = ""
@@ -25,6 +34,14 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # Admin JWT — separate secret so admin tokens can't be used as user tokens
+    ADMIN_SECRET_KEY: str = ""
+    ADMIN_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ADMIN_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # Static API key required in X-Admin-Api-Key header to create admin accounts
+    ADMIN_CREATE_API_KEY: str = ""
+
     REDIS_URL: str = ""
 
     CORESIGNAL_API_KEY: str = ""
@@ -33,6 +50,21 @@ class Settings(BaseSettings):
 
     PDL_API_KEY: str = ""
     PDL_BASE_URL: str = ""
+
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+
+    # LinkedIn OAuth
+    LINKEDIN_CLIENT_ID: str = ""
+    LINKEDIN_CLIENT_SECRET: str = ""
+    LINKEDIN_CALLBACK_URL: str = ""  # e.g. http://localhost:8000/api/v1/auth/linkedin/callback
+    FRONTEND_URL: str = ""           # e.g. http://localhost:3000
+
+    # Microsoft OAuth
+    MICROSOFT_CLIENT_ID: str = ""
+    MICROSOFT_CLIENT_SECRET: str = ""
+    MICROSOFT_TENANT_ID: str = "common"  # "common" = personal + work/school accounts
+    MICROSOFT_CALLBACK_URL: str = ""     # e.g. http://localhost:8000/api/v1/auth/microsoft/callback
 
 
 settings = Settings()

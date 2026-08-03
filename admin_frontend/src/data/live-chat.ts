@@ -1,0 +1,37 @@
+export interface Conversation {
+  id: string;
+  user: string;
+  initials: string;
+  type: string;
+  company: string;
+  subject: string;
+  assigned: string;
+  status: string;
+  unread: number;
+  started: string;
+  last: string;
+  plan: string;
+  joined: string;
+  messages: { from: string; role: string; text: string; time: string }[];
+}
+
+export const CONVERSATIONS: Conversation[] = [
+  { id: "CHT-001", user: "John Carter", initials: "JC", type: "Individual", company: "—", subject: "Can't access my account dashboard", assigned: "Super Admin", status: "open", unread: 2, started: "Jul 13, 2025 9:02 AM", last: "5 min ago", plan: "Pro", joined: "Jan 12, 2025", messages: [{ from: "John Carter", role: "user", text: "Hi, I'm unable to access my dashboard after the password reset. Is this a known issue?", time: "9:02 AM" }, { from: "Super Admin", role: "admin", text: "Hi John! Let me look into this for you right now.", time: "9:08 AM" }, { from: "John Carter", role: "user", text: "Thank you! It's quite urgent as I have a demo in an hour.", time: "9:10 AM" }] },
+  { id: "CHT-002", user: "Laura Chen", initials: "LC", type: "Enterprise", company: "Nexus Technologies", subject: "How to add team members to our plan", assigned: "Unassigned", status: "open", unread: 1, started: "Jul 13, 2025 8:40 AM", last: "22 min ago", plan: "Enterprise", joined: "Feb 14, 2025", messages: [{ from: "Laura Chen", role: "user", text: "Hello, I'd like to know how to invite new team members to our Enterprise account. Can you walk me through the process?", time: "8:40 AM" }] },
+  { id: "CHT-003", user: "Marcus Webb", initials: "MW", type: "Individual", company: "—", subject: "Billing question about Pro plan renewal", assigned: "Super Admin", status: "in_progress", unread: 0, started: "Jul 12, 2025 3:15 PM", last: "1 hr ago", plan: "Free", joined: "Mar 20, 2025", messages: [{ from: "Marcus Webb", role: "user", text: "Hi, I have a question about my Pro plan billing. Will I be charged automatically at renewal?", time: "3:15 PM" }, { from: "Super Admin", role: "admin", text: "Hi Marcus! Yes, if you have auto-renewal enabled, you'll be charged on your renewal date. You can manage this in your account settings.", time: "3:22 PM" }, { from: "Marcus Webb", role: "user", text: "Got it, thanks. How do I disable auto-renewal?", time: "3:25 PM" }, { from: "Super Admin", role: "admin", text: "Go to Settings → Billing → Subscription, and toggle off the Auto-Renew option. Let me know if you need help finding it!", time: "3:30 PM" }] },
+  { id: "CHT-004", user: "Priya Patel", initials: "PP", type: "Individual", company: "—", subject: "Search results not loading correctly", assigned: "Super Admin", status: "in_progress", unread: 0, started: "Jul 12, 2025 11:00 AM", last: "3 hr ago", plan: "Pro", joined: "Nov 8, 2024", messages: [{ from: "Priya Patel", role: "user", text: "My search results are showing nothing even for very broad searches. Everything returns zero results.", time: "11:00 AM" }, { from: "Super Admin", role: "admin", text: "Hi Priya! I can see your account. Let me check if there's a filter issue. Can you try clearing all filters and doing a fresh search?", time: "11:10 AM" }] },
+  { id: "CHT-005", user: "James Okafor", initials: "JO", type: "Enterprise", company: "Vantage Capital", subject: "Request for custom plan pricing", assigned: "Super Admin", status: "open", unread: 3, started: "Jul 11, 2025 2:30 PM", last: "Yesterday", plan: "Enterprise", joined: "Sep 10, 2024", messages: [{ from: "James Okafor", role: "user", text: "Hi, we have a team of 80 people and none of your current plans seem to fit. Do you offer custom pricing?", time: "2:30 PM" }, { from: "James Okafor", role: "user", text: "Also, we'd need SSO integration. Is that available?", time: "2:35 PM" }, { from: "James Okafor", role: "user", text: "Please get back to me ASAP — we're evaluating vendors this week.", time: "2:40 PM" }] },
+  { id: "CHT-006", user: "Emma Laurent", initials: "EL", type: "Individual", company: "—", subject: "Offer code not applying at checkout", assigned: "Super Admin", status: "resolved", unread: 0, started: "Jul 10, 2025 10:00 AM", last: "Jul 10, 2025", plan: "Pro", joined: "Apr 4, 2025", messages: [{ from: "Emma Laurent", role: "user", text: "The SUMMER20 code isn't being applied. Is it still valid?", time: "10:00 AM" }, { from: "Super Admin", role: "admin", text: "Hi Emma! The code is valid until July 31. It applies to Pro and Business plans. Make sure you're applying it before completing checkout. Let me know if you still have trouble!", time: "10:05 AM" }, { from: "Emma Laurent", role: "user", text: "It worked! I must have been applying it after clicking pay. Thanks!", time: "10:12 AM" }] },
+  { id: "CHT-007", user: "Nadia Brooks", initials: "NB", type: "Enterprise", company: "BrightPath EDU", subject: "Monthly usage report discrepancy", assigned: "Super Admin", status: "resolved", unread: 0, started: "Jul 9, 2025 4:00 PM", last: "Jul 9, 2025", plan: "Business", joined: "Apr 22, 2025", messages: [{ from: "Nadia Brooks", role: "user", text: "Our usage report shows 1,200 searches but our team only did about 980. Can you check?", time: "4:00 PM" }, { from: "Super Admin", role: "admin", text: "Hi Nadia! I've reviewed the logs. The discrepancy was due to some cached/retried API calls being counted. I've corrected the report — it now shows 980. Sorry for the confusion!", time: "4:45 PM" }, { from: "Nadia Brooks", role: "user", text: "Perfect, thank you for sorting that out so quickly!", time: "4:50 PM" }] },
+  { id: "CHT-008", user: "Ryan Nguyen", initials: "RN", type: "Individual", company: "—", subject: "How to export contacts to CSV", assigned: "Unassigned", status: "resolved", unread: 0, started: "Jul 8, 2025 1:00 PM", last: "Jul 8, 2025", plan: "Pro", joined: "Dec 15, 2024", messages: [{ from: "Ryan Nguyen", role: "user", text: "Is there a way to export my saved contacts to a CSV file?", time: "1:00 PM" }, { from: "Super Admin", role: "admin", text: "Hi Ryan! Yes — go to Lists, open the list you want to export, and click the Export button in the top right corner. You'll get a CSV with all contact data. Let me know if you need anything else!", time: "1:10 PM" }, { from: "Ryan Nguyen", role: "user", text: "Found it, thanks!", time: "1:15 PM" }] },
+];
+
+export const UNREAD_CONVERSATIONS = CONVERSATIONS.filter((c) => c.unread > 0);
+
+export const TEMPLATES = [
+  { name: "Welcome Greeting", category: "Onboarding", content: "Hi there! Welcome to LeadsBuddy. How can I help you today?", by: "Super Admin", updated: "Jun 20, 2025" },
+  { name: "Billing Inquiry Ack.", category: "Billing", content: "Thanks for reaching out! I can see your billing question. Let me pull up your account details...", by: "Super Admin", updated: "Jul 1, 2025" },
+  { name: "Technical Issue Ack.", category: "Technical", content: "I'm sorry to hear you're experiencing this issue. Let me look into this for you right away.", by: "Super Admin", updated: "Jul 5, 2025" },
+  { name: "Escalation Notice", category: "Support", content: "I'm going to escalate this to our technical team. You'll hear back within 24 hours.", by: "Super Admin", updated: "Jun 15, 2025" },
+  { name: "Resolution Confirmation", category: "Closing", content: "Great news — your issue has been resolved! Is there anything else I can help you with?", by: "Super Admin", updated: "Jul 8, 2025" },
+];

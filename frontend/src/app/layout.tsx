@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { GoogleOAuthWrapper } from "@/components/layout/GoogleOAuthWrapper";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -30,10 +31,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}
-      >
-        <AuthProvider>{children}</AuthProvider>
+      <body className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}>
+        <GoogleOAuthWrapper>
+          <AuthProvider>{children}</AuthProvider>
+        </GoogleOAuthWrapper>
         <Toaster position="top-right" richColors />
       </body>
     </html>

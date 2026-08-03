@@ -1,20 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  User,
-  Mail,
-  Shield,
-  LogOut,
-  KeyRound,
-  Check,
-  Loader2,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { User, Mail, Shield, LogOut, KeyRound, Check, Loader2, Eye, EyeOff, Building2, CreditCard, ArrowRight } from "lucide-react";
+import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiClient } from "@/lib/api";
+import { apiGetMyEnterprise, type EnterpriseMe } from "@/lib/enterpriseApi";
 import { toast } from "@/lib/toast";
 
 function avatarInitials(name = "") {
@@ -43,11 +35,29 @@ const ROLE_BADGE: Record<string, string> = {
   admin: "bg-red-50 text-red-700 border border-red-200",
   user: "bg-blue-50 text-blue-700 border border-blue-200",
   viewer: "bg-gray-50 text-gray-600 border border-gray-200",
+  individual: "bg-blue-50 text-blue-700 border border-blue-200",
+  enterprise_admin: "bg-amber-50 text-amber-700 border border-amber-200",
+  enterprise_user: "bg-emerald-50 text-emerald-700 border border-emerald-200",
 };
+
+function prettyRole(role: string): string {
+  if (role === "enterprise_admin") return "Enterprise Admin";
+  if (role === "enterprise_user") return "Enterprise Member";
+  if (role === "individual") return "Individual";
+  return role;
+}
 
 export default function ProfileClient() {
   const { user, logout } = useAuth();
   const router = useRouter();
+
+  const [enterprise, setEnterprise] = useState<EnterpriseMe | null>(null);
+  useEffect(() => {
+    if (!user?.enterprise_id) return;
+    apiGetMyEnterprise()
+      .then(setEnterprise)
+      .catch(() => setEnterprise(null));
+  }, [user?.enterprise_id]);
 
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [showPw, setShowPw] = useState({
@@ -127,10 +137,8 @@ export default function ProfileClient() {
 
               <div className="mb-5">
                 <h1 className="text-xl font-bold text-gray-900">{name}</h1>
-                <span
-                  className={`mt-1.5 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${roleBadge}`}
-                >
-                  {role}
+                <span className={`mt-1.5 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadge}`}>
+                  {prettyRole(role)}
                 </span>
               </div>
 
@@ -162,14 +170,40 @@ export default function ProfileClient() {
                 <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
                   <Shield className="h-4 w-4 shrink-0 text-gray-400" />
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                      Role
-                    </p>
-                    <p className="text-sm font-medium capitalize text-gray-800">
-                      {role}
-                    </p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Role</p>
+                    <p className="text-sm font-medium text-gray-800">{prettyRole(role)}</p>
                   </div>
                 </div>
+
+                {enterprise && (
+                  <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+                    <Building2 className="h-4 w-4 shrink-0 text-gray-400" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Enterprise</p>
+                      <p className="truncate text-sm font-medium text-gray-800">
+                        {enterprise.name}
+                        {enterprise.industry ? <span className="text-gray-500"> · {enterprise.industry}</span> : null}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <Link
+                  href="/search/usage"
+                  className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 hover:border-gray-200 hover:bg-gray-100 transition-colors"
+                >
+                  <CreditCard className="h-4 w-4 shrink-0 text-gray-400" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Search Credits</p>
+                    <p className="mt-0.5 text-sm font-medium text-gray-800">
+                      {(user?.remaining_credits ?? 0).toLocaleString()} remaining
+                      <span className="ml-2 text-xs font-normal text-gray-400">
+                        of {(user?.allocated_credits ?? 0).toLocaleString()} allocated
+                      </span>
+                    </p>
+                  </div>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                </Link>
               </div>
             </div>
           </div>
