@@ -171,5 +171,11 @@ class EmailRevealResponse(BaseModel):
     has_email: bool
 
 
+class PhoneRevealResponse(BaseModel):
+    record_id: str
+    phone: str | None = None
+    has_phone: bool
+
+
 class TitleAutocompleteResponse(BaseModel):
     suggestions: list[str]

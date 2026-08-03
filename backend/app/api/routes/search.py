@@ -19,11 +19,12 @@ from app.schemas.search import (
     CompanySearchRequest,
     EmailRevealResponse,
     PersonSearchRequest,
+    PhoneRevealResponse,
     SearchResponse,
     TitleAutocompleteResponse,
 )
 from app.services import coresignal_service
-from app.services.credit_service import deduct_credit
+from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
 
 router = APIRouter()
 
@@ -38,8 +39,15 @@ async def person_search(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
+    cost = CREDIT_COSTS["search"]
+    await check_credits(current_user, db, cost)
     result = await coresignal_service.search_persons(body, db=db)
-    await deduct_credit(current_user, db, reason="People Search", description="People search — 1 credit deducted")
+    await deduct_credit(
+        current_user, db,
+        reason="People Search",
+        description=f"People search — {cost} credits deducted",
+        amount=cost,
+    )
     _log_search(db, current_user.id, "person")
     await db.flush()
     return result
@@ -51,8 +59,15 @@ async def company_search(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
+    cost = CREDIT_COSTS["search"]
+    await check_credits(current_user, db, cost)
     result = await coresignal_service.search_companies(body, db=db)
-    await deduct_credit(current_user, db, reason="Company Search", description="Company search — 1 credit deducted")
+    await deduct_credit(
+        current_user, db,
+        reason="Company Search",
+        description=f"Company search — {cost} credits deducted",
+        amount=cost,
+    )
     _log_search(db, current_user.id, "company")
     await db.flush()
     return result
@@ -66,8 +81,15 @@ async def agentic_search(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SearchResponse:
+    cost = CREDIT_COSTS["search"]
+    await check_credits(current_user, db, cost)
     result = await coresignal_service.agentic_search(body, db=db)
-    await deduct_credit(current_user, db, reason="AI Search", description="AI search — 1 credit deducted")
+    await deduct_credit(
+        current_user, db,
+        reason="AI Search",
+        description=f"AI search — {cost} credits deducted",
+        amount=cost,
+    )
     _log_search(db, current_user.id, "agentic")
     await db.flush()
     return result
@@ -76,12 +98,16 @@ async def agentic_search(
 @router.get(
     "/persons/{record_id}/email",
     response_model=EmailRevealResponse,
-    summary="Reveal stored email for a person record",
+    summary="Reveal work email for a person record",
 )
-async def reveal_person_email(
+async def reveal_person_work_email(
     record_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> EmailRevealResponse:
+    cost = CREDIT_COSTS["email_work"]
+    await check_credits(current_user, db, cost)
+
     result = await db.execute(
         select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
     )
@@ -91,10 +117,98 @@ async def reveal_person_email(
             status_code=404,
             detail="Record not found. Run a new search to refresh.",
         )
+
+    await deduct_credit(
+        current_user, db,
+        reason="Work Email Reveal",
+        description=f"Work email reveal — {cost} credit deducted",
+        amount=cost,
+    )
+    await db.flush()
     return EmailRevealResponse(
         record_id=record_id,
         email=record.email,
         has_email=bool(record.email),
+    )
+
+
+@router.get(
+    "/persons/{record_id}/personal-email",
+    response_model=EmailRevealResponse,
+    summary="Reveal personal email for a person record",
+)
+async def reveal_person_personal_email(
+    record_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> EmailRevealResponse:
+    cost = CREDIT_COSTS["email_personal"]
+    await check_credits(current_user, db, cost)
+
+    result = await db.execute(
+        select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="Record not found. Run a new search to refresh.",
+        )
+
+    raw = record.raw_data or {}
+    personal_email = raw.get("primary_personal_email") or raw.get("personal_email")
+
+    await deduct_credit(
+        current_user, db,
+        reason="Personal Email Reveal",
+        description=f"Personal email reveal — {cost} credit deducted",
+        amount=cost,
+    )
+    await db.flush()
+    return EmailRevealResponse(
+        record_id=record_id,
+        email=personal_email,
+        has_email=bool(personal_email),
+    )
+
+
+@router.get(
+    "/persons/{record_id}/phone",
+    response_model=PhoneRevealResponse,
+    summary="Reveal mobile phone number for a person record",
+)
+async def reveal_person_phone(
+    record_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> PhoneRevealResponse:
+    cost = CREDIT_COSTS["phone"]
+    await check_credits(current_user, db, cost)
+
+    result = await db.execute(
+        select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
+    )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="Record not found. Run a new search to refresh.",
+        )
+
+    raw = record.raw_data or {}
+    phone = raw.get("mobile_phone")
+
+    await deduct_credit(
+        current_user, db,
+        reason="Phone Reveal",
+        description=f"Mobile phone reveal — {cost} credits deducted",
+        amount=cost,
+    )
+    await db.flush()
+    return PhoneRevealResponse(
+        record_id=record_id,
+        phone=phone,
+        has_phone=bool(phone),
     )
 
 
