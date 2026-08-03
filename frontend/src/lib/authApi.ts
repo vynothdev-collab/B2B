@@ -29,6 +29,11 @@ export async function apiLogin(
   return res.data;
 }
 
+export async function apiGoogleLogin(accessToken: string): Promise<AuthResponse> {
+  const res = await apiClient.post<AuthResponse>("/auth/google", { access_token: accessToken });
+  return res.data;
+}
+
 export async function apiRegister(
   name: string,
   email: string,

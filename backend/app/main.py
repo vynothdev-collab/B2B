@@ -26,6 +26,13 @@ def _drop_not_null_if_exists(sync_conn, table: str, column: str) -> None:
         )
 
 
+def _drop_column_if_exists(sync_conn, table: str, column: str) -> None:
+    insp = inspect(sync_conn)
+    existing = [c["name"] for c in insp.get_columns(table)]
+    if column in existing:
+        sync_conn.execute(text(f"ALTER TABLE {table} DROP COLUMN {column}"))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
@@ -56,11 +63,48 @@ async def lifespan(app: FastAPI):
             "added_at",
             "TIMESTAMPTZ NOT NULL DEFAULT NOW()",
         )
+        # users table — enterprise multi-tenancy
+        await conn.run_sync(
+            _add_column_if_missing, "users", "phone", "VARCHAR(50)"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "enterprise_id", "VARCHAR(36) REFERENCES enterprises(id)"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "allocated_credits", "INTEGER NOT NULL DEFAULT 0"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "used_credits", "INTEGER NOT NULL DEFAULT 0"
+        )
+        await conn.execute(text("UPDATE users SET role='individual' WHERE role='user'"))
+        # enterprises table — drop removed columns
+        await conn.run_sync(_drop_column_if_exists, "enterprises", "monthly_limit")
+        await conn.run_sync(
+            _add_column_if_missing, "enterprises", "plan", "VARCHAR(50) NOT NULL DEFAULT 'Free'"
+        )
         await conn.run_sync(
             _add_column_if_missing,
             "list_items",
             "deleted_at",
             "TIMESTAMPTZ DEFAULT NULL",
+        )
+        # plans table — soft delete
+        await conn.run_sync(
+            _add_column_if_missing, "plans", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
+        )
+        # users table — google oauth fields (idempotent; also handled by alembic 002)
+        await conn.run_sync(
+            _drop_not_null_if_exists, "users", "hashed_password"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "oauth_provider", "VARCHAR(50)"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "oauth_provider_id", "VARCHAR(255)"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "users", "email_verified",
+            "BOOLEAN NOT NULL DEFAULT FALSE"
         )
     yield
 

@@ -52,6 +52,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const _applyAuth = useCallback(
+    (res: Awaited<ReturnType<typeof apiLogin>>, welcomeMsg: string) => {
+      storeTokens(res.access_token, res.refresh_token);
+      setUser({
+        ...res.user,
+        allocated_credits: res.user.allocated_credits ?? 0,
+        used_credits: res.user.used_credits ?? 0,
+        remaining_credits: res.user.remaining_credits ?? 0,
+      });
+      toast.success(welcomeMsg);
+      router.replace("/search");
+    },
+    [router],
+  );
+
+  const _applyAuth = useCallback(
+    (res: Awaited<ReturnType<typeof apiLogin>>, welcomeMsg: string) => {
+      storeTokens(res.access_token, res.refresh_token);
+      setUser({
+        ...res.user,
+        allocated_credits: res.user.allocated_credits ?? 0,
+        used_credits: res.user.used_credits ?? 0,
+        remaining_credits: res.user.remaining_credits ?? 0,
+      });
+      toast.success(welcomeMsg);
+      router.replace("/search");
+    },
+    [router]
+  );
+
   const login = useCallback(
     async (email: string, password: string) => {
       const res = await apiLogin(email, password);

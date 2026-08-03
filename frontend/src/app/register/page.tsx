@@ -57,6 +57,19 @@ export default function RegisterPage() {
     pwStrength
   ];
 
+  const isDisabled = loading || oauthLoading;
+
+  if (oauthLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3 text-gray-500">
+          <Loader2 className="h-7 w-7 animate-spin text-red-600" />
+          <p className="text-sm font-medium">Signing you in…</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen">
       <div className="hidden lg:flex lg:w-[44%] flex-col justify-between bg-gradient-to-br from-red-700 via-red-600 to-indigo-700 p-12 relative overflow-hidden">
