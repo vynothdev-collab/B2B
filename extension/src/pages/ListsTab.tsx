@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import type { LeadsList, ListItem, PersonResult } from '../types';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import type { LeadsList, ListItem, PersonResult, CompanyResult } from '../types';
 import { listsApi } from '../api/lists';
 import { ListCard } from '../components/ListCard';
 import { CreateListModal } from '../components/CreateListModal';
@@ -24,12 +24,6 @@ const Ico = {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M15.75 19.5L8.25 12l7.5-7.5" />
-    </svg>
-  ),
-  chevronDown: (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
     </svg>
   ),
   email: (
@@ -88,16 +82,167 @@ function SkeletonList() {
   );
 }
 
-/* ─── Lead item card ─────────────────────────────────────────────────────── */
-function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void }) {
+/* ─── Company logo / initials avatar ────────────────────────────────────── */
+function CompanyAvatar({ src, name, website }: { src?: string; name: string; website?: string }) {
+  const domain = website?.replace(/^https?:\/\/(www\.)?/, '').split('/')[0] || '';
+  const sources = [
+    src,
+    domain ? `https://logo.clearbit.com/${domain}` : undefined,
+  ].filter(Boolean) as string[];
+
+  const [idx, setIdx] = useState(0);
+  const initials = name.slice(0, 2).toUpperCase();
+  const currentSrc = sources[idx];
+
+  if (currentSrc) {
+    return (
+      <img
+        src={currentSrc}
+        alt={name}
+        onError={() => setIdx((i) => i + 1)}
+        style={{
+          width: '36px', height: '36px', borderRadius: '9px',
+          objectFit: 'contain', border: '1px solid #E2E8F0',
+          background: '#fff', flexShrink: 0,
+        }}
+      />
+    );
+  }
+  return (
+    <div style={{
+      width: '36px', height: '36px', borderRadius: '9px', flexShrink: 0,
+      background: 'linear-gradient(135deg, #1A3D5C, #2563EB)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: '12px', fontWeight: 700, color: '#fff', letterSpacing: '0.02em',
+    }}>
+      {initials}
+    </div>
+  );
+}
+
+/* ─── Company item card ──────────────────────────────────────────────────── */
+function CompanyItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const co = item.data as CompanyResult;
+
+  const name = co.company_name || co.company_legal_name || 'Unknown Company';
+  const location = [co.hq_city, co.hq_country].filter(Boolean).join(', ') || co.hq_location || '';
+  const domain = co.website?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') || '';
+
+  const copyToClipboard = async (text: string, field: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 1500);
+  };
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        borderBottom: '1px solid #F1F5F9',
+        padding: '12px 16px',
+        background: hovered ? '#F8FAFD' : '#fff',
+        transition: 'background 0.12s',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+        <CompanyAvatar src={co.logo_url} name={name} website={co.website} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Name + actions row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <p style={{
+              fontSize: '13px', fontWeight: 600, color: '#0F172A',
+              margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {name}
+            </p>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '2px',
+              flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
+            }}>
+              {co.canonical_linkedin_url && (
+                <a href={co.canonical_linkedin_url} target="_blank" rel="noopener noreferrer"
+                  title="LinkedIn" style={{ padding: '4px', color: '#3B82F6', display: 'flex' }}>
+                  {Ico.linkedin}
+                </a>
+              )}
+              <button onClick={onRemove} title="Remove from list"
+                style={{ padding: '4px', color: '#CBD5E1', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#EF4444'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#CBD5E1'; }}>
+                {Ico.trash}
+              </button>
+            </div>
+          </div>
+
+          {/* Domain + industry */}
+          {(domain || co.industry) && (
+            <p style={{ fontSize: '11.5px', color: '#64748B', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {domain}{co.industry ? (domain ? ` · ${co.industry}` : co.industry) : ''}
+            </p>
+          )}
+
+          {/* Location + size */}
+          {(location || co.employees_count || co.size_range) && (
+            <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {[location, co.employees_count ? `${co.employees_count.toLocaleString()} employees` : co.size_range].filter(Boolean).join(' · ')}
+            </p>
+          )}
+
+          {/* Quick action chips */}
+          {hovered && (co.website || co.canonical_linkedin_url) && (
+            <div style={{ display: 'flex', gap: '5px', marginTop: '8px', flexWrap: 'wrap' }}>
+              {co.website && (
+                <button
+                  onClick={() => copyToClipboard(co.website!, 'website')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '4px 9px', borderRadius: '7px', fontSize: '11px', fontWeight: 500,
+                    border: '1px solid #E2E8F0', color: '#374151', background: '#fff',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C'; (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0'; (e.currentTarget as HTMLButtonElement).style.color = '#374151'; }}
+                >
+                  {copiedField === 'website' ? Ico.check : Ico.copy}
+                  {copiedField === 'website' ? 'Copied!' : 'Copy website'}
+                </button>
+              )}
+              {co.canonical_linkedin_url && (
+                <button
+                  onClick={() => copyToClipboard(co.canonical_linkedin_url!, 'linkedin')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '4px 9px', borderRadius: '7px', fontSize: '11px', fontWeight: 500,
+                    border: '1px solid #E2E8F0', color: '#374151', background: '#fff',
+                    cursor: 'pointer', transition: 'all 0.12s',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#0A66C2'; (e.currentTarget as HTMLButtonElement).style.color = '#0A66C2'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0'; (e.currentTarget as HTMLButtonElement).style.color = '#374151'; }}
+                >
+                  {copiedField === 'linkedin' ? Ico.check : Ico.linkedin}
+                  {copiedField === 'linkedin' ? 'Copied!' : 'Copy LinkedIn'}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Person item card ───────────────────────────────────────────────────── */
+function PersonItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void }) {
   const [revealedEmail, setRevealedEmail] = useState<string | null>(null);
   const [revealing, setRevealing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  if (item.item_type !== 'person') return null;
   const person = item.data as PersonResult;
-
   const name = person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim() || 'Unknown';
   const title = person.active_experience_title || person.headline || '';
   const company = person.active_experience_company_name || '';
@@ -133,19 +278,27 @@ function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
         <Avatar src={person.picture_url} name={name} size="sm" />
+
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {/* Name + hover actions */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+            <p style={{
+              fontSize: '13px', fontWeight: 600, color: '#0F172A',
+              margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
               {name}
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '2px',
+              flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
+            }}>
               {person.linkedin_url && (
                 <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
-                  style={{ padding: '4px', color: '#3B82F6', display: 'flex' }}>
+                  title="LinkedIn" style={{ padding: '4px', color: '#3B82F6', display: 'flex' }}>
                   {Ico.linkedin}
                 </a>
               )}
-              <button onClick={onRemove}
+              <button onClick={onRemove} title="Remove from list"
                 style={{ padding: '4px', color: '#CBD5E1', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#EF4444'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#CBD5E1'; }}>
@@ -153,62 +306,76 @@ function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void
               </button>
             </div>
           </div>
+
+          {/* Title · Company */}
           {(title || company) && (
             <p style={{ fontSize: '11.5px', color: '#64748B', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {title}{company ? ` · ${company}` : ''}
             </p>
           )}
+
+          {/* Location */}
           {location && (
-            <p style={{ fontSize: '11px', color: '#94A3B8', margin: '1px 0 0' }}>{location}</p>
+            <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0' }}>{location}</p>
           )}
 
-          {/* Email reveal */}
-          <div style={{ marginTop: '8px' }}>
-            {revealedEmail ? (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: '#F0FDF4', border: '1px solid #BBF7D0',
-                borderRadius: '8px', padding: '5px 8px',
-              }}>
-                <span style={{ fontSize: '11px', color: '#15803D', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {revealedEmail}
-                </span>
-                <button onClick={handleCopy}
-                  style={{ color: copied ? '#16A34A' : '#4ADE80', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexShrink: 0 }}>
-                  {copied ? Ico.check : Ico.copy}
+          {/* Email chip — shown on hover (or always if already revealed) */}
+          {(hovered || revealedEmail) && (
+            <div style={{ marginTop: '8px' }}>
+              {revealedEmail ? (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: '#F0FDF4', border: '1px solid #BBF7D0',
+                  borderRadius: '7px', padding: '4px 8px',
+                }}>
+                  <span style={{ fontSize: '11px', color: '#15803D', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {revealedEmail}
+                  </span>
+                  <button onClick={handleCopy}
+                    style={{ color: copied ? '#16A34A' : '#86EFAC', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexShrink: 0 }}>
+                    {copied ? Ico.check : Ico.copy}
+                  </button>
+                </div>
+              ) : (
+                <button onClick={handleReveal} disabled={revealing}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    padding: '4px 9px', borderRadius: '7px',
+                    fontSize: '11px', fontWeight: 500,
+                    border: '1px solid #E2E8F0', color: '#374151', background: '#fff',
+                    cursor: revealing ? 'default' : 'pointer',
+                    transition: 'all 0.12s', opacity: revealing ? 0.7 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!revealing) {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C';
+                      (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0';
+                    (e.currentTarget as HTMLButtonElement).style.color = '#374151';
+                  }}
+                >
+                  {revealing
+                    ? <span style={{ width: '11px', height: '11px', border: '2px solid #CBD5E1', borderTopColor: '#1A3D5C', borderRadius: '50%', display: 'inline-block', animation: 'lb-spin 0.7s linear infinite' }} />
+                    : Ico.email
+                  }
+                  {revealing ? 'Loading…' : 'Get email'}
                 </button>
-              </div>
-            ) : (
-              <button onClick={handleReveal} disabled={revealing}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '5px',
-                  padding: '5px 10px', borderRadius: '8px',
-                  fontSize: '11.5px', fontWeight: 500,
-                  border: '1px solid #E2E8F0',
-                  color: '#374151', background: '#fff', cursor: 'pointer',
-                  transition: 'all 0.12s', opacity: revealing ? 0.6 : 1,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C';
-                  (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0';
-                  (e.currentTarget as HTMLButtonElement).style.color = '#374151';
-                }}
-              >
-                {revealing
-                  ? <span style={{ width: '11px', height: '11px', border: '2px solid #CBD5E1', borderTopColor: '#1A3D5C', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
-                  : Ico.email
-                }
-                {revealing ? 'Loading…' : 'Get email'}
-              </button>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+/* ─── Unified item card dispatcher ──────────────────────────────────────── */
+function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void }) {
+  if (item.item_type === 'company') return <CompanyItemCard item={item} onRemove={onRemove} />;
+  return <PersonItemCard item={item} onRemove={onRemove} />;
 }
 
 /* ─── Stat pill ──────────────────────────────────────────────────────────── */
@@ -235,22 +402,313 @@ function ListsOverview({
   onRefresh: () => void;
 }) {
   const [searchFocused, setSearchFocused] = useState(false);
-  const filtered = lists.filter((l) => l.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const [toolbarShadow, setToolbarShadow] = useState(false);
   const totalLeads = lists.reduce((sum, l) => sum + (l.record_count ?? 0), 0);
   const defaultCount = lists.filter((l) => l.is_default).length;
 
+  /* Show toolbar shadow once user scrolls past it */
+  useEffect(() => {
+    const main = document.querySelector('main');
+    if (!main) return;
+    const onScroll = () => setToolbarShadow(main.scrollTop > 4);
+    main.addEventListener('scroll', onScroll, { passive: true });
+    return () => main.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div>
+      {/* ── Sticky toolbar ────────────────────────────────────────────── */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 20,
+        background: '#fff',
+        boxShadow: toolbarShadow ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+        transition: 'box-shadow 0.2s',
+      }}>
+        <div style={{ padding: '12px 14px 0' }}>
+          {/* Search + Create row */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <span style={{
+                position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)',
+                color: searchFocused ? '#1A3D5C' : '#94A3B8', display: 'flex', pointerEvents: 'none',
+                transition: 'color 0.15s',
+              }}>
+                {Ico.search}
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder="Search your lists…"
+                style={{
+                  width: '100%', height: '38px',
+                  paddingLeft: '33px', paddingRight: '12px',
+                  fontSize: '13px', color: '#0F172A',
+                  background: '#FFFFFF',
+                  border: `1.5px solid ${searchFocused ? '#1A3D5C' : '#E2E8F0'}`,
+                  borderRadius: '10px', outline: 'none',
+                  boxShadow: searchFocused ? '0 0 0 3px rgba(26,61,92,0.08)' : 'none',
+                  transition: 'border-color 0.15s, box-shadow 0.15s',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <button
+              onClick={onCreateClick}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                padding: '0 12px', height: '38px', flexShrink: 0,
+                borderRadius: '10px', border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #1A3D5C 0%, #2563AB 100%)',
+                color: '#fff', fontSize: '12.5px', fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(26,61,92,0.25)',
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+            >
+              {Ico.plus}
+              Create List
+            </button>
+          </div>
 
-      {/* ── Top toolbar ──────────────────────────────────────────────── */}
-      <div style={{ padding: '12px 14px 0', flexShrink: 0 }}>
+        </div>
 
-        {/* Search + Create row */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
-          {/* Search input */}
-          <div style={{ position: 'relative', flex: 1 }}>
+        {/* Stats strip */}
+        {!loading && lists.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '8px 16px',
+            background: '#F8FAFC',
+            borderTop: '1px solid #F1F5F9',
+            borderBottom: '1px solid #F1F5F9',
+          }}>
+            <StatPill value={lists.length} label={lists.length === 1 ? 'list' : 'lists'} />
+            <span style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
+            <StatPill value={totalLeads.toLocaleString()} label="total records" />
+            {defaultCount > 0 && (
+              <>
+                <span style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
+                <StatPill value={defaultCount} label="default" />
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Column header */}
+        {!loading && lists.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            padding: '6px 16px',
+            borderBottom: '1px solid #F1F5F9',
+          }}>
+            <span style={{ flex: 1, fontSize: '10.5px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+              List Name
+            </span>
+            <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+              Records
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ── List cards (natural flow, outer main scrolls) ─────────────── */}
+      {loading ? (
+        <SkeletonList />
+      ) : lists.length === 0 ? (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '48px 24px', textAlign: 'center',
+        }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '16px',
+            background: '#F8FAFC', border: '1px solid #E2E8F0',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '14px',
+          }}>
+            {Ico.listEmpty}
+          </div>
+          <p style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>
+            {searchQuery ? 'No matching lists' : 'No lists yet'}
+          </p>
+          <p style={{ fontSize: '12.5px', color: '#94A3B8', margin: '0 0 20px', lineHeight: 1.5 }}>
+            {searchQuery
+              ? 'Try a different search term or clear the filter.'
+              : 'Create your first list to start organizing and saving leads.'}
+          </p>
+          {!searchQuery && (
+            <button
+              onClick={onCreateClick}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #1A3D5C, #2563AB)',
+                color: '#fff', fontSize: '13px', fontWeight: 600,
+                boxShadow: '0 2px 8px rgba(26,61,92,0.25)',
+              }}
+            >
+              {Ico.plus}
+              Create List
+            </button>
+          )}
+        </div>
+      ) : (
+        lists.map((list: LeadsList) => (
+          <ListCard
+            key={list.id}
+            list={list}
+            onClick={() => onOpen(list)}
+            onDelete={!list.is_default ? () => onDelete(list) : undefined}
+          />
+        ))
+      )}
+    </div>
+  );
+}
+
+/* ─── List detail ────────────────────────────────────────────────────────── */
+function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
+  const [allItems, setAllItems] = useState<ListItem[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [headerShadow, setHeaderShadow] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const busyRef = useRef(false);   /* prevents duplicate inflight requests */
+  const genRef = useRef(0);        /* generation counter — discards stale responses */
+  const searchRef = useRef('');    /* current search term, readable inside observer */
+
+  /* Scroll main to top and attach shadow listener on mount */
+  useEffect(() => {
+    const main = document.querySelector('main');
+    if (main) main.scrollTop = 0;
+    const onScroll = () => setHeaderShadow((main?.scrollTop ?? 0) > 4);
+    main?.addEventListener('scroll', onScroll, { passive: true });
+    return () => main?.removeEventListener('scroll', onScroll);
+  }, []);
+
+  /* Fetch a page; p=1 resets, p>1 appends.  q is the search term. */
+  const fetchPage = useCallback(async (p: number, q = '') => {
+    const gen = ++genRef.current;
+    if (p === 1) { setInitialLoading(true); setAllItems([]); }
+    else setLoadingMore(true);
+    try {
+      const res = await listsApi.getListItems(list.id, p, 20, q || undefined);
+      if (gen !== genRef.current) return; /* stale — newer request superseded this */
+      const incoming = res.items ?? [];
+      const pages = Math.ceil(res.total / res.page_size) || 1;
+      setAllItems((prev) => p === 1 ? incoming : [...prev, ...incoming]);
+      setPage(p);
+      setTotalPages(pages);
+      setTotal(res.total);
+    } catch { /* ignore */ }
+    finally {
+      if (gen === genRef.current) {
+        setInitialLoading(false);
+        setLoadingMore(false);
+      }
+      busyRef.current = false;
+    }
+  }, [list.id]);
+
+  /* Initial load */
+  useEffect(() => { fetchPage(1, ''); }, [fetchPage]);
+
+  /* Debounce search → reset and reload from page 1 */
+  const isFirstDetailRender = useRef(true);
+  useEffect(() => {
+    if (isFirstDetailRender.current) { isFirstDetailRender.current = false; return; }
+    const t = setTimeout(() => {
+      searchRef.current = search;
+      busyRef.current = false;
+      fetchPage(1, search);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search, fetchPage]);
+
+  /* IntersectionObserver — triggers next page when sentinel enters viewport */
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const root = document.querySelector('main');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !busyRef.current && page < totalPages) {
+          busyRef.current = true;
+          fetchPage(page + 1, searchRef.current);
+        }
+      },
+      { root, threshold: 0.1, rootMargin: '80px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [page, totalPages, fetchPage]);
+
+  const handleRemoveItem = async (item: ListItem) => {
+    try {
+      await listsApi.removeItem(list.id, item.id);
+      setAllItems((prev) => prev.filter((i) => i.id !== item.id));
+      setTotal((t) => Math.max(0, t - 1));
+    } catch { /* ignore */ }
+  };
+
+  const recordLabel = total > 0 ? `${total.toLocaleString()} ${total === 1 ? 'record' : 'records'}` : (list.record_count != null ? `${list.record_count} ${list.record_count === 1 ? 'record' : 'records'}` : 'Loading…');
+
+  return (
+    <div>
+      {/* ── Sticky header ─────────────────────────────────────────────── */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 20,
+        background: '#fff',
+        boxShadow: headerShadow ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+        transition: 'box-shadow 0.2s',
+      }}>
+        <div style={{ padding: '12px 14px', borderBottom: '1px solid #F1F5F9' }}>
+          {/* Back + title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <button
+              onClick={onBack}
+              style={{
+                width: '30px', height: '30px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: '8px', border: 'none', cursor: 'pointer',
+                background: '#F1F5F9', color: '#64748B',
+                flexShrink: 0, transition: 'background 0.12s',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#E2E8F0'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F1F5F9'; }}
+            >
+              {Ico.back}
+            </button>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {list.name}
+              </h2>
+              <p style={{ fontSize: '11.5px', color: '#94A3B8', margin: '1px 0 0' }}>{recordLabel}</p>
+            </div>
+
+            {list.is_default && (
+              <span style={{
+                fontSize: '10px', fontWeight: 600, color: '#1D4ED8',
+                background: '#DBEAFE', padding: '3px 8px',
+                borderRadius: '20px', flexShrink: 0,
+              }}>
+                Default
+              </span>
+            )}
+          </div>
+
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
             <span style={{
-              position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)',
+              position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
               color: searchFocused ? '#1A3D5C' : '#94A3B8', display: 'flex', pointerEvents: 'none',
               transition: 'color 0.15s',
             }}>
@@ -258,348 +716,94 @@ function ListsOverview({
             </span>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
-              placeholder="Search your lists…"
+              placeholder="Search by name, company or domain…"
               style={{
-                width: '100%', height: '38px',
-                paddingLeft: '33px', paddingRight: '12px',
-                fontSize: '13px', color: '#0F172A',
-                background: '#FFFFFF',
-                border: `1.5px solid ${searchFocused ? '#1A3D5C' : '#E2E8F0'}`,
-                borderRadius: '10px',
-                outline: 'none',
+                width: '100%', height: '36px',
+                paddingLeft: '32px', paddingRight: '10px',
+                fontSize: '12.5px', color: '#0F172A',
+                background: '#F8FAFC',
+                border: `1.5px solid ${searchFocused ? '#1A3D5C' : '#E8ECF0'}`,
+                borderRadius: '9px', outline: 'none',
                 boxShadow: searchFocused ? '0 0 0 3px rgba(26,61,92,0.08)' : 'none',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
-                boxSizing: 'border-box',
+                transition: 'all 0.15s', boxSizing: 'border-box',
               }}
             />
           </div>
-
-          {/* Create list CTA */}
-          <button
-            onClick={onCreateClick}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              padding: '0 12px', height: '38px', flexShrink: 0,
-              borderRadius: '10px', border: 'none', cursor: 'pointer',
-              background: 'linear-gradient(135deg, #1A3D5C 0%, #2563AB 100%)',
-              color: '#fff', fontSize: '12.5px', fontWeight: 600,
-              boxShadow: '0 2px 8px rgba(26,61,92,0.25)',
-              transition: 'opacity 0.15s, transform 0.1s',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
-          >
-            {Ico.plus}
-            Create List
-          </button>
         </div>
+      </div>
 
-        {/* Filter dropdowns row */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-          {['Created by me', 'People & Companies'].map((label) => (
-            <div key={label} style={{
-              display: 'flex', alignItems: 'center', gap: '4px',
-              padding: '0 10px', height: '32px',
-              border: '1px solid #E2E8F0', borderRadius: '8px',
-              background: '#FFFFFF', cursor: 'default',
-              fontSize: '11.5px', color: '#374151', flexShrink: 0,
-              userSelect: 'none',
-            }}>
-              {label}
-              <span style={{ color: '#94A3B8' }}>{Ico.chevronDown}</span>
+      {/* ── Items (natural flow) ───────────────────────────────────────── */}
+      {initialLoading ? (
+        <div>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #F1F5F9' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '9px', background: '#F1F5F9', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ height: '12px', background: '#F1F5F9', borderRadius: '6px', width: '48%', marginBottom: '7px' }} />
+                <div style={{ height: '10px', background: '#F1F5F9', borderRadius: '6px', width: '65%' }} />
+              </div>
             </div>
           ))}
         </div>
-      </div>
-
-      {/* ── Stats summary strip ───────────────────────────────────────── */}
-      {!loading && lists.length > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '12px',
-          padding: '8px 16px',
-          background: '#F8FAFC',
-          borderTop: '1px solid #F1F5F9',
-          borderBottom: '1px solid #F1F5F9',
-          flexShrink: 0,
-        }}>
-          <StatPill value={lists.length} label={lists.length === 1 ? 'list' : 'lists'} />
-          <span style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
-          <StatPill value={totalLeads.toLocaleString()} label="total records" />
-          {defaultCount > 0 && (
-            <>
-              <span style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
-              <StatPill value={defaultCount} label="default" />
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ── Column header ─────────────────────────────────────────────── */}
-      {!loading && filtered.length > 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          padding: '6px 16px',
-          borderBottom: '1px solid #F1F5F9',
-          flexShrink: 0,
-        }}>
-          <span style={{ flex: 1, fontSize: '10.5px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-            List Name
-          </span>
-          <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-            Records
-          </span>
-        </div>
-      )}
-
-      {/* ── List items ────────────────────────────────────────────────── */}
-      <div className="scrollbar-thin" style={{ flex: 1, overflowY: 'auto' }}>
-        {loading ? (
-          <SkeletonList />
-        ) : filtered.length === 0 ? (
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            padding: '48px 24px', textAlign: 'center',
-          }}>
-            <div style={{
-              width: '56px', height: '56px', borderRadius: '16px',
-              background: '#F8FAFC', border: '1px solid #E2E8F0',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: '14px',
-            }}>
-              {Ico.listEmpty}
-            </div>
-            <p style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>
-              {searchQuery ? 'No matching lists' : 'No lists yet'}
-            </p>
-            <p style={{ fontSize: '12.5px', color: '#94A3B8', margin: '0 0 20px', lineHeight: 1.5 }}>
-              {searchQuery
-                ? 'Try a different search term or clear the filter.'
-                : 'Create your first list to start organizing and saving leads.'}
-            </p>
-            {!searchQuery && (
-              <button
-                onClick={onCreateClick}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #1A3D5C, #2563AB)',
-                  color: '#fff', fontSize: '13px', fontWeight: 600,
-                  boxShadow: '0 2px 8px rgba(26,61,92,0.25)',
-                }}
-              >
-                {Ico.plus}
-                Create List
-              </button>
-            )}
+      ) : allItems.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center' }}>
+          <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+            </svg>
           </div>
-        ) : (
-          filtered.map((list) => (
-            <ListCard
-              key={list.id}
-              list={list}
-              onClick={() => onOpen(list)}
-              onDelete={!list.is_default ? () => onDelete(list) : undefined}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── List detail ────────────────────────────────────────────────────────── */
-function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
-  const [items, setItems] = useState<ListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch] = useState('');
-  const [searchFocused, setSearchFocused] = useState(false);
-
-  const fetchItems = useCallback(async (p = 1) => {
-    setLoading(true);
-    try {
-      const res = await listsApi.getListItems(list.id, p, 20);
-      setItems(res.items ?? []);
-      setTotalPages(Math.ceil(res.total / res.page_size) || 1);
-      setPage(p);
-    } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [list.id]);
-
-  useEffect(() => { fetchItems(1); }, [fetchItems]);
-
-  const handleRemoveItem = async (item: ListItem) => {
-    try {
-      await listsApi.removeItem(list.id, item.id);
-      setItems((prev) => prev.filter((i) => i.id !== item.id));
-    } catch { /* ignore */ }
-  };
-
-  const filtered = items.filter((item) => {
-    if (!search) return true;
-    if (item.item_type !== 'person') return false;
-    const person = item.data as PersonResult;
-    const name = person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim();
-    return name.toLowerCase().includes(search.toLowerCase()) ||
-      (person.active_experience_title || '').toLowerCase().includes(search.toLowerCase()) ||
-      (person.active_experience_company_name || '').toLowerCase().includes(search.toLowerCase());
-  });
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-
-      {/* Detail header */}
-      <div style={{
-        padding: '12px 14px',
-        borderBottom: '1px solid #F1F5F9',
-        background: '#fff',
-        flexShrink: 0,
-      }}>
-        {/* Back + title row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-          <button
-            onClick={onBack}
-            style={{
-              width: '30px', height: '30px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: '8px', border: 'none', cursor: 'pointer',
-              background: '#F1F5F9', color: '#64748B',
-              flexShrink: 0, transition: 'background 0.12s',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#E2E8F0'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F1F5F9'; }}
-          >
-            {Ico.back}
-          </button>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {list.name}
-            </h2>
-            <p style={{ fontSize: '11.5px', color: '#94A3B8', margin: '1px 0 0' }}>
-              {list.record_count ?? items.length} {(list.record_count ?? items.length) === 1 ? 'record' : 'records'}
-            </p>
-          </div>
-
-          {list.is_default && (
-            <span style={{
-              fontSize: '10px', fontWeight: 600, color: '#1D4ED8',
-              background: '#DBEAFE', padding: '3px 8px',
-              borderRadius: '20px', flexShrink: 0,
-            }}>
-              Default
-            </span>
-          )}
+          <p style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>
+            {search ? 'No matches found' : 'This list is empty'}
+          </p>
+          <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
+            {search ? 'Try a different search term' : 'Save leads from the Prospect tab to see them here'}
+          </p>
         </div>
-
-        {/* Search in list */}
-        <div style={{ position: 'relative' }}>
-          <span style={{
-            position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
-            color: searchFocused ? '#1A3D5C' : '#94A3B8', display: 'flex', pointerEvents: 'none',
-            transition: 'color 0.15s',
-          }}>
-            {Ico.search}
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            placeholder="Search by name, title or company…"
-            style={{
-              width: '100%', height: '36px',
-              paddingLeft: '32px', paddingRight: '10px',
-              fontSize: '12.5px', color: '#0F172A',
-              background: '#F8FAFC',
-              border: `1.5px solid ${searchFocused ? '#1A3D5C' : '#E8ECF0'}`,
-              borderRadius: '9px', outline: 'none',
-              boxShadow: searchFocused ? '0 0 0 3px rgba(26,61,92,0.08)' : 'none',
-              transition: 'all 0.15s',
-              boxSizing: 'border-box',
-            }}
+      ) : (
+        allItems.map((item) => (
+          <LeadItemCard
+            key={item.id}
+            item={item}
+            onRemove={() => handleRemoveItem(item)}
           />
+        ))
+      )}
+
+      {/* ── Infinite scroll sentinel ───────────────────────────────────── */}
+      {!initialLoading && (
+        <div ref={sentinelRef} style={{ height: '1px' }} />
+      )}
+
+      {/* ── Loading more indicator ─────────────────────────────────────── */}
+      {loadingMore && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          padding: '16px', color: '#94A3B8', fontSize: '12px',
+        }}>
+          <span style={{
+            width: '14px', height: '14px',
+            border: '2px solid #E2E8F0', borderTopColor: '#1A3D5C',
+            borderRadius: '50%', display: 'inline-block',
+            animation: 'lb-spin 0.65s linear infinite',
+          }} />
+          Loading more…
         </div>
-      </div>
+      )}
 
-      {/* Items */}
-      <div className="scrollbar-thin" style={{ flex: 1, overflowY: 'auto' }}>
-        {loading ? (
-          <div>
-            {[...Array(5)].map((_, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #F1F5F9' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#F1F5F9', flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ height: '12px', background: '#F1F5F9', borderRadius: '6px', width: '48%', marginBottom: '7px' }} />
-                  <div style={{ height: '10px', background: '#F1F5F9', borderRadius: '6px', width: '65%' }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center' }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
-              </svg>
-            </div>
-            <p style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>
-              {search ? 'No matches found' : 'This list is empty'}
-            </p>
-            <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
-              {search ? 'Try a different search term' : 'Save leads from the Prospect tab to see them here'}
-            </p>
-          </div>
-        ) : (
-          filtered.map((item) => (
-            <LeadItemCard
-              key={item.id}
-              item={item}
-              onRemove={() => handleRemoveItem(item)}
-            />
-          ))
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && !loading && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '14px 16px', borderTop: '1px solid #F1F5F9' }}>
-            <button
-              onClick={() => fetchItems(page - 1)}
-              disabled={page <= 1}
-              style={{
-                padding: '6px 14px', fontSize: '12px', fontWeight: 500,
-                border: '1px solid #E2E8F0', borderRadius: '8px',
-                color: '#374151', background: '#fff', cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                opacity: page <= 1 ? 0.4 : 1, transition: 'all 0.12s',
-              }}
-            >
-              ← Prev
-            </button>
-            <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 500 }}>{page} / {totalPages}</span>
-            <button
-              onClick={() => fetchItems(page + 1)}
-              disabled={page >= totalPages}
-              style={{
-                padding: '6px 14px', fontSize: '12px', fontWeight: 500,
-                border: '1px solid #E2E8F0', borderRadius: '8px',
-                color: '#374151', background: '#fff', cursor: page >= totalPages ? 'not-allowed' : 'pointer',
-                opacity: page >= totalPages ? 0.4 : 1, transition: 'all 0.12s',
-              }}
-            >
-              Next →
-            </button>
-          </div>
-        )}
-      </div>
+      {/* ── End-of-list marker ────────────────────────────────────────── */}
+      {!initialLoading && !loadingMore && page >= totalPages && allItems.length > 0 && (
+        <div style={{
+          textAlign: 'center', padding: '14px',
+          fontSize: '11.5px', color: '#CBD5E1',
+          borderTop: '1px solid #F8FAFC',
+        }}>
+          Showing {allItems.length} of {total} records
+        </div>
+      )}
     </div>
   );
 }
@@ -611,11 +815,12 @@ export function ListsTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [selectedList, setSelectedList] = useState<LeadsList | null>(null);
+  const isFirstListsRender = useRef(true);
 
-  const fetchLists = useCallback(async () => {
+  const fetchLists = useCallback(async (q = '') => {
     setLoading(true);
     try {
-      const data = await listsApi.getLists();
+      const data = await listsApi.getLists(q || undefined);
       setLists(data);
     } catch {
       setLists([]);
@@ -624,7 +829,15 @@ export function ListsTab() {
     }
   }, []);
 
-  useEffect(() => { fetchLists(); }, [fetchLists]);
+  /* Initial load — immediate */
+  useEffect(() => { fetchLists(''); }, [fetchLists]);
+
+  /* Debounce subsequent search changes (skip first render) */
+  useEffect(() => {
+    if (isFirstListsRender.current) { isFirstListsRender.current = false; return; }
+    const t = setTimeout(() => fetchLists(searchQuery), 400);
+    return () => clearTimeout(t);
+  }, [searchQuery, fetchLists]);
 
   const handleDelete = async (list: LeadsList) => {
     if (!confirm(`Delete "${list.name}"?`)) return;

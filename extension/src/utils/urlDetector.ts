@@ -51,9 +51,11 @@ export function buildTabInfo(url: string): TabInfo {
   if (pageType === PAGE_TYPES.LINKEDIN_COMPANY) {
     try {
       const { pathname } = new URL(url);
-      // /company/openai/ → openai
-      const handle = pathname.replace('/company/', '').replace(/\//g, '').replace(/-/g, ' ');
-      return { url, pageType, companyName: handle };
+      // /company/softsuave/posts/?feedView=all → 'softsuave'
+      // Take only the first segment after /company/ to ignore sub-pages
+      const slug = pathname.replace(/^\/company\//, '').split('/')[0];
+      const linkedinUrl = `https://www.linkedin.com/company/${slug}`;
+      return { url, pageType, linkedinUrl, companyName: slug };
     } catch {
       return { url, pageType };
     }

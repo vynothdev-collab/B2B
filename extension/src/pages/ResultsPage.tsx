@@ -59,8 +59,9 @@ function getDisplayUrl(tabInfo: TabInfo): string {
   if (tabInfo.pageType === 'linkedin_person' && tabInfo.linkedinUrl) {
     return tabInfo.linkedinUrl.replace(/^https?:\/\//, '');
   }
-  if (tabInfo.pageType === 'linkedin_company' && tabInfo.companyName) {
-    return `linkedin.com/company/${tabInfo.companyName}`;
+  if (tabInfo.pageType === 'linkedin_company' && (tabInfo.linkedinUrl || tabInfo.companyName)) {
+    return (tabInfo.linkedinUrl ?? `https://www.linkedin.com/company/${tabInfo.companyName}`)
+      .replace(/^https?:\/\//, '');
   }
   return tabInfo.domain || tabInfo.companyName || tabInfo.url.replace(/^https?:\/\//, '').split('/')[0];
 }

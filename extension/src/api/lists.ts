@@ -2,8 +2,8 @@ import client from './client';
 import type { LeadsList, ListItemsPage } from '../types';
 
 export const listsApi = {
-  getLists: (): Promise<LeadsList[]> =>
-    client.get('/lists').then((r) => r.data),
+  getLists: (search?: string): Promise<LeadsList[]> =>
+    client.get('/lists', { params: search ? { search } : undefined }).then((r) => r.data),
 
   createList: (name: string, list_type = 'people'): Promise<LeadsList> =>
     client.post('/lists', { name, list_type }).then((r) => r.data),
@@ -14,8 +14,10 @@ export const listsApi = {
   deleteList: (listId: string): Promise<void> =>
     client.delete(`/lists/${listId}`).then((r) => r.data),
 
-  getListItems: (listId: string, page = 1, pageSize = 25): Promise<ListItemsPage> =>
-    client.get(`/lists/${listId}/items`, { params: { page, page_size: pageSize } }).then((r) => r.data),
+  getListItems: (listId: string, page = 1, pageSize = 25, search?: string): Promise<ListItemsPage> =>
+    client.get(`/lists/${listId}/items`, {
+      params: { page, page_size: pageSize, ...(search ? { search } : {}) },
+    }).then((r) => r.data),
 
   // item_type is the correct field name; data can be empty — backend hydrates from search records
   addItems: (

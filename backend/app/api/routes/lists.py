@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -67,16 +67,21 @@ async def _ensure_defaults(user_id: str, db: AsyncSession) -> list[ListModel]:
 
 @router.get("", response_model=list[ListResponse])
 async def get_lists(
+    search: str | None = Query(default=None, max_length=200),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     await _ensure_defaults(current_user.id, db)
 
-    result = await db.execute(
+    stmt = (
         select(ListModel)
         .where(ListModel.user_id == current_user.id, ListModel.deleted_at == None)
         .order_by(ListModel.is_default.desc(), ListModel.created_at.asc())
     )
+    if search and search.strip():
+        stmt = stmt.where(ListModel.name.ilike(f"%{search.strip()}%"))
+
+    result = await db.execute(stmt)
     lists = result.scalars().all()
 
     responses = []
@@ -364,6 +369,7 @@ async def get_list_items(
     list_id: str,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=25, ge=1, le=200),
+    search: str | None = Query(default=None, max_length=200),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -378,7 +384,28 @@ async def get_list_items(
     if not lst:
         raise HTTPException(status_code=404, detail="List not found")
 
-    base_filter = (ListItem.list_id == list_id, ListItem.deleted_at == None)
+    base_filter = [ListItem.list_id == list_id, ListItem.deleted_at == None]
+
+    if search and search.strip():
+        q = f"%{search.strip()}%"
+        base_filter.append(
+            or_(
+                # Person fields
+                ListItem.data["full_name"].astext.ilike(q),
+                ListItem.data["first_name"].astext.ilike(q),
+                ListItem.data["last_name"].astext.ilike(q),
+                ListItem.data["headline"].astext.ilike(q),
+                ListItem.data["active_experience_title"].astext.ilike(q),
+                ListItem.data["active_experience_company_name"].astext.ilike(q),
+                # Company fields
+                ListItem.data["company_name"].astext.ilike(q),
+                ListItem.data["company_legal_name"].astext.ilike(q),
+                ListItem.data["website"].astext.ilike(q),
+                ListItem.data["industry"].astext.ilike(q),
+                ListItem.data["hq_country"].astext.ilike(q),
+                ListItem.data["hq_city"].astext.ilike(q),
+            )
+        )
 
     count_result = await db.execute(
         select(func.count()).select_from(ListItem).where(*base_filter)
