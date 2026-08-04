@@ -16,6 +16,20 @@ export const searchApi = {
       .post('/search/persons', { linkedin_url: linkedinUrls, page_size: pageSize })
       .then((r) => r.data),
 
+  searchEmployees: (
+    filters: { companyName?: string; companyLinkedinUrl?: string },
+    page = 1,
+    pageSize = 10
+  ): Promise<SearchResponse<PersonResult>> =>
+    client
+      .post('/search/persons', {
+        ...(filters.companyName && { company_name: [filters.companyName] }),
+        ...(filters.companyLinkedinUrl && { company_linkedin_url: [filters.companyLinkedinUrl] }),
+        page,
+        page_size: pageSize,
+      })
+      .then((r) => r.data),
+
   getCompanyDetail: (recordId: string): Promise<CompanyResult> =>
     client.get(`/search/companies/${recordId}/detail`).then((r) => r.data),
 

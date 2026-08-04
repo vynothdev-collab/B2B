@@ -117,3 +117,32 @@ export interface RevealState {
   errorPersonalEmail: string | null;
   errorPhone: string | null;
 }
+
+// Lists
+export interface LeadsList {
+  id: string;
+  name: string;
+  description?: string;
+  item_count?: number;
+  is_default?: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ListItem {
+  id: string;
+  list_id: string;
+  record_id: string;
+  record_type: 'person' | 'company';
+  created_at: string;
+  person?: PersonResult;
+  company?: CompanyResult;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}

@@ -1,4 +1,6 @@
 export { Header } from './Header';
+export { Navigation } from './Navigation';
+export { Footer } from './Footer';
 export { DetectionBadge } from './DetectionBadge';
 export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
@@ -7,6 +9,9 @@ export { InfoRow } from './InfoRow';
 export { CompanyCard } from './CompanyCard';
 export { PersonCard } from './PersonCard';
 export { RevealSection } from './RevealSection';
+export { EmployeeCard } from './EmployeeCard';
+export { ListCard } from './ListCard';
+export { CreateListModal } from './CreateListModal';
 export { Spinner } from './ui/Spinner';
 export { Skeleton, SkeletonCard } from './ui/Skeleton';
 export { Button } from './ui/Button';
