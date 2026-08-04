@@ -7,10 +7,10 @@ interface Props {
   onTabChange: (tab: AppTab) => void;
 }
 
-const SearchIcon = () => (
+const PersonIcon = () => (
   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z" />
+      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
   </svg>
 );
 
@@ -23,29 +23,31 @@ const ListIcon = () => (
 
 export function Navigation({ activeTab, onTabChange }: Props) {
   const tabs: { id: AppTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'prospect', label: 'Prospect', icon: <SearchIcon /> },
+    { id: 'prospect', label: 'Prospect', icon: <PersonIcon /> },
     { id: 'lists', label: 'Lists', icon: <ListIcon /> },
   ];
 
   return (
-    <nav className="flex-shrink-0 flex border-b border-gray-200 bg-white px-4">
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
-        return (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`flex items-center gap-1.5 px-3 py-3 text-[13px] font-semibold border-b-2 transition-colors mr-1 ${
-              isActive
-                ? 'border-[#1A3D5C] text-[#1A3D5C]'
-                : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
-            }`}
-          >
-            <span className={isActive ? 'text-[#1A3D5C]' : 'text-gray-400'}>{tab.icon}</span>
-            {tab.label}
-          </button>
-        );
-      })}
+    <nav className="flex-shrink-0 px-3 py-2 bg-white border-b border-gray-100">
+      <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-[13px] font-semibold transition-all ${
+                isActive
+                  ? 'bg-white shadow-sm text-[#E84010]'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }

@@ -7,9 +7,9 @@ interface Props {
   onDelete?: () => void;
 }
 
-function PeopleIcon() {
+function PeopleGroupIcon() {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
         d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
     </svg>
@@ -25,49 +25,46 @@ function TrashIcon() {
   );
 }
 
-function ChevronRightIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-    </svg>
-  );
-}
-
 export function ListCard({ list, onClick, onDelete }: Props) {
-  const count = list.record_count ?? 0;
+  const count = list.record_count;
   const isDefault = list.is_default;
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors group"
+      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors group"
       onClick={onClick}
     >
       {/* Icon */}
-      <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-500">
-        <PeopleIcon />
+      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-gray-500 group-hover:bg-gray-200 transition-colors">
+        <PeopleGroupIcon />
       </div>
 
-      {/* Info */}
+      {/* Name */}
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-gray-800 truncate">{list.name}</p>
-        <p className="text-[11.5px] text-gray-400">
-          {count} {count === 1 ? 'person' : 'people'}
-          {isDefault && <span className="ml-1.5 text-blue-500 font-medium">· Default</span>}
+        <p className="text-[13px] font-medium text-gray-800 truncate">
+          {list.name}
+          {isDefault && (
+            <span className="ml-1.5 text-[10px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full">
+              Default
+            </span>
+          )}
         </p>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 flex-shrink-0">
+      {/* Records count */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className="text-[12.5px] text-gray-500">
+          {count == null ? '–' : `${count} ${count === 1 ? 'person' : 'people'}`}
+        </span>
         {!isDefault && onDelete && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+            className="w-6 h-6 flex items-center justify-center rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
             title="Delete list"
           >
             <TrashIcon />
           </button>
         )}
-        <ChevronRightIcon />
       </div>
     </div>
   );
