@@ -4,7 +4,14 @@
   "version": "0.1.0",
   "description": "Find and enrich B2B leads directly from your browser.",
   "permissions": [
-    "sidePanel"
+    "sidePanel",
+    "storage",
+    "tabs",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "https://*/*"
   ],
   "action": {
     "default_title": "Open LeadsBuddy.ai",
@@ -27,6 +34,12 @@
       "matches": ["<all_urls>"],
       "js": ["content/index.js"],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["shared/*.js", "assets/*"],
+      "matches": ["<all_urls>"]
     }
   ],
   "icons": {

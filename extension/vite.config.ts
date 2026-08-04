@@ -30,6 +30,7 @@ export default defineConfig({
     },
   },
   build: {
+    modulePreload: false,
     rollupOptions: {
       input: {
         'sidepanel/index': resolve(__dirname, 'src/sidepanel/index.html'),

@@ -1,75 +1,65 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useAuthStore } from '../store/authStore';
+import { useTabStore } from '../store/tabStore';
+import { MESSAGE_TYPES } from '../constants';
+import type { TabInfo } from '../types';
+import { Header } from '../components/Header';
+import { UnsupportedState } from '../components/UnsupportedState';
+import { LoginPage } from '../pages/LoginPage';
+import { ResultsPage } from '../pages/ResultsPage';
+import { Spinner } from '../components/ui/Spinner';
+
+function LoadingScreen() {
+  return (
+    <div className="flex items-center justify-center h-screen bg-white">
+      <div className="flex flex-col items-center gap-3">
+        <Spinner size="lg" />
+        <p className="text-sm text-gray-400">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
+  const { user, loading: authLoading, initialized, initialize } = useAuthStore();
+  const { tabInfo, setTabInfo } = useTabStore();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  useEffect(() => {
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_TAB_INFO }, (response) => {
+      if (response?.payload) setTabInfo(response.payload as TabInfo);
+    });
+  }, [setTabInfo]);
+
+  useEffect(() => {
+    const handler = (message: { type: string; payload?: unknown }) => {
+      if (message.type === MESSAGE_TYPES.TAB_UPDATED && message.payload) {
+        setTabInfo(message.payload as TabInfo);
+      }
+      if (message.type === 'AUTH_EXPIRED') {
+        useAuthStore.getState().logout();
+      }
+    };
+    chrome.runtime.onMessage.addListener(handler);
+    return () => chrome.runtime.onMessage.removeListener(handler);
+  }, [setTabInfo]);
+
+  if (!initialized || authLoading) return <LoadingScreen />;
+  if (!user) return <LoginPage />;
+
   return (
-    <div
-      style={{
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f8fafc',
-        padding: '24px',
-        boxSizing: 'border-box',
-      }}
-    >
-      <div
-        style={{
-          background: '#4F46E5',
-          borderRadius: '12px',
-          width: '56px',
-          height: '56px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '16px',
-          color: 'white',
-          fontSize: '26px',
-          fontWeight: 700,
-          letterSpacing: '-1px',
-          userSelect: 'none',
-        }}
-      >
-        L
-      </div>
-
-      <h1
-        style={{
-          fontSize: '20px',
-          fontWeight: 700,
-          color: '#1e293b',
-          margin: '0 0 6px',
-        }}
-      >
-        LeadsBuddy.ai
-      </h1>
-
-      <p
-        style={{
-          fontSize: '13px',
-          color: '#64748b',
-          margin: '0 0 32px',
-          textAlign: 'center',
-        }}
-      >
-        Extension Setup Complete
-      </p>
-
-      <div
-        style={{
-          background: '#f1f5f9',
-          border: '1px solid #e2e8f0',
-          borderRadius: '8px',
-          padding: '10px 20px',
-          fontSize: '13px',
-          color: '#94a3b8',
-          letterSpacing: '0.5px',
-        }}
-      >
-        UI Coming Soon
-      </div>
+    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+      <Header user={user} />
+      <main className="flex-1 overflow-y-auto scrollbar-thin">
+        {!tabInfo || tabInfo.pageType === 'unsupported' ? (
+          <UnsupportedState />
+        ) : (
+          <ResultsPage key={tabInfo.url} tabInfo={tabInfo} />
+        )}
+      </main>
     </div>
   );
 }
