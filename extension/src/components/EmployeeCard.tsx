@@ -80,7 +80,7 @@ export function EmployeeCard({ person, lists = [], onSaved }: Props) {
   const handleSaveToList = async () => {
     if (!lists.length || saved) return;
     try {
-      await listsApi.addItems(lists[0].id, [{ record_id: person.id, record_type: 'person' }]);
+      await listsApi.addItems(lists[0].id, [{ record_id: person.id, item_type: 'person' }]);
       setSaved(true);
       onSaved?.();
     } catch {

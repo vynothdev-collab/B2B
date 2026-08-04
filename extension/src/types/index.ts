@@ -122,8 +122,9 @@ export interface RevealState {
 export interface LeadsList {
   id: string;
   name: string;
+  list_type?: string;
   description?: string;
-  item_count?: number;
+  record_count?: number;   // actual API field name
   is_default?: boolean;
   created_at: string;
   updated_at?: string;
@@ -131,18 +132,16 @@ export interface LeadsList {
 
 export interface ListItem {
   id: string;
-  list_id: string;
   record_id: string;
-  record_type: 'person' | 'company';
-  created_at: string;
-  person?: PersonResult;
-  company?: CompanyResult;
+  item_type: 'person' | 'company';   // actual API field name
+  data: PersonResult | CompanyResult; // hydrated flat data field
+  added_at: string;                   // actual API field name
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
+export interface ListItemsPage {
+  items: ListItem[];
   total: number;
   page: number;
   page_size: number;
-  total_pages: number;
+  // total_pages is NOT returned — compute as Math.ceil(total / page_size)
 }

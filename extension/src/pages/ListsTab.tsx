@@ -76,8 +76,8 @@ function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void
   const [revealing, setRevealing] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const person = item.person as PersonResult | undefined;
-  if (!person) return null;
+  if (item.item_type !== 'person') return null;
+  const person = item.data as PersonResult;
 
   const name = person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim() || 'Unknown';
   const title = person.active_experience_title || person.headline || '';
@@ -264,7 +264,7 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
     try {
       const res = await listsApi.getListItems(list.id, p, 20);
       setItems(res.items ?? []);
-      setTotalPages(res.total_pages ?? 1);
+      setTotalPages(Math.ceil(res.total / res.page_size) || 1);
       setPage(p);
     } catch {
       setItems([]);
@@ -284,11 +284,12 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
 
   const filtered = items.filter((item) => {
     if (!search) return true;
-    const person = item.person as PersonResult | undefined;
-    const name = person?.full_name || `${person?.first_name || ''} ${person?.last_name || ''}`.trim();
+    if (item.item_type !== 'person') return false;
+    const person = item.data as PersonResult;
+    const name = person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim();
     return name.toLowerCase().includes(search.toLowerCase()) ||
-      (person?.active_experience_title || '').toLowerCase().includes(search.toLowerCase()) ||
-      (person?.active_experience_company_name || '').toLowerCase().includes(search.toLowerCase());
+      (person.active_experience_title || '').toLowerCase().includes(search.toLowerCase()) ||
+      (person.active_experience_company_name || '').toLowerCase().includes(search.toLowerCase());
   });
 
   return (
@@ -304,7 +305,7 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
           </button>
           <div className="flex-1 min-w-0">
             <h2 className="text-[14px] font-bold text-gray-900 truncate">{list.name}</h2>
-            <p className="text-[11px] text-gray-400">{list.item_count ?? items.length} people</p>
+            <p className="text-[11px] text-gray-400">{list.record_count ?? items.length} people</p>
           </div>
         </div>
         <div className="relative">

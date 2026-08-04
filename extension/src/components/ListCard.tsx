@@ -34,7 +34,7 @@ function ChevronRightIcon() {
 }
 
 export function ListCard({ list, onClick, onDelete }: Props) {
-  const count = list.item_count ?? 0;
+  const count = list.record_count ?? 0;
   const isDefault = list.is_default;
 
   return (
