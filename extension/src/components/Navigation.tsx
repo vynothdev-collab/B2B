@@ -8,42 +8,75 @@ interface Props {
 }
 
 const PersonIcon = () => (
-  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+    <path d="M4.501 20.118a7.5 7.5 0 0114.998 0" />
   </svg>
 );
 
 const ListIcon = () => (
-  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-      d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8.25 6.75h12M8.25 12h12m-12 5.25h12" />
+    <circle cx="3.75" cy="6.75" r=".5" fill="currentColor" />
+    <circle cx="3.75" cy="12" r=".5" fill="currentColor" />
+    <circle cx="3.75" cy="17.25" r=".5" fill="currentColor" />
   </svg>
 );
 
-export function Navigation({ activeTab, onTabChange }: Props) {
-  const tabs: { id: AppTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'prospect', label: 'Prospect', icon: <PersonIcon /> },
-    { id: 'lists', label: 'Lists', icon: <ListIcon /> },
-  ];
+const TABS: { id: AppTab; label: string; icon: React.ReactNode }[] = [
+  { id: 'prospect', label: 'Prospect', icon: <PersonIcon /> },
+  { id: 'lists',   label: 'Lists',    icon: <ListIcon /> },
+];
 
+export function Navigation({ activeTab, onTabChange }: Props) {
   return (
-    <nav className="flex-shrink-0 px-3 py-2 bg-white border-b border-gray-100">
-      <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
+    <nav style={{
+      flexShrink: 0,
+      padding: '10px 14px 12px',
+      background: '#F7F9FC',
+      borderBottom: '1px solid #EEF2F7',
+    }}>
+      {/* Pill container */}
+      <div style={{
+        display: 'flex',
+        background: '#E8ECF0',
+        borderRadius: '12px',
+        padding: '3px',
+        gap: '3px',
+      }}>
+        {TABS.map(({ id, label, icon }) => {
+          const isActive = activeTab === id;
           return (
             <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-[13px] font-semibold transition-all ${
-                isActive
-                  ? 'bg-white shadow-sm text-[#E84010]'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              key={id}
+              onClick={() => onTabChange(id)}
+              style={{
+                flex: 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                padding: '8px 12px',
+                borderRadius: '9px',
+                fontSize: '13px', fontWeight: 600,
+                border: 'none', cursor: 'pointer',
+                transition: 'all 0.18s ease',
+                outline: 'none',
+                /* Active / inactive */
+                background: isActive ? '#FFFFFF' : 'transparent',
+                color: isActive ? '#E84010' : '#6B7280',
+                boxShadow: isActive
+                  ? '0 1px 5px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)'
+                  : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = '#374151';
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) (e.currentTarget as HTMLButtonElement).style.color = '#6B7280';
+              }}
             >
-              <span>{tab.icon}</span>
-              {tab.label}
+              {icon}
+              {label}
             </button>
           );
         })}

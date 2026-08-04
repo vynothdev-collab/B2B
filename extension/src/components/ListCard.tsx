@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { LeadsList } from '../types';
 
 interface Props {
@@ -7,62 +7,99 @@ interface Props {
   onDelete?: () => void;
 }
 
-function PeopleGroupIcon() {
-  return (
-    <svg className="w-4.5 h-4.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
-        d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
-        d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-    </svg>
-  );
-}
-
 export function ListCard({ list, onClick, onDelete }: Props) {
-  const count = list.record_count;
+  const [hovered, setHovered] = useState(false);
+  const count = list.record_count ?? 0;
   const isDefault = list.is_default;
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors group"
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '12px',
+        padding: '11px 16px',
+        borderBottom: '1px solid #F1F5F9',
+        background: hovered ? '#F8FAFD' : '#FFFFFF',
+        cursor: 'pointer',
+        transition: 'background 0.12s',
+        outline: 'none',
+      }}
     >
-      {/* Icon */}
-      <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 text-gray-500 group-hover:bg-gray-200 transition-colors">
-        <PeopleGroupIcon />
+      {/* List icon */}
+      <div style={{
+        width: '36px', height: '36px', borderRadius: '10px',
+        background: hovered ? '#DBEAFE' : '#EFF6FF',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+        transition: 'background 0.12s',
+      }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="#3B82F6" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+        </svg>
       </div>
 
-      {/* Name */}
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-medium text-gray-800 truncate">
-          {list.name}
+      {/* Name + meta */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+          <span style={{
+            fontSize: '13px', fontWeight: 600, color: '#0F172A',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {list.name}
+          </span>
           {isDefault && (
-            <span className="ml-1.5 text-[10px] font-semibold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full">
+            <span style={{
+              fontSize: '10px', fontWeight: 600, color: '#1D4ED8',
+              background: '#DBEAFE', padding: '2px 7px',
+              borderRadius: '20px', flexShrink: 0, whiteSpace: 'nowrap',
+              letterSpacing: '0.01em',
+            }}>
               Default
             </span>
           )}
-        </p>
+        </div>
+        <span style={{ fontSize: '11.5px', color: '#94A3B8' }}>
+          {count === 0 ? 'No records' : `${count.toLocaleString()} ${count === 1 ? 'record' : 'records'}`}
+        </span>
       </div>
 
-      {/* Records count */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-[12.5px] text-gray-500">
-          {count == null ? '–' : `${count} ${count === 1 ? 'person' : 'people'}`}
-        </span>
-        {!isDefault && onDelete && (
+      {/* Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+        {/* Chevron */}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke={hovered ? '#1A3D5C' : '#CBD5E1'} strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          style={{ transition: 'stroke 0.12s', flexShrink: 0 }}>
+          <path d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        </svg>
+
+        {/* Delete — only for non-default, shown on hover */}
+        {!isDefault && onDelete && hovered && (
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
-            className="w-6 h-6 flex items-center justify-center rounded-md text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
             title="Delete list"
+            style={{
+              width: '26px', height: '26px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '7px', border: 'none', cursor: 'pointer',
+              background: '#FEF2F2', color: '#EF4444',
+              transition: 'all 0.12s',
+              flexShrink: 0,
+              marginLeft: '2px',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#FEE2E2'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#FEF2F2'; }}
           >
-            <TrashIcon />
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
+            </svg>
           </button>
         )}
       </div>

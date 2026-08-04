@@ -63,7 +63,7 @@ export default function App() {
   const isUnsupported = !tabInfo || tabInfo.pageType === 'unsupported';
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#F7F9FC' }}>
       {/* Sticky header */}
       <Header user={user} onRefresh={handleRefresh} />
 
@@ -71,7 +71,7 @@ export default function App() {
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Scrollable content */}
-      <main className="flex-1 overflow-y-auto scrollbar-thin bg-white">
+      <main className="flex-1 overflow-y-auto scrollbar-thin" style={{ background: '#FFFFFF' }}>
         {activeTab === 'prospect' ? (
           isUnsupported ? (
             <UnsupportedState />

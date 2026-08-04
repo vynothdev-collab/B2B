@@ -6,64 +6,82 @@ import { CreateListModal } from '../components/CreateListModal';
 import { Avatar } from '../components/ui/Avatar';
 import { searchApi } from '../api/search';
 
-/* ─── Icons ─────────────────────────────────────────────────────────────── */
-function PlusIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+/* ─── Inline SVG helpers ─────────────────────────────────────────────────── */
+const Ico = {
+  search: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z" />
     </svg>
-  );
-}
-function BackIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.75 19.5L8.25 12l7.5-7.5" />
+  ),
+  plus: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 4v16m8-8H4" />
     </svg>
-  );
-}
-function SearchIcon() {
-  return (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z" />
+  ),
+  back: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15.75 19.5L8.25 12l7.5-7.5" />
     </svg>
-  );
-}
-function TrashIcon() {
-  return (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
-        d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+  ),
+  chevronDown: (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
     </svg>
-  );
-}
-function EmailIcon() {
-  return (
-    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
-        d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+  ),
+  email: (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
     </svg>
-  );
-}
-function LinkedInIcon() {
-  return (
-    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  ),
+  trash: (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
     </svg>
-  );
-}
+  ),
+  linkedin: (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+    </svg>
+  ),
+  copy: (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+    </svg>
+  ),
+  check: (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  listEmpty: (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1"
+      strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+    </svg>
+  ),
+};
 
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
 function SkeletonList() {
   return (
-    <div className="space-y-0">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-          <div className="w-9 h-9 rounded-xl bg-gray-100 animate-pulse" />
-          <div className="flex-1 space-y-1.5">
-            <div className="h-3 bg-gray-100 rounded animate-pulse w-2/3" />
-            <div className="h-2.5 bg-gray-100 rounded animate-pulse w-1/3" />
+    <div>
+      {[...Array(5)].map((_, i) => (
+        <div key={i} style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '12px 16px', borderBottom: '1px solid #F1F5F9',
+        }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#F1F5F9', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ height: '13px', background: '#F1F5F9', borderRadius: '6px', width: '55%', marginBottom: '7px' }} />
+            <div style={{ height: '11px', background: '#F1F5F9', borderRadius: '6px', width: '30%' }} />
           </div>
+          <div style={{ width: '55px', height: '11px', background: '#F1F5F9', borderRadius: '6px' }} />
         </div>
       ))}
     </div>
@@ -75,6 +93,7 @@ function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void
   const [revealedEmail, setRevealedEmail] = useState<string | null>(null);
   const [revealing, setRevealing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   if (item.item_type !== 'person') return null;
   const person = item.data as PersonResult;
@@ -90,11 +109,8 @@ function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void
     try {
       const r = await searchApi.revealWorkEmail(person.id);
       setRevealedEmail(r.email);
-    } catch {
-      // ignore
-    } finally {
-      setRevealing(false);
-    }
+    } catch { /* ignore */ }
+    finally { setRevealing(false); }
   };
 
   const handleCopy = async () => {
@@ -105,60 +121,102 @@ function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void
   };
 
   return (
-    <div className="border-b border-gray-100 last:border-0 px-4 py-3 group">
-      <div className="flex items-start gap-2.5">
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        borderBottom: '1px solid #F1F5F9',
+        padding: '12px 16px',
+        background: hovered ? '#F8FAFD' : '#fff',
+        transition: 'background 0.12s',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
         <Avatar src={person.picture_url} name={name} size="sm" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <p className="text-[13px] font-semibold text-gray-900 truncate">{name}</p>
-            <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {name}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}>
               {person.linkedin_url && (
                 <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
-                  className="p-1 text-blue-500 hover:text-blue-700">
-                  <LinkedInIcon />
+                  style={{ padding: '4px', color: '#3B82F6', display: 'flex' }}>
+                  {Ico.linkedin}
                 </a>
               )}
               <button onClick={onRemove}
-                className="p-1 text-gray-400 hover:text-red-500 transition-colors">
-                <TrashIcon />
+                style={{ padding: '4px', color: '#CBD5E1', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#EF4444'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#CBD5E1'; }}>
+                {Ico.trash}
               </button>
             </div>
           </div>
           {(title || company) && (
-            <p className="text-[11.5px] text-gray-500 truncate">{title}{company ? ` · ${company}` : ''}</p>
+            <p style={{ fontSize: '11.5px', color: '#64748B', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {title}{company ? ` · ${company}` : ''}
+            </p>
           )}
-          {location && <p className="text-[11px] text-gray-400">{location}</p>}
+          {location && (
+            <p style={{ fontSize: '11px', color: '#94A3B8', margin: '1px 0 0' }}>{location}</p>
+          )}
 
-          {/* Email */}
-          <div className="mt-2">
+          {/* Email reveal */}
+          <div style={{ marginTop: '8px' }}>
             {revealedEmail ? (
-              <div className="flex items-center gap-1.5 bg-green-50 border border-green-100 rounded-lg px-2 py-1">
-                <span className="text-[11px] text-green-700 font-mono truncate flex-1">{revealedEmail}</span>
-                <button onClick={handleCopy} className="text-green-500 hover:text-green-700 flex-shrink-0">
-                  {copied ? (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7}
-                        d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-                    </svg>
-                  )}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: '#F0FDF4', border: '1px solid #BBF7D0',
+                borderRadius: '8px', padding: '5px 8px',
+              }}>
+                <span style={{ fontSize: '11px', color: '#15803D', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {revealedEmail}
+                </span>
+                <button onClick={handleCopy}
+                  style={{ color: copied ? '#16A34A' : '#4ADE80', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexShrink: 0 }}>
+                  {copied ? Ico.check : Ico.copy}
                 </button>
               </div>
             ) : (
               <button onClick={handleReveal} disabled={revealing}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border border-gray-200 text-gray-500 hover:border-[#1A3D5C] hover:text-[#1A3D5C] transition-colors disabled:opacity-50">
-                {revealing ? (
-                  <span className="w-3 h-3 border-2 border-gray-300 border-t-[#1A3D5C] rounded-full animate-spin" />
-                ) : <EmailIcon />}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '5px 10px', borderRadius: '8px',
+                  fontSize: '11.5px', fontWeight: 500,
+                  border: '1px solid #E2E8F0',
+                  color: '#374151', background: '#fff', cursor: 'pointer',
+                  transition: 'all 0.12s', opacity: revealing ? 0.6 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C';
+                  (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C';
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0';
+                  (e.currentTarget as HTMLButtonElement).style.color = '#374151';
+                }}
+              >
+                {revealing
+                  ? <span style={{ width: '11px', height: '11px', border: '2px solid #CBD5E1', borderTopColor: '#1A3D5C', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+                  : Ico.email
+                }
                 {revealing ? 'Loading…' : 'Get email'}
               </button>
             )}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ─── Stat pill ──────────────────────────────────────────────────────────── */
+function StatPill({ value, label }: { value: string | number; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+      <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1A3D5C' }}>{value}</span>
+      <span style={{ fontSize: '12px', color: '#94A3B8' }}>{label}</span>
     </div>
   );
 }
@@ -176,88 +234,165 @@ function ListsOverview({
   onCreateClick: () => void;
   onRefresh: () => void;
 }) {
+  const [searchFocused, setSearchFocused] = useState(false);
   const filtered = lists.filter((l) => l.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const totalLeads = lists.reduce((sum, l) => sum + (l.record_count ?? 0), 0);
+  const defaultCount = lists.filter((l) => l.is_default).length;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Search */}
-      <div className="px-3 pt-3 pb-0 flex-shrink-0">
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <SearchIcon />
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search for lists"
-            className="w-full h-9 pl-8 pr-3 text-[13px] border border-gray-200 rounded-xl bg-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 transition-all"
-          />
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      {/* Filters row */}
-      <div className="px-3 pt-2.5 pb-2 flex-shrink-0">
-        <p className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Filter by</p>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-white text-[12px] text-gray-600 cursor-default select-none">
-            Created by me
-            <svg className="w-3 h-3 text-gray-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
+      {/* ── Top toolbar ──────────────────────────────────────────────── */}
+      <div style={{ padding: '12px 14px 0', flexShrink: 0 }}>
+
+        {/* Search + Create row */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+          {/* Search input */}
+          <div style={{ position: 'relative', flex: 1 }}>
+            <span style={{
+              position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)',
+              color: searchFocused ? '#1A3D5C' : '#94A3B8', display: 'flex', pointerEvents: 'none',
+              transition: 'color 0.15s',
+            }}>
+              {Ico.search}
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              placeholder="Search your lists…"
+              style={{
+                width: '100%', height: '38px',
+                paddingLeft: '33px', paddingRight: '12px',
+                fontSize: '13px', color: '#0F172A',
+                background: '#FFFFFF',
+                border: `1.5px solid ${searchFocused ? '#1A3D5C' : '#E2E8F0'}`,
+                borderRadius: '10px',
+                outline: 'none',
+                boxShadow: searchFocused ? '0 0 0 3px rgba(26,61,92,0.08)' : 'none',
+                transition: 'border-color 0.15s, box-shadow 0.15s',
+                boxSizing: 'border-box',
+              }}
+            />
           </div>
-          <div className="flex items-center gap-1 px-2.5 py-1.5 border border-gray-200 rounded-lg bg-white text-[12px] text-gray-600 cursor-default select-none">
-            People and co...
-            <svg className="w-3 h-3 text-gray-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </div>
+
+          {/* Create list CTA */}
           <button
             onClick={onCreateClick}
-            className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold text-white transition-colors flex-shrink-0"
-            style={{ background: '#E84010' }}
-            title="New list"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '0 12px', height: '38px', flexShrink: 0,
+              borderRadius: '10px', border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg, #1A3D5C 0%, #2563AB 100%)',
+              color: '#fff', fontSize: '12.5px', fontWeight: 600,
+              boxShadow: '0 2px 8px rgba(26,61,92,0.25)',
+              transition: 'opacity 0.15s, transform 0.1s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
           >
-            <PlusIcon />
-            New
+            {Ico.plus}
+            Create List
           </button>
+        </div>
+
+        {/* Filter dropdowns row */}
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
+          {['Created by me', 'People & Companies'].map((label) => (
+            <div key={label} style={{
+              display: 'flex', alignItems: 'center', gap: '4px',
+              padding: '0 10px', height: '32px',
+              border: '1px solid #E2E8F0', borderRadius: '8px',
+              background: '#FFFFFF', cursor: 'default',
+              fontSize: '11.5px', color: '#374151', flexShrink: 0,
+              userSelect: 'none',
+            }}>
+              {label}
+              <span style={{ color: '#94A3B8' }}>{Ico.chevronDown}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Column headers */}
-      {!loading && filtered.length > 0 && (
-        <div className="flex items-center px-4 py-1.5 border-y border-gray-100 bg-gray-50/80 flex-shrink-0">
-          <span className="flex-1 text-[10.5px] font-semibold text-gray-400 uppercase tracking-wider">Name</span>
-          <span className="text-[10.5px] font-semibold text-gray-400 uppercase tracking-wider">Records count</span>
+      {/* ── Stats summary strip ───────────────────────────────────────── */}
+      {!loading && lists.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '8px 16px',
+          background: '#F8FAFC',
+          borderTop: '1px solid #F1F5F9',
+          borderBottom: '1px solid #F1F5F9',
+          flexShrink: 0,
+        }}>
+          <StatPill value={lists.length} label={lists.length === 1 ? 'list' : 'lists'} />
+          <span style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
+          <StatPill value={totalLeads.toLocaleString()} label="total records" />
+          {defaultCount > 0 && (
+            <>
+              <span style={{ width: '1px', height: '12px', background: '#E2E8F0' }} />
+              <StatPill value={defaultCount} label="default" />
+            </>
+          )}
         </div>
       )}
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
+      {/* ── Column header ─────────────────────────────────────────────── */}
+      {!loading && filtered.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          padding: '6px 16px',
+          borderBottom: '1px solid #F1F5F9',
+          flexShrink: 0,
+        }}>
+          <span style={{ flex: 1, fontSize: '10.5px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+            List Name
+          </span>
+          <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#94A3B8', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
+            Records
+          </span>
+        </div>
+      )}
+
+      {/* ── List items ────────────────────────────────────────────────── */}
+      <div className="scrollbar-thin" style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
           <SkeletonList />
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mb-3 text-gray-400">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-              </svg>
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            padding: '48px 24px', textAlign: 'center',
+          }}>
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '16px',
+              background: '#F8FAFC', border: '1px solid #E2E8F0',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: '14px',
+            }}>
+              {Ico.listEmpty}
             </div>
-            <p className="text-[13px] font-semibold text-gray-700 mb-1">
-              {searchQuery ? 'No lists match your search' : 'No lists yet'}
+            <p style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>
+              {searchQuery ? 'No matching lists' : 'No lists yet'}
             </p>
-            <p className="text-[12px] text-gray-400">
-              {searchQuery ? 'Try a different search term' : 'Create your first list to start saving leads'}
+            <p style={{ fontSize: '12.5px', color: '#94A3B8', margin: '0 0 20px', lineHeight: 1.5 }}>
+              {searchQuery
+                ? 'Try a different search term or clear the filter.'
+                : 'Create your first list to start organizing and saving leads.'}
             </p>
             {!searchQuery && (
               <button
                 onClick={onCreateClick}
-                className="mt-4 flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold text-white"
-                style={{ background: '#E84010' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #1A3D5C, #2563AB)',
+                  color: '#fff', fontSize: '13px', fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(26,61,92,0.25)',
+                }}
               >
-                <PlusIcon />
-                Create list
+                {Ico.plus}
+                Create List
               </button>
             )}
           </div>
@@ -283,6 +418,7 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const fetchItems = useCallback(async (p = 1) => {
     setLoading(true);
@@ -318,59 +454,108 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
   });
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-4 pt-3 pb-2 flex-shrink-0 space-y-2">
-        <div className="flex items-center gap-2">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+
+      {/* Detail header */}
+      <div style={{
+        padding: '12px 14px',
+        borderBottom: '1px solid #F1F5F9',
+        background: '#fff',
+        flexShrink: 0,
+      }}>
+        {/* Back + title row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
           <button
             onClick={onBack}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            style={{
+              width: '30px', height: '30px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: '8px', border: 'none', cursor: 'pointer',
+              background: '#F1F5F9', color: '#64748B',
+              flexShrink: 0, transition: 'background 0.12s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#E2E8F0'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F1F5F9'; }}
           >
-            <BackIcon />
+            {Ico.back}
           </button>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-[14px] font-bold text-gray-900 truncate">{list.name}</h2>
-            <p className="text-[11px] text-gray-400">{list.record_count ?? items.length} people</p>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {list.name}
+            </h2>
+            <p style={{ fontSize: '11.5px', color: '#94A3B8', margin: '1px 0 0' }}>
+              {list.record_count ?? items.length} {(list.record_count ?? items.length) === 1 ? 'record' : 'records'}
+            </p>
           </div>
+
+          {list.is_default && (
+            <span style={{
+              fontSize: '10px', fontWeight: 600, color: '#1D4ED8',
+              background: '#DBEAFE', padding: '3px 8px',
+              borderRadius: '20px', flexShrink: 0,
+            }}>
+              Default
+            </span>
+          )}
         </div>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><SearchIcon /></span>
+
+        {/* Search in list */}
+        <div style={{ position: 'relative' }}>
+          <span style={{
+            position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
+            color: searchFocused ? '#1A3D5C' : '#94A3B8', display: 'flex', pointerEvents: 'none',
+            transition: 'color 0.15s',
+          }}>
+            {Ico.search}
+          </span>
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or title…"
-            className="w-full h-9 pl-8 pr-3 text-[13px] border border-gray-200 rounded-xl bg-gray-50 placeholder:text-gray-300 focus:outline-none focus:border-[#1A3D5C] focus:bg-white transition-all"
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            placeholder="Search by name, title or company…"
+            style={{
+              width: '100%', height: '36px',
+              paddingLeft: '32px', paddingRight: '10px',
+              fontSize: '12.5px', color: '#0F172A',
+              background: '#F8FAFC',
+              border: `1.5px solid ${searchFocused ? '#1A3D5C' : '#E8ECF0'}`,
+              borderRadius: '9px', outline: 'none',
+              boxShadow: searchFocused ? '0 0 0 3px rgba(26,61,92,0.08)' : 'none',
+              transition: 'all 0.15s',
+              boxSizing: 'border-box',
+            }}
           />
         </div>
       </div>
 
       {/* Items */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
+      <div className="scrollbar-thin" style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
-          <div className="space-y-0">
+          <div>
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-                <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-3 bg-gray-100 rounded animate-pulse w-1/2" />
-                  <div className="h-2.5 bg-gray-100 rounded animate-pulse w-2/3" />
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', borderBottom: '1px solid #F1F5F9' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#F1F5F9', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: '12px', background: '#F1F5F9', borderRadius: '6px', width: '48%', marginBottom: '7px' }} />
+                  <div style={{ height: '10px', background: '#F1F5F9', borderRadius: '6px', width: '65%' }} />
                 </div>
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mb-3 text-gray-400">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center' }}>
+            <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
               </svg>
             </div>
-            <p className="text-[13px] font-semibold text-gray-700 mb-1">
+            <p style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>
               {search ? 'No matches found' : 'This list is empty'}
             </p>
-            <p className="text-[12px] text-gray-400">
+            <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, lineHeight: 1.5 }}>
               {search ? 'Try a different search term' : 'Save leads from the Prospect tab to see them here'}
             </p>
           </div>
@@ -386,21 +571,31 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
 
         {/* Pagination */}
         {totalPages > 1 && !loading && (
-          <div className="flex items-center justify-center gap-3 py-4 border-t border-gray-100">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '14px 16px', borderTop: '1px solid #F1F5F9' }}>
             <button
               onClick={() => fetchItems(page - 1)}
               disabled={page <= 1}
-              className="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              style={{
+                padding: '6px 14px', fontSize: '12px', fontWeight: 500,
+                border: '1px solid #E2E8F0', borderRadius: '8px',
+                color: '#374151', background: '#fff', cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                opacity: page <= 1 ? 0.4 : 1, transition: 'all 0.12s',
+              }}
             >
-              Prev
+              ← Prev
             </button>
-            <span className="text-[12px] text-gray-400">{page} / {totalPages}</span>
+            <span style={{ fontSize: '12px', color: '#94A3B8', fontWeight: 500 }}>{page} / {totalPages}</span>
             <button
               onClick={() => fetchItems(page + 1)}
               disabled={page >= totalPages}
-              className="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+              style={{
+                padding: '6px 14px', fontSize: '12px', fontWeight: 500,
+                border: '1px solid #E2E8F0', borderRadius: '8px',
+                color: '#374151', background: '#fff', cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                opacity: page >= totalPages ? 0.4 : 1, transition: 'all 0.12s',
+              }}
             >
-              Next
+              Next →
             </button>
           </div>
         )}
@@ -409,7 +604,7 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
   );
 }
 
-/* ─── Main ───────────────────────────────────────────────────────────────── */
+/* ─── Main export ────────────────────────────────────────────────────────── */
 export function ListsTab() {
   const [lists, setLists] = useState<LeadsList[]>([]);
   const [loading, setLoading] = useState(true);
@@ -448,10 +643,7 @@ export function ListsTab() {
   if (selectedList) {
     return (
       <>
-        <ListDetail
-          list={selectedList}
-          onBack={() => setSelectedList(null)}
-        />
+        <ListDetail list={selectedList} onBack={() => setSelectedList(null)} />
         {showCreate && <CreateListModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />}
       </>
     );

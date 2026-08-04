@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { TabInfo, PersonResult, CompanyResult, LeadsList } from '../types';
 import { searchApi } from '../api/search';
 import { listsApi } from '../api/lists';
@@ -10,7 +10,6 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { EmployeeCard } from '../components/EmployeeCard';
 import { useAuthStore } from '../store/authStore';
-import { Button } from '../components/ui/Button';
 
 interface Props {
   tabInfo: TabInfo;
@@ -28,25 +27,31 @@ type CompanyTab = 'details' | 'employees';
 
 const PAGE_CONFIG = {
   linkedin_person: {
-    label: 'LinkedIn Person',
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-500',
-    pillBg: 'bg-blue-50',
-    pillText: 'text-blue-700',
+    label: 'LinkedIn Profile',
+    searchLabel: 'Search Profile',
+    description: 'Find work email, phone number & professional data',
+    iconBg: '#EFF6FF',
+    iconColor: '#3B82F6',
+    typeBadgeBg: '#EFF6FF',
+    typeBadgeText: '#1D4ED8',
   },
   linkedin_company: {
     label: 'LinkedIn Company',
-    iconBg: 'bg-orange-50',
-    iconColor: 'text-orange-500',
-    pillBg: 'bg-orange-50',
-    pillText: 'text-orange-700',
+    searchLabel: 'Search Company',
+    description: 'Find company info, employees & contact details',
+    iconBg: '#FFF7F5',
+    iconColor: '#E84010',
+    typeBadgeBg: '#FFF7F5',
+    typeBadgeText: '#C43009',
   },
   company_website: {
     label: 'Company Website',
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-    pillBg: 'bg-emerald-50',
-    pillText: 'text-emerald-700',
+    searchLabel: 'Search Company',
+    description: 'Find company info, employees & contact details',
+    iconBg: '#ECFDF5',
+    iconColor: '#059669',
+    typeBadgeBg: '#ECFDF5',
+    typeBadgeText: '#047857',
   },
 } as const;
 
@@ -60,73 +65,133 @@ function getDisplayUrl(tabInfo: TabInfo): string {
   return tabInfo.domain || tabInfo.companyName || tabInfo.url.replace(/^https?:\/\//, '').split('/')[0];
 }
 
-function PersonIcon() {
-  return (
-    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-    </svg>
-  );
-}
 
-function BuildingIcon() {
-  return (
-    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-        d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-    </svg>
-  );
-}
 
-function GlobeIcon() {
-  return (
-    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-        d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-        d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z" />
-    </svg>
-  );
-}
-
-function getPageIcon(pageType: string) {
-  if (pageType === 'linkedin_person') return <PersonIcon />;
-  if (pageType === 'linkedin_company') return <BuildingIcon />;
-  return <GlobeIcon />;
-}
-
-/* ─── Idle state ─────────────────────────────────────────────────────────── */
+/* ─── Idle / Detection state ─────────────────────────────────────────────── */
 function IdleState({ tabInfo, onSearch }: { tabInfo: TabInfo; onSearch: () => void }) {
   const config = PAGE_CONFIG[tabInfo.pageType as keyof typeof PAGE_CONFIG] ?? PAGE_CONFIG.company_website;
   const displayUrl = getDisplayUrl(tabInfo);
 
   return (
-    <div className="flex flex-col items-center justify-center px-6 text-center" style={{ minHeight: 'calc(100vh - 148px)' }}>
-      <div className={`w-14 h-14 rounded-2xl ${config.iconBg} flex items-center justify-center mb-4`}>
-        <div className={`w-7 h-7 ${config.iconColor}`}>{getPageIcon(tabInfo.pageType)}</div>
+    <div style={{
+      minHeight: 'calc(100vh - 170px)',
+      display: 'flex', flexDirection: 'column', justifyContent: 'center',
+      padding: '16px 16px', gap: '12px',
+    }}>
+
+      {/* ── Detection card ─────────────────────────────────────────────── */}
+      <div style={{
+        background: '#fff',
+        borderRadius: '16px',
+        border: '1.5px solid #E2E8F0',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+        overflow: 'visible',   /* no overflow-hidden so badge is never clipped */
+      }}>
+
+        {/* Card body */}
+        <div style={{ padding: '16px 16px 14px' }}>
+
+          {/* Row: icon block + detected badge */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+
+            {/* Icon */}
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '12px',
+              background: config.iconBg,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke={config.iconColor} strokeWidth="1.6"
+                strokeLinecap="round" strokeLinejoin="round"
+              >
+                {tabInfo.pageType === 'linkedin_person' ? (
+                  <>
+                    <path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    <path d="M4.501 20.118a7.5 7.5 0 0114.998 0" />
+                  </>
+                ) : tabInfo.pageType === 'linkedin_company' ? (
+                  <>
+                    <path d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18" />
+                    <path d="M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+                  </>
+                ) : (
+                  <>
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 3c2.485 0 4.5 4.03 4.5 9S14.485 21 12 21m0-18c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9m-9-9h18" />
+                  </>
+                )}
+              </svg>
+            </div>
+
+            {/* Detected badge */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '5px 10px', borderRadius: '999px',
+              background: '#F0FDF4', border: '1px solid #BBF7D0',
+              flexShrink: 0, whiteSpace: 'nowrap',
+            }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E', flexShrink: 0 }} />
+              <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#16A34A' }}>Detected</span>
+            </div>
+          </div>
+
+          {/* Type label */}
+          <p style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: '0 0 4px', lineHeight: 1.3 }}>
+            {config.label}
+          </p>
+
+          {/* URL */}
+          <p style={{
+            fontSize: '11px', fontFamily: 'ui-monospace, monospace',
+            color: '#94A3B8', margin: 0,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }} title={tabInfo.url}>
+            {displayUrl}
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: '1px', background: '#F1F5F9', margin: '0 16px' }} />
+
+        {/* Credit info row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px' }}>
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="10" cy="10" r="9" fill="#FEF3C7" stroke="#FCD34D" strokeWidth="1" />
+            <text x="10" y="14" textAnchor="middle" fill="#D97706" fontSize="9" fontWeight="700" fontFamily="sans-serif">$</text>
+          </svg>
+          <span style={{ fontSize: '11.5px', color: '#64748B' }}>
+            Uses <strong style={{ color: '#374151', fontWeight: 600 }}>1 credit</strong> per search
+          </span>
+        </div>
       </div>
 
-      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold mb-2 ${config.pillBg} ${config.pillText}`}>
-        {config.label}
-      </span>
+      {/* ── Primary CTA ────────────────────────────────────────────────── */}
+      <button
+        onClick={onSearch}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          padding: '14px 20px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+          fontSize: '14px', fontWeight: 700, color: '#fff', letterSpacing: '0.01em',
+          background: 'linear-gradient(135deg, #E84010 0%, #FF6535 100%)',
+          boxShadow: '0 4px 18px rgba(232,64,16,0.3)',
+          transition: 'opacity 0.15s, transform 0.1s',
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.92'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; }}
+        onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.985)'; }}
+        onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
+      >
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 15.803 7.5 7.5 0 0015.803 15.803z" />
+        </svg>
+        {config.searchLabel}
+      </button>
 
-      <p className="text-[11px] text-gray-400 mb-6 font-mono truncate max-w-full px-1" title={tabInfo.url}>
-        {displayUrl}
+      {/* Helper text */}
+      <p style={{ textAlign: 'center', fontSize: '11.5px', color: '#94A3B8', margin: 0 }}>
+        {config.description}
       </p>
-
-      <Button variant="brand" size="md" onClick={onSearch} className="w-full">
-        <SearchIcon />
-        Search
-      </Button>
-
-      <p className="text-[11px] text-gray-400 mt-2.5">Uses 1 credit per search</p>
     </div>
   );
 }
@@ -187,8 +252,11 @@ function EmployeeList({ company, lists }: { company: CompanyResult; lists: Leads
   return (
     <div>
       {total > 0 && (
-        <div className="px-4 py-2 border-b border-gray-100 bg-gray-50">
-          <p className="text-[11.5px] text-gray-500">Showing {employees.length} of {total.toLocaleString()} employees</p>
+        <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/70">
+          <p className="text-[11.5px]" style={{ color: '#64748B' }}>
+            Showing <span className="font-semibold text-gray-700">{employees.length}</span> of{' '}
+            <span className="font-semibold text-gray-700">{total.toLocaleString()}</span> employees
+          </p>
         </div>
       )}
       {employees.map((emp) => (
@@ -205,36 +273,41 @@ function CompanyResult({ company, lists }: { company: CompanyResult; lists: Lead
 
   return (
     <div>
-      {/* Sub-tabs */}
-      <div className="flex border-b border-gray-200 bg-white px-4 sticky top-0 z-10">
-        <button
-          onClick={() => setActiveTab('details')}
-          className={`flex items-center gap-1.5 px-2 py-2.5 text-[12.5px] font-semibold border-b-2 transition-colors mr-3 ${
-            activeTab === 'details'
-              ? 'border-[#1A3D5C] text-[#1A3D5C]'
-              : 'border-transparent text-gray-400 hover:text-gray-600'
-          }`}
-        >
-          Company Details
-        </button>
-        <button
-          onClick={() => setActiveTab('employees')}
-          className={`flex items-center gap-1.5 px-2 py-2.5 text-[12.5px] font-semibold border-b-2 transition-colors ${
-            activeTab === 'employees'
-              ? 'border-[#1A3D5C] text-[#1A3D5C]'
-              : 'border-transparent text-gray-400 hover:text-gray-600'
-          }`}
-        >
-          All Employees
-          {employeeCount && (
-            <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-              {employeeCount > 999 ? `${Math.round(employeeCount / 1000)}k` : employeeCount}
-            </span>
-          )}
-        </button>
+      {/* Sub-tabs — pill style */}
+      <div className="px-3 py-2 bg-white sticky top-0 z-10" style={{ borderBottom: '1px solid #F1F5F9' }}>
+        <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+          {(['details', 'employees'] as const).map((tab) => {
+            const isActive = activeTab === tab;
+            const label = tab === 'details' ? 'Company Details' : 'All Employees';
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all"
+                style={{
+                  background: isActive ? '#fff' : 'transparent',
+                  color: isActive ? '#1A3D5C' : '#6B7280',
+                  boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                {label}
+                {tab === 'employees' && employeeCount ? (
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{
+                      background: isActive ? '#EFF6FF' : '#E5E7EB',
+                      color: isActive ? '#1D4ED8' : '#9CA3AF',
+                    }}
+                  >
+                    {employeeCount > 999 ? `${Math.round(employeeCount / 1000)}k` : employeeCount}
+                  </span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Tab content */}
       {activeTab === 'details' ? (
         <CompanyCard company={company} />
       ) : (
@@ -299,7 +372,8 @@ export function ResultsPage({ tabInfo }: Props) {
     return (
       <EmptyState
         message="No results found"
-        description="We couldn't find data for this page. Try navigating to a company website or a LinkedIn profile."
+        description="We couldn't find data for this page in our database."
+        action={{ label: 'Search on LeadsBuddy', href: 'https://app.leadsbuddy.ai' }}
       />
     );
   }
