@@ -21,35 +21,50 @@ interface LoadingState {
 }
 
 const EmailIcon = () => (
-  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-    />
+  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
   </svg>
 );
 
 const PhoneIcon = () => (
-  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-    />
+  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
   </svg>
 );
 
-function ContactItem({
-  icon,
-  label,
-  value,
-}: {
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const ChevronDownIcon = ({ open }: { open: boolean }) => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"
+    style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+function IconBox({ children, muted }: { children: React.ReactNode; muted?: boolean }) {
+  return (
+    <div style={{
+      width: 30, height: 30, borderRadius: 6, flexShrink: 0,
+      background: '#F9FAFB', border: '1px solid #E5E7EB',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      color: muted ? '#D1D5DB' : '#6B7280',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function RevealedRow({ icon, label, value, verified }: {
   icon: React.ReactNode;
-  label: string;
+  label?: string;
   value: string;
+  verified?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -58,36 +73,38 @@ function ContactItem({
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="flex items-center gap-3 py-2.5 px-3 bg-gray-50 rounded-lg mb-2 last:mb-0">
-      <div className="w-7 h-7 rounded-md bg-white border border-gray-100 flex items-center justify-center flex-shrink-0 text-gray-400">
-        {icon}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #F3F4F6' }}>
+      <IconBox>{icon}</IconBox>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {label && <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>}
+        <p style={{ margin: 0, fontSize: 12.5, fontWeight: 500, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</p>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
-        <p className="text-xs font-medium text-gray-800 truncate">{value}</p>
-      </div>
-      <button
-        onClick={copy}
-        className="flex-shrink-0 text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors px-1"
-      >
-        {copied ? '✓' : 'Copy'}
+      {verified && <CheckIcon />}
+      <button onClick={copy} style={{ flexShrink: 0, fontSize: 11.5, fontWeight: 600, color: copied ? '#22C55E' : '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}>
+        {copied ? 'Copied!' : 'Copy'}
       </button>
     </div>
   );
 }
 
+function EmptyRow({ icon, label }: { icon: React.ReactNode; label?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #F3F4F6' }}>
+      <IconBox muted>{icon}</IconBox>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {label && <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: '#D1D5DB', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>}
+        <p style={{ margin: 0, fontSize: 13, color: '#D1D5DB' }}>—</p>
+      </div>
+    </div>
+  );
+}
+
 export function RevealSection({ person, onRefreshUser }: Props) {
-  const [revealed, setRevealed] = useState<RevealedData>({
-    workEmail: null,
-    personalEmail: null,
-    phone: null,
-  });
-  const [loading, setLoading] = useState<LoadingState>({
-    workEmail: false,
-    personalEmail: false,
-    phone: false,
-  });
+  const [revealed, setRevealed] = useState<RevealedData>({ workEmail: null, personalEmail: null, phone: null });
+  const [loading, setLoading] = useState<LoadingState>({ workEmail: false, personalEmail: false, phone: false });
   const [errors, setErrors] = useState<Partial<Record<keyof LoadingState, string>>>({});
+  const [showMore, setShowMore] = useState(false);
+  const [phoneNotFound, setPhoneNotFound] = useState(false);
 
   async function reveal(type: keyof LoadingState) {
     setLoading((p) => ({ ...p, [type]: true }));
@@ -104,7 +121,7 @@ export function RevealSection({ person, onRefreshUser }: Props) {
       } else {
         const r = await searchApi.revealPhone(person.id);
         setRevealed((p) => ({ ...p, phone: r.phone }));
-        if (!r.phone) setErrors((p) => ({ ...p, phone: 'No phone number found' }));
+        if (!r.phone) setPhoneNotFound(true);
       }
       onRefreshUser?.();
     } catch (err: unknown) {
@@ -116,96 +133,63 @@ export function RevealSection({ person, onRefreshUser }: Props) {
     }
   }
 
-  const hasAnyRevealed = revealed.workEmail || revealed.personalEmail || revealed.phone;
-  const allRevealed = revealed.workEmail && revealed.personalEmail && revealed.phone;
+  const moreCount = !revealed.personalEmail ? 1 : 0;
+  const showMoreToggle = !revealed.personalEmail && (revealed.workEmail || revealed.phone !== null || phoneNotFound);
 
   return (
-    <div className="px-3 pt-2 pb-3">
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-50">
-          <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-            Contact Information
-          </h3>
-        </div>
+    <div style={{ padding: '0 20px 4px' }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
+        Contact Information
+      </p>
 
-        <div className="p-3">
-          {/* Revealed contacts */}
-          {hasAnyRevealed && (
-            <div className="mb-2">
-              {revealed.workEmail && (
-                <ContactItem icon={<EmailIcon />} label="Work Email" value={revealed.workEmail} />
-              )}
-              {revealed.personalEmail && (
-                <ContactItem
-                  icon={<EmailIcon />}
-                  label="Personal Email"
-                  value={revealed.personalEmail}
-                />
-              )}
-              {revealed.phone && (
-                <ContactItem icon={<PhoneIcon />} label="Phone" value={revealed.phone} />
-              )}
-            </div>
-          )}
-
-          {/* Reveal buttons */}
-          {!allRevealed && (
-            <div className="space-y-2">
-              {!revealed.workEmail && (
-                <div>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    loading={loading.workEmail}
-                    onClick={() => reveal('workEmail')}
-                    className="w-full"
-                  >
-                    <EmailIcon />
-                    Get Work Email
-                  </Button>
-                  {errors.workEmail && (
-                    <p className="text-xs text-red-500 mt-1 px-1">{errors.workEmail}</p>
-                  )}
-                </div>
-              )}
-              {!revealed.personalEmail && (
-                <div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={loading.personalEmail}
-                    onClick={() => reveal('personalEmail')}
-                    className="w-full"
-                  >
-                    <EmailIcon />
-                    Get Personal Email
-                  </Button>
-                  {errors.personalEmail && (
-                    <p className="text-xs text-red-500 mt-1 px-1">{errors.personalEmail}</p>
-                  )}
-                </div>
-              )}
-              {!revealed.phone && (
-                <div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={loading.phone}
-                    onClick={() => reveal('phone')}
-                    className="w-full"
-                  >
-                    <PhoneIcon />
-                    Get Phone Number
-                  </Button>
-                  {errors.phone && (
-                    <p className="text-xs text-red-500 mt-1 px-1">{errors.phone}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+      {/* Work Email */}
+      {revealed.workEmail ? (
+        <RevealedRow icon={<EmailIcon />} label="Work Email" value={revealed.workEmail} verified />
+      ) : (
+        <div style={{ paddingBottom: 6 }}>
+          <Button variant="primary" size="sm" loading={loading.workEmail} onClick={() => reveal('workEmail')} className="w-full">
+            <EmailIcon /> Get Work Email
+          </Button>
+          {errors.workEmail && <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#EF4444' }}>{errors.workEmail}</p>}
         </div>
-      </div>
+      )}
+
+      {/* Phone */}
+      {revealed.phone ? (
+        <RevealedRow icon={<PhoneIcon />} label="Phone" value={revealed.phone} />
+      ) : phoneNotFound ? (
+        <EmptyRow icon={<PhoneIcon />} label="Phone" />
+      ) : (
+        <div style={{ paddingTop: 6, paddingBottom: 6, borderBottom: '1px solid #F3F4F6' }}>
+          <Button variant="secondary" size="sm" loading={loading.phone} onClick={() => reveal('phone')} className="w-full">
+            <PhoneIcon /> Get Phone Number
+          </Button>
+          {errors.phone && <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#EF4444' }}>{errors.phone}</p>}
+        </div>
+      )}
+
+      {/* See more contacts toggle */}
+      {showMoreToggle && (
+        <button
+          onClick={() => setShowMore((v) => !v)}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 0 4px', fontSize: 12.5, fontWeight: 600, color: '#E84010', background: 'none', border: 'none', cursor: 'pointer' }}>
+          See more contacts ({moreCount})
+          <ChevronDownIcon open={showMore} />
+        </button>
+      )}
+
+      {/* Personal Email (expandable) */}
+      {(showMore || !showMoreToggle) && !revealed.personalEmail && (
+        <div style={{ paddingTop: 6 }}>
+          <Button variant="secondary" size="sm" loading={loading.personalEmail} onClick={() => reveal('personalEmail')} className="w-full">
+            <EmailIcon /> Get Personal Email
+          </Button>
+          {errors.personalEmail && <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#EF4444' }}>{errors.personalEmail}</p>}
+        </div>
+      )}
+      {revealed.personalEmail && (
+        <RevealedRow icon={<EmailIcon />} label="Personal Email" value={revealed.personalEmail} verified />
+      )}
     </div>
   );
 }

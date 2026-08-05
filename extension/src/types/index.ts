@@ -39,6 +39,8 @@ export interface PersonResult {
   linkedin_url?: string;
   active_experience_title?: string;
   active_experience_department?: string;
+  active_experience_management_level?: string;
+  active_experience_start_date?: string;
   active_experience_company_name?: string;
   active_experience_company_logo_url?: string;
   active_experience_company_website?: string;
@@ -47,11 +49,15 @@ export interface PersonResult {
   active_experience_company_hq_country?: string;
   active_experience_company_hq_city?: string;
   active_experience_company_employees_count?: number;
+  active_experience_company_size?: string;
   location_country?: string;
   location_state?: string;
   location_city?: string;
   has_email?: boolean;
   mobile_phone?: string;
+  inferred_skills?: string[];
+  summary?: string;
+  total_experience_duration_months?: number;
 }
 
 export interface CompanyResult {
@@ -71,9 +77,14 @@ export interface CompanyResult {
   canonical_linkedin_url?: string;
   type?: string;
   founded?: number;
+  is_public?: boolean;
   company_status?: string;
   revenue_annual_range?: string;
   description?: string;
+  specialties?: string | string[];
+  technologies_used?: Array<{ technology?: string } | string>;
+  categories_and_keywords?: string | string[];
+  awards_certifications?: string | string[];
   phone?: string;
   email?: string;
 }

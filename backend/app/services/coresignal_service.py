@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
+import time
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any, NoReturn
 
@@ -1727,4 +1729,133 @@ async def agentic_search(
             scroll_token=search_result["next_token"],
             es_query=query,
         ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# URL normalization utilities (extension-only)
+# ---------------------------------------------------------------------------
+
+def _normalize_linkedin_url(url: str) -> str:
+    """Normalize any LinkedIn URL to https://www.linkedin.com/... without trailing slash."""
+    url = url.strip()
+    url = re.sub(r"^https?://", "", url, flags=re.IGNORECASE)
+    if not url.lower().startswith("www."):
+        url = "www." + url
+    url = url.rstrip("/")
+    return "https://" + url.lower()
+
+
+def _extract_root_domain(url: str) -> str:
+    """Extract bare root domain from any URL, e.g. https://www.stripe.com/about -> stripe.com."""
+    url = url.strip()
+    url = re.sub(r"^https?://", "", url, flags=re.IGNORECASE)
+    url = re.sub(r"^www\.", "", url, flags=re.IGNORECASE)
+    url = url.split("/")[0].split("?")[0].split("#")[0]
+    return url.lower()
+
+
+# ---------------------------------------------------------------------------
+# Extension-specific search functions (always limit = 1)
+# ---------------------------------------------------------------------------
+
+async def search_extension_person(linkedin_url: str, db: "AsyncSession | None" = None) -> SearchResponse:
+    """Exact-match person lookup by LinkedIn profile URL. Returns at most one record."""
+    _require_api_key()
+
+    normalized = _normalize_linkedin_url(linkedin_url)
+    logger.info("extension_person_search url=%s normalized=%s", linkedin_url, normalized)
+
+    query = {
+        "bool": {
+            "must": [{"match_phrase": {"url": normalized}}],
+            "filter": [{"term": {"is_deleted": False}}],
+        }
+    }
+
+    t0 = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            search_result = await _search_ids(client, "employee_multi_source", query, page_size=1)
+            records = await _collect_records(client, "employee_multi_source", search_result["ids"])
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
+
+    logger.info(
+        "extension_person_search url=%s total=%d duration=%.2fs",
+        normalized, search_result["total"], time.monotonic() - t0,
+    )
+
+    if db is not None:
+        try:
+            await _store_person_records(db, records)
+        except Exception:
+            pass
+
+    single = records[:1]
+    return SearchResponse(
+        data=[_map_person(r) for r in single],
+        meta=SearchMeta(total=1 if single else 0, total_pages=1 if single else 0, scroll_token=None),
+    )
+
+
+async def search_extension_company(
+    linkedin_url: str | None = None,
+    website: str | None = None,
+    company_name: str | None = None,
+    db: "AsyncSession | None" = None,
+) -> SearchResponse:
+    """
+    Exact-match company lookup for the extension. Returns at most one record.
+    Priority: linkedin_url > website > company_name.
+    """
+    _require_api_key()
+
+    must: list[dict] = []
+    search_type: str
+
+    if linkedin_url:
+        normalized = _normalize_linkedin_url(linkedin_url)
+        must.append({"match_phrase": {"canonical_linkedin_url": normalized}})
+        search_type = f"linkedin:{normalized}"
+    elif website:
+        domain = _extract_root_domain(website)
+        must.append({"match_phrase": {"website": domain}})
+        search_type = f"website:{domain}"
+    elif company_name:
+        must.append({"match_phrase": {"company_name": company_name}})
+        search_type = f"name:{company_name}"
+    else:
+        raise HTTPException(status_code=400, detail="Provide linkedin_url, website, or company_name.")
+
+    query = {"bool": {"must": must}}
+    logger.info("extension_company_search type=%s", search_type)
+
+    t0 = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            search_result = await _search_ids(client, "company_multi_source", query, page_size=1)
+            records = await _collect_records(client, "company_multi_source", search_result["ids"])
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="API request timed out. Please try again.")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
+
+    logger.info(
+        "extension_company_search type=%s total=%d duration=%.2fs",
+        search_type, search_result["total"], time.monotonic() - t0,
+    )
+
+    if db is not None:
+        try:
+            await _store_company_records(db, records)
+        except Exception:
+            pass
+
+    single = records[:1]
+    return SearchResponse(
+        data=[_map_company(r) for r in single],
+        meta=SearchMeta(total=1 if single else 0, total_pages=1 if single else 0, scroll_token=None),
     )

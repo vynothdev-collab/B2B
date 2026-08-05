@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.api.routes import auth, health, lists, plans, search, users
+from app.api.routes import auth, extension, health, lists, plans, search, users
 from app.api.routes.admin import auth as admin_auth
 from app.api.routes.admin import credits as admin_credits
 from app.api.routes.admin import enterprises as admin_enterprises
@@ -36,5 +36,11 @@ api_router.include_router(
 )
 api_router.include_router(
     lists.router,
+    dependencies=[Depends(get_current_user)],
+)
+api_router.include_router(
+    extension.router,
+    prefix="/extension/search",
+    tags=["extension"],
     dependencies=[Depends(get_current_user)],
 )

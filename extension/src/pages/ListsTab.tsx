@@ -5,6 +5,8 @@ import { ListCard } from '../components/ListCard';
 import { CreateListModal } from '../components/CreateListModal';
 import { Avatar } from '../components/ui/Avatar';
 import { searchApi } from '../api/search';
+import { PersonDetailPanel } from '../components/PersonDetailPanel';
+import { CompanyDetailPanel } from '../components/CompanyDetailPanel';
 
 /* ─── Inline SVG helpers ─────────────────────────────────────────────────── */
 const Ico = {
@@ -121,7 +123,7 @@ function CompanyAvatar({ src, name, website }: { src?: string; name: string; web
 }
 
 /* ─── Company item card ──────────────────────────────────────────────────── */
-function CompanyItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void }) {
+function CompanyItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onRemove: () => void; onViewDetails: () => void }) {
   const [hovered, setHovered] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const co = item.data as CompanyResult;
@@ -140,11 +142,13 @@ function CompanyItemCard({ item, onRemove }: { item: ListItem; onRemove: () => v
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={onViewDetails}
       style={{
         borderBottom: '1px solid #F1F5F9',
         padding: '12px 16px',
         background: hovered ? '#F8FAFD' : '#fff',
         transition: 'background 0.12s',
+        cursor: 'pointer',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -159,10 +163,13 @@ function CompanyItemCard({ item, onRemove }: { item: ListItem; onRemove: () => v
             }}>
               {name}
             </p>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '2px',
-              flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
-            }}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '2px',
+                flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
+              }}
+            >
               {co.canonical_linkedin_url && (
                 <a href={co.canonical_linkedin_url} target="_blank" rel="noopener noreferrer"
                   title="LinkedIn" style={{ padding: '4px', color: '#3B82F6', display: 'flex' }}>
@@ -192,9 +199,9 @@ function CompanyItemCard({ item, onRemove }: { item: ListItem; onRemove: () => v
             </p>
           )}
 
-          {/* Quick action chips */}
+          {/* Quick action chips — stop propagation so they don't open the panel */}
           {hovered && (co.website || co.canonical_linkedin_url) && (
-            <div style={{ display: 'flex', gap: '5px', marginTop: '8px', flexWrap: 'wrap' }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', gap: '5px', marginTop: '8px', flexWrap: 'wrap' }}>
               {co.website && (
                 <button
                   onClick={() => copyToClipboard(co.website!, 'website')}
@@ -229,6 +236,11 @@ function CompanyItemCard({ item, onRemove }: { item: ListItem; onRemove: () => v
               )}
             </div>
           )}
+
+          {/* "View details" hint */}
+          {hovered && (
+            <p style={{ fontSize: '10.5px', color: '#CBD5E1', margin: '6px 0 0' }}>Click to view details →</p>
+          )}
         </div>
       </div>
     </div>
@@ -236,7 +248,7 @@ function CompanyItemCard({ item, onRemove }: { item: ListItem; onRemove: () => v
 }
 
 /* ─── Person item card ───────────────────────────────────────────────────── */
-function PersonItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void }) {
+function PersonItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onRemove: () => void; onViewDetails: () => void }) {
   const [revealedEmail, setRevealedEmail] = useState<string | null>(null);
   const [revealing, setRevealing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -269,11 +281,13 @@ function PersonItemCard({ item, onRemove }: { item: ListItem; onRemove: () => vo
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={onViewDetails}
       style={{
         borderBottom: '1px solid #F1F5F9',
         padding: '12px 16px',
         background: hovered ? '#F8FAFD' : '#fff',
         transition: 'background 0.12s',
+        cursor: 'pointer',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
@@ -288,10 +302,13 @@ function PersonItemCard({ item, onRemove }: { item: ListItem; onRemove: () => vo
             }}>
               {name}
             </p>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '2px',
-              flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
-            }}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '2px',
+                flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
+              }}
+            >
               {person.linkedin_url && (
                 <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
                   title="LinkedIn" style={{ padding: '4px', color: '#3B82F6', display: 'flex' }}>
@@ -319,9 +336,9 @@ function PersonItemCard({ item, onRemove }: { item: ListItem; onRemove: () => vo
             <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0' }}>{location}</p>
           )}
 
-          {/* Email chip — shown on hover (or always if already revealed) */}
+          {/* Email chip — stop propagation so it doesn't open the panel */}
           {(hovered || revealedEmail) && (
-            <div style={{ marginTop: '8px' }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ marginTop: '8px' }}>
               {revealedEmail ? (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '6px',
@@ -366,6 +383,11 @@ function PersonItemCard({ item, onRemove }: { item: ListItem; onRemove: () => vo
               )}
             </div>
           )}
+
+          {/* "View details" hint */}
+          {hovered && !revealedEmail && (
+            <p style={{ fontSize: '10.5px', color: '#CBD5E1', margin: '6px 0 0' }}>Click to view details →</p>
+          )}
         </div>
       </div>
     </div>
@@ -373,9 +395,9 @@ function PersonItemCard({ item, onRemove }: { item: ListItem; onRemove: () => vo
 }
 
 /* ─── Unified item card dispatcher ──────────────────────────────────────── */
-function LeadItemCard({ item, onRemove }: { item: ListItem; onRemove: () => void }) {
-  if (item.item_type === 'company') return <CompanyItemCard item={item} onRemove={onRemove} />;
-  return <PersonItemCard item={item} onRemove={onRemove} />;
+function LeadItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onRemove: () => void; onViewDetails: () => void }) {
+  if (item.item_type === 'company') return <CompanyItemCard item={item} onRemove={onRemove} onViewDetails={onViewDetails} />;
+  return <PersonItemCard item={item} onRemove={onRemove} onViewDetails={onViewDetails} />;
 }
 
 /* ─── Stat pill ──────────────────────────────────────────────────────────── */
@@ -579,6 +601,7 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [headerShadow, setHeaderShadow] = useState(false);
+  const [detailItem, setDetailItem] = useState<ListItem | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const busyRef = useRef(false);   /* prevents duplicate inflight requests */
   const genRef = useRef(0);        /* generation counter — discards stale responses */
@@ -769,6 +792,7 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
             key={item.id}
             item={item}
             onRemove={() => handleRemoveItem(item)}
+            onViewDetails={() => setDetailItem(item)}
           />
         ))
       )}
@@ -803,6 +827,22 @@ function ListDetail({ list, onBack }: { list: LeadsList; onBack: () => void }) {
         }}>
           Showing {allItems.length} of {total} records
         </div>
+      )}
+
+      {/* ── Detail panels (slide in from right, full-screen overlay) ── */}
+      {detailItem && detailItem.item_type === 'person' && (
+        <PersonDetailPanel
+          item={detailItem}
+          listName={list.name}
+          onClose={() => setDetailItem(null)}
+        />
+      )}
+      {detailItem && detailItem.item_type === 'company' && (
+        <CompanyDetailPanel
+          item={detailItem}
+          listName={list.name}
+          onClose={() => setDetailItem(null)}
+        />
       )}
     </div>
   );

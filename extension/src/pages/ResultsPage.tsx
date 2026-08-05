@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { TabInfo, PersonResult, CompanyResult, LeadsList } from '../types';
 import { searchApi } from '../api/search';
+import { extensionApi } from '../api/extension';
 import { listsApi } from '../api/lists';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { CompanyCard } from '../components/CompanyCard';
@@ -336,7 +337,7 @@ export function ResultsPage({ tabInfo }: Props) {
     fetchLists();
     try {
       if (tabInfo.pageType === 'linkedin_person' && tabInfo.linkedinUrl) {
-        const res = await searchApi.searchPersons([tabInfo.linkedinUrl], 1);
+        const res = await extensionApi.searchPerson(tabInfo.linkedinUrl);
         if (res.data.length === 0) { setState({ status: 'empty' }); return; }
         try {
           const detail = await searchApi.getPersonDetail(res.data[0].id);
@@ -344,11 +345,22 @@ export function ResultsPage({ tabInfo }: Props) {
         } catch {
           setState({ status: 'person', result: res.data[0] });
         }
-      } else if (
-        (tabInfo.pageType === 'company_website' || tabInfo.pageType === 'linkedin_company') &&
-        tabInfo.companyName
-      ) {
-        const res = await searchApi.searchCompanies([tabInfo.companyName], 1);
+      } else if (tabInfo.pageType === 'linkedin_company') {
+        const res = await extensionApi.searchCompany({
+          linkedinUrl: tabInfo.linkedinUrl,
+        });
+        if (res.data.length === 0) { setState({ status: 'empty' }); return; }
+        try {
+          const detail = await searchApi.getCompanyDetail(res.data[0].id);
+          setState({ status: 'company', result: { ...res.data[0], ...detail } });
+        } catch {
+          setState({ status: 'company', result: res.data[0] });
+        }
+      } else if (tabInfo.pageType === 'company_website') {
+        const res = await extensionApi.searchCompany({
+          website: tabInfo.domain,
+          companyName: tabInfo.companyName,
+        });
         if (res.data.length === 0) { setState({ status: 'empty' }); return; }
         try {
           const detail = await searchApi.getCompanyDetail(res.data[0].id);
