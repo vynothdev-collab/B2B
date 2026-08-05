@@ -7,9 +7,15 @@ interface CompanyDetail extends CompanyResult {
   total_website_visits_monthly?: number | null;
   total_website_visits_change?: { change_monthly_percentage?: number | null } | null;
   employees_count_change?: { change_yearly_percentage?: number | null } | null;
-  last_funding_round?: { type?: string | null; amount_raised?: number | null; [k: string]: unknown } | null;
-  active_job_postings?: number | null;
+  last_funding_round?: { type?: string | null; amount_raised?: number | null; announced_date?: string | null; [k: string]: unknown } | null;
+  active_job_postings?: number | Array<{ id?: string | null }> | null;
   company_employee_reviews_aggregate_score?: number | null;
+}
+
+function normalizeJobCount(val?: number | Array<{ id?: string | null }> | null): number | null {
+  if (val == null) return null;
+  if (Array.isArray(val)) return val.length > 0 ? val.length : null;
+  return typeof val === 'number' && val > 0 ? val : null;
 }
 
 interface Props { item: ListItem; listName?: string; onClose: () => void; }
@@ -300,6 +306,7 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
   const description = (d as CompanyDetail & { description?: string | null }).description ?? null;
 
   const revStr = typeof d.revenue_annual_range === 'string' ? d.revenue_annual_range : null;
+  const jobCount = normalizeJobCount(d.active_job_postings);
 
   const NAV = [
     { label: 'Overview', ref: overviewRef },
@@ -413,7 +420,7 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
                   <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-line' }}>{description}</p>
                 </div>
               )}
-              {(d.employees_count != null || d.company_employee_reviews_aggregate_score != null || d.active_job_postings != null) && (
+              {(d.employees_count != null || d.company_employee_reviews_aggregate_score != null || jobCount != null) && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                   {d.employees_count != null && d.employees_count > 0 && (
                     <MetricCard icon={<IcoUsers />} label="Employees" value={fmtNum(d.employees_count)} />
@@ -424,12 +431,12 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
                   {d.company_employee_reviews_aggregate_score != null && (
                     <MetricCard icon={<IcoStar />} label="Rating" value={`★ ${d.company_employee_reviews_aggregate_score.toFixed(1)}`} accent />
                   )}
-                  {d.active_job_postings != null && (
-                    <MetricCard icon={<IcoBriefcase />} label="Open Jobs" value={String(d.active_job_postings)} />
+                  {jobCount != null && (
+                    <MetricCard icon={<IcoBriefcase />} label="Open Jobs" value={String(jobCount)} />
                   )}
                 </div>
               )}
-              {!description && d.employees_count == null && d.company_employee_reviews_aggregate_score == null && d.active_job_postings == null && (
+              {!description && d.employees_count == null && d.company_employee_reviews_aggregate_score == null && jobCount == null && (
                 <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
                   <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Overview</p>
                   <Empty icon={<IcoBuilding2 />} text="No overview available" />
@@ -499,13 +506,13 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
                 {revStr && <MetricCard icon={<IcoDollar />} label="Revenue" value={revStr} accent />}
-                {d.active_job_postings != null && <MetricCard icon={<IcoBriefcase />} label="Open Jobs" value={String(d.active_job_postings)} />}
+                {jobCount != null && <MetricCard icon={<IcoBriefcase />} label="Open Jobs" value={String(jobCount)} />}
                 {d.company_employee_reviews_aggregate_score != null && (
                   <MetricCard icon={<IcoStar />} label="Employee Rating" value={`★ ${d.company_employee_reviews_aggregate_score.toFixed(1)}`} sub="aggregate score" />
                 )}
               </div>
 
-              {!d.employees_count && !d.total_website_visits_monthly && !revStr && d.active_job_postings == null && (
+              {!d.employees_count && !d.total_website_visits_monthly && !revStr && jobCount == null && (
                 <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
                   <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Metrics</p>
                   <Empty icon={<IcoBarChart />} text="No metrics available" />

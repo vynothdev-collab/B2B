@@ -1398,7 +1398,9 @@ def _map_company(r: dict) -> dict:
     ]
     jobs_raw = r.get("active_job_postings") or []
     active_job_postings = [
-        {"id": j.get("id")} if isinstance(j, dict) else j for j in jobs_raw
+        {"id": j.get("id")} if isinstance(j, dict) else j
+        for j in jobs_raw
+        if not isinstance(j, dict) or j.get("id") is not None
     ]
 
     return {
@@ -1746,6 +1748,22 @@ def _normalize_linkedin_url(url: str) -> str:
     return "https://" + url.lower()
 
 
+def _extract_linkedin_shorthand(url: str) -> str:
+    """Extract LinkedIn profile shorthand slug from a /in/ URL. E.g. .../in/teja-kumar/ -> teja-kumar."""
+    url = url.strip().rstrip("/").lower()
+    if "/in/" in url:
+        return url.split("/in/")[1].split("/")[0].split("?")[0]
+    return ""
+
+
+def _extract_linkedin_company_shorthand(url: str) -> str:
+    """Extract company shorthand from a /company/ URL. E.g. .../company/zoho/ -> zoho."""
+    url = url.strip().rstrip("/").lower()
+    if "/company/" in url:
+        return url.split("/company/")[1].split("/")[0].split("?")[0]
+    return ""
+
+
 def _extract_root_domain(url: str) -> str:
     """Extract bare root domain from any URL, e.g. https://www.stripe.com/about -> stripe.com."""
     url = url.strip()
@@ -1760,16 +1778,22 @@ def _extract_root_domain(url: str) -> str:
 # ---------------------------------------------------------------------------
 
 async def search_extension_person(linkedin_url: str, db: "AsyncSession | None" = None) -> SearchResponse:
-    """Exact-match person lookup by LinkedIn profile URL. Returns at most one record."""
+    """Exact-match person lookup by LinkedIn profile shorthand name. Returns at most one record."""
     _require_api_key()
 
-    normalized = _normalize_linkedin_url(linkedin_url)
-    logger.info("extension_person_search url=%s normalized=%s", linkedin_url, normalized)
+    shorthand = _extract_linkedin_shorthand(linkedin_url)
+    if not shorthand:
+        raise HTTPException(status_code=400, detail="Invalid LinkedIn profile URL")
+
+    logger.info("extension_person_search url=%s shorthand=%s", linkedin_url, shorthand)
 
     query = {
         "bool": {
-            "must": [{"match_phrase": {"url": normalized}}],
-            "filter": [{"term": {"is_deleted": False}}],
+            "filter": [
+                {"term": {"is_deleted": 0}},
+                {"term": {"is_parent": 1}},
+                {"terms": {"linkedin_shorthand_names.exact": [shorthand]}},
+            ]
         }
     }
 
@@ -1784,8 +1808,8 @@ async def search_extension_person(linkedin_url: str, db: "AsyncSession | None" =
         raise HTTPException(status_code=502, detail="Could not reach API. Please try again later.")
 
     logger.info(
-        "extension_person_search url=%s total=%d duration=%.2fs",
-        normalized, search_result["total"], time.monotonic() - t0,
+        "extension_person_search shorthand=%s total=%d duration=%.2fs",
+        shorthand, search_result["total"], time.monotonic() - t0,
     )
 
     if db is not None:
@@ -1818,7 +1842,23 @@ async def search_extension_company(
 
     if linkedin_url:
         normalized = _normalize_linkedin_url(linkedin_url)
-        must.append({"match_phrase": {"canonical_linkedin_url": normalized}})
+        shorthand = _extract_linkedin_company_shorthand(linkedin_url)
+        must.append({
+            "bool": {
+                "should": [
+                    {"terms": {"canonical_linkedin_url": [normalized]}},
+                    {"terms": {"linkedin_url": [normalized]}},
+                    *(
+                        [
+                            {"terms": {"canonical_linkedin_shorthand_name.exact": [shorthand]}},
+                            {"terms": {"linkedin_shorthand_name.exact": [shorthand]}},
+                        ]
+                        if shorthand else []
+                    ),
+                ],
+                "minimum_should_match": 1,
+            }
+        })
         search_type = f"linkedin:{normalized}"
     elif website:
         domain = _extract_root_domain(website)

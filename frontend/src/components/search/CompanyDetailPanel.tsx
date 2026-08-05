@@ -758,7 +758,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 )}
                 {(d.employees_count != null ||
                   d.company_employee_reviews_aggregate_score != null ||
-                  d.active_job_postings != null) && (
+                  (Array.isArray(d.active_job_postings) && d.active_job_postings.length > 0)) && (
                   <div
                     className={`grid grid-cols-3 gap-2 ${detail?.description ? "mt-4" : ""}`}
                   >
@@ -788,11 +788,11 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                         accent
                       />
                     )}
-                    {d.active_job_postings != null && (
+                    {Array.isArray(d.active_job_postings) && d.active_job_postings.length > 0 && (
                       <MetricCard
                         icon={<Briefcase className="h-3 w-3" />}
                         label="Open Jobs"
-                        value={String(d.active_job_postings)}
+                        value={String(d.active_job_postings.length)}
                       />
                     )}
                   </div>
@@ -800,7 +800,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 {!detail?.description &&
                   d.employees_count == null &&
                   d.company_employee_reviews_aggregate_score == null &&
-                  d.active_job_postings == null && (
+                  !(Array.isArray(d.active_job_postings) && d.active_job_postings.length > 0) && (
                     <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                       <p className="text-[15px] font-bold text-gray-900 mb-4">
                         Overview
@@ -928,11 +928,11 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                       accent
                     />
                   )}
-                  {d.active_job_postings != null && (
+                  {Array.isArray(d.active_job_postings) && d.active_job_postings.length > 0 && (
                     <MetricCard
                       icon={<Briefcase className="h-3 w-3" />}
                       label="Open Jobs"
-                      value={String(d.active_job_postings)}
+                      value={String(d.active_job_postings.length)}
                     />
                   )}
                   {d.company_employee_reviews_aggregate_score != null && (
@@ -948,7 +948,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                 {!d.employees_count &&
                   !d.total_website_visits_monthly &&
                   !revenueLabel &&
-                  d.active_job_postings == null && (
+                  !(Array.isArray(d.active_job_postings) && d.active_job_postings.length > 0) && (
                     <div className="rounded-2xl border border-gray-100 bg-[#F5F4F9] p-5">
                       <p className="text-[15px] font-bold text-gray-900 mb-4">
                         Metrics

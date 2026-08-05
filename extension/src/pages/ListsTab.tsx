@@ -131,6 +131,7 @@ function CompanyItemCard({ item, onRemove, onViewDetails }: { item: ListItem; on
   const name = co.company_name || co.company_legal_name || 'Unknown Company';
   const location = [co.hq_city, co.hq_country].filter(Boolean).join(', ') || co.hq_location || '';
   const domain = co.website?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') || '';
+  const empCount = co.employees_count ? (co.employees_count > 999 ? `${Math.round(co.employees_count / 1000)}k` : String(co.employees_count)) : co.size_range || '';
 
   const copyToClipboard = async (text: string, field: string) => {
     await navigator.clipboard.writeText(text);
@@ -144,40 +145,28 @@ function CompanyItemCard({ item, onRemove, onViewDetails }: { item: ListItem; on
       onMouseLeave={() => setHovered(false)}
       onClick={onViewDetails}
       style={{
-        borderBottom: '1px solid #F1F5F9',
-        padding: '12px 16px',
-        background: hovered ? '#F8FAFD' : '#fff',
-        transition: 'background 0.12s',
-        cursor: 'pointer',
+        borderBottom: '1px solid #F1F5F9', padding: '12px 16px',
+        background: hovered ? '#F8FAFD' : '#fff', transition: 'background 0.12s', cursor: 'pointer',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
         <CompanyAvatar src={co.logo_url} name={name} website={co.website} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Name + actions row */}
+          {/* Name + actions */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-            <p style={{
-              fontSize: '13px', fontWeight: 600, color: '#0F172A',
-              margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {name}
             </p>
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '2px',
-                flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
-              }}
-            >
+            <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
               {co.canonical_linkedin_url && (
-                <a href={co.canonical_linkedin_url} target="_blank" rel="noopener noreferrer"
-                  title="LinkedIn" style={{ padding: '4px', color: '#3B82F6', display: 'flex' }}>
+                <a href={co.canonical_linkedin_url} target="_blank" rel="noopener noreferrer" title="LinkedIn"
+                  style={{ padding: '4px', color: '#0A66C2', display: 'flex', opacity: hovered ? 1 : 0.35, transition: 'opacity 0.15s' }}>
                   {Ico.linkedin}
                 </a>
               )}
               <button onClick={onRemove} title="Remove from list"
-                style={{ padding: '4px', color: '#CBD5E1', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}
+                style={{ padding: '4px', color: '#CBD5E1', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#EF4444'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#CBD5E1'; }}>
                 {Ico.trash}
@@ -185,61 +174,55 @@ function CompanyItemCard({ item, onRemove, onViewDetails }: { item: ListItem; on
             </div>
           </div>
 
-          {/* Domain + industry */}
-          {(domain || co.industry) && (
+          {/* Industry */}
+          {co.industry && (
             <p style={{ fontSize: '11.5px', color: '#64748B', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {domain}{co.industry ? (domain ? ` · ${co.industry}` : co.industry) : ''}
+              {co.industry}
             </p>
           )}
 
-          {/* Location + size */}
-          {(location || co.employees_count || co.size_range) && (
-            <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {[location, co.employees_count ? `${co.employees_count.toLocaleString()} employees` : co.size_range].filter(Boolean).join(' · ')}
-            </p>
-          )}
+          {/* Location · employees · domain row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+            {location && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#94A3B8' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                {location}
+              </span>
+            )}
+            {empCount && (
+              <>
+                {location && <span style={{ color: '#E2E8F0', fontSize: '10px' }}>·</span>}
+                <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#94A3B8' }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                  </svg>
+                  {empCount}
+                </span>
+              </>
+            )}
+            {domain && (
+              <>
+                {(location || empCount) && <span style={{ color: '#E2E8F0', fontSize: '10px' }}>·</span>}
+                <span style={{ fontSize: '11px', color: '#94A3B8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{domain}</span>
+              </>
+            )}
+          </div>
 
-          {/* Quick action chips — stop propagation so they don't open the panel */}
+          {/* Quick copy chips on hover */}
           {hovered && (co.website || co.canonical_linkedin_url) && (
             <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', gap: '5px', marginTop: '8px', flexWrap: 'wrap' }}>
               {co.website && (
-                <button
-                  onClick={() => copyToClipboard(co.website!, 'website')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    padding: '4px 9px', borderRadius: '7px', fontSize: '11px', fontWeight: 500,
-                    border: '1px solid #E2E8F0', color: '#374151', background: '#fff',
-                    cursor: 'pointer', transition: 'all 0.12s',
-                  }}
+                <button onClick={() => copyToClipboard(co.website!, 'website')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 9px', borderRadius: '7px', fontSize: '11px', fontWeight: 500, border: '1px solid #E2E8F0', color: '#374151', background: '#fff', cursor: 'pointer', transition: 'all 0.12s' }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C'; (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0'; (e.currentTarget as HTMLButtonElement).style.color = '#374151'; }}
-                >
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0'; (e.currentTarget as HTMLButtonElement).style.color = '#374151'; }}>
                   {copiedField === 'website' ? Ico.check : Ico.copy}
                   {copiedField === 'website' ? 'Copied!' : 'Copy website'}
                 </button>
               )}
-              {co.canonical_linkedin_url && (
-                <button
-                  onClick={() => copyToClipboard(co.canonical_linkedin_url!, 'linkedin')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    padding: '4px 9px', borderRadius: '7px', fontSize: '11px', fontWeight: 500,
-                    border: '1px solid #E2E8F0', color: '#374151', background: '#fff',
-                    cursor: 'pointer', transition: 'all 0.12s',
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#0A66C2'; (e.currentTarget as HTMLButtonElement).style.color = '#0A66C2'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0'; (e.currentTarget as HTMLButtonElement).style.color = '#374151'; }}
-                >
-                  {copiedField === 'linkedin' ? Ico.check : Ico.linkedin}
-                  {copiedField === 'linkedin' ? 'Copied!' : 'Copy LinkedIn'}
-                </button>
-              )}
             </div>
-          )}
-
-          {/* "View details" hint */}
-          {hovered && (
-            <p style={{ fontSize: '10.5px', color: '#CBD5E1', margin: '6px 0 0' }}>Click to view details →</p>
           )}
         </div>
       </div>
@@ -258,7 +241,8 @@ function PersonItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onR
   const name = person.full_name || `${person.first_name || ''} ${person.last_name || ''}`.trim() || 'Unknown';
   const title = person.active_experience_title || person.headline || '';
   const company = person.active_experience_company_name || '';
-  const location = [person.location_city, person.location_country].filter(Boolean).join(', ');
+  const department = person.active_experience_department || '';
+  const location = [person.location_city, person.location_state, person.location_country].filter(Boolean).join(', ');
 
   const handleReveal = async () => {
     if (revealedEmail || revealing) return;
@@ -283,40 +267,28 @@ function PersonItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onR
       onMouseLeave={() => setHovered(false)}
       onClick={onViewDetails}
       style={{
-        borderBottom: '1px solid #F1F5F9',
-        padding: '12px 16px',
-        background: hovered ? '#F8FAFD' : '#fff',
-        transition: 'background 0.12s',
-        cursor: 'pointer',
+        borderBottom: '1px solid #F1F5F9', padding: '12px 16px',
+        background: hovered ? '#F8FAFD' : '#fff', transition: 'background 0.12s', cursor: 'pointer',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
         <Avatar src={person.picture_url} name={name} size="sm" />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Name + hover actions */}
+          {/* Name + actions */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
-            <p style={{
-              fontSize: '13px', fontWeight: 600, color: '#0F172A',
-              margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {name}
             </p>
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '2px',
-                flexShrink: 0, opacity: hovered ? 1 : 0, transition: 'opacity 0.15s',
-              }}
-            >
+            <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
               {person.linkedin_url && (
-                <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer"
-                  title="LinkedIn" style={{ padding: '4px', color: '#3B82F6', display: 'flex' }}>
+                <a href={person.linkedin_url} target="_blank" rel="noopener noreferrer" title="LinkedIn"
+                  style={{ padding: '4px', color: '#0A66C2', display: 'flex', opacity: hovered ? 1 : 0.35, transition: 'opacity 0.15s' }}>
                   {Ico.linkedin}
                 </a>
               )}
               <button onClick={onRemove} title="Remove from list"
-                style={{ padding: '4px', color: '#CBD5E1', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}
+                style={{ padding: '4px', color: '#CBD5E1', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#EF4444'; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#CBD5E1'; }}>
                 {Ico.trash}
@@ -324,70 +296,63 @@ function PersonItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onR
             </div>
           </div>
 
-          {/* Title · Company */}
-          {(title || company) && (
-            <p style={{ fontSize: '11.5px', color: '#64748B', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {title}{company ? ` · ${company}` : ''}
+          {/* Title */}
+          {title && (
+            <p style={{ fontSize: '11.5px', color: '#374151', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {title}
+            </p>
+          )}
+
+          {/* Company + department */}
+          {(company || department) && (
+            <p style={{ fontSize: '11.5px', color: '#2563EB', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+              {company}{department && company ? ` · ${department}` : department}
             </p>
           )}
 
           {/* Location */}
           {location && (
-            <p style={{ fontSize: '11px', color: '#94A3B8', margin: '2px 0 0' }}>{location}</p>
-          )}
-
-          {/* Email chip — stop propagation so it doesn't open the panel */}
-          {(hovered || revealedEmail) && (
-            <div onClick={(e) => e.stopPropagation()} style={{ marginTop: '8px' }}>
-              {revealedEmail ? (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  background: '#F0FDF4', border: '1px solid #BBF7D0',
-                  borderRadius: '7px', padding: '4px 8px',
-                }}>
-                  <span style={{ fontSize: '11px', color: '#15803D', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {revealedEmail}
-                  </span>
-                  <button onClick={handleCopy}
-                    style={{ color: copied ? '#16A34A' : '#86EFAC', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexShrink: 0 }}>
-                    {copied ? Ico.check : Ico.copy}
-                  </button>
-                </div>
-              ) : (
-                <button onClick={handleReveal} disabled={revealing}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    padding: '4px 9px', borderRadius: '7px',
-                    fontSize: '11px', fontWeight: 500,
-                    border: '1px solid #E2E8F0', color: '#374151', background: '#fff',
-                    cursor: revealing ? 'default' : 'pointer',
-                    transition: 'all 0.12s', opacity: revealing ? 0.7 : 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!revealing) {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C';
-                      (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0';
-                    (e.currentTarget as HTMLButtonElement).style.color = '#374151';
-                  }}
-                >
-                  {revealing
-                    ? <span style={{ width: '11px', height: '11px', border: '2px solid #CBD5E1', borderTopColor: '#1A3D5C', borderRadius: '50%', display: 'inline-block', animation: 'lb-spin 0.7s linear infinite' }} />
-                    : Ico.email
-                  }
-                  {revealing ? 'Loading…' : 'Get email'}
-                </button>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginTop: '3px' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+              <p style={{ fontSize: '11px', color: '#94A3B8', margin: 0 }}>{location}</p>
             </div>
           )}
 
-          {/* "View details" hint */}
-          {hovered && !revealedEmail && (
-            <p style={{ fontSize: '10.5px', color: '#CBD5E1', margin: '6px 0 0' }}>Click to view details →</p>
-          )}
+          {/* Email row — always visible; click stops propagation */}
+          <div onClick={(e) => e.stopPropagation()} style={{ marginTop: '7px' }}>
+            {revealedEmail ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '7px', padding: '4px 8px' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+                <span style={{ fontSize: '11px', color: '#15803D', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {revealedEmail}
+                </span>
+                <button onClick={handleCopy} style={{ color: copied ? '#16A34A' : '#86EFAC', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexShrink: 0 }}>
+                  {copied ? Ico.check : Ico.copy}
+                </button>
+              </div>
+            ) : (
+              <button onClick={handleReveal} disabled={revealing}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                  padding: '4px 10px', borderRadius: '7px', fontSize: '11px', fontWeight: 500,
+                  border: '1px solid #E2E8F0', color: '#374151', background: '#fff',
+                  cursor: revealing ? 'default' : 'pointer', transition: 'all 0.12s', opacity: revealing ? 0.7 : 1,
+                }}
+                onMouseEnter={(e) => { if (!revealing) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C'; (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C'; } }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0'; (e.currentTarget as HTMLButtonElement).style.color = '#374151'; }}
+              >
+                {revealing
+                  ? <span style={{ width: '10px', height: '10px', border: '1.5px solid #CBD5E1', borderTopColor: '#1A3D5C', borderRadius: '50%', display: 'inline-block', animation: 'lb-spin 0.7s linear infinite' }} />
+                  : Ico.email
+                }
+                {revealing ? 'Loading…' : 'Get email'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

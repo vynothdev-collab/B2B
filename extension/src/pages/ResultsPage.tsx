@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { TabInfo, PersonResult, CompanyResult, LeadsList } from '../types';
 import { searchApi } from '../api/search';
 import { extensionApi } from '../api/extension';
@@ -6,10 +6,8 @@ import { listsApi } from '../api/lists';
 import { SkeletonCard } from '../components/ui/Skeleton';
 import { CompanyCard } from '../components/CompanyCard';
 import { PersonCard } from '../components/PersonCard';
-import { RevealSection } from '../components/RevealSection';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
-import { EmployeeCard } from '../components/EmployeeCard';
 import { useAuthStore } from '../store/authStore';
 
 interface Props {
@@ -24,7 +22,6 @@ type SearchState =
   | { status: 'person'; result: PersonResult }
   | { status: 'company'; result: CompanyResult };
 
-type CompanyTab = 'details' | 'employees';
 
 const PAGE_CONFIG = {
   linkedin_person: {
@@ -199,124 +196,10 @@ function IdleState({ tabInfo, onSearch }: { tabInfo: TabInfo; onSearch: () => vo
 }
 
 /* ─── Employee list ──────────────────────────────────────────────────────── */
-function EmployeeList({ company, lists }: { company: CompanyResult; lists: LeadsList[] }) {
-  const [employees, setEmployees] = useState<PersonResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const [total, setTotal] = useState(0);
 
-  const fetchEmployees = useCallback(async () => {
-    setLoading(true);
-    try {
-      const filters = company.canonical_linkedin_url
-        ? { companyLinkedinUrl: company.canonical_linkedin_url }
-        : { companyName: company.company_name };
-      const res = await searchApi.searchEmployees(filters, 1, 20);
-      setEmployees(res.data);
-      setTotal(res.meta.total);
-    } catch {
-      setEmployees([]);
-    } finally {
-      setLoading(false);
-      setSearched(true);
-    }
-  }, [company]);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
-
-  if (loading) {
-    return (
-      <div className="space-y-0">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-            <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
-            <div className="flex-1 space-y-1.5">
-              <div className="h-3 bg-gray-100 rounded animate-pulse w-2/5" />
-              <div className="h-2.5 bg-gray-100 rounded animate-pulse w-3/5" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (searched && employees.length === 0) {
-    return (
-      <EmptyState
-        message="No employees found"
-        description="We couldn't find employees for this company in our database."
-      />
-    );
-  }
-
-  return (
-    <div>
-      {total > 0 && (
-        <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/70">
-          <p className="text-[11.5px]" style={{ color: '#64748B' }}>
-            Showing <span className="font-semibold text-gray-700">{employees.length}</span> of{' '}
-            <span className="font-semibold text-gray-700">{total.toLocaleString()}</span> employees
-          </p>
-        </div>
-      )}
-      {employees.map((emp) => (
-        <EmployeeCard key={emp.id} person={emp} lists={lists} />
-      ))}
-    </div>
-  );
-}
-
-/* ─── Company result with sub-tabs ──────────────────────────────────────── */
-function CompanyResult({ company, lists }: { company: CompanyResult; lists: LeadsList[] }) {
-  const [activeTab, setActiveTab] = useState<CompanyTab>('details');
-  const employeeCount = company.employees_count;
-
-  return (
-    <div>
-      {/* Sub-tabs — pill style */}
-      <div className="px-3 py-2 bg-white sticky top-0 z-10" style={{ borderBottom: '1px solid #F1F5F9' }}>
-        <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
-          {(['details', 'employees'] as const).map((tab) => {
-            const isActive = activeTab === tab;
-            const label = tab === 'details' ? 'Company Details' : 'All Employees';
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-semibold transition-all"
-                style={{
-                  background: isActive ? '#fff' : 'transparent',
-                  color: isActive ? '#1A3D5C' : '#6B7280',
-                  boxShadow: isActive ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                }}
-              >
-                {label}
-                {tab === 'employees' && employeeCount ? (
-                  <span
-                    className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                    style={{
-                      background: isActive ? '#EFF6FF' : '#E5E7EB',
-                      color: isActive ? '#1D4ED8' : '#9CA3AF',
-                    }}
-                  >
-                    {employeeCount > 999 ? `${Math.round(employeeCount / 1000)}k` : employeeCount}
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {activeTab === 'details' ? (
-        <CompanyCard company={company} />
-      ) : (
-        <EmployeeList company={company} lists={lists} />
-      )}
-    </div>
-  );
+/* ─── Company result ─────────────────────────────────────────────────────── */
+function CompanyResult({ company, lists, onRefreshLists }: { company: CompanyResult; lists: LeadsList[]; onRefreshLists?: () => void }) {
+  return <CompanyCard company={company} lists={lists} onRefreshLists={onRefreshLists} />;
 }
 
 /* ─── Main ───────────────────────────────────────────────────────────────── */
@@ -379,7 +262,7 @@ export function ResultsPage({ tabInfo }: Props) {
   }, [tabInfo, fetchLists]);
 
   if (state.status === 'idle') return <IdleState tabInfo={tabInfo} onSearch={runSearch} />;
-  if (state.status === 'loading') return <SkeletonCard />;
+  if (state.status === 'loading') return <SkeletonCard type={tabInfo.pageType === 'linkedin_person' ? 'person' : 'company'} />;
   if (state.status === 'error') return <ErrorState message={state.message} onRetry={runSearch} />;
   if (state.status === 'empty') {
     return (
@@ -391,12 +274,9 @@ export function ResultsPage({ tabInfo }: Props) {
     );
   }
   if (state.status === 'company') {
-    return <CompanyResult company={state.result} lists={lists} />;
+    return <CompanyResult company={state.result} lists={lists} onRefreshLists={fetchLists} />;
   }
   return (
-    <div>
-      <PersonCard person={state.result} />
-      <RevealSection person={state.result} onRefreshUser={refreshUser} />
-    </div>
+    <PersonCard person={state.result} lists={lists} onRefreshLists={fetchLists} onRefreshUser={refreshUser} />
   );
 }
