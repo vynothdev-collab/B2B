@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { ListItem, CompanyResult } from '../types';
 import { searchApi } from '../api/search';
 
@@ -49,11 +49,11 @@ function CompanyAvatar({ name, logoUrl, website }: { name: string; logoUrl?: str
   if (src && !err) {
     return (
       <img src={src} alt={name} onError={() => setErr(true)}
-        style={{ width: 96, height: 96, borderRadius: 12, objectFit: 'contain', border: '1px solid #F3F4F6', background: '#fff', padding: 4, flexShrink: 0 }} />
+        style={{ width: 72, height: 72, borderRadius: 12, objectFit: 'contain', border: '1px solid #F3F4F6', background: '#fff', padding: 4, flexShrink: 0 }} />
     );
   }
   return (
-    <div style={{ width: 96, height: 96, borderRadius: 12, flexShrink: 0, background: c.bg, color: c.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700 }}>
+    <div style={{ width: 72, height: 72, borderRadius: 12, flexShrink: 0, background: c.bg, color: c.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700 }}>
       {initials}
     </div>
   );
@@ -86,11 +86,11 @@ function WebsiteSVG() {
 const IcoBack = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>;
 const IcoChevL = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>;
 const IcoChevR = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>;
-const IcoChevUp = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>;
+const IcoChevUp = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6" /></svg>;
 const IcoChevDown = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>;
-const IcoPin = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>;
-const IcoUsers = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg>;
-const IcoBuilding2 = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6M9 12h6M9 15h6" /></svg>;
+const IcoPin = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>;
+const IcoUsers = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg>;
+const IcoBuilding2 = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M9 9h6M9 12h6M9 15h6" /></svg>;
 const IcoStar = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>;
 const IcoDollar = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg>;
 const IcoBriefcase = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" /></svg>;
@@ -119,10 +119,53 @@ function fmtNum(n: number): string {
   return n.toLocaleString('en-US');
 }
 
+/* ─── CollapsibleSection ──────────────────────────────────────────────────── */
+function CollapsibleSection({
+  sectionRef,
+  title,
+  badge,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  sectionRef?: React.RefObject<HTMLDivElement>;
+  title: string;
+  badge?: number;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div ref={sectionRef} style={{ borderRadius: 14, border: '1px solid #E8ECF0', background: '#fff', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+      <button onClick={onToggle} style={{
+        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '13px 16px', background: isOpen ? '#FAFBFF' : '#fff',
+        border: 'none', borderBottom: isOpen ? '1px solid #F1F5F9' : 'none',
+        cursor: 'pointer', transition: 'background 0.15s',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>{title}</span>
+          {badge != null && badge > 0 && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 18, minWidth: 18, borderRadius: 20, background: '#EF4444', padding: '0 5px', fontSize: 10, fontWeight: 700, color: '#fff' }}>{badge}</span>
+          )}
+        </div>
+        <span style={{ color: '#9CA3AF', transition: 'transform 0.2s', transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'flex' }}>
+          <IcoChevDown />
+        </span>
+      </button>
+      <div style={{ maxHeight: isOpen ? '3000px' : '0px', overflow: 'hidden', transition: isOpen ? 'max-height 0.3s ease' : 'max-height 0.22s ease' }}>
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Shared UI components ────────────────────────────────────────────────── */
 function Empty({ icon, text }: { icon?: React.ReactNode; text: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 0', gap: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 0', gap: 10 }}>
       {icon && <div style={{ borderRadius: 16, background: '#F9FAFB', padding: 16, color: '#D1D5DB' }}>{icon}</div>}
       <p style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 500, margin: 0 }}>{text}</p>
     </div>
@@ -131,7 +174,7 @@ function Empty({ icon, text }: { icon?: React.ReactNode; text: string }) {
 
 function MetricCard({ icon, label, value, sub, accent = false }: { icon: React.ReactNode; label: string; value: string; sub?: string; accent?: boolean }) {
   return (
-    <div style={{ borderRadius: 12, border: `1px solid ${accent ? '#FECACA' : '#F3F4F6'}`, padding: '12px', background: accent ? '#FEF2F2' : '#F5F4F9' }}>
+    <div style={{ borderRadius: 10, border: `1px solid ${accent ? '#FECACA' : '#F3F4F6'}`, padding: '12px', background: accent ? '#FEF2F2' : '#F8FAFC' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: accent ? '#F87171' : '#374151' }}>
         {icon}{label}
       </div>
@@ -145,48 +188,93 @@ function GrowthBadge({ pct }: { pct: number }) {
   const pos = pct >= 0;
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, borderRadius: 20, padding: '2px 8px', fontSize: 12, fontWeight: 700, border: `1px solid ${pos ? '#A7F3D0' : '#FECDD3'}`, background: pos ? '#ECFDF5' : '#FFF1F2', color: pos ? '#059669' : '#BE123C' }}>
-      {pos ? <IcoChevUp /> : <IcoChevDown />}
+      {pos ? <IcoChevUp /> : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>}
       {Math.abs(pct).toFixed(1)}%
     </span>
   );
 }
 
-function ChipsSection({ title, items, colorize = false }: { title: string; items: string[]; colorize?: boolean }) {
+/* ─── Chips (inline, no card wrapper) ────────────────────────────────────── */
+function Chips({ items, colorize = false }: { items: string[]; colorize?: boolean }) {
   const [showAll, setShowAll] = useState(false);
-  const VISIBLE = 3;
+  const VISIBLE = 8;
   const visible = showAll ? items : items.slice(0, VISIBLE);
   const remaining = items.length - VISIBLE;
-  if (items.length === 0) return null;
   return (
-    <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-      <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>{title}</p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {visible.map((s, i) => {
-          const c = colorize ? CHIP_COLORS[i % CHIP_COLORS.length] : null;
-          return (
-            <span key={i} style={{ borderRadius: 20, border: `1px solid ${c ? c.border : '#E5E7EB'}`, padding: '6px 14px', fontSize: 13, fontWeight: 600, background: c ? c.bg : '#fff', color: c ? c.text : '#111827' }}>{s}</span>
-          );
-        })}
-        {!showAll && remaining > 0 && (
-          <button onClick={() => setShowAll(true)} style={{ borderRadius: 20, border: '1px solid #FECACA', background: '#FEF2F2', padding: '6px 14px', fontSize: 13, fontWeight: 600, color: '#EF4444', cursor: 'pointer' }}>+{remaining} more</button>
-        )}
-        {showAll && items.length > VISIBLE && (
-          <button onClick={() => setShowAll(false)} style={{ borderRadius: 20, border: '1px solid #FECACA', background: '#FEF2F2', padding: '6px 14px', fontSize: 13, fontWeight: 600, color: '#EF4444', cursor: 'pointer' }}>Show less</button>
-        )}
-      </div>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+      {visible.map((s, i) => {
+        const c = colorize ? CHIP_COLORS[i % CHIP_COLORS.length] : null;
+        return (
+          <span key={i} style={{ borderRadius: 20, border: `1px solid ${c ? c.border : '#E5E7EB'}`, padding: '5px 12px', fontSize: 12.5, fontWeight: 600, background: c ? c.bg : '#F9FAFB', color: c ? c.text : '#374151' }}>{s}</span>
+        );
+      })}
+      {!showAll && remaining > 0 && (
+        <button onClick={() => setShowAll(true)} style={{ borderRadius: 20, border: '1px solid #FECACA', background: '#FEF2F2', padding: '5px 12px', fontSize: 12.5, fontWeight: 600, color: '#EF4444', cursor: 'pointer' }}>+{remaining} more</button>
+      )}
+      {showAll && items.length > VISIBLE && (
+        <button onClick={() => setShowAll(false)} style={{ borderRadius: 20, border: '1px solid #E5E7EB', background: '#F9FAFB', padding: '5px 12px', fontSize: 12.5, fontWeight: 600, color: '#6B7280', cursor: 'pointer' }}>Show less</button>
+      )}
     </div>
   );
 }
 
+/* ─── LoadingSkeleton ─────────────────────────────────────────────────────── */
 function LoadingSkeleton() {
+  const Bone = ({ w, h, r = 6 }: { w?: string | number; h: number; r?: number }) => (
+    <div style={{
+      width: w ?? '100%', height: h, borderRadius: r, flexShrink: 0,
+      background: 'linear-gradient(90deg, #F1F5F9 0%, #E8EEF4 50%, #F1F5F9 100%)',
+      backgroundSize: '200% 100%',
+      animation: 'lb-shimmer 1.4s ease infinite',
+    }} />
+  );
+  const sections = [
+    { label: 'Overview', openSkeleton: true },
+    { label: 'Specialties', openSkeleton: true },
+    { label: 'Tech Stack', openSkeleton: false },
+    { label: 'Metrics', openSkeleton: false },
+    { label: 'About', openSkeleton: false },
+  ];
   return (
-    <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {[1, 2, 3].map((k) => (
-        <div key={k} style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-          <div style={{ height: 16, width: 100, background: '#E5E7EB', borderRadius: 6, marginBottom: 16 }} />
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {[88, 64, 104, 72, 96].map((w, i) => <div key={i} style={{ height: 36, width: w, background: '#E5E7EB', borderRadius: 20 }} />)}
+    <div style={{ padding: '10px 16px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Expand/Collapse controls skeleton */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, padding: '2px 0 6px' }}>
+        <Bone w={70} h={10} r={5} />
+        <Bone w={70} h={10} r={5} />
+      </div>
+      {sections.map(({ label, openSkeleton }, i) => (
+        <div key={i} style={{ borderRadius: 14, border: '1px solid #E8ECF0', background: '#fff', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+          <div style={{ padding: '13px 16px', background: '#FAFBFF', borderBottom: openSkeleton ? '1px solid #F1F5F9' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Bone w={label.length * 7} h={12} r={5} />
+            </div>
+            <Bone w={14} h={14} r={4} />
           </div>
+          {openSkeleton && (
+            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {i === 0 ? (
+                <>
+                  <Bone h={11} r={4} />
+                  <Bone h={11} w="88%" r={4} />
+                  <Bone h={11} w="72%" r={4} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 2 }}>
+                    {[0, 1].map((j) => (
+                      <div key={j} style={{ borderRadius: 10, border: '1px solid #F3F4F6', background: '#F8FAFC', padding: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <Bone w={56} h={9} r={4} />
+                        <Bone w={48} h={18} r={5} />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                  {[80, 60, 95, 70, 110, 55, 85, 65].map((w, j) => (
+                    <Bone key={j} w={w} h={28} r={20} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </div>
@@ -200,6 +288,8 @@ const tabBtn = (active: boolean): React.CSSProperties => ({
   background: active ? '#FEF2F2' : 'transparent', transition: 'all 0.15s',
 });
 
+type SectionKey = 'overview' | 'specialties' | 'tech' | 'metrics' | 'about';
+
 /* ─── Main component ──────────────────────────────────────────────────────── */
 export function CompanyDetailPanel({ item, onClose }: Props) {
   const [visible, setVisible] = useState(false);
@@ -208,6 +298,9 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
   const [activeTab, setActiveTab] = useState('Overview');
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [open, setOpen] = useState<Record<SectionKey, boolean>>({
+    overview: true, specialties: true, tech: true, metrics: true, about: true,
+  });
 
   const base = item.data as CompanyResult;
   const d = (detail ?? base) as CompanyDetail;
@@ -219,6 +312,10 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
   const aboutRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tabNavRef = useRef<HTMLDivElement>(null);
+
+  const toggle = (key: SectionKey) => setOpen(prev => ({ ...prev, [key]: !prev[key] }));
+  const expandAll = useCallback(() => setOpen({ overview: true, specialties: true, tech: true, metrics: true, about: true }), []);
+  const collapseAll = useCallback(() => setOpen({ overview: false, specialties: false, tech: false, metrics: false, about: false }), []);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setVisible(true));
@@ -287,9 +384,10 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
   const scrollTabNav = (dir: 'left' | 'right') =>
     tabNavRef.current?.scrollBy({ left: dir === 'left' ? -120 : 120, behavior: 'smooth' });
 
-  const scrollTo = (label: string, ref: React.RefObject<HTMLDivElement | null>) => {
+  const scrollTo = (label: string, ref: React.RefObject<HTMLDivElement>, sectionKey: SectionKey) => {
     setActiveTab(label);
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setOpen(prev => ({ ...prev, [sectionKey]: true }));
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
 
   const handleClose = () => { setVisible(false); setTimeout(onClose, 280); };
@@ -308,12 +406,12 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
   const revStr = typeof d.revenue_annual_range === 'string' ? d.revenue_annual_range : null;
   const jobCount = normalizeJobCount(d.active_job_postings);
 
-  const NAV = [
-    { label: 'Overview', ref: overviewRef },
-    { label: 'Specialties', ref: specialtiesRef, count: specialtiesArr.length },
-    { label: 'Tech Stack', ref: techRef, count: techArr.length },
-    { label: 'Metrics', ref: metricsRef },
-    { label: 'About', ref: aboutRef },
+  const NAV: { label: string; ref: React.RefObject<HTMLDivElement>; count?: number; key: SectionKey }[] = [
+    { label: 'Overview', ref: overviewRef, key: 'overview' },
+    { label: 'Specialties', ref: specialtiesRef, count: specialtiesArr.length, key: 'specialties' },
+    { label: 'Tech Stack', ref: techRef, count: techArr.length, key: 'tech' },
+    { label: 'Metrics', ref: metricsRef, key: 'metrics' },
+    { label: 'About', ref: aboutRef, key: 'about' },
   ];
 
   const arrowBtn = (show: boolean, dir: 'left' | 'right'): React.CSSProperties => ({
@@ -324,47 +422,58 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
     cursor: 'pointer', color: '#9CA3AF', visibility: show ? 'visible' : 'hidden',
   });
 
+  const openCount = Object.values(open).filter(Boolean).length;
+  const totalSections = Object.keys(open).length;
+
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 100,
-      background: '#fff', display: 'flex', flexDirection: 'column',
+      background: '#F8FAFC', display: 'flex', flexDirection: 'column',
       transform: visible ? 'translateX(0)' : 'translateX(100%)',
       transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
     }}>
 
       {/* ── Sticky header ─────────────────────────────────────────────── */}
       <div style={{ flexShrink: 0, background: '#fff', borderBottom: '1px solid #F3F4F6' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9CA3AF' }}>Company</span>
+            <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9CA3AF' }}>Company Profile</span>
           </div>
-          <button onClick={handleClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', background: 'transparent', color: '#9CA3AF' }}>
+          <button onClick={handleClose} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', border: 'none', cursor: 'pointer', background: '#F9FAFB', color: '#9CA3AF' }}>
             <IcoBack />
           </button>
         </div>
 
         {/* ── Hero ────────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '0 20px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '0 16px 14px' }}>
           <CompanyAvatar name={name} logoUrl={d.logo_url} website={d.website} />
           <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.2, letterSpacing: '-0.01em' }}>{name}</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.2, letterSpacing: '-0.01em' }}>{name}</h2>
               {d.is_public && <span style={{ borderRadius: 20, border: '1px solid #BFDBFE', background: '#EFF6FF', padding: '1px 8px', fontSize: 10, fontWeight: 700, color: '#1D4ED8' }}>PUBLIC</span>}
             </div>
-            {d.industry && <p style={{ margin: '2px 0 6px', fontSize: 13, fontWeight: 600, color: '#2563EB', textTransform: 'capitalize' }}>{d.industry}</p>}
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 12px' }}>
-              {location && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#9CA3AF' }}><IcoPin />{location}</span>}
-              {d.founded && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#9CA3AF' }}><IcoBuilding2 />Est. {d.founded}</span>}
+            {d.industry && <p style={{ margin: '2px 0 5px', fontSize: 12.5, fontWeight: 600, color: '#2563EB', textTransform: 'capitalize' }}>{d.industry}</p>}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '3px 10px' }}>
+              {location && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9CA3AF' }}>
+                  <IcoPin />{location}
+                </span>
+              )}
+              {d.founded && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9CA3AF' }}>
+                  <IcoBuilding2 />Est. {d.founded}
+                </span>
+              )}
               {d.employees_count != null && d.employees_count > 0
-                ? <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#9CA3AF' }}><IcoUsers />{d.employees_count.toLocaleString('en-US')} employees</span>
+                ? <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9CA3AF' }}><IcoUsers />{d.employees_count.toLocaleString('en-US')} employees</span>
                 : d.size_range
-                  ? <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#9CA3AF' }}><IcoUsers />{d.size_range}</span>
+                  ? <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9CA3AF' }}><IcoUsers />{d.size_range}</span>
                   : null
               }
             </div>
             {d.type && (
-              <div style={{ marginTop: 6 }}>
+              <div style={{ marginTop: 5 }}>
                 <span style={{ borderRadius: 20, border: '1px solid #E5E7EB', background: '#F9FAFB', padding: '2px 10px', fontSize: 11, fontWeight: 500, color: '#6B7280', textTransform: 'capitalize' }}>
                   {d.type.replace(/_/g, ' ')}
                 </span>
@@ -374,7 +483,7 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
         </div>
 
         {/* ── Social links ────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 8, padding: '0 20px 16px' }}>
+        <div style={{ display: 'flex', gap: 8, padding: '0 16px 14px' }}>
           {companyLinkedIn ? (
             <a href={`https://${companyLinkedIn.replace(/^https?:\/\//, '')}`} target="_blank" rel="noopener noreferrer" title="LinkedIn"><LinkedInSVG /></a>
           ) : (
@@ -392,12 +501,12 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
       <div style={{ flexShrink: 0, position: 'relative', display: 'flex', alignItems: 'stretch', background: '#fff', borderBottom: '1px solid #E5E7EB' }}>
         <button onClick={() => scrollTabNav('left')} style={arrowBtn(canScrollLeft, 'left')}><IcoChevL /></button>
         <div ref={tabNavRef} style={{ display: 'flex', overflowX: 'auto', flex: 1, scrollbarWidth: 'none' }}>
-          {NAV.map((item) => (
-            <button key={item.label} data-tab={item.label} onClick={() => scrollTo(item.label, item.ref)} style={tabBtn(activeTab === item.label)}>
-              {item.label}
-              {item.count != null && item.count > 0 && (
+          {NAV.map((navItem) => (
+            <button key={navItem.label} data-tab={navItem.label} onClick={() => scrollTo(navItem.label, navItem.ref, navItem.key)} style={tabBtn(activeTab === navItem.label)}>
+              {navItem.label}
+              {navItem.count != null && navItem.count > 0 && (
                 <span style={{ marginLeft: 6, display: 'inline-flex', height: 16, minWidth: 16, alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: '#EF4444', padding: '0 4px', fontSize: 10, fontWeight: 700, color: '#fff' }}>
-                  {item.count}
+                  {navItem.count}
                 </span>
               )}
             </button>
@@ -410,15 +519,32 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto' }}>
         {loading && <LoadingSkeleton />}
         {!loading && (
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ padding: '10px 5px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-            {/* Overview */}
-            <div ref={overviewRef}>
+            {/* Expand / Collapse All */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 2px 4px' }}>
+              <span style={{ fontSize: 11.5, color: '#9CA3AF', fontWeight: 500 }}>
+                {openCount} of {totalSections} sections open
+              </span>
+              <div style={{ display: 'flex', gap: 2 }}>
+                <button onClick={expandAll} style={{ fontSize: 11.5, fontWeight: 600, color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', padding: '3px 8px', borderRadius: 6 }}>
+                  Expand All
+                </button>
+                <button onClick={collapseAll} style={{ fontSize: 11.5, fontWeight: 600, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: '3px 8px', borderRadius: 6 }}>
+                  Collapse All
+                </button>
+              </div>
+            </div>
+
+            {/* ── Overview ──────────────────────────────────────────────── */}
+            <CollapsibleSection
+              sectionRef={overviewRef}
+              title="Overview"
+              isOpen={open.overview}
+              onToggle={() => toggle('overview')}
+            >
               {description && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20, marginBottom: 16 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 12px' }}>About</p>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: '#111827', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-line' }}>{description}</p>
-                </div>
+                <p style={{ fontSize: 13, fontWeight: 500, color: '#374151', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-line' }}>{description}</p>
               )}
               {(d.employees_count != null || d.company_employee_reviews_aggregate_score != null || jobCount != null) && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
@@ -437,53 +563,59 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
                 </div>
               )}
               {!description && d.employees_count == null && d.company_employee_reviews_aggregate_score == null && jobCount == null && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Overview</p>
-                  <Empty icon={<IcoBuilding2 />} text="No overview available" />
-                </div>
+                <Empty icon={<IcoBuilding2 />} text="No overview available" />
               )}
-            </div>
+            </CollapsibleSection>
 
-            {/* Specialties */}
-            <div ref={specialtiesRef}>
-              {specialtiesArr.length > 0 ? (
-                <ChipsSection title="Specialties" items={specialtiesArr} />
-              ) : (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Specialties</p>
-                  <Empty icon={<IcoLayers />} text="No specialties listed" />
-                </div>
-              )}
-            </div>
+            {/* ── Specialties ───────────────────────────────────────────── */}
+            <CollapsibleSection
+              sectionRef={specialtiesRef}
+              title="Specialties"
+              badge={specialtiesArr.length}
+              isOpen={open.specialties}
+              onToggle={() => toggle('specialties')}
+            >
+              {specialtiesArr.length > 0
+                ? <Chips items={specialtiesArr} />
+                : <Empty icon={<IcoLayers />} text="No specialties listed" />
+              }
+            </CollapsibleSection>
 
-            {/* Tech Stack */}
-            <div ref={techRef}>
-              {techArr.length > 0 ? (
-                <ChipsSection title="Tech Stack" items={techArr} colorize />
-              ) : (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Tech Stack</p>
-                  <Empty icon={<IcoZap />} text="No technologies listed" />
-                </div>
-              )}
-            </div>
+            {/* ── Tech Stack ────────────────────────────────────────────── */}
+            <CollapsibleSection
+              sectionRef={techRef}
+              title="Tech Stack"
+              badge={techArr.length}
+              isOpen={open.tech}
+              onToggle={() => toggle('tech')}
+            >
+              {techArr.length > 0
+                ? <Chips items={techArr} colorize />
+                : <Empty icon={<IcoZap />} text="No technologies listed" />
+              }
+            </CollapsibleSection>
 
-            {/* Metrics */}
-            <div ref={metricsRef} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* ── Metrics ───────────────────────────────────────────────── */}
+            <CollapsibleSection
+              sectionRef={metricsRef}
+              title="Metrics"
+              isOpen={open.metrics}
+              onToggle={() => toggle('metrics')}
+            >
               {(d.employees_count != null || d.size_range) && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Headcount</p>
+                <div style={{ borderRadius: 10, border: '1px solid #F3F4F6', background: '#F8FAFC', padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', margin: 0 }}>Headcount</p>
                     {d.employees_count_change?.change_yearly_percentage != null && <GrowthBadge pct={d.employees_count_change.change_yearly_percentage} />}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-                    <p style={{ fontSize: 28, fontWeight: 800, color: '#111827', margin: 0, lineHeight: 1 }}>
+                    <p style={{ fontSize: 26, fontWeight: 800, color: '#111827', margin: 0, lineHeight: 1 }}>
                       {d.employees_count != null && d.employees_count > 0 ? d.employees_count.toLocaleString('en-US') : d.size_range ?? '—'}
                     </p>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', margin: '0 0 3px' }}>employees</p>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', margin: '0 0 2px' }}>employees</p>
                   </div>
                   {d.employees_count_change?.change_yearly_percentage != null && (
-                    <p style={{ margin: '6px 0 0', fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                    <p style={{ margin: '5px 0 0', fontSize: 11.5, fontWeight: 600, color: '#6B7280' }}>
                       {d.employees_count_change.change_yearly_percentage >= 0 ? '+' : ''}
                       {d.employees_count_change.change_yearly_percentage.toFixed(1)}% year-over-year
                     </p>
@@ -492,82 +624,89 @@ export function CompanyDetailPanel({ item, onClose }: Props) {
               )}
 
               {d.total_website_visits_monthly != null && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Monthly Web Traffic</p>
+                <div style={{ borderRadius: 10, border: '1px solid #F3F4F6', background: '#F8FAFC', padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', margin: 0 }}>Monthly Web Traffic</p>
                     {d.total_website_visits_change?.change_monthly_percentage != null && <GrowthBadge pct={d.total_website_visits_change.change_monthly_percentage} />}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-                    <p style={{ fontSize: 28, fontWeight: 800, color: '#111827', margin: 0, lineHeight: 1 }}>{fmtNum(d.total_website_visits_monthly)}</p>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', margin: '0 0 3px' }}>visits / mo</p>
+                    <p style={{ fontSize: 26, fontWeight: 800, color: '#111827', margin: 0, lineHeight: 1 }}>{fmtNum(d.total_website_visits_monthly)}</p>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', margin: '0 0 2px' }}>visits / mo</p>
                   </div>
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-                {revStr && <MetricCard icon={<IcoDollar />} label="Revenue" value={revStr} accent />}
-                {jobCount != null && <MetricCard icon={<IcoBriefcase />} label="Open Jobs" value={String(jobCount)} />}
-                {d.company_employee_reviews_aggregate_score != null && (
-                  <MetricCard icon={<IcoStar />} label="Employee Rating" value={`★ ${d.company_employee_reviews_aggregate_score.toFixed(1)}`} sub="aggregate score" />
-                )}
-              </div>
+              {(revStr || jobCount != null || d.company_employee_reviews_aggregate_score != null) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  {revStr && <MetricCard icon={<IcoDollar />} label="Revenue" value={revStr} accent />}
+                  {jobCount != null && <MetricCard icon={<IcoBriefcase />} label="Open Jobs" value={String(jobCount)} />}
+                  {d.company_employee_reviews_aggregate_score != null && (
+                    <MetricCard icon={<IcoStar />} label="Employee Rating" value={`★ ${d.company_employee_reviews_aggregate_score.toFixed(1)}`} sub="aggregate score" />
+                  )}
+                </div>
+              )}
 
               {!d.employees_count && !d.total_website_visits_monthly && !revStr && jobCount == null && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Metrics</p>
-                  <Empty icon={<IcoBarChart />} text="No metrics available" />
-                </div>
+                <Empty icon={<IcoBarChart />} text="No metrics available" />
               )}
-            </div>
+            </CollapsibleSection>
 
-            {/* About */}
-            <div ref={aboutRef} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* ── About ─────────────────────────────────────────────────── */}
+            <CollapsibleSection
+              sectionRef={aboutRef}
+              title="About"
+              isOpen={open.about}
+              onToggle={() => toggle('about')}
+            >
               {d.last_funding_round && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Last Funding Round</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                    {d.last_funding_round.type && <span style={{ borderRadius: 20, border: '1px solid #BFDBFE', background: '#EFF6FF', padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#1D4ED8' }}>{d.last_funding_round.type}</span>}
-                    {d.last_funding_round.amount_raised != null && <span style={{ fontSize: 26, fontWeight: 800, color: '#111827' }}>${fmtNum(d.last_funding_round.amount_raised)}</span>}
+                <div style={{ borderRadius: 10, border: '1px solid #BFDBFE', background: '#EFF6FF', padding: '14px 16px' }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#1D4ED8', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Last Funding Round</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    {d.last_funding_round.type && (
+                      <span style={{ borderRadius: 20, border: '1px solid #BFDBFE', background: '#DBEAFE', padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#1D4ED8' }}>{d.last_funding_round.type}</span>
+                    )}
+                    {d.last_funding_round.amount_raised != null && (
+                      <span style={{ fontSize: 22, fontWeight: 800, color: '#111827' }}>${fmtNum(d.last_funding_round.amount_raised)}</span>
+                    )}
                   </div>
-                  {d.last_funding_round['date'] != null && <p style={{ margin: '8px 0 0', fontSize: 12, fontWeight: 600, color: '#374151' }}>{String(d.last_funding_round['date'] as string)}</p>}
+                  {d.last_funding_round['date'] != null && (
+                    <p style={{ margin: '6px 0 0', fontSize: 11.5, fontWeight: 600, color: '#374151' }}>{String(d.last_funding_round['date'] as string)}</p>
+                  )}
                 </div>
               )}
 
               {awardsArr.length > 0 && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>Awards & Certifications</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {awardsArr.map((a, i) => (
-                      <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                        <div style={{ marginTop: 2, width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-                          <IcoAward />
-                        </div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0, lineHeight: 1.4 }}>{a}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <p style={{ fontSize: 12.5, fontWeight: 700, color: '#374151', margin: 0 }}>Awards & Certifications</p>
+                  {awardsArr.map((a, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ marginTop: 2, width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+                        <IcoAward />
                       </div>
-                    ))}
-                  </div>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0, lineHeight: 1.4 }}>{a}</p>
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {keywordsArr.length > 0 && <ChipsSection title="Categories & Keywords" items={keywordsArr} />}
+              {keywordsArr.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <p style={{ fontSize: 12.5, fontWeight: 700, color: '#374151', margin: 0 }}>Categories & Keywords</p>
+                  <Chips items={keywordsArr} />
+                </div>
+              )}
 
               {d.company_status && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 12px' }}>Status</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.company_status.toLowerCase() === 'active' ? '#34D399' : '#D1D5DB' }} />
-                    <span style={{ fontSize: 14, fontWeight: 600, color: '#1F2937', textTransform: 'capitalize' }}>{d.company_status}</span>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderRadius: 10, border: '1px solid #F3F4F6', background: '#F8FAFC' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.company_status.toLowerCase() === 'active' ? '#34D399' : '#D1D5DB', flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1F2937', textTransform: 'capitalize' }}>Status: {d.company_status}</span>
                 </div>
               )}
 
               {!d.last_funding_round && !awardsArr.length && !keywordsArr.length && !d.company_status && (
-                <div style={{ borderRadius: 16, border: '1px solid #F3F4F6', background: '#F5F4F9', padding: 20 }}>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 16px' }}>About</p>
-                  <Empty icon={<IcoLayers />} text="No additional info available" />
-                </div>
+                <Empty icon={<IcoLayers />} text="No additional info available" />
               )}
-            </div>
+            </CollapsibleSection>
 
           </div>
         )}
