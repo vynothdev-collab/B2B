@@ -27,20 +27,30 @@ export default function App() {
   const { user, loading: authLoading, initialized, initialize, refreshUser } = useAuthStore();
   const { tabInfo, setTabInfo } = useTabStore();
   const [activeTab, setActiveTab] = useState<AppTab>('prospect');
+  const [detecting, setDetecting] = useState(false);
+  const windowIdRef = React.useRef<number | undefined>(undefined);
 
   useEffect(() => { initialize(); }, [initialize]);
 
   useEffect(() => {
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_TAB_INFO }, (response) => {
-      if (response?.payload) setTabInfo(response.payload as TabInfo);
+    chrome.windows.getCurrent((win) => {
+      windowIdRef.current = win.id;
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_TAB_INFO, windowId: win.id }, (response) => {
+        if (response?.payload) setTabInfo(response.payload as TabInfo);
+      });
     });
   }, [setTabInfo]);
 
   useEffect(() => {
     const handler = (message: { type: string; payload?: unknown }) => {
       if (message.type === MESSAGE_TYPES.TAB_UPDATED && message.payload) {
-        setTabInfo(message.payload as TabInfo);
+        const incoming = message.payload as TabInfo;
+        if (incoming.windowId !== undefined && incoming.windowId !== windowIdRef.current) return;
+        if (useTabStore.getState().tabInfo?.url === incoming.url) return;
+        setDetecting(true);
+        setTabInfo(incoming);
         setActiveTab('prospect');
+        setTimeout(() => setDetecting(false), 260);
       }
       if (message.type === 'AUTH_EXPIRED') {
         useAuthStore.getState().logout();
@@ -52,7 +62,7 @@ export default function App() {
 
   const handleRefresh = useCallback(() => {
     refreshUser();
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_TAB_INFO }, (response) => {
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_TAB_INFO, windowId: windowIdRef.current }, (response) => {
       if (response?.payload) setTabInfo(response.payload as TabInfo);
     });
   }, [refreshUser, setTabInfo]);
@@ -71,7 +81,18 @@ export default function App() {
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Scrollable content */}
-      <main className="flex-1 overflow-y-auto scrollbar-thin" style={{ background: '#FFFFFF' }}>
+      <main className="flex-1 overflow-y-auto scrollbar-thin" style={{ background: '#FFFFFF', position: 'relative' }}>
+        {detecting && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(1px)',
+            animation: 'lb-fade-in 0.15s ease both',
+          }}>
+            <Spinner size="sm" />
+            <span style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>Detecting page…</span>
+          </div>
+        )}
         {activeTab === 'prospect' ? (
           isUnsupported ? (
             <UnsupportedState />

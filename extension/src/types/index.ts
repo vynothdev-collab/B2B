@@ -6,6 +6,7 @@ export interface TabInfo {
   linkedinUrl?: string;
   domain?: string;
   companyName?: string;
+  windowId?: number;
 }
 
 export interface User {

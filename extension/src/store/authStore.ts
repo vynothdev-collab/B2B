@@ -30,7 +30,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       const accessToken = await tokens.getAccess();
       if (!accessToken) {
-        // Try refresh
         const refreshToken = await tokens.getRefresh();
         if (!refreshToken) {
           set({ user: null, loading: false, initialized: true });
@@ -42,9 +41,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const user = await authApi.getMe();
       await storage.set(STORAGE_KEYS.USER, user);
       set({ user, loading: false, initialized: true, error: null });
-    } catch {
-      await tokens.clear();
-      set({ user: null, loading: false, initialized: true, error: null });
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401 || status === 403) {
+        await tokens.clear();
+        set({ user: null, loading: false, initialized: true, error: null });
+      } else {
+        const cachedUser = await storage.get<User>(STORAGE_KEYS.USER);
+        set({ user: cachedUser, loading: false, initialized: true, error: null });
+      }
     }
   },
 
@@ -67,21 +72,17 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       await authApi.logout();
     } catch {
-      /* ignore */
     }
     await tokens.clear();
     set({ user: null, error: null });
   },
 
-  // Silently re-fetches the user (e.g. after an unlock deducts credits).
-  // Does not affect loading/initialized state so the UI doesn't flash.
   refreshUser: async () => {
     try {
       const user = await authApi.getMe();
       await storage.set(STORAGE_KEYS.USER, user);
       set({ user });
     } catch {
-      /* ignore — stale credit count is acceptable */
     }
   },
 }));

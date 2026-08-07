@@ -1,49 +1,66 @@
 import { buildTabInfo } from '../utils/urlDetector';
 import { MESSAGE_TYPES } from '../constants';
+import type { TabInfo } from '../types';
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.sidePanel.setOptions({ enabled: true });
+  chrome.sidePanel.setOptions({ enabled: true }).catch(() => {});
+  chrome.sidePanel
+    .setPanelBehavior({ openPanelOnActionClick: true })
+    .catch((error) => console.error('[LeadsBuddy] setPanelBehavior failed', error));
 });
 
-chrome.action.onClicked.addListener((tab) => {
-  if (tab.id === undefined) return;
-  chrome.sidePanel.open({ tabId: tab.id });
-});
-
-function notifySidepanel(payload: ReturnType<typeof buildTabInfo>) {
-  // Callback form: reading runtime.lastError inside the callback suppresses
-  // Chrome's "Unchecked runtime.lastError" warning when no receiver is open.
+function broadcastTabInfo(payload: TabInfo) {
   chrome.runtime.sendMessage({ type: MESSAGE_TYPES.TAB_UPDATED, payload }, () => {
     void chrome.runtime.lastError;
   });
 }
 
-// Notify sidepanel whenever active tab URL changes
+function notifyTab(tab: chrome.tabs.Tab) {
+  if (!tab.url || tab.windowId === undefined) return;
+  broadcastTabInfo({ ...buildTabInfo(tab.url), windowId: tab.windowId });
+}
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  chrome.tabs.get(activeInfo.tabId, (tab) => {
+    if (chrome.runtime.lastError || !tab) return; // tab closed mid-flight
+    notifyTab(tab);
+  });
+});
+
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.url) {
-    notifySidepanel(buildTabInfo(tab.url));
+  if (!tab.active) return;
+  if (changeInfo.url || changeInfo.status === 'complete') {
+    notifyTab(tab);
   }
 });
 
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  const tab = await chrome.tabs.get(activeInfo.tabId);
-  if (tab.url) {
-    notifySidepanel(buildTabInfo(tab.url));
-  }
+chrome.windows.onFocusChanged.addListener((windowId) => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) return;
+  chrome.tabs.query({ active: true, windowId }, (tabs) => {
+    if (tabs[0]) notifyTab(tabs[0]);
+  });
 });
 
-// Respond to sidepanel requests for current tab info
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === MESSAGE_TYPES.GET_TAB_INFO) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const requestedWindowId = typeof message.windowId === 'number' ? message.windowId : undefined;
+    const query: chrome.tabs.QueryInfo =
+      requestedWindowId !== undefined
+        ? { active: true, windowId: requestedWindowId }
+        : { active: true, currentWindow: true };
+
+    chrome.tabs.query(query, (tabs) => {
       const tab = tabs[0];
-      if (tab?.url) {
-        sendResponse({ type: MESSAGE_TYPES.TAB_INFO, payload: buildTabInfo(tab.url) });
+      if (tab?.url && tab.windowId !== undefined) {
+        sendResponse({
+          type: MESSAGE_TYPES.TAB_INFO,
+          payload: { ...buildTabInfo(tab.url), windowId: tab.windowId },
+        });
       } else {
         sendResponse({ type: MESSAGE_TYPES.TAB_INFO, payload: null });
       }
     });
-    return true; // Keep message channel open
+    return true; 
   }
 });
 

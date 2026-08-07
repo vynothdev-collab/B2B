@@ -42,10 +42,12 @@ client.interceptors.response.use(
         await tokens.setAccess(newAccessToken);
         original.headers.Authorization = `Bearer ${newAccessToken}`;
         return client(original);
-      } catch {
-        await tokens.clear();
-        // Notify sidepanel to show login
-        chrome.runtime.sendMessage({ type: 'AUTH_EXPIRED' });
+      } catch (refreshErr: unknown) {
+        const refreshStatus = (refreshErr as { response?: { status?: number } })?.response?.status;
+        if (refreshStatus === 401 || refreshStatus === 403) {
+          await tokens.clear();
+          chrome.runtime.sendMessage({ type: 'AUTH_EXPIRED' });
+        }
         return Promise.reject(error);
       }
     }
