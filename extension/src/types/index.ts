@@ -93,8 +93,14 @@ export interface CompanyResult {
   technologies_used?: Array<{ technology?: string } | string>;
   categories_and_keywords?: string | string[];
   awards_certifications?: string | string[];
-  phone?: string;
-  email?: string;
+  phone?: string | null;
+  email?: string | null;
+  has_email?: boolean;
+  has_phone?: boolean;
+  unlocked?: {
+    email: boolean;
+    phone: boolean;
+  };
 }
 
 export interface SearchMeta {

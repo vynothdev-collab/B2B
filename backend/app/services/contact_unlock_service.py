@@ -1,11 +1,14 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.contact_unlock import ContactUnlock, ContactUnlockField
+from app.models.contact_unlock import ContactUnlock, ContactUnlockEntity, ContactUnlockField
 
 
 async def get_unlock_map(
-    db: AsyncSession, user_id: str, record_ids: list[str]
+    db: AsyncSession,
+    user_id: str,
+    record_ids: list[str],
+    entity_type: str = ContactUnlockEntity.PERSON,
 ) -> dict[str, dict[str, str | None]]:
     """record_id -> {field: unlocked_value} for the given user, fields not present are locked."""
     if not record_ids:
@@ -14,6 +17,7 @@ async def get_unlock_map(
         select(ContactUnlock).where(
             ContactUnlock.user_id == user_id,
             ContactUnlock.record_id.in_(record_ids),
+            ContactUnlock.entity_type == entity_type,
         )
     )
     unlock_map: dict[str, dict[str, str | None]] = {}
@@ -33,4 +37,15 @@ def apply_unlock_state(item: dict, record_id: str, unlock_map: dict) -> None:
         "work_email": ContactUnlockField.WORK_EMAIL in fields,
         "personal_email": ContactUnlockField.PERSONAL_EMAIL in fields,
         "mobile": ContactUnlockField.MOBILE in fields,
+    }
+
+
+def apply_company_unlock_state(item: dict, record_id: str, unlock_map: dict) -> None:
+    """Mutate a mapped company dict so locked fields never carry their real value."""
+    fields = unlock_map.get(record_id, {})
+    item["email"] = fields.get(ContactUnlockField.EMAIL)
+    item["phone"] = fields.get(ContactUnlockField.PHONE)
+    item["unlocked"] = {
+        "email": ContactUnlockField.EMAIL in fields,
+        "phone": ContactUnlockField.PHONE in fields,
     }

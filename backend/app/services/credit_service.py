@@ -16,6 +16,8 @@ CREDIT_COSTS = {
     "work_email": 1,
     "personal_email": 1,
     "mobile": 10,
+    "company_email": 1,
+    "company_phone": 10,
 }
 
 

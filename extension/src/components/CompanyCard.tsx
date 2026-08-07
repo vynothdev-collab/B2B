@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { CompanyResult, LeadsList } from '../types';
 import { listsApi } from '../api/lists';
+import { searchApi } from '../api/search';
+import { UNLOCK_COSTS } from '../constants/unlockCosts';
 
 interface Props {
   company: CompanyResult;
@@ -74,11 +76,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 /* ─── Contact unlock row ─────────────────────────────────────────────────── */
-function ContactUnlockRow({ icon, label, value, shown, onUnlock }: {
+function ContactUnlockRow({ icon, label, value, hasValue, unlocked, unlocking, credits, onUnlock }: {
   icon: React.ReactNode;
   label: string;
-  value?: string;
-  shown: boolean;
+  value: string | null;
+  hasValue: boolean;
+  unlocked: boolean;
+  unlocking: boolean;
+  credits: number;
   onUnlock: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -94,42 +99,44 @@ function ContactUnlockRow({ icon, label, value, shown, onUnlock }: {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '9px 12px', borderRadius: 10,
-      background: shown && value ? '#F0FDF4' : '#F8FAFF',
-      border: `1.5px solid ${shown && value ? '#BBF7D0' : '#DBEAFE'}`,
+      background: unlocked && value ? '#F0FDF4' : '#F8FAFF',
+      border: `1.5px solid ${unlocked && value ? '#BBF7D0' : '#DBEAFE'}`,
     }}>
       <div style={{
         width: 30, height: 30, borderRadius: 7, flexShrink: 0,
-        background: shown && value ? '#DCFCE7' : '#EFF6FF',
-        border: `1px solid ${shown && value ? '#86EFAC' : '#BFDBFE'}`,
+        background: unlocked && value ? '#DCFCE7' : '#EFF6FF',
+        border: `1px solid ${unlocked && value ? '#86EFAC' : '#BFDBFE'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: shown && value ? '#15803D' : '#2563EB',
+        color: unlocked && value ? '#15803D' : '#2563EB',
       }}>
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ margin: 0, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6B7280' }}>{label}</p>
-        {shown && value ? (
-          <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</p>
+        {unlocked ? (
+          <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value || 'Not available'}</p>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
             <span style={{ color: '#94A3B8' }}><IcoLock /></span>
-            <span style={{ fontSize: 11.5, color: '#94A3B8' }}>{value ? 'Click to unlock' : 'Not available'}</span>
+            <span style={{ fontSize: 11.5, color: '#94A3B8' }}>
+              {unlocking ? 'Unlocking…' : `Hidden · ${credits} credit${credits !== 1 ? 's' : ''}`}
+            </span>
           </div>
         )}
       </div>
-      {shown && value ? (
+      {unlocked && value ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
           <IcoCheck />
           <button onClick={copy} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, fontWeight: 600, color: copied ? '#15803D' : '#94A3B8', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}>
             <IcoCopy /> {copied ? 'Copied' : 'Copy'}
           </button>
         </div>
-      ) : value ? (
-        <button onClick={onUnlock} style={{
+      ) : !unlocked && hasValue !== false ? (
+        <button onClick={onUnlock} disabled={unlocking} style={{
           flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
           padding: '5px 11px', borderRadius: 7, fontSize: 11, fontWeight: 700,
           color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE',
-          cursor: 'pointer', transition: 'all 0.15s',
+          cursor: unlocking ? 'wait' : 'pointer', opacity: unlocking ? 0.6 : 1, transition: 'all 0.15s',
         }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#DBEAFE'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EFF6FF'; }}
@@ -209,8 +216,11 @@ export function CompanyCard({ company, lists = [], onRefreshLists }: Props) {
   const [descExpanded, setDescExpanded] = useState(false);
   const [techsExpanded, setTechsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [emailShown, setEmailShown] = useState(false);
-  const [phoneShown, setPhoneShown] = useState(false);
+  const [emailUnlocked, setEmailUnlocked] = useState(!!company.unlocked?.email);
+  const [phoneUnlocked, setPhoneUnlocked] = useState(!!company.unlocked?.phone);
+  const [emailValue, setEmailValue] = useState<string | null>(company.email ?? null);
+  const [phoneValue, setPhoneValue] = useState<string | null>(company.phone ?? null);
+  const [unlockingField, setUnlockingField] = useState<'email' | 'phone' | null>(null);
 
   const name = company.company_name || company.company_legal_name || 'Unknown Company';
   const location = [company.hq_city, company.hq_state, company.hq_country].filter(Boolean).join(', ') || company.hq_location || '';
@@ -221,7 +231,24 @@ export function CompanyCard({ company, lists = [], onRefreshLists }: Props) {
   const moreTechs = techs.length - TECHS_VISIBLE;
   const domain = company.website?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') || '';
   const isActive = company.company_status?.toLowerCase() === 'active';
-  const hasContact = !!(company.email || company.phone);
+  const hasContact = !!(company.has_email || company.has_phone);
+
+  const unlockField = async (field: 'email' | 'phone') => {
+    if (unlockingField) return;
+    setUnlockingField(field);
+    try {
+      if (field === 'email') {
+        const r = await searchApi.unlockCompanyEmail(company.id);
+        setEmailValue(r.email);
+        setEmailUnlocked(true);
+      } else {
+        const r = await searchApi.unlockCompanyPhone(company.id);
+        setPhoneValue(r.phone);
+        setPhoneUnlocked(true);
+      }
+    } catch { /* ignore — button re-enables, user can retry */ }
+    finally { setUnlockingField(null); }
+  };
 
   const copyWebsite = async () => {
     if (!company.website) return;
@@ -309,22 +336,28 @@ export function CompanyCard({ company, lists = [], onRefreshLists }: Props) {
           <div style={{ borderTop: '1px solid #F1F5F9', padding: '13px 18px' }}>
             <SectionLabel>Contact Information</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {(company.email !== undefined) && (
+              {company.has_email && (
                 <ContactUnlockRow
                   icon={<IcoEmail />}
                   label="Company Email"
-                  value={company.email}
-                  shown={emailShown}
-                  onUnlock={() => setEmailShown(true)}
+                  value={emailValue}
+                  hasValue={company.has_email}
+                  unlocked={emailUnlocked}
+                  unlocking={unlockingField === 'email'}
+                  credits={UNLOCK_COSTS.companyEmail}
+                  onUnlock={() => unlockField('email')}
                 />
               )}
-              {(company.phone !== undefined) && (
+              {company.has_phone && (
                 <ContactUnlockRow
                   icon={<IcoPhone />}
                   label="Company Phone"
-                  value={company.phone}
-                  shown={phoneShown}
-                  onUnlock={() => setPhoneShown(true)}
+                  value={phoneValue}
+                  hasValue={company.has_phone}
+                  unlocked={phoneUnlocked}
+                  unlocking={unlockingField === 'phone'}
+                  credits={UNLOCK_COSTS.companyPhone}
+                  onUnlock={() => unlockField('phone')}
                 />
               )}
             </div>

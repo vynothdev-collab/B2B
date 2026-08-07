@@ -418,6 +418,24 @@ export async function unlockPersonMobile(
   return data;
 }
 
+export async function unlockCompanyEmail(
+  recordId: string,
+): Promise<EmailUnlockResult> {
+  const { data } = await apiClient.get<EmailUnlockResult>(
+    `/search/companies/${encodeURIComponent(recordId)}/unlock/email`,
+  );
+  return data;
+}
+
+export async function unlockCompanyPhone(
+  recordId: string,
+): Promise<PhoneUnlockResult> {
+  const { data } = await apiClient.get<PhoneUnlockResult>(
+    `/search/companies/${encodeURIComponent(recordId)}/unlock/phone`,
+  );
+  return data;
+}
+
 export async function fetchTitleSuggestions(text: string): Promise<string[]> {
   if (text.trim().length < 2) return [];
   try {

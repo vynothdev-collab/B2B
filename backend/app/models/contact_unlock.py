@@ -11,13 +11,24 @@ class ContactUnlockField:
     WORK_EMAIL = "work_email"
     PERSONAL_EMAIL = "personal_email"
     MOBILE = "mobile"
-    ALL = {WORK_EMAIL, PERSONAL_EMAIL, MOBILE}
+    EMAIL = "email"
+    PHONE = "phone"
+    ALL_PERSON = {WORK_EMAIL, PERSONAL_EMAIL, MOBILE}
+    ALL_COMPANY = {EMAIL, PHONE}
+
+
+class ContactUnlockEntity:
+    PERSON = "person"
+    COMPANY = "company"
 
 
 class ContactUnlock(Base):
     __tablename__ = "contact_unlocks"
     __table_args__ = (
-        UniqueConstraint("user_id", "record_id", "field", name="uq_contact_unlock_user_record_field"),
+        UniqueConstraint(
+            "user_id", "record_id", "entity_type", "field",
+            name="uq_contact_unlock_user_record_entity_field",
+        ),
     )
 
     id: Mapped[str] = mapped_column(
@@ -27,6 +38,9 @@ class ContactUnlock(Base):
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     record_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    entity_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=ContactUnlockEntity.PERSON
+    )  # ContactUnlockEntity
     field: Mapped[str] = mapped_column(String(50), nullable=False)  # ContactUnlockField
     value: Mapped[str | None] = mapped_column(String(512), nullable=True)
     unlocked_at: Mapped[datetime] = mapped_column(

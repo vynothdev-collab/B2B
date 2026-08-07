@@ -44,4 +44,10 @@ export const searchApi = {
 
   unlockMobile: (recordId: string): Promise<UnlockPhoneResult> =>
     client.get(`/search/persons/${recordId}/unlock/mobile`).then((r) => r.data),
+
+  unlockCompanyEmail: (recordId: string): Promise<UnlockEmailResult> =>
+    client.get(`/search/companies/${recordId}/unlock/email`).then((r) => r.data),
+
+  unlockCompanyPhone: (recordId: string): Promise<UnlockPhoneResult> =>
+    client.get(`/search/companies/${recordId}/unlock/phone`).then((r) => r.data),
 };
