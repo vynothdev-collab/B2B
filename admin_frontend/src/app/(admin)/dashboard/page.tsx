@@ -117,8 +117,8 @@ export default function DashboardPage() {
                 <p className="text-lg font-bold text-slate-800">{INDIVIDUAL_STATS.searchesThisMonth.toLocaleString()}</p>
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
-                <p className="text-xs text-slate-500 mb-1">Reveals (Month)</p>
-                <p className="text-lg font-bold text-slate-800">{INDIVIDUAL_STATS.revealsThisMonth.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 mb-1">Unlocks (Month)</p>
+                <p className="text-lg font-bold text-slate-800">{INDIVIDUAL_STATS.unlocksThisMonth.toLocaleString()}</p>
               </div>
             </div>
 

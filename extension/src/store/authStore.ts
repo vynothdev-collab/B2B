@@ -73,7 +73,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({ user: null, error: null });
   },
 
-  // Silently re-fetches the user (e.g. after a reveal deducts credits).
+  // Silently re-fetches the user (e.g. after an unlock deducts credits).
   // Does not affect loading/initialized state so the UI doesn't flash.
   refreshUser: async () => {
     try {

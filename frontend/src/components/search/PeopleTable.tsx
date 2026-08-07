@@ -12,19 +12,21 @@ import {
   toStringArr,
 } from "@/components/common/tableHelpers";
 
+export type UnlockField = "work_email" | "personal_email" | "mobile";
+
 interface BuildColsArgs {
   visibleColumns: Record<string, boolean>;
-  revealedEmails: Map<string, string | null>;
-  onRevealEmail: (recordId: string) => void;
-  revealingIds: Set<string>;
+  unlockedValues: Map<string, string | null>;
+  onUnlockField: (recordId: string, field: UnlockField) => void;
+  unlockingIds: Set<string>;
   onNameClick?: (row: PersonResult) => void;
 }
 
 function buildPeopleColumns({
   visibleColumns,
-  revealedEmails,
-  onRevealEmail,
-  revealingIds,
+  unlockedValues,
+  onUnlockField,
+  unlockingIds,
   onNameClick,
 }: BuildColsArgs): DataTableColumn<PersonResult>[] {
   const isCol = (key: string) => visibleColumns[key] !== false;
@@ -110,12 +112,17 @@ function buildPeopleColumns({
       label: "Work Email",
       minWidth: 165,
       render: (person) => {
-        const revealedEmail = revealedEmails.get(person.id);
-        const isRevealing = revealingIds.has(person.id);
-        return revealedEmails.has(person.id) ? (
-          revealedEmail ? (
+        const key = `${person.id}:work_email`;
+        const isUnlocked =
+          unlockedValues.has(key) || !!person.unlocked?.work_email;
+        const value = unlockedValues.has(key)
+          ? unlockedValues.get(key)
+          : ((person.work_email as string | null | undefined) ?? null);
+        const isUnlocking = unlockingIds.has(key);
+        return isUnlocked ? (
+          value ? (
             <span className="block max-w-[160px] truncate text-[13px] font-medium text-gray-800">
-              {revealedEmail}
+              {value}
             </span>
           ) : (
             <span className="text-xs text-gray-500">No email</span>
@@ -123,12 +130,12 @@ function buildPeopleColumns({
         ) : person.has_email ? (
           <button
             type="button"
-            disabled={isRevealing}
-            onClick={() => onRevealEmail(person.id)}
+            disabled={isUnlocking}
+            onClick={() => onUnlockField(person.id, "work_email")}
             className="flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
           >
             <Mail className="h-3 w-3" />
-            {isRevealing ? "Revealing…" : "Reveal"}
+            {isUnlocking ? "Unlocking…" : "Unlock for 1 credit"}
           </button>
         ) : (
           <Dash />
@@ -139,7 +146,34 @@ function buildPeopleColumns({
       key: "email",
       label: "Email",
       minWidth: 165,
-      render: () => <Dash />,
+      render: (person) => {
+        const key = `${person.id}:personal_email`;
+        const isUnlocked =
+          unlockedValues.has(key) || !!person.unlocked?.personal_email;
+        const value = unlockedValues.has(key)
+          ? unlockedValues.get(key)
+          : ((person.personal_email as string | null | undefined) ?? null);
+        const isUnlocking = unlockingIds.has(key);
+        return isUnlocked ? (
+          value ? (
+            <span className="block max-w-[160px] truncate text-[13px] font-medium text-gray-800">
+              {value}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-500">No email</span>
+          )
+        ) : (
+          <button
+            type="button"
+            disabled={isUnlocking}
+            onClick={() => onUnlockField(person.id, "personal_email")}
+            className="flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
+          >
+            <Mail className="h-3 w-3" />
+            {isUnlocking ? "Unlocking…" : "Unlock for 1 credit"}
+          </button>
+        );
+      },
     },
     {
       key: "location",
@@ -162,7 +196,32 @@ function buildPeopleColumns({
       key: "mobile",
       label: "Mobile",
       minWidth: 120,
-      render: () => <Dash />,
+      render: (person) => {
+        const key = `${person.id}:mobile`;
+        const isUnlocked = unlockedValues.has(key) || !!person.unlocked?.mobile;
+        const value = unlockedValues.has(key)
+          ? unlockedValues.get(key)
+          : ((person.mobile_phone as string | null | undefined) ?? null);
+        const isUnlocking = unlockingIds.has(key);
+        return isUnlocked ? (
+          value ? (
+            <span className="block max-w-[110px] truncate text-[13px] font-medium text-gray-800">
+              {value}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-500">No number</span>
+          )
+        ) : (
+          <button
+            type="button"
+            disabled={isUnlocking}
+            onClick={() => onUnlockField(person.id, "mobile")}
+            className="flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
+          >
+            {isUnlocking ? "Unlocking…" : "Unlock for 10 credits"}
+          </button>
+        );
+      },
     },
     {
       key: "person_country",
@@ -543,9 +602,9 @@ export function PeopleTableSkeleton({
 }) {
   const cols = buildPeopleColumns({
     visibleColumns: visibleColumns ?? {},
-    revealedEmails: new Map(),
-    onRevealEmail: () => {},
-    revealingIds: new Set(),
+    unlockedValues: new Map(),
+    onUnlockField: () => {},
+    unlockingIds: new Set(),
   });
   return (
     <DataTable
@@ -565,9 +624,9 @@ interface Props {
   onSelect: (id: string) => void;
   onSelectAll: (all: boolean) => void;
   visibleColumns: Record<string, boolean>;
-  revealedEmails: Map<string, string | null>;
-  onRevealEmail: (recordId: string) => void;
-  revealingIds: Set<string>;
+  unlockedValues: Map<string, string | null>;
+  onUnlockField: (recordId: string, field: UnlockField) => void;
+  unlockingIds: Set<string>;
   onOpenColumnSettings?: () => void;
   onRowClick?: (row: PersonResult) => void;
   onNameClick?: (row: PersonResult) => void;
@@ -579,18 +638,18 @@ export default function PeopleTable({
   onSelect,
   onSelectAll,
   visibleColumns,
-  revealedEmails,
-  onRevealEmail,
-  revealingIds,
+  unlockedValues,
+  onUnlockField,
+  unlockingIds,
   onOpenColumnSettings,
   onRowClick,
   onNameClick,
 }: Props) {
   const cols = buildPeopleColumns({
     visibleColumns,
-    revealedEmails,
-    onRevealEmail,
-    revealingIds,
+    unlockedValues,
+    onUnlockField,
+    unlockingIds,
     onNameClick,
   });
   return (

@@ -81,7 +81,7 @@ The following features are intentionally omitted from this base setup:
 - Backend API calls
 - CoreSignal / PDL integration
 - LinkedIn / Sales Navigator detection
-- Lead search & reveal
+- Lead search & unlock
 - Credit system
 - State management
 - Settings

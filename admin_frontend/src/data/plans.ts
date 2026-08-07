@@ -7,7 +7,7 @@ export const PLANS = [
     status: "active",
     iconBg: "var(--line-soft)",
     iconColor: "var(--ink-dim)",
-    limits: ["50 searches / month", "10 email reveals / month", "1 user seat", "Basic filters", "Email support"],
+    limits: ["50 searches / month", "10 email unlocks / month", "1 user seat", "Basic filters", "Email support"],
   },
   {
     name: "Pro",
@@ -17,7 +17,7 @@ export const PLANS = [
     status: "active",
     iconBg: "rgba(23,50,41,.10)",
     iconColor: "var(--forest)",
-    limits: ["500 searches / month", "100 email reveals / month", "1 user seat", "Advanced filters", "Priority email support"],
+    limits: ["500 searches / month", "100 email unlocks / month", "1 user seat", "Advanced filters", "Priority email support"],
   },
   {
     name: "Business",
@@ -27,7 +27,7 @@ export const PLANS = [
     status: "active",
     iconBg: "var(--gold-dim)",
     iconColor: "#8A6222",
-    limits: ["2,000 searches / month", "500 email reveals / month", "Up to 5 user seats", "Team management", "Live chat support"],
+    limits: ["2,000 searches / month", "500 email unlocks / month", "Up to 5 user seats", "Team management", "Live chat support"],
   },
   {
     name: "Enterprise",
@@ -37,7 +37,7 @@ export const PLANS = [
     status: "active",
     iconBg: "var(--sage-dim)",
     iconColor: "var(--sage-dark, #3E6A44)",
-    limits: ["Unlimited searches", "2,000 email reveals / month", "Up to 25 user seats", "Dedicated account manager", "SLA & priority support"],
+    limits: ["Unlimited searches", "2,000 email unlocks / month", "Up to 25 user seats", "Dedicated account manager", "SLA & priority support"],
   },
   {
     name: "Enterprise Custom",
@@ -47,7 +47,7 @@ export const PLANS = [
     status: "active",
     iconBg: "var(--rust-dim)",
     iconColor: "var(--rust)",
-    limits: ["Custom search volume", "Custom reveal limits", "Unlimited user seats", "Custom integrations & SSO", "Dedicated SLA & TAM"],
+    limits: ["Custom search volume", "Custom unlock limits", "Unlimited user seats", "Custom integrations & SSO", "Dedicated SLA & TAM"],
   },
 ];
 

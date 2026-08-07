@@ -232,8 +232,8 @@ function CompanyItemCard({ item, onRemove, onViewDetails }: { item: ListItem; on
 
 /* ─── Person item card ───────────────────────────────────────────────────── */
 function PersonItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onRemove: () => void; onViewDetails: () => void }) {
-  const [revealedEmail, setRevealedEmail] = useState<string | null>(null);
-  const [revealing, setRevealing] = useState(false);
+  const [unlockedEmail, setUnlockedEmail] = useState<string | null>(null);
+  const [unlocking, setUnlocking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hovered, setHovered] = useState(false);
 
@@ -244,19 +244,19 @@ function PersonItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onR
   const department = person.active_experience_department || '';
   const location = [person.location_city, person.location_state, person.location_country].filter(Boolean).join(', ');
 
-  const handleReveal = async () => {
-    if (revealedEmail || revealing) return;
-    setRevealing(true);
+  const handleUnlock = async () => {
+    if (unlockedEmail || unlocking) return;
+    setUnlocking(true);
     try {
-      const r = await searchApi.revealWorkEmail(person.id);
-      setRevealedEmail(r.email);
+      const r = await searchApi.unlockWorkEmail(person.id);
+      setUnlockedEmail(r.email);
     } catch { /* ignore */ }
-    finally { setRevealing(false); }
+    finally { setUnlocking(false); }
   };
 
   const handleCopy = async () => {
-    if (!revealedEmail) return;
-    await navigator.clipboard.writeText(revealedEmail);
+    if (!unlockedEmail) return;
+    await navigator.clipboard.writeText(unlockedEmail);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -322,34 +322,34 @@ function PersonItemCard({ item, onRemove, onViewDetails }: { item: ListItem; onR
 
           {/* Email row — always visible; click stops propagation */}
           <div onClick={(e) => e.stopPropagation()} style={{ marginTop: '7px' }}>
-            {revealedEmail ? (
+            {unlockedEmail ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '7px', padding: '4px 8px' }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 13l4 4L19 7" />
                 </svg>
                 <span style={{ fontSize: '11px', color: '#15803D', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {revealedEmail}
+                  {unlockedEmail}
                 </span>
                 <button onClick={handleCopy} style={{ color: copied ? '#16A34A' : '#86EFAC', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexShrink: 0 }}>
                   {copied ? Ico.check : Ico.copy}
                 </button>
               </div>
             ) : (
-              <button onClick={handleReveal} disabled={revealing}
+              <button onClick={handleUnlock} disabled={unlocking}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '4px',
                   padding: '4px 10px', borderRadius: '7px', fontSize: '11px', fontWeight: 500,
                   border: '1px solid #E2E8F0', color: '#374151', background: '#fff',
-                  cursor: revealing ? 'default' : 'pointer', transition: 'all 0.12s', opacity: revealing ? 0.7 : 1,
+                  cursor: unlocking ? 'default' : 'pointer', transition: 'all 0.12s', opacity: unlocking ? 0.7 : 1,
                 }}
-                onMouseEnter={(e) => { if (!revealing) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C'; (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C'; } }}
+                onMouseEnter={(e) => { if (!unlocking) { (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C'; (e.currentTarget as HTMLButtonElement).style.color = '#1A3D5C'; } }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#E2E8F0'; (e.currentTarget as HTMLButtonElement).style.color = '#374151'; }}
               >
-                {revealing
+                {unlocking
                   ? <span style={{ width: '10px', height: '10px', border: '1.5px solid #CBD5E1', borderTopColor: '#1A3D5C', borderRadius: '50%', display: 'inline-block', animation: 'lb-spin 0.7s linear infinite' }} />
                   : Ico.email
                 }
-                {revealing ? 'Loading…' : 'Get email'}
+                {unlocking ? 'Loading…' : 'Get email'}
               </button>
             )}
           </div>

@@ -57,11 +57,11 @@ export function EmployeeCard({ person, lists = [], onSaved }: Props) {
   const company = person.active_experience_company_name || '';
   const location = [person.location_city, person.location_country].filter(Boolean).join(', ');
 
-  const handleRevealEmail = async () => {
+  const handleUnlockEmail = async () => {
     if (email || loadingEmail) return;
     setLoadingEmail(true);
     try {
-      const result = await searchApi.revealWorkEmail(person.id);
+      const result = await searchApi.unlockWorkEmail(person.id);
       setEmail(result.email);
     } catch {
       setEmail(null);
@@ -123,7 +123,7 @@ export function EmployeeCard({ person, lists = [], onSaved }: Props) {
           </div>
         </div>
 
-        {/* Email reveal row */}
+        {/* Email unlock row */}
         <div className="flex items-center gap-2 mt-2.5">
           {email ? (
             <div className="flex items-center gap-1.5 flex-1 bg-green-50 border border-green-100 rounded-lg px-2.5 py-1.5">
@@ -143,7 +143,7 @@ export function EmployeeCard({ person, lists = [], onSaved }: Props) {
             </div>
           ) : (
             <button
-              onClick={handleRevealEmail}
+              onClick={handleUnlockEmail}
               disabled={loadingEmail}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-semibold border transition-colors bg-white border-gray-200 text-gray-600 hover:border-[#1A3D5C] hover:text-[#1A3D5C] disabled:opacity-50"
             >

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { PersonResult, LeadsList } from '../types';
 import { listsApi } from '../api/lists';
 import { searchApi } from '../api/search';
+import { UNLOCK_COSTS } from '../constants/unlockCosts';
 
 interface Props {
   person: PersonResult;
@@ -20,7 +21,7 @@ const AV_COLORS = [
 type ContactStatus =
   | { status: 'hidden' }
   | { status: 'loading' }
-  | { status: 'revealed'; value: string }
+  | { status: 'unlocked'; value: string }
   | { status: 'not_found' }
   | { status: 'error'; message: string };
 
@@ -103,12 +104,12 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 /* ─── Premium contact status card ────────────────────────────────────────── */
-function ContactCard({ icon, label, state, credits, onReveal }: {
+function ContactCard({ icon, label, state, credits, onUnlock }: {
   icon: React.ReactNode;
   label: string;
   state: ContactStatus;
   credits: number;
-  onReveal: () => void;
+  onUnlock: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -118,24 +119,24 @@ function ContactCard({ icon, label, state, credits, onReveal }: {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const isRevealed = state.status === 'revealed';
+  const isUnlocked = state.status === 'unlocked';
   const isNotFound = state.status === 'not_found';
 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '10px 12px', borderRadius: 10,
-      background: isRevealed ? '#F0FDF4' : isNotFound ? '#FAFAFA' : '#F8FAFF',
-      border: `1.5px solid ${isRevealed ? '#BBF7D0' : isNotFound ? '#E9ECEF' : '#DBEAFE'}`,
+      background: isUnlocked ? '#F0FDF4' : isNotFound ? '#FAFAFA' : '#F8FAFF',
+      border: `1.5px solid ${isUnlocked ? '#BBF7D0' : isNotFound ? '#E9ECEF' : '#DBEAFE'}`,
       transition: 'all 0.2s',
     }}>
       {/* Icon box */}
       <div style={{
         width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-        background: isRevealed ? '#DCFCE7' : isNotFound ? '#F3F4F6' : '#EFF6FF',
-        border: `1px solid ${isRevealed ? '#86EFAC' : isNotFound ? '#E5E7EB' : '#BFDBFE'}`,
+        background: isUnlocked ? '#DCFCE7' : isNotFound ? '#F3F4F6' : '#EFF6FF',
+        border: `1px solid ${isUnlocked ? '#86EFAC' : isNotFound ? '#E5E7EB' : '#BFDBFE'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: isRevealed ? '#15803D' : isNotFound ? '#D1D5DB' : '#2563EB',
+        color: isUnlocked ? '#15803D' : isNotFound ? '#D1D5DB' : '#2563EB',
       }}>
         {icon}
       </div>
@@ -166,11 +167,11 @@ function ContactCard({ icon, label, state, credits, onReveal }: {
               border: '1.5px solid #DBEAFE', borderTopColor: '#2563EB',
               display: 'inline-block', animation: 'lb-spin 0.7s linear infinite',
             }} />
-            <span style={{ fontSize: 11.5, color: '#94A3B8' }}>Revealing...</span>
+            <span style={{ fontSize: 11.5, color: '#94A3B8' }}>Unlocking...</span>
           </div>
         )}
 
-        {state.status === 'revealed' && (
+        {state.status === 'unlocked' && (
           <p style={{
             margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#111827',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -192,7 +193,7 @@ function ContactCard({ icon, label, state, credits, onReveal }: {
 
       {/* Action button */}
       {state.status === 'hidden' && (
-        <button onClick={onReveal} style={{
+        <button onClick={onUnlock} style={{
           flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
           padding: '5px 11px', borderRadius: 7,
           fontSize: 11, fontWeight: 700, color: '#2563EB',
@@ -202,11 +203,11 @@ function ContactCard({ icon, label, state, credits, onReveal }: {
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#DBEAFE'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EFF6FF'; }}
         >
-          Reveal
+          Unlock
         </button>
       )}
 
-      {state.status === 'revealed' && (
+      {state.status === 'unlocked' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <IcoCheck />
           <button onClick={() => copy(state.value)} style={{
@@ -310,18 +311,18 @@ export function PersonCard({ person, lists = [], onRefreshLists, onRefreshUser }
   const companyLinkedIn = person.active_experience_company_linkedin_url;
   const hasCompanyInfo = !!(company && (person.active_experience_company_industry || person.active_experience_company_employees_count));
 
-  async function revealContact(type: keyof ContactState) {
+  async function unlockContact(type: keyof ContactState) {
     setContact(prev => ({ ...prev, [type]: { status: 'loading' } }));
     try {
       if (type === 'workEmail') {
-        const r = await searchApi.revealWorkEmail(person.id);
-        setContact(prev => ({ ...prev, workEmail: r.email ? { status: 'revealed', value: r.email } : { status: 'not_found' } }));
+        const r = await searchApi.unlockWorkEmail(person.id);
+        setContact(prev => ({ ...prev, workEmail: r.email ? { status: 'unlocked', value: r.email } : { status: 'not_found' } }));
       } else if (type === 'personalEmail') {
-        const r = await searchApi.revealPersonalEmail(person.id);
-        setContact(prev => ({ ...prev, personalEmail: r.email ? { status: 'revealed', value: r.email } : { status: 'not_found' } }));
+        const r = await searchApi.unlockPersonalEmail(person.id);
+        setContact(prev => ({ ...prev, personalEmail: r.email ? { status: 'unlocked', value: r.email } : { status: 'not_found' } }));
       } else {
-        const r = await searchApi.revealPhone(person.id);
-        setContact(prev => ({ ...prev, phone: r.phone ? { status: 'revealed', value: r.phone } : { status: 'not_found' } }));
+        const r = await searchApi.unlockMobile(person.id);
+        setContact(prev => ({ ...prev, phone: r.phone ? { status: 'unlocked', value: r.phone } : { status: 'not_found' } }));
       }
       onRefreshUser?.();
     } catch (err: unknown) {
@@ -392,22 +393,22 @@ export function PersonCard({ person, lists = [], onRefreshLists, onRefreshUser }
               icon={<IcoEmail />}
               label="Work Email"
               state={contact.workEmail}
-              credits={1}
-              onReveal={() => revealContact('workEmail')}
+              credits={UNLOCK_COSTS.workEmail}
+              onUnlock={() => unlockContact('workEmail')}
             />
             <ContactCard
               icon={<IcoEmail />}
               label="Personal Email"
               state={contact.personalEmail}
-              credits={1}
-              onReveal={() => revealContact('personalEmail')}
+              credits={UNLOCK_COSTS.personalEmail}
+              onUnlock={() => unlockContact('personalEmail')}
             />
             <ContactCard
               icon={<IcoPhone />}
               label="Mobile Number"
               state={contact.phone}
-              credits={10}
-              onReveal={() => revealContact('phone')}
+              credits={UNLOCK_COSTS.mobile}
+              onUnlock={() => unlockContact('phone')}
             />
           </div>
         </div>

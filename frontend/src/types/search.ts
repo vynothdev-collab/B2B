@@ -310,6 +310,13 @@ export interface PersonResult {
   location_state?: string;
   location_city?: string;
   has_email?: boolean;
+  work_email?: string | null;
+  personal_email?: string | null;
+  unlocked?: {
+    work_email: boolean;
+    personal_email: boolean;
+    mobile: boolean;
+  };
   [key: string]: unknown;
 }
 

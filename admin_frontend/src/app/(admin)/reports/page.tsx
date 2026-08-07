@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Download } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 
-const TABS = ["Search Activity", "Email Reveals", "Login History", "Exported Reports"];
+const TABS = ["Search Activity", "Email Unlocks", "Login History", "Exported Reports"];
 
 const SEARCH_ACTIVITY = [
   { user: "Laura Chen", type: "Enterprise", company: "Nexus Technologies", searchType: "Company Search", filters: "Industry: SaaS, Country: US", results: 142, datetime: "Jul 13, 2025 9:02 AM" },
@@ -19,7 +19,7 @@ const SEARCH_ACTIVITY = [
   { user: "Ryan Nguyen", type: "Individual", company: "—", searchType: "People Search", filters: "Title: CTO, Country: AU", results: 28, datetime: "Jul 11, 2025 4:30 PM" },
 ];
 
-const EMAIL_REVEALS = [
+const EMAIL_UNLOCKS = [
   { user: "Laura Chen", type: "Enterprise", company: "Nexus Technologies", contact: "Michael Bauer", datetime: "Jul 13, 2025 9:10 AM" },
   { user: "James Okafor", type: "Enterprise", company: "Vantage Capital", contact: "Chioma Eze", datetime: "Jul 13, 2025 8:35 AM" },
   { user: "John Carter", type: "Individual", company: "—", contact: "Sarah Thompson", datetime: "Jul 13, 2025 8:52 AM" },
@@ -44,7 +44,7 @@ const LOGIN_HISTORY = [
 ];
 
 const EXPORTED_REPORTS = [
-  { name: "User Activity Report", description: "Comprehensive activity log for all users", contents: "Searches, reveals, logins, date range filters" },
+  { name: "User Activity Report", description: "Comprehensive activity log for all users", contents: "Searches, unlocks, logins, date range filters" },
   { name: "Revenue Report", description: "Complete payment and revenue analytics", contents: "Transactions, refunds, plan breakdown, MRR" },
   { name: "Enterprise Usage Report", description: "Usage metrics for all enterprise accounts", contents: "Team usage, credit consumption, search activity" },
   { name: "Support & Tickets Report", description: "Ticket volume, resolution times, SLA compliance", contents: "Ticket status, priority, category, response times" },
@@ -129,7 +129,7 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {activeTab === "Email Reveals" && (
+      {activeTab === "Email Unlocks" && (
         <div className="bg-white rounded-xl border border-slate-200">
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
@@ -151,7 +151,7 @@ export default function ReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {EMAIL_REVEALS.map((row, i) => (
+                {EMAIL_UNLOCKS.map((row, i) => (
                   <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
                     <td className="px-4 py-3">

@@ -26,6 +26,14 @@ import {
 
 import { apiClient } from "@/lib/api";
 import type { PersonResult } from "@/types/search";
+import {
+  unlockPersonWorkEmail,
+  unlockPersonPersonalEmail,
+  unlockPersonMobile,
+} from "@/lib/searchApi";
+import { toast } from "@/lib/toast";
+
+type UnlockField = "work_email" | "personal_email" | "mobile";
 
 interface WorkEntry {
   company_name: string | null;
@@ -253,7 +261,17 @@ function WebsiteSVG() {
   );
 }
 
-function SeeMoreContacts({ workEmail }: { workEmail: string | null }) {
+function SeeMoreContacts({
+  personalEmail,
+  isUnlocked,
+  isUnlocking,
+  onUnlock,
+}: {
+  personalEmail: string | null;
+  isUnlocked: boolean;
+  isUnlocking: boolean;
+  onUnlock: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div>
@@ -270,15 +288,26 @@ function SeeMoreContacts({ workEmail }: { workEmail: string | null }) {
       {expanded && (
         <div className="mt-2 flex items-center gap-2">
           <Briefcase className="h-4 w-4 text-gray-400 shrink-0" />
-          {workEmail ? (
-            <a
-              href={`mailto:${workEmail}`}
-              className="text-[13px] text-gray-700 hover:text-red-500 transition-colors"
-            >
-              {workEmail}
-            </a>
+          {isUnlocked ? (
+            personalEmail ? (
+              <a
+                href={`mailto:${personalEmail}`}
+                className="text-[13px] text-gray-700 hover:text-red-500 transition-colors"
+              >
+                {personalEmail}
+              </a>
+            ) : (
+              <span className="text-[13px] text-gray-400">No email</span>
+            )
           ) : (
-            <span className="text-[13px] text-gray-400">—</span>
+            <button
+              type="button"
+              disabled={isUnlocking}
+              onClick={onUnlock}
+              className="flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
+            >
+              {isUnlocking ? "Unlocking…" : "Unlock personal email for 1 credit"}
+            </button>
           )}
         </div>
       )}
@@ -590,6 +619,13 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
+  const [unlockOverrides, setUnlockOverrides] = useState<
+    Partial<Record<UnlockField, string | null>>
+  >({});
+  const [unlockingField, setUnlockingField] = useState<UnlockField | null>(
+    null,
+  );
+
   const skillsRef = useRef<HTMLDivElement>(null);
   const expRef = useRef<HTMLDivElement>(null);
   const eduRef = useRef<HTMLDivElement>(null);
@@ -605,6 +641,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       return;
     }
     setDetail(null);
+    setUnlockOverrides({});
+    setUnlockingField(null);
     setLoading(true);
     apiClient
       .get<PersonDetail>(`/search/persons/${person.id}/detail`)
@@ -735,9 +773,47 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     ? (d!.inferred_skills as string[]).length
     : 0;
 
-  const personEmail = (detail as PersonDetail | null)?.email ?? null;
-  const personPhone = (d?.mobile_phone as string | null) ?? null;
+  const workEmailUnlocked =
+    "work_email" in unlockOverrides || !!d?.unlocked?.work_email;
+  const personEmail =
+    "work_email" in unlockOverrides
+      ? unlockOverrides.work_email
+      : ((detail as PersonDetail | null)?.email ?? null);
+
+  const personalEmailUnlocked =
+    "personal_email" in unlockOverrides || !!d?.unlocked?.personal_email;
+  const personalEmail: string | null =
+    "personal_email" in unlockOverrides
+      ? (unlockOverrides.personal_email ?? null)
+      : ((d?.personal_email as string | null | undefined) ?? null);
+
+  const mobileUnlocked =
+    "mobile" in unlockOverrides || !!d?.unlocked?.mobile;
+  const personPhone =
+    "mobile" in unlockOverrides
+      ? unlockOverrides.mobile
+      : ((d?.mobile_phone as string | null | undefined) ?? null);
+
   const personLinkedIn = (d?.linkedin_url as string | null) ?? null;
+
+  const handleUnlock = async (field: UnlockField) => {
+    if (!person || unlockingField) return;
+    setUnlockingField(field);
+    try {
+      const result =
+        field === "work_email"
+          ? await unlockPersonWorkEmail(person.id)
+          : field === "personal_email"
+            ? await unlockPersonPersonalEmail(person.id)
+            : await unlockPersonMobile(person.id);
+      const value = "email" in result ? result.email : (result.phone ?? null);
+      setUnlockOverrides((prev) => ({ ...prev, [field]: value ?? null }));
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setUnlockingField(null);
+    }
+  };
 
   const currentWork =
     detail?.work_history?.find((w) => w.is_current) ??
@@ -799,9 +875,9 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 <h2 className="text-[18px] font-bold text-gray-900 leading-tight tracking-tight">
                   {fullName}
                 </h2>
-                {d?.has_email && (
+                {workEmailUnlocked && (
                   <span className="rounded-full border border-green-300 bg-green-50 px-2 py-0.5 text-[10px] font-bold text-green-600">
-                    Revealed
+                    Unlocked
                   </span>
                 )}
               </div>
@@ -842,30 +918,45 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
           <div className="px-5 pb-3 space-y-2.5">
             <div className="flex items-center gap-2.5">
               <Mail className="h-4 w-4 text-gray-400 shrink-0" />
-              {personEmail ? (
-                <>
-                  <a
-                    href={`mailto:${personEmail}`}
-                    className="text-[13px] text-gray-700 hover:text-red-500 transition-colors truncate"
-                  >
-                    {personEmail}
-                  </a>
-                  <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-500">
-                    <svg
-                      viewBox="0 0 12 12"
-                      fill="none"
-                      className="h-2.5 w-2.5"
+              {workEmailUnlocked ? (
+                personEmail ? (
+                  <>
+                    <a
+                      href={`mailto:${personEmail}`}
+                      className="text-[13px] text-gray-700 hover:text-red-500 transition-colors truncate"
                     >
-                      <path
-                        d="M2 6l3 3 5-5"
-                        stroke="white"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </>
+                      {personEmail}
+                    </a>
+                    <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-500">
+                      <svg
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        className="h-2.5 w-2.5"
+                      >
+                        <path
+                          d="M2 6l3 3 5-5"
+                          stroke="white"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-[13px] text-gray-400">No email</span>
+                )
+              ) : d?.has_email ? (
+                <button
+                  type="button"
+                  disabled={unlockingField === "work_email"}
+                  onClick={() => handleUnlock("work_email")}
+                  className="flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
+                >
+                  {unlockingField === "work_email"
+                    ? "Unlocking…"
+                    : "Unlock work email for 1 credit"}
+                </button>
               ) : (
                 <span className="text-[13px] text-gray-400">—</span>
               )}
@@ -873,19 +964,39 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
             <div className="flex items-center gap-2.5">
               <Phone className="h-4 w-4 text-gray-400 shrink-0" />
-              {personPhone ? (
-                <a
-                  href={`tel:${personPhone}`}
-                  className="text-[13px] text-gray-700 hover:text-red-500 transition-colors"
-                >
-                  {personPhone}
-                </a>
+              {mobileUnlocked ? (
+                personPhone ? (
+                  <a
+                    href={`tel:${personPhone}`}
+                    className="text-[13px] text-gray-700 hover:text-red-500 transition-colors"
+                  >
+                    {personPhone}
+                  </a>
+                ) : (
+                  <span className="text-[13px] text-gray-400">
+                    No number
+                  </span>
+                )
               ) : (
-                <span className="text-[13px] text-gray-400">—</span>
+                <button
+                  type="button"
+                  disabled={unlockingField === "mobile"}
+                  onClick={() => handleUnlock("mobile")}
+                  className="flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
+                >
+                  {unlockingField === "mobile"
+                    ? "Unlocking…"
+                    : "Unlock mobile for 10 credits"}
+                </button>
               )}
             </div>
 
-            <SeeMoreContacts workEmail={null} />
+            <SeeMoreContacts
+              personalEmail={personalEmail}
+              isUnlocked={personalEmailUnlocked}
+              isUnlocking={unlockingField === "personal_email"}
+              onUnlock={() => handleUnlock("personal_email")}
+            />
           </div>
 
           <div className="flex items-center gap-2 px-5 pb-4">

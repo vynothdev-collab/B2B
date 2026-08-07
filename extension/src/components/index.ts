@@ -8,7 +8,7 @@ export { UnsupportedState } from './UnsupportedState';
 export { InfoRow } from './InfoRow';
 export { CompanyCard } from './CompanyCard';
 export { PersonCard } from './PersonCard';
-export { RevealSection } from './RevealSection';
+export { UnlockSection } from './UnlockSection';
 export { EmployeeCard } from './EmployeeCard';
 export { ListCard } from './ListCard';
 export { CreateListModal } from './CreateListModal';

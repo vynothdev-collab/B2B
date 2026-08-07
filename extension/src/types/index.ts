@@ -54,7 +54,15 @@ export interface PersonResult {
   location_state?: string;
   location_city?: string;
   has_email?: boolean;
-  mobile_phone?: string;
+  mobile_phone?: string | null;
+  work_email?: string | null;
+  personal_email?: string | null;
+  email?: string | null;
+  unlocked?: {
+    work_email: boolean;
+    personal_email: boolean;
+    mobile: boolean;
+  };
   inferred_skills?: string[];
   summary?: string;
   total_experience_duration_months?: number;
@@ -100,33 +108,25 @@ export interface SearchResponse<T> {
   meta: SearchMeta;
 }
 
-export interface RevealEmailResult {
+export interface UnlockEmailResult {
   record_id: string;
   email: string | null;
   has_email: boolean;
+  already_unlocked: boolean;
+  credits_charged: number;
 }
 
-export interface RevealPhoneResult {
+export interface UnlockPhoneResult {
   record_id: string;
   phone: string | null;
   has_phone: boolean;
+  already_unlocked: boolean;
+  credits_charged: number;
 }
 
 export interface ExtensionMessage<T = unknown> {
   type: string;
   payload?: T;
-}
-
-export interface RevealState {
-  workEmail: string | null;
-  personalEmail: string | null;
-  phone: string | null;
-  loadingWorkEmail: boolean;
-  loadingPersonalEmail: boolean;
-  loadingPhone: boolean;
-  errorWorkEmail: string | null;
-  errorPersonalEmail: string | null;
-  errorPhone: string | null;
 }
 
 // Lists

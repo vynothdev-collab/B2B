@@ -39,7 +39,7 @@ function IconBox({ children, muted }: { children: React.ReactNode; muted?: boole
   );
 }
 
-function RevealedRow({ icon, label, value, verified }: {
+function UnlockedRow({ icon, label, value, verified }: {
   icon: React.ReactNode;
   label?: string;
   value: string;
@@ -78,13 +78,13 @@ function EmptyRow({ icon, label }: { icon: React.ReactNode; label?: string }) {
   );
 }
 
-export function CompanyRevealSection({ company }: Props) {
+export function CompanyUnlockSection({ company }: Props) {
   const [showEmail, setShowEmail] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [emailNotFound, setEmailNotFound] = useState(false);
   const [phoneNotFound, setPhoneNotFound] = useState(false);
 
-  function revealEmail() {
+  function unlockEmail() {
     if (company.email) {
       setShowEmail(true);
     } else {
@@ -92,7 +92,7 @@ export function CompanyRevealSection({ company }: Props) {
     }
   }
 
-  function revealPhone() {
+  function unlockPhone() {
     if (company.phone) {
       setShowPhone(true);
     } else {
@@ -110,26 +110,26 @@ export function CompanyRevealSection({ company }: Props) {
 
       {/* Email */}
       {showEmail && company.email ? (
-        <RevealedRow icon={<EmailIcon />} label="Email" value={company.email} verified />
+        <UnlockedRow icon={<EmailIcon />} label="Email" value={company.email} verified />
       ) : emailNotFound ? (
         <EmptyRow icon={<EmailIcon />} label="Email" />
       ) : (
         <div style={{ paddingBottom: 6 }}>
-          <Button variant="primary" size="sm" onClick={revealEmail} className="w-full">
-            <EmailIcon /> Get Email
+          <Button variant="primary" size="sm" onClick={unlockEmail} className="w-full">
+            <EmailIcon /> Unlock Email
           </Button>
         </div>
       )}
 
       {/* Phone / Mobile */}
       {showPhone && company.phone ? (
-        <RevealedRow icon={<PhoneIcon />} label="Phone" value={company.phone} />
+        <UnlockedRow icon={<PhoneIcon />} label="Phone" value={company.phone} />
       ) : phoneNotFound ? (
         <EmptyRow icon={<PhoneIcon />} label="Phone" />
       ) : (
         <div style={{ paddingTop: 6, paddingBottom: 6, borderBottom: '1px solid #F3F4F6' }}>
-          <Button variant="secondary" size="sm" onClick={revealPhone} className="w-full">
-            <PhoneIcon /> Get Phone Number
+          <Button variant="secondary" size="sm" onClick={unlockPhone} className="w-full">
+            <PhoneIcon /> Unlock Phone Number
           </Button>
         </div>
       )}

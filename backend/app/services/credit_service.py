@@ -13,9 +13,9 @@ from app.models.plan import Plan
 CREDIT_COSTS = {
     "search": 10,
     "pagination": 10,
-    "email_work": 1,
-    "email_personal": 1,
-    "phone": 10,
+    "work_email": 1,
+    "personal_email": 1,
+    "mobile": 10,
 }
 
 

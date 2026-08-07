@@ -38,6 +38,7 @@ class ListItemOut(BaseModel):
     item_type: str
     data: dict[str, Any] = {}
     added_at: datetime | None = None
+    unlocked: dict[str, bool] = {}
 
 
 class ListItemsPageResponse(BaseModel):

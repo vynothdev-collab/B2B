@@ -8,7 +8,7 @@ interface Props {
   onRefreshUser?: () => void;
 }
 
-interface RevealedData {
+interface UnlockedData {
   workEmail: string | null;
   personalEmail: string | null;
   phone: string | null;
@@ -60,7 +60,7 @@ function IconBox({ children, muted }: { children: React.ReactNode; muted?: boole
   );
 }
 
-function RevealedRow({ icon, label, value, verified }: {
+function UnlockedRow({ icon, label, value, verified }: {
   icon: React.ReactNode;
   label?: string;
   value: string;
@@ -99,42 +99,48 @@ function EmptyRow({ icon, label }: { icon: React.ReactNode; label?: string }) {
   );
 }
 
-export function RevealSection({ person, onRefreshUser }: Props) {
-  const [revealed, setRevealed] = useState<RevealedData>({ workEmail: null, personalEmail: null, phone: null });
+export function UnlockSection({ person, onRefreshUser }: Props) {
+  const [unlocked, setUnlocked] = useState<UnlockedData>({
+    workEmail: person.unlocked?.work_email ? (person.work_email ?? null) : null,
+    personalEmail: person.unlocked?.personal_email ? (person.personal_email ?? null) : null,
+    phone: person.unlocked?.mobile ? (person.mobile_phone ?? null) : null,
+  });
   const [loading, setLoading] = useState<LoadingState>({ workEmail: false, personalEmail: false, phone: false });
   const [errors, setErrors] = useState<Partial<Record<keyof LoadingState, string>>>({});
   const [showMore, setShowMore] = useState(false);
-  const [phoneNotFound, setPhoneNotFound] = useState(false);
+  const [phoneNotFound, setPhoneNotFound] = useState(
+    !!person.unlocked?.mobile && !person.mobile_phone,
+  );
 
-  async function reveal(type: keyof LoadingState) {
+  async function unlock(type: keyof LoadingState) {
     setLoading((p) => ({ ...p, [type]: true }));
     setErrors((p) => ({ ...p, [type]: undefined }));
     try {
       if (type === 'workEmail') {
-        const r = await searchApi.revealWorkEmail(person.id);
-        setRevealed((p) => ({ ...p, workEmail: r.email }));
+        const r = await searchApi.unlockWorkEmail(person.id);
+        setUnlocked((p) => ({ ...p, workEmail: r.email }));
         if (!r.email) setErrors((p) => ({ ...p, workEmail: 'No work email found' }));
       } else if (type === 'personalEmail') {
-        const r = await searchApi.revealPersonalEmail(person.id);
-        setRevealed((p) => ({ ...p, personalEmail: r.email }));
+        const r = await searchApi.unlockPersonalEmail(person.id);
+        setUnlocked((p) => ({ ...p, personalEmail: r.email }));
         if (!r.email) setErrors((p) => ({ ...p, personalEmail: 'No personal email found' }));
       } else {
-        const r = await searchApi.revealPhone(person.id);
-        setRevealed((p) => ({ ...p, phone: r.phone }));
+        const r = await searchApi.unlockMobile(person.id);
+        setUnlocked((p) => ({ ...p, phone: r.phone }));
         if (!r.phone) setPhoneNotFound(true);
       }
       onRefreshUser?.();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { detail?: string } } };
-      const msg = axiosErr?.response?.data?.detail || 'Failed to reveal — check your credits';
+      const msg = axiosErr?.response?.data?.detail || 'Failed to unlock — check your credits';
       setErrors((p) => ({ ...p, [type]: msg }));
     } finally {
       setLoading((p) => ({ ...p, [type]: false }));
     }
   }
 
-  const moreCount = !revealed.personalEmail ? 1 : 0;
-  const showMoreToggle = !revealed.personalEmail && (revealed.workEmail || revealed.phone !== null || phoneNotFound);
+  const moreCount = !unlocked.personalEmail ? 1 : 0;
+  const showMoreToggle = !unlocked.personalEmail && (unlocked.workEmail || unlocked.phone !== null || phoneNotFound);
 
   return (
     <div style={{ padding: '0 20px 4px' }}>
@@ -143,26 +149,26 @@ export function RevealSection({ person, onRefreshUser }: Props) {
       </p>
 
       {/* Work Email */}
-      {revealed.workEmail ? (
-        <RevealedRow icon={<EmailIcon />} label="Work Email" value={revealed.workEmail} verified />
+      {unlocked.workEmail ? (
+        <UnlockedRow icon={<EmailIcon />} label="Work Email" value={unlocked.workEmail} verified />
       ) : (
         <div style={{ paddingBottom: 6 }}>
-          <Button variant="primary" size="sm" loading={loading.workEmail} onClick={() => reveal('workEmail')} className="w-full">
-            <EmailIcon /> Get Work Email
+          <Button variant="primary" size="sm" loading={loading.workEmail} onClick={() => unlock('workEmail')} className="w-full">
+            <EmailIcon /> Unlock Work Email
           </Button>
           {errors.workEmail && <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#EF4444' }}>{errors.workEmail}</p>}
         </div>
       )}
 
       {/* Phone */}
-      {revealed.phone ? (
-        <RevealedRow icon={<PhoneIcon />} label="Phone" value={revealed.phone} />
+      {unlocked.phone ? (
+        <UnlockedRow icon={<PhoneIcon />} label="Phone" value={unlocked.phone} />
       ) : phoneNotFound ? (
         <EmptyRow icon={<PhoneIcon />} label="Phone" />
       ) : (
         <div style={{ paddingTop: 6, paddingBottom: 6, borderBottom: '1px solid #F3F4F6' }}>
-          <Button variant="secondary" size="sm" loading={loading.phone} onClick={() => reveal('phone')} className="w-full">
-            <PhoneIcon /> Get Phone Number
+          <Button variant="secondary" size="sm" loading={loading.phone} onClick={() => unlock('phone')} className="w-full">
+            <PhoneIcon /> Unlock Phone Number
           </Button>
           {errors.phone && <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#EF4444' }}>{errors.phone}</p>}
         </div>
@@ -179,16 +185,16 @@ export function RevealSection({ person, onRefreshUser }: Props) {
       )}
 
       {/* Personal Email (expandable) */}
-      {(showMore || !showMoreToggle) && !revealed.personalEmail && (
+      {(showMore || !showMoreToggle) && !unlocked.personalEmail && (
         <div style={{ paddingTop: 6 }}>
-          <Button variant="secondary" size="sm" loading={loading.personalEmail} onClick={() => reveal('personalEmail')} className="w-full">
-            <EmailIcon /> Get Personal Email
+          <Button variant="secondary" size="sm" loading={loading.personalEmail} onClick={() => unlock('personalEmail')} className="w-full">
+            <EmailIcon /> Unlock Personal Email
           </Button>
           {errors.personalEmail && <p style={{ margin: '4px 0 0', fontSize: 11.5, color: '#EF4444' }}>{errors.personalEmail}</p>}
         </div>
       )}
-      {revealed.personalEmail && (
-        <RevealedRow icon={<EmailIcon />} label="Personal Email" value={revealed.personalEmail} verified />
+      {unlocked.personalEmail && (
+        <UnlockedRow icon={<EmailIcon />} label="Personal Email" value={unlocked.personalEmail} verified />
       )}
     </div>
   );

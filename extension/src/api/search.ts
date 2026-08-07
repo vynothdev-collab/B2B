@@ -3,8 +3,8 @@ import type {
   CompanyResult,
   PersonResult,
   SearchResponse,
-  RevealEmailResult,
-  RevealPhoneResult,
+  UnlockEmailResult,
+  UnlockPhoneResult,
 } from '../types';
 
 export const searchApi = {
@@ -36,12 +36,12 @@ export const searchApi = {
   getPersonDetail: (recordId: string): Promise<PersonResult> =>
     client.get(`/search/persons/${recordId}/detail`).then((r) => r.data),
 
-  revealWorkEmail: (recordId: string): Promise<RevealEmailResult> =>
-    client.get(`/search/persons/${recordId}/email`).then((r) => r.data),
+  unlockWorkEmail: (recordId: string): Promise<UnlockEmailResult> =>
+    client.get(`/search/persons/${recordId}/unlock/work-email`).then((r) => r.data),
 
-  revealPersonalEmail: (recordId: string): Promise<RevealEmailResult> =>
-    client.get(`/search/persons/${recordId}/personal-email`).then((r) => r.data),
+  unlockPersonalEmail: (recordId: string): Promise<UnlockEmailResult> =>
+    client.get(`/search/persons/${recordId}/unlock/personal-email`).then((r) => r.data),
 
-  revealPhone: (recordId: string): Promise<RevealPhoneResult> =>
-    client.get(`/search/persons/${recordId}/phone`).then((r) => r.data),
+  unlockMobile: (recordId: string): Promise<UnlockPhoneResult> =>
+    client.get(`/search/persons/${recordId}/unlock/mobile`).then((r) => r.data),
 };

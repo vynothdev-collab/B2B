@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.models.contact_unlock import ContactUnlock, ContactUnlockField
 from app.models.search_log import SearchLog
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
 from app.models.user import User, UserRole
@@ -17,13 +18,14 @@ from app.models.technology_intent import TechnologyIntent
 from app.schemas.search import (
     AgenticSearchRequest,
     CompanySearchRequest,
-    EmailRevealResponse,
+    EmailUnlockResponse,
     PersonSearchRequest,
-    PhoneRevealResponse,
+    PhoneUnlockResponse,
     SearchResponse,
     TitleAutocompleteResponse,
 )
 from app.services import coresignal_service
+from app.services.contact_unlock_service import apply_unlock_state, get_unlock_map
 from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
 
 router = APIRouter()
@@ -50,6 +52,11 @@ async def person_search(
     )
     _log_search(db, current_user.id, "person")
     await db.flush()
+    record_ids = [item.get("id") for item in result.data if item.get("id")]
+    unlock_map = await get_unlock_map(db, current_user.id, record_ids)
+    for item in result.data:
+        if item.get("id"):
+            apply_unlock_state(item, item["id"], unlock_map)
     return result
 
 
@@ -92,20 +99,51 @@ async def agentic_search(
     )
     _log_search(db, current_user.id, "agentic")
     await db.flush()
+    if body.entity == "employee":
+        record_ids = [item.get("id") for item in result.data if item.get("id")]
+        unlock_map = await get_unlock_map(db, current_user.id, record_ids)
+        for item in result.data:
+            if item.get("id"):
+                apply_unlock_state(item, item["id"], unlock_map)
     return result
 
 
+async def _get_existing_unlock(
+    db: AsyncSession, user_id: str, record_id: str, field: str
+) -> ContactUnlock | None:
+    result = await db.execute(
+        select(ContactUnlock).where(
+            ContactUnlock.user_id == user_id,
+            ContactUnlock.record_id == record_id,
+            ContactUnlock.field == field,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 @router.get(
-    "/persons/{record_id}/email",
-    response_model=EmailRevealResponse,
-    summary="Reveal work email for a person record",
+    "/persons/{record_id}/unlock/work-email",
+    response_model=EmailUnlockResponse,
+    summary="Unlock work email for a person record",
 )
-async def reveal_person_work_email(
+async def unlock_person_work_email(
     record_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> EmailRevealResponse:
-    cost = CREDIT_COSTS["email_work"]
+) -> EmailUnlockResponse:
+    existing = await _get_existing_unlock(
+        db, current_user.id, record_id, ContactUnlockField.WORK_EMAIL
+    )
+    if existing:
+        return EmailUnlockResponse(
+            record_id=record_id,
+            email=existing.value,
+            has_email=bool(existing.value),
+            already_unlocked=True,
+            credits_charged=0,
+        )
+
+    cost = CREDIT_COSTS["work_email"]
     await check_credits(current_user, db, cost)
 
     result = await db.execute(
@@ -120,29 +158,51 @@ async def reveal_person_work_email(
 
     await deduct_credit(
         current_user, db,
-        reason="Work Email Reveal",
-        description=f"Work email reveal — {cost} credit deducted",
+        reason="Work Email Unlock",
+        description=f"Work email unlock — {cost} credit deducted",
         amount=cost,
     )
+    db.add(
+        ContactUnlock(
+            user_id=current_user.id,
+            record_id=record_id,
+            field=ContactUnlockField.WORK_EMAIL,
+            value=record.email,
+        )
+    )
     await db.flush()
-    return EmailRevealResponse(
+    return EmailUnlockResponse(
         record_id=record_id,
         email=record.email,
         has_email=bool(record.email),
+        already_unlocked=False,
+        credits_charged=cost,
     )
 
 
 @router.get(
-    "/persons/{record_id}/personal-email",
-    response_model=EmailRevealResponse,
-    summary="Reveal personal email for a person record",
+    "/persons/{record_id}/unlock/personal-email",
+    response_model=EmailUnlockResponse,
+    summary="Unlock personal email for a person record",
 )
-async def reveal_person_personal_email(
+async def unlock_person_personal_email(
     record_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> EmailRevealResponse:
-    cost = CREDIT_COSTS["email_personal"]
+) -> EmailUnlockResponse:
+    existing = await _get_existing_unlock(
+        db, current_user.id, record_id, ContactUnlockField.PERSONAL_EMAIL
+    )
+    if existing:
+        return EmailUnlockResponse(
+            record_id=record_id,
+            email=existing.value,
+            has_email=bool(existing.value),
+            already_unlocked=True,
+            credits_charged=0,
+        )
+
+    cost = CREDIT_COSTS["personal_email"]
     await check_credits(current_user, db, cost)
 
     result = await db.execute(
@@ -160,29 +220,51 @@ async def reveal_person_personal_email(
 
     await deduct_credit(
         current_user, db,
-        reason="Personal Email Reveal",
-        description=f"Personal email reveal — {cost} credit deducted",
+        reason="Personal Email Unlock",
+        description=f"Personal email unlock — {cost} credit deducted",
         amount=cost,
     )
+    db.add(
+        ContactUnlock(
+            user_id=current_user.id,
+            record_id=record_id,
+            field=ContactUnlockField.PERSONAL_EMAIL,
+            value=personal_email,
+        )
+    )
     await db.flush()
-    return EmailRevealResponse(
+    return EmailUnlockResponse(
         record_id=record_id,
         email=personal_email,
         has_email=bool(personal_email),
+        already_unlocked=False,
+        credits_charged=cost,
     )
 
 
 @router.get(
-    "/persons/{record_id}/phone",
-    response_model=PhoneRevealResponse,
-    summary="Reveal mobile phone number for a person record",
+    "/persons/{record_id}/unlock/mobile",
+    response_model=PhoneUnlockResponse,
+    summary="Unlock mobile phone number for a person record",
 )
-async def reveal_person_phone(
+async def unlock_person_phone(
     record_id: str,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> PhoneRevealResponse:
-    cost = CREDIT_COSTS["phone"]
+) -> PhoneUnlockResponse:
+    existing = await _get_existing_unlock(
+        db, current_user.id, record_id, ContactUnlockField.MOBILE
+    )
+    if existing:
+        return PhoneUnlockResponse(
+            record_id=record_id,
+            phone=existing.value,
+            has_phone=bool(existing.value),
+            already_unlocked=True,
+            credits_charged=0,
+        )
+
+    cost = CREDIT_COSTS["mobile"]
     await check_credits(current_user, db, cost)
 
     result = await db.execute(
@@ -200,15 +282,25 @@ async def reveal_person_phone(
 
     await deduct_credit(
         current_user, db,
-        reason="Phone Reveal",
-        description=f"Mobile phone reveal — {cost} credits deducted",
+        reason="Mobile Number Unlock",
+        description=f"Mobile number unlock — {cost} credits deducted",
         amount=cost,
     )
+    db.add(
+        ContactUnlock(
+            user_id=current_user.id,
+            record_id=record_id,
+            field=ContactUnlockField.MOBILE,
+            value=phone,
+        )
+    )
     await db.flush()
-    return PhoneRevealResponse(
+    return PhoneUnlockResponse(
         record_id=record_id,
         phone=phone,
         has_phone=bool(phone),
+        already_unlocked=False,
+        credits_charged=cost,
     )
 
 
@@ -217,6 +309,7 @@ async def reveal_person_phone(
 )
 async def get_person_detail(
     record_id: str,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -228,6 +321,10 @@ async def get_person_detail(
 
     raw = record.raw_data or {}
     mapped = coresignal_service._map_person(raw)
+
+    unlock_map = await get_unlock_map(db, current_user.id, [record_id])
+    apply_unlock_state(mapped, record_id, unlock_map)
+    unlocked = mapped["unlocked"]
 
     experiences = [e for e in (raw.get("experience") or []) if isinstance(e, dict)]
     work_history = []
@@ -448,7 +545,6 @@ async def get_person_detail(
 
     return {
         **mapped,
-        "email": record.email or raw.get("primary_professional_email"),
         "summary": raw.get("summary"),
         "work_history": work_history,
         "education": education,
@@ -465,6 +561,7 @@ async def get_person_detail(
         "recommendations": recommendations,
         "test_scores": test_scores,
         "websites": websites,
+        "unlocked": unlocked,
     }
 
 

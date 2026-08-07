@@ -165,16 +165,20 @@ class AgenticSearchRequest(BaseModel):
     es_query: dict | None = None
 
 
-class EmailRevealResponse(BaseModel):
+class EmailUnlockResponse(BaseModel):
     record_id: str
     email: str | None = None
     has_email: bool
+    already_unlocked: bool = False
+    credits_charged: int = 0
 
 
-class PhoneRevealResponse(BaseModel):
+class PhoneUnlockResponse(BaseModel):
     record_id: str
     phone: str | None = None
     has_phone: bool
+    already_unlocked: bool = False
+    credits_charged: int = 0
 
 
 class TitleAutocompleteResponse(BaseModel):

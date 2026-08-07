@@ -18,7 +18,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 const PERKS = [
   "Search 800M+ people & 35M+ companies",
-  "Reveal verified emails & phone numbers",
+  "Unlock verified emails & phone numbers",
   "Export directly to your CRM",
   "Real-time data enrichment",
 ];

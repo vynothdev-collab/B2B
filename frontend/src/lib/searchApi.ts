@@ -375,17 +375,45 @@ export async function agenticSearch(
   return data;
 }
 
-export interface EmailRevealResult {
+export interface EmailUnlockResult {
   record_id: string;
   email: string | null;
   has_email: boolean;
+  already_unlocked: boolean;
+  credits_charged: number;
 }
 
-export async function revealPersonEmail(
+export interface PhoneUnlockResult {
+  record_id: string;
+  phone: string | null;
+  has_phone: boolean;
+  already_unlocked: boolean;
+  credits_charged: number;
+}
+
+export async function unlockPersonWorkEmail(
   recordId: string,
-): Promise<EmailRevealResult> {
-  const { data } = await apiClient.get<EmailRevealResult>(
-    `/search/persons/${encodeURIComponent(recordId)}/email`,
+): Promise<EmailUnlockResult> {
+  const { data } = await apiClient.get<EmailUnlockResult>(
+    `/search/persons/${encodeURIComponent(recordId)}/unlock/work-email`,
+  );
+  return data;
+}
+
+export async function unlockPersonPersonalEmail(
+  recordId: string,
+): Promise<EmailUnlockResult> {
+  const { data } = await apiClient.get<EmailUnlockResult>(
+    `/search/persons/${encodeURIComponent(recordId)}/unlock/personal-email`,
+  );
+  return data;
+}
+
+export async function unlockPersonMobile(
+  recordId: string,
+): Promise<PhoneUnlockResult> {
+  const { data } = await apiClient.get<PhoneUnlockResult>(
+    `/search/persons/${encodeURIComponent(recordId)}/unlock/mobile`,
   );
   return data;
 }

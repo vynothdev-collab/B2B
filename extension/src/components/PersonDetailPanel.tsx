@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { ListItem, PersonResult } from '../types';
 import { searchApi } from '../api/search';
 import { useAuthStore } from '../store/authStore';
+import { UNLOCK_COSTS } from '../constants/unlockCosts';
 
 /* ─── Extended detail types ───────────────────────────────────────────────── */
 interface WorkEntry {
@@ -36,7 +37,7 @@ interface Props { item: ListItem; listName?: string; onClose: () => void; }
 type ContactStatus =
   | { status: 'hidden' }
   | { status: 'loading' }
-  | { status: 'revealed'; value: string }
+  | { status: 'unlocked'; value: string }
   | { status: 'not_found' }
   | { status: 'error'; message: string };
 
@@ -163,12 +164,12 @@ function CollapsibleSection({ sectionRef, title, badge, isOpen, onToggle, childr
 }
 
 /* ─── Premium contact card (same as PersonCard) ──────────────────────────── */
-function ContactCard({ icon, label, state, credits, onReveal }: {
+function ContactCard({ icon, label, state, credits, onUnlock }: {
   icon: React.ReactNode;
   label: string;
   state: ContactStatus;
   credits: number;
-  onReveal: () => void;
+  onUnlock: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   const copy = async (value: string) => {
@@ -176,23 +177,23 @@ function ContactCard({ icon, label, state, credits, onReveal }: {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-  const isRevealed = state.status === 'revealed';
+  const isUnlocked = state.status === 'unlocked';
   const isNotFound = state.status === 'not_found';
 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
       padding: '10px 12px', borderRadius: 10,
-      background: isRevealed ? '#F0FDF4' : isNotFound ? '#FAFAFA' : '#F8FAFF',
-      border: `1.5px solid ${isRevealed ? '#BBF7D0' : isNotFound ? '#E9ECEF' : '#DBEAFE'}`,
+      background: isUnlocked ? '#F0FDF4' : isNotFound ? '#FAFAFA' : '#F8FAFF',
+      border: `1.5px solid ${isUnlocked ? '#BBF7D0' : isNotFound ? '#E9ECEF' : '#DBEAFE'}`,
       transition: 'all 0.2s',
     }}>
       <div style={{
         width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-        background: isRevealed ? '#DCFCE7' : isNotFound ? '#F3F4F6' : '#EFF6FF',
-        border: `1px solid ${isRevealed ? '#86EFAC' : isNotFound ? '#E5E7EB' : '#BFDBFE'}`,
+        background: isUnlocked ? '#DCFCE7' : isNotFound ? '#F3F4F6' : '#EFF6FF',
+        border: `1px solid ${isUnlocked ? '#86EFAC' : isNotFound ? '#E5E7EB' : '#BFDBFE'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: isRevealed ? '#15803D' : isNotFound ? '#D1D5DB' : '#2563EB',
+        color: isUnlocked ? '#15803D' : isNotFound ? '#D1D5DB' : '#2563EB',
       }}>
         {icon}
       </div>
@@ -209,10 +210,10 @@ function ContactCard({ icon, label, state, credits, onReveal }: {
         {state.status === 'loading' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, border: '1.5px solid #DBEAFE', borderTopColor: '#2563EB', display: 'inline-block', animation: 'lb-spin 0.7s linear infinite' }} />
-            <span style={{ fontSize: 11.5, color: '#94A3B8' }}>Revealing...</span>
+            <span style={{ fontSize: 11.5, color: '#94A3B8' }}>Unlocking...</span>
           </div>
         )}
-        {state.status === 'revealed' && (
+        {state.status === 'unlocked' && (
           <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {state.value}
           </p>
@@ -221,7 +222,7 @@ function ContactCard({ icon, label, state, credits, onReveal }: {
         {state.status === 'error' && <p style={{ margin: '2px 0 0', fontSize: 11, color: '#EF4444', lineHeight: 1.3 }}>{state.message}</p>}
       </div>
       {state.status === 'hidden' && (
-        <button onClick={onReveal} style={{
+        <button onClick={onUnlock} style={{
           flexShrink: 0, padding: '5px 11px', borderRadius: 7,
           fontSize: 11, fontWeight: 700, color: '#2563EB',
           background: '#EFF6FF', border: '1px solid #BFDBFE',
@@ -230,10 +231,10 @@ function ContactCard({ icon, label, state, credits, onReveal }: {
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#DBEAFE'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EFF6FF'; }}
         >
-          Reveal
+          Unlock
         </button>
       )}
-      {state.status === 'revealed' && (
+      {state.status === 'unlocked' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
           <IcoCheckGreen />
           <button onClick={() => copy(state.value)} style={{
@@ -423,7 +424,7 @@ export function PersonDetailPanel({ item, onClose }: Props) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  /* Contact reveal state */
+  /* Contact unlock state */
   const [contact, setContact] = useState<{
     workEmail: ContactStatus;
     personalEmail: ContactStatus;
@@ -540,19 +541,19 @@ export function PersonDetailPanel({ item, onClose }: Props) {
   const expandAll = () => setOpen({ contact: true, skills: true, experience: true, education: true, company: true, summary: true, projects: true });
   const collapseAll = () => setOpen({ contact: false, skills: false, experience: false, education: false, company: false, summary: false, projects: false });
 
-  /* Reveal contact */
-  async function revealContact(type: 'workEmail' | 'personalEmail' | 'phone') {
+  /* Unlock contact */
+  async function unlockContact(type: 'workEmail' | 'personalEmail' | 'phone') {
     setContact(prev => ({ ...prev, [type]: { status: 'loading' } }));
     try {
       if (type === 'workEmail') {
-        const r = await searchApi.revealWorkEmail(d.id);
-        setContact(prev => ({ ...prev, workEmail: r.email ? { status: 'revealed', value: r.email } : { status: 'not_found' } }));
+        const r = await searchApi.unlockWorkEmail(d.id);
+        setContact(prev => ({ ...prev, workEmail: r.email ? { status: 'unlocked', value: r.email } : { status: 'not_found' } }));
       } else if (type === 'personalEmail') {
-        const r = await searchApi.revealPersonalEmail(d.id);
-        setContact(prev => ({ ...prev, personalEmail: r.email ? { status: 'revealed', value: r.email } : { status: 'not_found' } }));
+        const r = await searchApi.unlockPersonalEmail(d.id);
+        setContact(prev => ({ ...prev, personalEmail: r.email ? { status: 'unlocked', value: r.email } : { status: 'not_found' } }));
       } else {
-        const r = await searchApi.revealPhone(d.id);
-        setContact(prev => ({ ...prev, phone: r.phone ? { status: 'revealed', value: r.phone } : { status: 'not_found' } }));
+        const r = await searchApi.unlockMobile(d.id);
+        setContact(prev => ({ ...prev, phone: r.phone ? { status: 'unlocked', value: r.phone } : { status: 'not_found' } }));
       }
       refreshUser();
     } catch (err: unknown) {
@@ -682,9 +683,9 @@ export function PersonDetailPanel({ item, onClose }: Props) {
             {/* ── Contact Information ────────────────────────────────── */}
             <CollapsibleSection sectionRef={contactRef} title="Contact Information" isOpen={open.contact} onToggle={() => toggle('contact')}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                <ContactCard icon={<IcoEmail />} label="Work Email" state={contact.workEmail} credits={1} onReveal={() => revealContact('workEmail')} />
-                <ContactCard icon={<IcoEmail />} label="Personal Email" state={contact.personalEmail} credits={1} onReveal={() => revealContact('personalEmail')} />
-                <ContactCard icon={<IcoPhone />} label="Mobile Number" state={contact.phone} credits={10} onReveal={() => revealContact('phone')} />
+                <ContactCard icon={<IcoEmail />} label="Work Email" state={contact.workEmail} credits={UNLOCK_COSTS.workEmail} onUnlock={() => unlockContact('workEmail')} />
+                <ContactCard icon={<IcoEmail />} label="Personal Email" state={contact.personalEmail} credits={UNLOCK_COSTS.personalEmail} onUnlock={() => unlockContact('personalEmail')} />
+                <ContactCard icon={<IcoPhone />} label="Mobile Number" state={contact.phone} credits={UNLOCK_COSTS.mobile} onUnlock={() => unlockContact('phone')} />
               </div>
             </CollapsibleSection>
 

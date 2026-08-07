@@ -6,7 +6,10 @@ import FilterPanelShell from "./FilterPanelShell";
 import PeopleFilterPanel, {
   countPeopleFilters,
 } from "./filters/PeopleFilterPanel";
-import PeopleTable, { PeopleTableSkeleton } from "./PeopleTable";
+import PeopleTable, {
+  PeopleTableSkeleton,
+  type UnlockField,
+} from "./PeopleTable";
 import PersonDetailPanel from "./PersonDetailPanel";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
@@ -16,7 +19,9 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
   searchPersons,
   agenticSearch,
-  revealPersonEmail,
+  unlockPersonWorkEmail,
+  unlockPersonPersonalEmail,
+  unlockPersonMobile,
 } from "@/lib/searchApi";
 import type { PersonExclusions } from "@/lib/searchApi";
 import { toast } from "@/lib/toast";
@@ -64,31 +69,37 @@ export default function PeopleSearchPage() {
     null,
   );
 
-  const [revealedEmails, setRevealedEmails] = useState<
+  const [unlockedValues, setUnlockedValues] = useState<
     Map<string, string | null>
   >(new Map());
-  const [revealingIds, setRevealingIds] = useState<Set<string>>(new Set());
+  const [unlockingIds, setUnlockingIds] = useState<Set<string>>(new Set());
 
-  const handleRevealEmail = useCallback(
-    async (recordId: string) => {
-      if (revealedEmails.has(recordId) || revealingIds.has(recordId)) return;
-      setRevealingIds((prev) => new Set(prev).add(recordId));
+  const handleUnlockField = useCallback(
+    async (recordId: string, field: UnlockField) => {
+      const key = `${recordId}:${field}`;
+      if (unlockedValues.has(key) || unlockingIds.has(key)) return;
+      setUnlockingIds((prev) => new Set(prev).add(key));
       try {
-        const result = await revealPersonEmail(recordId);
-        setRevealedEmails((prev) =>
-          new Map(prev).set(recordId, result.email ?? null),
-        );
+        const result =
+          field === "work_email"
+            ? await unlockPersonWorkEmail(recordId)
+            : field === "personal_email"
+              ? await unlockPersonPersonalEmail(recordId)
+              : await unlockPersonMobile(recordId);
+        const value =
+          "email" in result ? result.email : (result.phone ?? null);
+        setUnlockedValues((prev) => new Map(prev).set(key, value ?? null));
       } catch (e: unknown) {
         toast.apiError(e);
       } finally {
-        setRevealingIds((prev) => {
+        setUnlockingIds((prev) => {
           const next = new Set(prev);
-          next.delete(recordId);
+          next.delete(key);
           return next;
         });
       }
     },
-    [revealedEmails, revealingIds],
+    [unlockedValues, unlockingIds],
   );
 
   const resolveExclusions = useCallback(async (): Promise<PersonExclusions> => {
@@ -194,8 +205,8 @@ export default function PeopleSearchPage() {
     setSelected(new Set());
     setCurrentPage(1);
     setTokenHistory([]);
-    setRevealedEmails(new Map());
-    setRevealingIds(new Set());
+    setUnlockedValues(new Map());
+    setUnlockingIds(new Set());
   };
 
   const startSearch = useCallback(() => {
@@ -391,9 +402,9 @@ export default function PeopleSearchPage() {
                     onSelect={toggleSelect}
                     onSelectAll={toggleSelectAll}
                     visibleColumns={visibleColumns}
-                    revealedEmails={revealedEmails}
-                    onRevealEmail={handleRevealEmail}
-                    revealingIds={revealingIds}
+                    unlockedValues={unlockedValues}
+                    onUnlockField={handleUnlockField}
+                    unlockingIds={unlockingIds}
                     onOpenColumnSettings={() => setColumnSettingsOpen(true)}
                     onNameClick={(row) => setSelectedPerson(row)}
                   />
@@ -415,7 +426,7 @@ export default function PeopleSearchPage() {
                     className="flex items-center gap-1.5 rounded-lg bg-red-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-red-500 sm:px-3 sm:text-xs"
                   >
                     <Eye className="h-3 w-3" />
-                    Reveal contacts
+                    Unlock contacts
                   </button>
                   <button
                     type="button"

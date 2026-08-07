@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.models.contact_unlock import ContactUnlockField
 from app.models.list import List as ListModel
 from app.models.list import ListItem
 from app.models.search_record import CompanySearchRecord, PersonSearchRecord
@@ -20,6 +21,7 @@ from app.schemas.list import (
     ListResponse,
     ListUpdate,
 )
+from app.services.contact_unlock_service import apply_unlock_state, get_unlock_map
 from app.services.coresignal_service import _map_company, _map_person
 
 router = APIRouter(prefix="/lists", tags=["lists"])
@@ -218,13 +220,19 @@ async def add_items_to_list(
         )
         raw_data_map = {row[0]: row[1] for row in raw_result.fetchall()}
 
+    person_unlock_map = (
+        await get_unlock_map(db, current_user.id, record_ids)
+        if item_type == "person"
+        else {}
+    )
+
     added_count = 0
     for item in data.items:
         raw = raw_data_map.get(item.record_id)
         if raw:
             if item_type == "person":
                 item_data = _map_person(raw)
-                item_data["email"] = raw.get("primary_professional_email")
+                apply_unlock_state(item_data, item.record_id, person_unlock_map)
             else:
                 item_data = _map_company(raw)
         else:
@@ -443,6 +451,8 @@ async def get_list_items(
         )
         company_raw_map = {row[0]: row[1] for row in cr.fetchall()}
 
+    unlock_map = await get_unlock_map(db, current_user.id, person_ids)
+
     def _resolve_data(item: ListItem) -> dict:
         stored = item.data if isinstance(item.data, dict) else {}
 
@@ -450,7 +460,7 @@ async def get_list_items(
             raw = person_raw_map.get(item.record_id)
             if raw:
                 mapped = _map_person(raw)
-                mapped["email"] = raw.get("primary_professional_email")
+                apply_unlock_state(mapped, item.record_id, unlock_map)
                 return mapped
             if (
                 stored
@@ -458,7 +468,7 @@ async def get_list_items(
                 and "active_experience_title" not in stored
             ):
                 mapped = _map_person(stored)
-                mapped["email"] = stored.get("primary_professional_email")
+                apply_unlock_state(mapped, item.record_id, unlock_map)
                 return mapped
         else:
             raw = company_raw_map.get(item.record_id)
@@ -468,6 +478,14 @@ async def get_list_items(
                 return _map_company(stored)
 
         return stored
+
+    def _unlocked_flags(item: ListItem) -> dict[str, bool]:
+        fields = unlock_map.get(item.record_id, {})
+        return {
+            "work_email": ContactUnlockField.WORK_EMAIL in fields,
+            "personal_email": ContactUnlockField.PERSONAL_EMAIL in fields,
+            "mobile": ContactUnlockField.MOBILE in fields,
+        }
 
     return ListItemsPageResponse(
         total=total,
@@ -480,6 +498,7 @@ async def get_list_items(
                 item_type=i.item_type,
                 data=_resolve_data(i),
                 added_at=i.added_at,
+                unlocked=_unlocked_flags(i) if i.item_type == "person" else {},
             )
             for i in items
         ],

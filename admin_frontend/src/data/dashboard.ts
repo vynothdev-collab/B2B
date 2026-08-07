@@ -48,7 +48,7 @@ export const INDIVIDUAL_STATS = {
   freeCount: 680,
   paidCount: 604,
   searchesThisMonth: 18240,
-  revealsThisMonth: 2180,
+  unlocksThisMonth: 2180,
   plans: [
     { name: "Free",     count: 680, pct: 53, barColor: "var(--ink-faint)" },
     { name: "Pro",      count: 412, pct: 32, barColor: "var(--forest)"    },
@@ -65,7 +65,7 @@ export const ENTERPRISE_STATS = {
   activeAccounts: 44,
   suspendedAccounts: 4,
   searchesThisMonth: 6141,
-  revealsThisMonth: 962,
+  unlocksThisMonth: 962,
   revenueThisMonth: 9200,
   topAccounts: [
     { name: "Vantage Capital",    initials: "VC", plan: "Enterprise", users: 35, status: "active"   },
@@ -159,5 +159,5 @@ export const RECENT_ACTIVITY = [
 
 export const PLATFORM_USAGE = [
   { label: "Searches", individual: 18240, enterprise: 6141, color: "bg-blue-500"   },
-  { label: "Reveals",  individual: 2180,  enterprise: 962,  color: "bg-violet-500" },
+  { label: "Unlocks",  individual: 2180,  enterprise: 962,  color: "bg-violet-500" },
 ];

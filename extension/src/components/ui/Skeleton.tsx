@@ -22,7 +22,7 @@ const Divider = () => <div style={{ height: 1, background: '#F1F5F9' }} />;
 /* ─── Section label skeleton ─────────────────────────────────────────────── */
 const LabelBone = () => <Bone w={72} h={8} r={4} />;
 
-/* ─── Contact card skeleton (matches ContactCard / ContactRevealRow) ─────── */
+/* ─── Contact card skeleton (matches ContactCard / ContactUnlockRow) ─────── */
 function ContactCardSkeleton() {
   return (
     <div style={{
@@ -37,7 +37,7 @@ function ContactCardSkeleton() {
         <Bone w={70} h={8} r={4} />
         <Bone w={110} h={10} r={5} />
       </div>
-      {/* Reveal button */}
+      {/* Unlock button */}
       <Bone w={52} h={26} r={7} style={{ flexShrink: 0 }} />
     </div>
   );

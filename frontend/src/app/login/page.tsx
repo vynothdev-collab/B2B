@@ -133,7 +133,7 @@ function LoginForm() {
               },
               {
                 icon: <Zap className="h-4 w-4" />,
-                text: "Instant contact reveal & CRM export",
+                text: "Instant contact unlock & CRM export",
               },
             ].map((f) => (
               <div key={f.text} className="flex items-center gap-3">

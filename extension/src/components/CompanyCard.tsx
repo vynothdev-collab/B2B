@@ -73,13 +73,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ─── Contact reveal row ─────────────────────────────────────────────────── */
-function ContactRevealRow({ icon, label, value, shown, onReveal }: {
+/* ─── Contact unlock row ─────────────────────────────────────────────────── */
+function ContactUnlockRow({ icon, label, value, shown, onUnlock }: {
   icon: React.ReactNode;
   label: string;
   value?: string;
   shown: boolean;
-  onReveal: () => void;
+  onUnlock: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -113,7 +113,7 @@ function ContactRevealRow({ icon, label, value, shown, onReveal }: {
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
             <span style={{ color: '#94A3B8' }}><IcoLock /></span>
-            <span style={{ fontSize: 11.5, color: '#94A3B8' }}>{value ? 'Click to reveal' : 'Not available'}</span>
+            <span style={{ fontSize: 11.5, color: '#94A3B8' }}>{value ? 'Click to unlock' : 'Not available'}</span>
           </div>
         )}
       </div>
@@ -125,7 +125,7 @@ function ContactRevealRow({ icon, label, value, shown, onReveal }: {
           </button>
         </div>
       ) : value ? (
-        <button onClick={onReveal} style={{
+        <button onClick={onUnlock} style={{
           flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4,
           padding: '5px 11px', borderRadius: 7, fontSize: 11, fontWeight: 700,
           color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE',
@@ -134,7 +134,7 @@ function ContactRevealRow({ icon, label, value, shown, onReveal }: {
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#DBEAFE'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EFF6FF'; }}
         >
-          Reveal
+          Unlock
         </button>
       ) : (
         <span style={{ fontSize: 11, color: '#D1D5DB' }}>—</span>
@@ -310,21 +310,21 @@ export function CompanyCard({ company, lists = [], onRefreshLists }: Props) {
             <SectionLabel>Contact Information</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
               {(company.email !== undefined) && (
-                <ContactRevealRow
+                <ContactUnlockRow
                   icon={<IcoEmail />}
                   label="Company Email"
                   value={company.email}
                   shown={emailShown}
-                  onReveal={() => setEmailShown(true)}
+                  onUnlock={() => setEmailShown(true)}
                 />
               )}
               {(company.phone !== undefined) && (
-                <ContactRevealRow
+                <ContactUnlockRow
                   icon={<IcoPhone />}
                   label="Company Phone"
                   value={company.phone}
                   shown={phoneShown}
-                  onReveal={() => setPhoneShown(true)}
+                  onUnlock={() => setPhoneShown(true)}
                 />
               )}
             </div>
