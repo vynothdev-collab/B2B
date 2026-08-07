@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { listsApi } from '../api/lists';
+import type { LeadsList } from '../types';
 
 interface Props {
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (list: LeadsList) => void;
+  listType?: 'people' | 'companies';
 }
 
 const ListIco = () => (
@@ -34,7 +36,7 @@ const SpinnerIco = () => (
   }} />
 );
 
-export function CreateListModal({ onClose, onCreated }: Props) {
+export function CreateListModal({ onClose, onCreated, listType = 'people' }: Props) {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -96,8 +98,8 @@ export function CreateListModal({ onClose, onCreated }: Props) {
     setLoading(true);
     setError('');
     try {
-      await listsApi.createList(name.trim());
-      onCreated();
+      const list = await listsApi.createList(name.trim(), listType);
+      onCreated(list);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { detail?: string } } };
       setError(axiosErr?.response?.data?.detail || 'Failed to create list. Please try again.');

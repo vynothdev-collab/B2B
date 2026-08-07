@@ -31,6 +31,20 @@ export const listsApi = {
       })
       .then((r) => r.data),
 
+  // Same as addItems, but also supports creating a new list inline via list_name.
+  addToList: (payload: {
+    list_id?: string;
+    list_name?: string;
+    list_type?: 'people' | 'companies';
+    items: { record_id: string; item_type: 'person' | 'company' }[];
+  }): Promise<{ added: number; list_id: string; list_name: string }> =>
+    client
+      .post('/lists/add-items', {
+        ...payload,
+        items: payload.items.map((i) => ({ ...i, data: {} })),
+      })
+      .then((r) => r.data),
+
   removeItem: (listId: string, itemId: string): Promise<void> =>
     client.delete(`/lists/${listId}/items/${itemId}`).then((r) => r.data),
 };

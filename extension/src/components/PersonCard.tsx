@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import type { PersonResult, LeadsList } from '../types';
-import { listsApi } from '../api/lists';
 import { searchApi } from '../api/search';
 import { UNLOCK_COSTS } from '../constants/unlockCosts';
+import { AddToListModal } from './AddToListModal';
 
 interface Props {
   person: PersonResult;
@@ -86,8 +86,7 @@ const IcoClock = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="non
 const IcoUsers = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" /></svg>;
 const IcoLinkedIn = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>;
 const IcoGlobe = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 3c2.485 0 4.5 4.03 4.5 9S14.485 21 12 21m0-18c-2.485 0-4.5 4.03-4.5 9s2.015 9 4.5 9M3 12h18" /></svg>;
-const IcoBookmark = ({ filled }: { filled: boolean }) => <svg width="13" height="13" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></svg>;
-const IcoChevron = ({ open }: { open: boolean }) => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}><polyline points="6 9 12 15 18 9" /></svg>;
+const IcoListPlus = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 12H3M16 6H3M11 18H3M18 9v6M21 12h-6" /></svg>;
 const IcoEmail = () => <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
 const IcoPhone = () => <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8}><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>;
 const IcoLock = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>;
@@ -224,70 +223,9 @@ function ContactCard({ icon, label, state, credits, onUnlock }: {
   );
 }
 
-/* ─── Save dropdown ──────────────────────────────────────────────────────── */
-function SaveDropdown({ personId, lists, onSaved }: { personId: string; lists: LeadsList[]; onSaved?: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [saved, setSaved] = useState<string | null>(null);
-  const [saving, setSaving] = useState<string | null>(null);
-
-  const save = async (list: LeadsList) => {
-    if (saving) return;
-    setSaving(list.id);
-    try {
-      await listsApi.addItems(list.id, [{ record_id: personId, item_type: 'person' }]);
-      setSaved(list.id);
-      onSaved?.();
-    } catch { /* ignore */ }
-    finally { setSaving(null); setOpen(false); }
-  };
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(v => !v)} style={{
-        display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
-        fontSize: 12, fontWeight: 600, border: '1.5px solid #E5E7EB',
-        background: saved ? '#F0FDF4' : '#fff', color: saved ? '#15803D' : '#374151',
-        cursor: 'pointer', transition: 'all 0.15s',
-      }}
-        onMouseEnter={e => { if (!saved) (e.currentTarget as HTMLButtonElement).style.borderColor = '#1A3D5C'; }}
-        onMouseLeave={e => { if (!saved) (e.currentTarget as HTMLButtonElement).style.borderColor = '#E5E7EB'; }}
-      >
-        <IcoBookmark filled={!!saved} />
-        {saved ? 'Saved' : 'Save'}
-        {!saved && <IcoChevron open={open} />}
-      </button>
-      {open && !saved && lists.length > 0 && (
-        <div style={{
-          position: 'absolute', bottom: 'calc(100% + 6px)', right: 0, zIndex: 50,
-          background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 180, overflow: 'hidden',
-        }}>
-          <p style={{ padding: '8px 12px 6px', fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0, borderBottom: '1px solid #F3F4F6' }}>
-            Save to list
-          </p>
-          {lists.map(list => (
-            <button key={list.id} onClick={() => save(list)} style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '8px 12px', background: 'none', border: 'none',
-              cursor: saving ? 'default' : 'pointer', fontSize: 12.5, color: '#111827',
-              textAlign: 'left', transition: 'background 0.1s',
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F9FAFB'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; }}
-            >
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{list.name}</span>
-              {saving === list.id && <span style={{ width: 10, height: 10, border: '1.5px solid #E5E7EB', borderTopColor: '#1A3D5C', borderRadius: '50%', flexShrink: 0, display: 'inline-block', animation: 'lb-spin 0.7s linear infinite' }} />}
-              {list.is_default && <span style={{ fontSize: 9, fontWeight: 700, color: '#1D4ED8', background: '#DBEAFE', padding: '1px 6px', borderRadius: 20, flexShrink: 0, marginLeft: 6 }}>Default</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ─── Main component ─────────────────────────────────────────────────────── */
-export function PersonCard({ person, lists = [], onRefreshLists, onRefreshUser }: Props) {
+export function PersonCard({ person, onRefreshLists, onRefreshUser }: Props) {
+  const [addListOpen, setAddListOpen] = useState(false);
   const [skillsExpanded, setSkillsExpanded] = useState(false);
   const [contact, setContact] = useState<ContactState>({
     workEmail: { status: 'hidden' },
@@ -337,7 +275,8 @@ export function PersonCard({ person, lists = [], onRefreshLists, onRefreshUser }
 
         {/* ── Hero ────────────────────────────────────────────────────────── */}
         <div style={{ padding: '18px 18px 14px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
             <PersonAvatar name={name} src={person.picture_url as string | null} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', margin: '0 0 2px', lineHeight: 1.25, letterSpacing: '-0.01em' }}>
@@ -361,6 +300,17 @@ export function PersonCard({ person, lists = [], onRefreshLists, onRefreshUser }
                 </div>
               )}
             </div>
+          </div>
+          <button onClick={() => setAddListOpen(true)} title="Add to list" aria-label="Add to list" style={{
+            flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', borderRadius: 8,
+            fontSize: 11.5, fontWeight: 700, color: '#DC2626', background: '#FEF2F2',
+            border: '1.5px solid #FECACA', cursor: 'pointer', transition: 'all 0.15s',
+          }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#DC2626'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#DC2626'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FEF2F2'; (e.currentTarget as HTMLButtonElement).style.color = '#DC2626'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#FECACA'; }}
+          >
+            <IcoListPlus /> Add
+          </button>
           </div>
 
           {/* Professional meta chips */}
@@ -504,14 +454,16 @@ export function PersonCard({ person, lists = [], onRefreshLists, onRefreshUser }
               <IcoGlobe /> Website
             </a>
           )}
-          {lists.length > 0 && (
-            <div style={{ marginLeft: 'auto' }}>
-              <SaveDropdown personId={person.id} lists={lists} onSaved={onRefreshLists} />
-            </div>
-          )}
         </div>
 
       </div>
+
+      <AddToListModal
+        open={addListOpen}
+        onClose={() => { setAddListOpen(false); onRefreshLists?.(); }}
+        items={[{ record_id: person.id, item_type: 'person' }]}
+        itemType="person"
+      />
     </div>
   );
 }

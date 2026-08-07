@@ -12,6 +12,7 @@ export { UnlockSection } from './UnlockSection';
 export { EmployeeCard } from './EmployeeCard';
 export { ListCard } from './ListCard';
 export { CreateListModal } from './CreateListModal';
+export { AddToListModal } from './AddToListModal';
 export { Spinner } from './ui/Spinner';
 export { Skeleton, SkeletonCard } from './ui/Skeleton';
 export { Button } from './ui/Button';
