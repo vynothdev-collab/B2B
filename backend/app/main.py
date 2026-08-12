@@ -6,6 +6,7 @@ from sqlalchemy import inspect, text
 
 import app.models  # noqa: F401
 from app.api.router import api_router
+from app.api.routes.public_api import public_api_router
 from app.core.config import settings
 from app.core.database import Base, engine
 
@@ -126,3 +127,4 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(public_api_router, prefix="/public/v1")

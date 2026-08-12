@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -49,3 +50,107 @@ def apply_company_unlock_state(item: dict, record_id: str, unlock_map: dict) -> 
         "email": ContactUnlockField.EMAIL in fields,
         "phone": ContactUnlockField.PHONE in fields,
     }
+
+
+async def get_existing_unlock(
+    db: AsyncSession,
+    user_id: str,
+    record_id: str,
+    field: str,
+    entity_type: str = ContactUnlockEntity.PERSON,
+) -> ContactUnlock | None:
+    result = await db.execute(
+        select(ContactUnlock).where(
+            ContactUnlock.user_id == user_id,
+            ContactUnlock.record_id == record_id,
+            ContactUnlock.entity_type == entity_type,
+            ContactUnlock.field == field,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+_COST_KEY_BY_FIELD = {
+    ContactUnlockField.WORK_EMAIL: "work_email",
+    ContactUnlockField.PERSONAL_EMAIL: "personal_email",
+    ContactUnlockField.MOBILE: "mobile",
+    ContactUnlockField.EMAIL: "company_email",
+    ContactUnlockField.PHONE: "company_phone",
+}
+
+_REASON_BY_FIELD = {
+    ContactUnlockField.WORK_EMAIL: "Work Email Unlock",
+    ContactUnlockField.PERSONAL_EMAIL: "Personal Email Unlock",
+    ContactUnlockField.MOBILE: "Mobile Number Unlock",
+    ContactUnlockField.EMAIL: "Company Email Unlock",
+    ContactUnlockField.PHONE: "Company Phone Unlock",
+}
+
+
+async def unlock_contact_field(
+    db: AsyncSession,
+    user,
+    record_id: str,
+    field: str,
+    entity_type: str = ContactUnlockEntity.PERSON,
+) -> dict:
+    """
+    Shared unlock logic used by both the internal (JWT) search API and the
+    public Developer API. Returns {value, already_unlocked, credits_charged}.
+    """
+    from app.models.search_record import CompanySearchRecord, PersonSearchRecord
+    from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
+
+    existing = await get_existing_unlock(db, user.id, record_id, field, entity_type)
+    if existing:
+        return {"value": existing.value, "already_unlocked": True, "credits_charged": 0}
+
+    cost_key = _COST_KEY_BY_FIELD[field]
+    cost = CREDIT_COSTS[cost_key]
+    await check_credits(user, db, cost)
+
+    if entity_type == ContactUnlockEntity.PERSON:
+        result = await db.execute(
+            select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
+        )
+    else:
+        result = await db.execute(
+            select(CompanySearchRecord).where(CompanySearchRecord.coresignal_id == record_id)
+        )
+    record = result.scalar_one_or_none()
+    if not record:
+        raise HTTPException(
+            status_code=404,
+            detail="Record not found. Run a new search to refresh.",
+        )
+
+    raw = record.raw_data or {}
+    if field == ContactUnlockField.WORK_EMAIL:
+        value = record.email
+    elif field == ContactUnlockField.PERSONAL_EMAIL:
+        value = raw.get("primary_personal_email") or raw.get("personal_email")
+    elif field == ContactUnlockField.MOBILE:
+        value = raw.get("mobile_phone")
+    elif field == ContactUnlockField.EMAIL:
+        value = raw.get("email")
+    else:
+        value = raw.get("phone")
+
+    reason = _REASON_BY_FIELD[field]
+    await deduct_credit(
+        user, db,
+        reason=reason,
+        description=f"{reason} — {cost} credit(s) deducted",
+        amount=cost,
+    )
+    db.add(
+        ContactUnlock(
+            user_id=user.id,
+            record_id=record_id,
+            entity_type=entity_type,
+            field=field,
+            value=value,
+        )
+    )
+    await db.flush()
+    return {"value": value, "already_unlocked": False, "credits_charged": cost}

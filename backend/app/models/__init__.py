@@ -7,6 +7,7 @@ from app.models.search_log import SearchLog
 from app.models.credit_transaction import CreditTransaction
 from app.models.plan import Plan, PlanType
 from app.models.user_plan import UserPlan, UserPlanStatus
+from app.models.api_key import ApiKey
 
 __all__ = [
     "User",
@@ -24,4 +25,5 @@ __all__ = [
     "PlanType",
     "UserPlan",
     "UserPlanStatus",
+    "ApiKey",
 ]

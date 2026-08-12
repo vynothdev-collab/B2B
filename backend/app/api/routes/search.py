@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.contact_unlock import ContactUnlock, ContactUnlockEntity, ContactUnlockField
+from app.models.contact_unlock import ContactUnlockEntity, ContactUnlockField
 from app.models.search_log import SearchLog
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
 from app.models.user import User, UserRole
@@ -29,6 +29,7 @@ from app.services.contact_unlock_service import (
     apply_company_unlock_state,
     apply_unlock_state,
     get_unlock_map,
+    unlock_contact_field,
 )
 from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
 
@@ -112,24 +113,6 @@ async def agentic_search(
     return result
 
 
-async def _get_existing_unlock(
-    db: AsyncSession,
-    user_id: str,
-    record_id: str,
-    field: str,
-    entity_type: str = ContactUnlockEntity.PERSON,
-) -> ContactUnlock | None:
-    result = await db.execute(
-        select(ContactUnlock).where(
-            ContactUnlock.user_id == user_id,
-            ContactUnlock.record_id == record_id,
-            ContactUnlock.entity_type == entity_type,
-            ContactUnlock.field == field,
-        )
-    )
-    return result.scalar_one_or_none()
-
-
 @router.get(
     "/persons/{record_id}/unlock/work-email",
     response_model=EmailUnlockResponse,
@@ -140,52 +123,15 @@ async def unlock_person_work_email(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> EmailUnlockResponse:
-    existing = await _get_existing_unlock(
-        db, current_user.id, record_id, ContactUnlockField.WORK_EMAIL
+    res = await unlock_contact_field(
+        db, current_user, record_id, ContactUnlockField.WORK_EMAIL
     )
-    if existing:
-        return EmailUnlockResponse(
-            record_id=record_id,
-            email=existing.value,
-            has_email=bool(existing.value),
-            already_unlocked=True,
-            credits_charged=0,
-        )
-
-    cost = CREDIT_COSTS["work_email"]
-    await check_credits(current_user, db, cost)
-
-    result = await db.execute(
-        select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
-    )
-    record = result.scalar_one_or_none()
-    if not record:
-        raise HTTPException(
-            status_code=404,
-            detail="Record not found. Run a new search to refresh.",
-        )
-
-    await deduct_credit(
-        current_user, db,
-        reason="Work Email Unlock",
-        description=f"Work email unlock — {cost} credit deducted",
-        amount=cost,
-    )
-    db.add(
-        ContactUnlock(
-            user_id=current_user.id,
-            record_id=record_id,
-            field=ContactUnlockField.WORK_EMAIL,
-            value=record.email,
-        )
-    )
-    await db.flush()
     return EmailUnlockResponse(
         record_id=record_id,
-        email=record.email,
-        has_email=bool(record.email),
-        already_unlocked=False,
-        credits_charged=cost,
+        email=res["value"],
+        has_email=bool(res["value"]),
+        already_unlocked=res["already_unlocked"],
+        credits_charged=res["credits_charged"],
     )
 
 
@@ -199,55 +145,15 @@ async def unlock_person_personal_email(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> EmailUnlockResponse:
-    existing = await _get_existing_unlock(
-        db, current_user.id, record_id, ContactUnlockField.PERSONAL_EMAIL
+    res = await unlock_contact_field(
+        db, current_user, record_id, ContactUnlockField.PERSONAL_EMAIL
     )
-    if existing:
-        return EmailUnlockResponse(
-            record_id=record_id,
-            email=existing.value,
-            has_email=bool(existing.value),
-            already_unlocked=True,
-            credits_charged=0,
-        )
-
-    cost = CREDIT_COSTS["personal_email"]
-    await check_credits(current_user, db, cost)
-
-    result = await db.execute(
-        select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
-    )
-    record = result.scalar_one_or_none()
-    if not record:
-        raise HTTPException(
-            status_code=404,
-            detail="Record not found. Run a new search to refresh.",
-        )
-
-    raw = record.raw_data or {}
-    personal_email = raw.get("primary_personal_email") or raw.get("personal_email")
-
-    await deduct_credit(
-        current_user, db,
-        reason="Personal Email Unlock",
-        description=f"Personal email unlock — {cost} credit deducted",
-        amount=cost,
-    )
-    db.add(
-        ContactUnlock(
-            user_id=current_user.id,
-            record_id=record_id,
-            field=ContactUnlockField.PERSONAL_EMAIL,
-            value=personal_email,
-        )
-    )
-    await db.flush()
     return EmailUnlockResponse(
         record_id=record_id,
-        email=personal_email,
-        has_email=bool(personal_email),
-        already_unlocked=False,
-        credits_charged=cost,
+        email=res["value"],
+        has_email=bool(res["value"]),
+        already_unlocked=res["already_unlocked"],
+        credits_charged=res["credits_charged"],
     )
 
 
@@ -261,55 +167,15 @@ async def unlock_person_phone(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PhoneUnlockResponse:
-    existing = await _get_existing_unlock(
-        db, current_user.id, record_id, ContactUnlockField.MOBILE
+    res = await unlock_contact_field(
+        db, current_user, record_id, ContactUnlockField.MOBILE
     )
-    if existing:
-        return PhoneUnlockResponse(
-            record_id=record_id,
-            phone=existing.value,
-            has_phone=bool(existing.value),
-            already_unlocked=True,
-            credits_charged=0,
-        )
-
-    cost = CREDIT_COSTS["mobile"]
-    await check_credits(current_user, db, cost)
-
-    result = await db.execute(
-        select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
-    )
-    record = result.scalar_one_or_none()
-    if not record:
-        raise HTTPException(
-            status_code=404,
-            detail="Record not found. Run a new search to refresh.",
-        )
-
-    raw = record.raw_data or {}
-    phone = raw.get("mobile_phone")
-
-    await deduct_credit(
-        current_user, db,
-        reason="Mobile Number Unlock",
-        description=f"Mobile number unlock — {cost} credits deducted",
-        amount=cost,
-    )
-    db.add(
-        ContactUnlock(
-            user_id=current_user.id,
-            record_id=record_id,
-            field=ContactUnlockField.MOBILE,
-            value=phone,
-        )
-    )
-    await db.flush()
     return PhoneUnlockResponse(
         record_id=record_id,
-        phone=phone,
-        has_phone=bool(phone),
-        already_unlocked=False,
-        credits_charged=cost,
+        phone=res["value"],
+        has_phone=bool(res["value"]),
+        already_unlocked=res["already_unlocked"],
+        credits_charged=res["credits_charged"],
     )
 
 
@@ -323,57 +189,16 @@ async def unlock_company_email(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> EmailUnlockResponse:
-    existing = await _get_existing_unlock(
-        db, current_user.id, record_id, ContactUnlockField.EMAIL,
+    res = await unlock_contact_field(
+        db, current_user, record_id, ContactUnlockField.EMAIL,
         entity_type=ContactUnlockEntity.COMPANY,
     )
-    if existing:
-        return EmailUnlockResponse(
-            record_id=record_id,
-            email=existing.value,
-            has_email=bool(existing.value),
-            already_unlocked=True,
-            credits_charged=0,
-        )
-
-    cost = CREDIT_COSTS["company_email"]
-    await check_credits(current_user, db, cost)
-
-    result = await db.execute(
-        select(CompanySearchRecord).where(CompanySearchRecord.coresignal_id == record_id)
-    )
-    record = result.scalar_one_or_none()
-    if not record:
-        raise HTTPException(
-            status_code=404,
-            detail="Record not found. Run a new search to refresh.",
-        )
-
-    raw = record.raw_data or {}
-    email = raw.get("email")
-
-    await deduct_credit(
-        current_user, db,
-        reason="Company Email Unlock",
-        description=f"Company email unlock — {cost} credit deducted",
-        amount=cost,
-    )
-    db.add(
-        ContactUnlock(
-            user_id=current_user.id,
-            record_id=record_id,
-            entity_type=ContactUnlockEntity.COMPANY,
-            field=ContactUnlockField.EMAIL,
-            value=email,
-        )
-    )
-    await db.flush()
     return EmailUnlockResponse(
         record_id=record_id,
-        email=email,
-        has_email=bool(email),
-        already_unlocked=False,
-        credits_charged=cost,
+        email=res["value"],
+        has_email=bool(res["value"]),
+        already_unlocked=res["already_unlocked"],
+        credits_charged=res["credits_charged"],
     )
 
 
@@ -387,57 +212,16 @@ async def unlock_company_phone(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> PhoneUnlockResponse:
-    existing = await _get_existing_unlock(
-        db, current_user.id, record_id, ContactUnlockField.PHONE,
+    res = await unlock_contact_field(
+        db, current_user, record_id, ContactUnlockField.PHONE,
         entity_type=ContactUnlockEntity.COMPANY,
     )
-    if existing:
-        return PhoneUnlockResponse(
-            record_id=record_id,
-            phone=existing.value,
-            has_phone=bool(existing.value),
-            already_unlocked=True,
-            credits_charged=0,
-        )
-
-    cost = CREDIT_COSTS["company_phone"]
-    await check_credits(current_user, db, cost)
-
-    result = await db.execute(
-        select(CompanySearchRecord).where(CompanySearchRecord.coresignal_id == record_id)
-    )
-    record = result.scalar_one_or_none()
-    if not record:
-        raise HTTPException(
-            status_code=404,
-            detail="Record not found. Run a new search to refresh.",
-        )
-
-    raw = record.raw_data or {}
-    phone = raw.get("phone")
-
-    await deduct_credit(
-        current_user, db,
-        reason="Company Phone Unlock",
-        description=f"Company phone unlock — {cost} credits deducted",
-        amount=cost,
-    )
-    db.add(
-        ContactUnlock(
-            user_id=current_user.id,
-            record_id=record_id,
-            entity_type=ContactUnlockEntity.COMPANY,
-            field=ContactUnlockField.PHONE,
-            value=phone,
-        )
-    )
-    await db.flush()
     return PhoneUnlockResponse(
         record_id=record_id,
-        phone=phone,
-        has_phone=bool(phone),
-        already_unlocked=False,
-        credits_charged=cost,
+        phone=res["value"],
+        has_phone=bool(res["value"]),
+        already_unlocked=res["already_unlocked"],
+        credits_charged=res["credits_charged"],
     )
 
 
