@@ -1,20 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CreditCard, Clock, Infinity, CheckCircle2, AlertCircle,
-  Loader2, ListOrdered, Zap,
+  Loader2, ListOrdered, Zap, CalendarDays, ChevronLeft, ChevronRight,
+  Receipt, Users, Building2, PlusCircle,
 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   getAvailablePlans,
   getMyPlans,
+  getMyBillingHistory,
   purchasePlan,
   type Plan,
   type MyPlansResponse,
   type UserPlanOut,
+  type BillingHistoryItem,
+  type BillingHistoryFilter,
 } from "@/lib/plansApi";
+
+// ── Theme ──────────────────────────────────────────────────────────────────────
+
+const RED = "#dc2626";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -23,50 +31,65 @@ function formatPrice(price_cents: number): string {
   return `$${Math.round(price_cents / 100)}`;
 }
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 function daysUntil(isoDate: string): number {
   return Math.max(0, Math.ceil((new Date(isoDate).getTime() - Date.now()) / 86400000));
 }
 
-const ACCENT_COLORS = ["#6366f1", "#e94560", "#0ea5e9", "#f59e0b"];
+// ── Current Plan Card ────────────────────────────────────────────────────────────
 
-// ── Active Validity Plan Card ──────────────────────────────────────────────────
-
-function ValidityPlanCard({ plan }: { plan: UserPlanOut }) {
-  const pct = plan.credits_total > 0
-    ? Math.round((plan.credits_remaining / plan.credits_total) * 100)
-    : 0;
+function CurrentPlanCard({ plan }: { plan: UserPlanOut }) {
+  const used = Math.max(0, plan.credits_total - plan.credits_remaining);
+  const pctUsed = plan.credits_total > 0 ? Math.round((used / plan.credits_total) * 100) : 0;
   const days = plan.expires_at ? daysUntil(plan.expires_at) : null;
-  const barColor = pct > 40 ? "#10b981" : pct > 15 ? "#f59e0b" : "#dc2626";
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Active Validity Plan</p>
-          <p className="mt-0.5 text-lg font-semibold text-gray-900">{plan.plan_name}</p>
+    <div className="rounded-2xl border border-red-100 bg-white p-5">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50">
+            <Zap className="h-5 w-5 text-red-600" />
+          </div>
+          <div>
+            <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-700">
+              Current Plan
+            </span>
+            <p className="mt-1 text-base font-bold text-gray-900">{plan.plan_name}</p>
+            <p className="text-xs text-gray-400">Validity Plan</p>
+          </div>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-          <CheckCircle2 className="h-3.5 w-3.5" /> Active
-        </span>
-      </div>
-      <div className="flex items-end justify-between">
-        <div>
-          <p className="text-3xl font-bold text-gray-900">{plan.credits_remaining.toLocaleString()}</p>
-          <p className="text-xs text-gray-400">of {plan.credits_total.toLocaleString()} credits remaining</p>
-        </div>
-        {days !== null && (
-          <div className="text-right">
-            <p className="text-2xl font-bold" style={{ color: days <= 3 ? "#dc2626" : days <= 7 ? "#f59e0b" : "#374151" }}>
-              {days}
+
+        {plan.starts_at && plan.expires_at && (
+          <div className="sm:border-l sm:border-gray-100 sm:pl-6">
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <CalendarDays className="h-3.5 w-3.5" /> Validity
+            </div>
+            <p className="mt-0.5 text-sm font-semibold text-gray-900">
+              {formatDate(plan.starts_at)} – {formatDate(plan.expires_at)}
             </p>
-            <p className="text-xs text-gray-400">days left</p>
+            {days !== null && (
+              <p className="text-xs font-medium text-red-600">{days} days remaining</p>
+            )}
           </div>
         )}
+
+        <div className="sm:min-w-[180px] sm:border-l sm:border-gray-100 sm:pl-6">
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <CreditCard className="h-3.5 w-3.5" /> Credits Used
+          </div>
+          <p className="mt-0.5 text-lg font-bold">
+            <span style={{ color: RED }}>{used.toLocaleString()}</span>
+            <span className="text-sm font-medium text-gray-400"> / {plan.credits_total.toLocaleString()}</span>
+          </p>
+          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+            <div className="h-full rounded-full transition-all" style={{ width: `${pctUsed}%`, background: RED }} />
+          </div>
+          <p className="mt-1 text-[11px] text-gray-400">{pctUsed}% used</p>
+        </div>
       </div>
-      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
-      </div>
-      <p className="text-xs text-gray-400">{pct}% remaining</p>
     </div>
   );
 }
@@ -81,7 +104,7 @@ function PaygPlanCard({ plan }: { plan: UserPlanOut }) {
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Pay As You Go</p>
           <p className="mt-0.5 font-semibold text-gray-900">{plan.plan_name}</p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
           <Infinity className="h-3.5 w-3.5" /> No expiry
         </span>
       </div>
@@ -116,14 +139,13 @@ function PricingCard({
   plan,
   onBuy,
   buying,
-  index,
+  isCurrent,
 }: {
   plan: Plan;
   onBuy: (plan: Plan) => void;
   buying: boolean;
-  index: number;
+  isCurrent: boolean;
 }) {
-  const accent = ACCENT_COLORS[index % ACCENT_COLORS.length];
   const isFree = plan.price_cents === 0;
 
   const creditsLine =
@@ -132,51 +154,129 @@ function PricingCard({
       : `${plan.credits.toLocaleString()} credits${plan.validity_days ? ` · ${plan.validity_days} days` : ""}`;
 
   return (
-    <div className="relative flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden transition-shadow hover:shadow-md">
-      {/* Icon + name */}
-      <div className="px-6 pt-6 pb-4">
-        <div
-          className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
-          style={{ background: `${accent}1a` }}
-        >
-          {plan.plan_type === "payg"
-            ? <Zap className="h-6 w-6" style={{ color: accent }} />
-            : <Clock className="h-6 w-6" style={{ color: accent }} />}
-        </div>
-        <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
-        {plan.description && (
-          <p className="mt-1 text-sm leading-snug text-gray-400">{plan.description}</p>
-        )}
-      </div>
+    <div
+      className={`relative flex w-64 shrink-0 snap-start flex-col rounded-2xl border p-5 pt-6 transition-shadow ${
+        isCurrent ? "border-red-300 bg-red-50/40 shadow-sm" : "border-gray-200 bg-white hover:shadow-md"
+      }`}
+    >
+      {isCurrent && (
+        <span className="absolute top-3 right-3 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
+          Current
+        </span>
+      )}
 
-      {/* Price block */}
-      <div className="border-b border-gray-100 px-6 pb-5">
-        <div className="flex items-end gap-1.5">
-          <span className="text-4xl font-bold text-gray-900">{formatPrice(plan.price_cents)}</span>
-          {!isFree && (
-            <span className="mb-1.5 text-sm text-gray-400">one-time</span>
-          )}
-        </div>
-        <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-          {creditsLine}
-        </p>
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100">
+        {plan.plan_type === "payg"
+          ? <Zap className="h-6 w-6 text-red-600" />
+          : <Clock className="h-6 w-6 text-red-600" />}
       </div>
+      <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+      {plan.description && (
+        <p className="mt-1 text-xs leading-snug text-gray-400">{plan.description}</p>
+      )}
 
-      {/* CTA */}
-      <div className="mt-auto px-6 py-5">
-        <button
-          type="button"
-          onClick={() => onBuy(plan)}
-          disabled={buying}
-          className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
-          style={{ background: isFree ? "#111827" : accent }}
-          onMouseEnter={(e) => { if (!buying) (e.currentTarget as HTMLButtonElement).style.opacity = "0.88"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-        >
-          {buying && <Loader2 className="h-4 w-4 animate-spin" />}
-          {isFree ? "Get started free" : "Get started"}
-        </button>
+      <div className="mt-3 flex items-end gap-1.5">
+        <span className="text-3xl font-extrabold text-gray-900">{formatPrice(plan.price_cents)}</span>
+        {!isFree && <span className="mb-1 text-xs text-gray-400">one-time</span>}
       </div>
+      <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+        {creditsLine}
+      </p>
+
+      <button
+        type="button"
+        onClick={() => onBuy(plan)}
+        disabled={buying}
+        className={`mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
+          isCurrent
+            ? "bg-red-600 text-white hover:bg-red-700"
+            : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+        }`}
+      >
+        {buying && <Loader2 className="h-4 w-4 animate-spin" />}
+        {isCurrent && <CheckCircle2 className="h-4 w-4" />}
+        {isCurrent ? "Renew / Queue Plan" : isFree ? "Get started free" : "Select Plan"}
+      </button>
+    </div>
+  );
+}
+
+// ── Plan Carousel ──────────────────────────────────────────────────────────────
+
+function PlanCarousel({ children }: { children: React.ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (dir: number) => {
+    scrollRef.current?.scrollBy({ left: dir * 288, behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => scroll(-1)}
+        aria-label="Scroll left"
+        className="absolute left-0 top-1/2 z-10 hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md hover:bg-gray-50 sm:flex"
+      >
+        <ChevronLeft className="h-4 w-4 text-gray-600" />
+      </button>
+      <div
+        ref={scrollRef}
+        className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth px-1 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {children}
+      </div>
+      <button
+        type="button"
+        onClick={() => scroll(1)}
+        aria-label="Scroll right"
+        className="absolute right-0 top-1/2 z-10 hidden h-9 w-9 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md hover:bg-gray-50 sm:flex"
+      >
+        <ChevronRight className="h-4 w-4 text-gray-600" />
+      </button>
+    </div>
+  );
+}
+
+// ── Skeletons ──────────────────────────────────────────────────────────────────
+
+function CurrentPlanCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-2xl border border-gray-100 bg-white p-5">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 shrink-0 rounded-xl bg-gray-200" />
+          <div className="space-y-2">
+            <div className="h-4 w-20 rounded-full bg-gray-200" />
+            <div className="h-4 w-32 rounded bg-gray-200" />
+            <div className="h-3 w-16 rounded bg-gray-100" />
+          </div>
+        </div>
+        <div className="sm:border-l sm:border-gray-100 sm:pl-6 space-y-2">
+          <div className="h-3 w-14 rounded bg-gray-100" />
+          <div className="h-4 w-36 rounded bg-gray-200" />
+          <div className="h-3 w-24 rounded bg-gray-100" />
+        </div>
+        <div className="sm:min-w-[180px] sm:border-l sm:border-gray-100 sm:pl-6 space-y-2">
+          <div className="h-3 w-20 rounded bg-gray-100" />
+          <div className="h-5 w-24 rounded bg-gray-200" />
+          <div className="h-1.5 w-full rounded-full bg-gray-100" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PricingCardSkeleton() {
+  return (
+    <div className="flex w-64 shrink-0 snap-start flex-col rounded-2xl border border-gray-200 bg-white p-5 pt-6 animate-pulse">
+      <div className="mb-4 h-12 w-12 rounded-2xl bg-gray-200" />
+      <div className="h-4 w-28 rounded bg-gray-200" />
+      <div className="mt-2 h-3 w-full rounded bg-gray-100" />
+      <div className="mt-1 h-3 w-3/4 rounded bg-gray-100" />
+      <div className="mt-4 h-7 w-16 rounded bg-gray-200" />
+      <div className="mt-2 h-3 w-24 rounded bg-gray-100" />
+      <div className="mt-6 h-10 w-full rounded-xl bg-gray-200" />
     </div>
   );
 }
@@ -202,12 +302,89 @@ function PlanTypeToggle({
               ? "text-white shadow-sm"
               : "text-gray-400 hover:text-gray-700"
           }`}
-          style={value === t ? { background: "#e94560" } : {}}
+          style={value === t ? { background: RED } : {}}
         >
           {t === "validity" ? "Validity Plans" : "Pay As You Go"}
         </button>
       ))}
     </div>
+  );
+}
+
+// ── Billing & Credit History ────────────────────────────────────────────────────
+
+type HistoryKind = BillingHistoryItem["kind"];
+
+function fmtDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    year: "numeric", month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+
+function HistoryKindBadge({ kind }: { kind: HistoryKind }) {
+  const map: Record<HistoryKind, { icon: React.ReactNode; classes: string; label: string }> = {
+    purchase: {
+      icon: <PlusCircle className="h-3 w-3" />,
+      classes: "border-red-100 bg-red-50 text-red-700",
+      label: "Plan Purchase",
+    },
+    person: {
+      icon: <Users className="h-3 w-3" />,
+      classes: "border-emerald-100 bg-emerald-50 text-emerald-700",
+      label: "People Search",
+    },
+    company: {
+      icon: <Building2 className="h-3 w-3" />,
+      classes: "border-amber-100 bg-amber-50 text-amber-700",
+      label: "Company Search",
+    },
+    agentic: {
+      icon: <Zap className="h-3 w-3" />,
+      classes: "border-violet-100 bg-violet-50 text-violet-700",
+      label: "Agentic Search",
+    },
+  };
+  const m = map[kind];
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${m.classes}`}>
+      {m.icon} {m.label}
+    </span>
+  );
+}
+
+function HistoryTableSkeleton() {
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50 text-xs font-medium text-gray-500">
+              <th className="px-4 py-2.5 text-left">Date &amp; Time</th>
+              <th className="px-4 py-2.5 text-left">Event</th>
+              <th className="px-4 py-2.5 text-left">Details</th>
+              <th className="px-4 py-2.5 text-right">Credits</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <tr key={i} className="border-b border-gray-100">
+                <td className="px-4 py-3"><div className="h-3.5 w-28 animate-pulse rounded bg-gray-100" /></td>
+                <td className="px-4 py-3"><div className="h-5 w-28 animate-pulse rounded-full bg-gray-100" /></td>
+                <td className="px-4 py-3"><div className="h-3.5 w-36 animate-pulse rounded bg-gray-100" /></td>
+                <td className="px-4 py-3 text-right"><div className="ml-auto h-3.5 w-12 animate-pulse rounded bg-gray-100" /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3">
+        <div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
+        <div className="h-6 w-40 animate-pulse rounded bg-gray-100" />
+      </div>
+    </>
   );
 }
 
@@ -222,6 +399,17 @@ export default function PlansClient() {
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [confirmPlan, setConfirmPlan] = useState<Plan | null>(null);
   const [toast, setToast] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
+
+  const [billingItems, setBillingItems] = useState<BillingHistoryItem[]>([]);
+  const [billingTotal, setBillingTotal] = useState(0);
+  // historyInitialLoading: true only until the first billing-history fetch ever completes — drives the skeleton.
+  // historyFetching: true for every fetch (incl. filter/page changes) — drives a subtle stale-content dim.
+  const [historyInitialLoading, setHistoryInitialLoading] = useState(true);
+  const [historyFetching, setHistoryFetching] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState<BillingHistoryFilter>("all");
+  const [historyPage, setHistoryPage] = useState(1);
+  const HISTORY_PAGE_SIZE = 10;
+  const historyAbortRef = useRef<AbortController | null>(null);
 
   const showToast = (type: "ok" | "err", msg: string) => {
     setToast({ type, msg });
@@ -241,7 +429,30 @@ export default function PlansClient() {
     }
   }, []);
 
+  const loadHistory = useCallback(async (filter: BillingHistoryFilter, page: number) => {
+    historyAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    historyAbortRef.current = ctrl;
+    setHistoryFetching(true);
+    try {
+      const res = await getMyBillingHistory(filter, page, HISTORY_PAGE_SIZE, ctrl.signal);
+      setBillingItems(res.items);
+      setBillingTotal(res.total);
+      setHistoryFetching(false);
+      setHistoryInitialLoading(false);
+    } catch {
+      // an aborted (superseded) request must not clear the fetching flag — the request
+      // that replaced it owns that responsibility. A genuine failure should stop the spinner.
+      if (!ctrl.signal.aborted) {
+        setHistoryFetching(false);
+        setHistoryInitialLoading(false);
+      }
+    }
+  }, []);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { void loadHistory(historyFilter, historyPage); }, [loadHistory, historyFilter, historyPage]);
+  useEffect(() => { setHistoryPage(1); }, [historyFilter]);
 
   const handleBuy = async (plan: Plan) => {
     setBuyingId(plan.id);
@@ -249,7 +460,7 @@ export default function PlansClient() {
     try {
       await purchasePlan(plan.id);
       showToast("ok", `Plan "${plan.name}" purchased successfully!`);
-      await load();
+      await Promise.all([load(), loadHistory(historyFilter, historyPage)]);
     } catch (err: unknown) {
       const detail =
         err && typeof err === "object" && "response" in err
@@ -281,6 +492,11 @@ export default function PlansClient() {
 
   const validityPlans = availablePlans.filter((p) => p.plan_type === "validity");
   const paygPlans = availablePlans.filter((p) => p.plan_type === "payg");
+
+  // Filtering and pagination for billing history are handled server-side.
+  const historyPageCount = Math.max(1, Math.ceil(billingTotal / HISTORY_PAGE_SIZE));
+  const safeHistoryPage = Math.min(historyPage, historyPageCount);
+  const pagedHistory = billingItems;
 
   return (
     <div className="flex flex-col h-full">
@@ -333,33 +549,11 @@ export default function PlansClient() {
 
       <div className="flex-1 overflow-y-auto p-6 space-y-10">
 
-        {/* Credit summary banner */}
-        {myPlans && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { label: "Validity Credits", value: myPlans.summary.validity_credits_remaining, color: "#f59e0b" },
-              { label: "PAYG Credits", value: myPlans.summary.payg_credits_remaining, color: "#3b82f6" },
-              { label: "Admin Credits", value: myPlans.summary.legacy_credits_remaining, color: "#6b7280" },
-              { label: "Total Remaining", value: myPlans.summary.total_remaining, color: "#10b981" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-                <p className="mt-0.5 text-2xl font-bold" style={{ color }}>{value.toLocaleString()}</p>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* My Plans */}
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <CreditCard className="h-4 w-4 text-gray-400" />
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-700">My Active Plans</h2>
-          </div>
-
           {loading && (
-            <div className="flex items-center gap-2 py-6 text-sm text-gray-400">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading your plans…
+            <div className="space-y-3">
+              <CurrentPlanCardSkeleton />
             </div>
           )}
 
@@ -372,7 +566,7 @@ export default function PlansClient() {
 
           {!loading && myPlans?.active_validity && (
             <div className="mb-3">
-              <ValidityPlanCard plan={myPlans.active_validity} />
+              <CurrentPlanCard plan={myPlans.active_validity} />
             </div>
           )}
 
@@ -402,13 +596,15 @@ export default function PlansClient() {
 
         {/* Available Plans */}
         <section>
-          <div className="mb-8 flex justify-center">
+          <div className="mt-6 flex justify-center">
             <PlanTypeToggle value={planType} onChange={setPlanType} />
           </div>
 
           {loading && (
-            <div className="flex items-center gap-2 py-6 text-sm text-gray-400">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading plans…
+            <div className="flex snap-x gap-5 overflow-x-auto px-1 py-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <PricingCardSkeleton key={i} />
+              ))}
             </div>
           )}
 
@@ -422,19 +618,129 @@ export default function PlansClient() {
               return <p className="py-4 text-sm text-gray-400">No plans available in this category.</p>;
             }
             return (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {shown.map((plan, i) => (
-                  <PricingCard
-                    key={plan.id}
-                    plan={plan}
-                    onBuy={(p: Plan) => setConfirmPlan(p)}
-                    buying={buyingId === plan.id}
-                    index={i}
-                  />
-                ))}
-              </div>
+              <PlanCarousel>
+                {shown.map((plan) => {
+                  const isCurrent =
+                    plan.plan_type === "validity"
+                      ? myPlans?.active_validity?.plan_id === plan.id
+                      : !!myPlans?.active_payg.some((p) => p.plan_id === plan.id);
+                  return (
+                    <PricingCard
+                      key={plan.id}
+                      plan={plan}
+                      onBuy={(p: Plan) => setConfirmPlan(p)}
+                      buying={buyingId === plan.id}
+                      isCurrent={isCurrent}
+                    />
+                  );
+                })}
+              </PlanCarousel>
             );
           })()}
+        </section>
+
+        {/* Billing & Credit History */}
+        <section>
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Billing & Credit History</h3>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    Every plan purchase (credits added) and every search (credits deducted), with date &amp; time.
+                  </p>
+                </div>
+                {historyFetching && !historyInitialLoading && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-300" />
+                )}
+              </div>
+              <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
+                {([
+                  { key: "all", label: "All" },
+                  { key: "purchase", label: "Purchases" },
+                  { key: "usage", label: "Usage" },
+                ] as const).map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setHistoryFilter(f.key)}
+                    disabled={historyFetching}
+                    className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed"
+                    style={
+                      historyFilter === f.key
+                        ? { background: "#fff", color: "#111827", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }
+                        : { background: "transparent", color: "#9ca3af" }
+                    }
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {historyInitialLoading ? (
+              <HistoryTableSkeleton />
+            ) : billingTotal === 0 && !historyFetching ? (
+              <p className="px-6 py-10 text-center text-sm text-gray-400">
+                {historyFilter === "all"
+                  ? "No billing or usage history yet. Purchase a plan or run a search to see it here."
+                  : "No history matches this filter."}
+              </p>
+            ) : (
+              <div className={`transition-opacity ${historyFetching ? "pointer-events-none opacity-40" : "opacity-100"}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50 text-xs font-medium text-gray-500">
+                        <th className="px-4 py-2.5 text-left">Date &amp; Time</th>
+                        <th className="px-4 py-2.5 text-left">Event</th>
+                        <th className="px-4 py-2.5 text-left">Details</th>
+                        <th className="px-4 py-2.5 text-right">Credits</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedHistory.map((h) => (
+                        <tr key={h.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 text-gray-600">{fmtDateTime(h.date)}</td>
+                          <td className="px-4 py-3"><HistoryKindBadge kind={h.kind} /></td>
+                          <td className="px-4 py-3 text-gray-600">{h.detail}</td>
+                          <td className="px-4 py-3 text-right font-semibold" style={{ color: h.credits > 0 ? "#10b981" : "#dc2626" }}>
+                            {h.credits > 0 ? `+${h.credits.toLocaleString()}` : h.credits.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3">
+                  <p className="text-xs text-gray-400">
+                    Showing {(safeHistoryPage - 1) * HISTORY_PAGE_SIZE + 1}-
+                    {Math.min(safeHistoryPage * HISTORY_PAGE_SIZE, billingTotal)} of {billingTotal}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                      disabled={safeHistoryPage <= 1 || historyFetching}
+                      className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                    </button>
+                    <span className="text-xs text-gray-400">Page {safeHistoryPage} / {historyPageCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setHistoryPage((p) => Math.min(historyPageCount, p + 1))}
+                      disabled={safeHistoryPage >= historyPageCount || historyFetching}
+                      className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Next <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </section>
 
       </div>

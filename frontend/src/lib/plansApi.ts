@@ -54,3 +54,40 @@ export async function purchasePlan(planId: string): Promise<UserPlanOut> {
   const { data } = await api.post<UserPlanOut>(`/plans/purchase/${planId}`);
   return data;
 }
+
+export async function getMyPlanHistory(signal?: AbortSignal): Promise<UserPlanOut[]> {
+  const { data } = await api.get<UserPlanOut[]>("/plans/my/history", { signal });
+  return data;
+}
+
+export type BillingHistoryKind = "purchase" | "person" | "company" | "agentic";
+export type BillingHistoryFilter = "all" | "purchase" | "usage";
+
+export interface BillingHistoryItem {
+  id: string;
+  date: string;
+  kind: BillingHistoryKind;
+  label: string;
+  detail: string;
+  credits: number;
+}
+
+export interface BillingHistoryResponse {
+  items: BillingHistoryItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export async function getMyBillingHistory(
+  filter: BillingHistoryFilter = "all",
+  page = 1,
+  pageSize = 10,
+  signal?: AbortSignal,
+): Promise<BillingHistoryResponse> {
+  const { data } = await api.get<BillingHistoryResponse>("/plans/my/billing-history", {
+    params: { filter, page, page_size: pageSize },
+    signal,
+  });
+  return data;
+}

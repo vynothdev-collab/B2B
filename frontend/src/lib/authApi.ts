@@ -76,14 +76,27 @@ export interface UsageHistoryResponse {
   daily_usage:  DailyUsage[];
   recent:       RecentSearch[];
   total_logs:   number;
+  recent_total: number;
+  page:         number;
+  page_size:    number;
 }
+
+export type SearchTypeFilter = "person" | "company" | "agentic";
 
 export async function apiGetUsageHistory(
   days = 30,
   signal?: AbortSignal,
+  searchType?: SearchTypeFilter,
+  page = 1,
+  pageSize = 10,
 ): Promise<UsageHistoryResponse> {
   const res = await apiClient.get<UsageHistoryResponse>("/users/me/usage-history", {
-    params: { days },
+    params: {
+      days,
+      search_type: searchType,
+      page,
+      page_size: pageSize,
+    },
     signal,
   });
   return res.data;

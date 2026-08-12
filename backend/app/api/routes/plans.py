@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy import String, cast, func, literal, select, union_all
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.plan import Plan
+from app.models.search_log import SearchLog
 from app.models.user import User, UserRole
 from app.models.user_plan import UserPlan, UserPlanStatus
 from app.schemas.plan import MyPlansResponse, PlanOut, UserPlanOut, CreditSummary
@@ -132,6 +134,129 @@ async def get_my_plans(
             total_remaining=validity_rem + payg_rem + legacy_rem,
         ),
     )
+
+
+@router.get("/my/history", response_model=list[UserPlanOut])
+async def get_my_plan_history(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[UserPlanOut]:
+    await _sweep_expired(current_user.id, db)
+
+    rows = (
+        await db.execute(
+            select(UserPlan, Plan.name)
+            .join(Plan, Plan.id == UserPlan.plan_id)
+            .where(UserPlan.user_id == current_user.id)
+            .order_by(UserPlan.purchased_at.desc())
+        )
+    ).all()
+
+    return [_user_plan_out(up, plan_name) for up, plan_name in rows]
+
+
+class BillingHistoryItem(BaseModel):
+    id: str
+    date: datetime
+    kind: str
+    label: str
+    detail: str
+    credits: int
+
+
+class BillingHistoryResponse(BaseModel):
+    items: list[BillingHistoryItem]
+    total: int
+    page: int
+    page_size: int
+
+
+_SEARCH_LABELS = {
+    "person": "People Search",
+    "company": "Company Search",
+    "agentic": "Agentic Search",
+}
+
+
+@router.get("/my/billing-history", response_model=BillingHistoryResponse)
+async def get_my_billing_history(
+    filter: str = Query(default="all"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> BillingHistoryResponse:
+    if filter not in ("all", "purchase", "usage"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid filter")
+
+    purchase_q = (
+        select(
+            UserPlan.id.label("id"),
+            UserPlan.purchased_at.label("date"),
+            literal("purchase").label("kind"),
+            Plan.name.label("plan_name"),
+            UserPlan.plan_type.label("plan_type"),
+            UserPlan.credits_total.label("credits"),
+        )
+        .join(Plan, Plan.id == UserPlan.plan_id)
+        .where(UserPlan.user_id == current_user.id)
+    )
+    usage_q = select(
+        SearchLog.id.label("id"),
+        SearchLog.created_at.label("date"),
+        SearchLog.search_type.label("kind"),
+        cast(literal(None), String).label("plan_name"),
+        cast(literal(None), String).label("plan_type"),
+        literal(-1).label("credits"),
+    ).where(SearchLog.user_id == current_user.id)
+
+    combined = union_all(purchase_q, usage_q).subquery("combined")
+
+    query = select(combined)
+    if filter == "purchase":
+        query = query.where(combined.c.kind == "purchase")
+    elif filter == "usage":
+        query = query.where(combined.c.kind != "purchase")
+
+    total = (
+        await db.execute(select(func.count()).select_from(query.subquery()))
+    ).scalar_one()
+
+    rows = (
+        await db.execute(
+            query.order_by(combined.c.date.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        )
+    ).all()
+
+    items: list[BillingHistoryItem] = []
+    for r in rows:
+        if r.kind == "purchase":
+            plan_kind = "Pay As You Go" if r.plan_type == "payg" else "Validity"
+            items.append(
+                BillingHistoryItem(
+                    id=f"plan-{r.id}",
+                    date=r.date,
+                    kind="purchase",
+                    label="Plan Purchase",
+                    detail=f"{r.plan_name} ({plan_kind})",
+                    credits=r.credits,
+                )
+            )
+        else:
+            items.append(
+                BillingHistoryItem(
+                    id=f"search-{r.id}",
+                    date=r.date,
+                    kind=r.kind,
+                    label=_SEARCH_LABELS.get(r.kind, "Search"),
+                    detail="Search credit used",
+                    credits=r.credits,
+                )
+            )
+
+    return BillingHistoryResponse(items=items, total=total, page=page, page_size=page_size)
 
 
 @router.post("/purchase/{plan_id}", response_model=UserPlanOut)

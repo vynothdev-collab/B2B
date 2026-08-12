@@ -109,15 +109,26 @@ class UsageHistoryResponse(BaseModel):
     daily_usage:  list[DailyUsage]
     recent:       list[RecentSearch]
     total_logs:   int
+    recent_total: int
+    page:         int
+    page_size:    int
+
+
+VALID_SEARCH_TYPES = {"person", "company", "agentic"}
 
 
 @router.get("/me/usage-history", response_model=UsageHistoryResponse)
 async def get_usage_history(
     days: int = Query(default=30, ge=7, le=90),
-    recent_limit: int = Query(default=20, ge=1, le=100),
+    search_type: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> UsageHistoryResponse:
+    if search_type is not None and search_type not in VALID_SEARCH_TYPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid search_type filter")
+
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
     # Daily aggregates — one DB round-trip with GROUP BY date + type
@@ -151,17 +162,26 @@ async def get_usage_history(
         for d, v in day_map.items()
     ]
 
-    # Recent searches (lightweight — id + type + ts only)
+    # Recent searches (lightweight — id + type + ts only), filtered + paginated in the DB
+    recent_filter = [SearchLog.user_id == current_user.id]
+    if search_type is not None:
+        recent_filter.append(SearchLog.search_type == search_type)
+
+    recent_total = (
+        await db.execute(select(func.count()).where(*recent_filter))
+    ).scalar_one()
+
     recent_rows = (
         await db.execute(
             select(SearchLog)
-            .where(SearchLog.user_id == current_user.id)
+            .where(*recent_filter)
             .order_by(SearchLog.created_at.desc())
-            .limit(recent_limit)
+            .limit(page_size)
+            .offset((page - 1) * page_size)
         )
     ).scalars().all()
 
-    # Total log count (lightweight scalar)
+    # Total log count across all types (lightweight scalar, used for the header summary)
     total_logs = (
         await db.execute(
             select(func.count()).where(SearchLog.user_id == current_user.id)
@@ -172,4 +192,7 @@ async def get_usage_history(
         daily_usage=daily_usage,
         recent=[RecentSearch(id=r.id, search_type=r.search_type, created_at=r.created_at) for r in recent_rows],
         total_logs=total_logs,
+        recent_total=recent_total,
+        page=page,
+        page_size=page_size,
     )

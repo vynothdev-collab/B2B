@@ -2,11 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CreditCard, TrendingUp, Wallet, Loader2, Briefcase, ArrowRight, Users, Building2, Zap } from "lucide-react";
+import {
+  Wallet, Briefcase, ArrowRight, Users, Building2, Zap,
+  ChevronLeft, ChevronRight, Loader2,
+} from "lucide-react";
 import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiGetMe, apiGetUsageHistory, type DailyUsage, type RecentSearch, type UserInfo } from "@/lib/authApi";
+import {
+  apiGetMe, apiGetUsageHistory,
+  type DailyUsage, type RecentSearch, type SearchTypeFilter, type UserInfo,
+} from "@/lib/authApi";
 
 // ── Credit colour helper ──────────────────────────────────────────────────────
 
@@ -19,49 +25,78 @@ function creditColor(remaining: number, allocated: number): string {
 // ── Tiny SVG bar chart ────────────────────────────────────────────────────────
 
 function BarChart({ data }: { data: DailyUsage[] }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const maxCount = Math.max(...data.map((d) => d.total), 1);
+  // Round the axis ceiling up to a "nice" number so gridline labels aren't fractional
+  const niceMax = Math.max(4, Math.ceil(maxCount / 4) * 4);
   const W = 600;
-  const H = 120;
-  const barW = Math.max(4, Math.floor((W - data.length * 2) / data.length));
-  const gap = Math.floor((W - data.length * barW) / (data.length + 1));
+  const H = 140;
+  const padLeft = 26;
+  const chartW = W - padLeft;
+  const barW = Math.max(4, Math.floor((chartW - data.length * 2) / data.length));
+  const gap = Math.floor((chartW - data.length * barW) / (data.length + 1));
 
   // Show only the last 14 label dates to avoid clutter
   const labelStep = data.length > 14 ? Math.ceil(data.length / 7) : 2;
 
+  const gridFractions = [0, 0.25, 0.5, 0.75, 1];
+
   return (
     <svg
       viewBox={`0 0 ${W} ${H + 24}`}
-      className="w-full"
+      className="w-full overflow-visible"
       aria-label="Daily credit usage bar chart"
     >
+      {/* gridlines + y-axis scale, so empty regions read as "grid" not "broken" */}
+      {gridFractions.map((f) => {
+        const y = H - f * H;
+        return (
+          <g key={f}>
+            <line x1={padLeft} x2={W} y1={y} y2={y} stroke="#f1f5f9" strokeWidth="1" />
+            <text x={padLeft - 6} y={y + 3} textAnchor="end" fontSize="9" fill="#cbd5e1">
+              {Math.round(niceMax * f)}
+            </text>
+          </g>
+        );
+      })}
+
       {data.map((d, i) => {
-        const barH = Math.max(2, Math.round((d.total / maxCount) * H));
-        const x = gap + i * (barW + gap);
+        const barH = Math.max(2, Math.round((d.total / niceMax) * H));
+        const x = padLeft + gap + i * (barW + gap);
         const y = H - barH;
         const showLabel = i % labelStep === 0;
         const label = d.date.slice(5); // MM-DD
 
-        const personH = Math.round((d.person / maxCount) * H);
-        const companyH = Math.round((d.company / maxCount) * H);
+        const personH = Math.round((d.person / niceMax) * H);
+        const companyH = Math.round((d.company / niceMax) * H);
         const agenticH = Math.max(0, barH - personH - companyH);
 
         return (
-          <g key={d.date}>
+          <g
+            key={d.date}
+            onMouseEnter={() => setHoverIdx(i)}
+            onMouseLeave={() => setHoverIdx((cur) => (cur === i ? null : cur))}
+          >
+            {/* wide hit area so hover works even on thin/empty bars */}
+            <rect x={x - gap / 2} y={0} width={barW + gap} height={H} fill="transparent" />
+            {hoverIdx === i && (
+              <rect x={x - gap / 2} y={0} width={barW + gap} height={H} fill="#111827" opacity="0.04" />
+            )}
             {/* agentic (top) */}
             {agenticH > 0 && (
-              <rect x={x} y={y} width={barW} height={agenticH} fill="#8b5cf6" rx="1" />
+              <rect x={x} y={y} width={barW} height={agenticH} fill="#8b5cf6" rx="1.5" />
             )}
             {/* company (middle) */}
             {companyH > 0 && (
-              <rect x={x} y={y + agenticH} width={barW} height={companyH} fill="#f59e0b" rx="1" />
+              <rect x={x} y={y + agenticH} width={barW} height={companyH} fill="#f59e0b" rx="1.5" />
             )}
             {/* person (bottom) */}
             {personH > 0 && (
-              <rect x={x} y={y + agenticH + companyH} width={barW} height={personH} fill="#10b981" rx="1" />
+              <rect x={x} y={y + agenticH + companyH} width={barW} height={personH} fill="#10b981" rx="1.5" />
             )}
             {/* empty bar placeholder */}
             {d.total === 0 && (
-              <rect x={x} y={H - 2} width={barW} height={2} fill="#e5e7eb" rx="1" />
+              <rect x={x} y={H - 1.5} width={barW} height={1.5} fill="#e5e7eb" rx="1" />
             )}
             {showLabel && (
               <text
@@ -74,6 +109,9 @@ function BarChart({ data }: { data: DailyUsage[] }) {
                 {label}
               </text>
             )}
+            <title>
+              {`${d.date} — ${d.total} search${d.total === 1 ? "" : "es"} (People ${d.person}, Company ${d.company}, Agentic ${d.agentic})`}
+            </title>
           </g>
         );
       })}
@@ -86,20 +124,87 @@ function BarChart({ data }: { data: DailyUsage[] }) {
 function TypeBadge({ type }: { type: string }) {
   if (type === "person")
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-        <Users className="h-2.5 w-2.5" /> People
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+        <Users className="h-3 w-3" /> People
       </span>
     );
   if (type === "company")
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-        <Building2 className="h-2.5 w-2.5" /> Company
+      <span className="inline-flex items-center gap-1 rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+        <Building2 className="h-3 w-3" /> Company
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-700">
-      <Zap className="h-2.5 w-2.5" /> Agentic
+    <span className="inline-flex items-center gap-1 rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
+      <Zap className="h-3 w-3" /> Agentic
     </span>
+  );
+}
+
+// ── Skeletons ──────────────────────────────────────────────────────────────────
+
+function CreditBalanceSkeleton() {
+  return (
+    <div className="animate-pulse overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="border-b border-gray-100 px-6 py-4 space-y-2">
+        <div className="h-4 w-32 rounded bg-gray-200" />
+        <div className="h-3 w-56 rounded bg-gray-100" />
+      </div>
+      <div className="px-6 py-5">
+        <div className="mb-4 flex items-end gap-3">
+          <div className="h-9 w-24 rounded bg-gray-200" />
+          <div className="mb-1 h-3 w-28 rounded bg-gray-100" />
+        </div>
+        <div className="h-3 w-full rounded-full bg-gray-100" />
+        <div className="mt-2 h-3 w-48 rounded bg-gray-100" />
+      </div>
+    </div>
+  );
+}
+
+function StatCardSkeleton() {
+  return (
+    <div className="flex animate-pulse items-center gap-4 rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
+      <div className="h-11 w-11 shrink-0 rounded-full bg-gray-200" />
+      <div className="space-y-2">
+        <div className="h-3 w-16 rounded bg-gray-100" />
+        <div className="h-6 w-14 rounded bg-gray-200" />
+        <div className="h-3 w-20 rounded bg-gray-100" />
+      </div>
+    </div>
+  );
+}
+
+function UsageLogTableSkeleton() {
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100 bg-gray-50/80 text-xs font-medium uppercase tracking-wide text-gray-400">
+              <th className="px-4 py-2.5 text-left">#</th>
+              <th className="px-4 py-2.5 text-left">Type</th>
+              <th className="px-4 py-2.5 text-left">Date &amp; Time</th>
+              <th className="px-4 py-2.5 text-right">Credits</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <tr key={i} className="border-b border-gray-50 odd:bg-white even:bg-gray-50/40">
+                <td className="px-4 py-3"><div className="h-3.5 w-4 animate-pulse rounded bg-gray-100" /></td>
+                <td className="px-4 py-3"><div className="h-5 w-20 animate-pulse rounded-full bg-gray-100" /></td>
+                <td className="px-4 py-3"><div className="h-3.5 w-32 animate-pulse rounded bg-gray-100" /></td>
+                <td className="px-4 py-3 text-right"><div className="ml-auto h-5 w-9 animate-pulse rounded-full bg-gray-100" /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-col gap-3 border-t border-gray-100 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
+        <div className="h-7 w-40 animate-pulse rounded-lg bg-gray-100" />
+      </div>
+    </>
   );
 }
 
@@ -115,18 +220,31 @@ function fmtDate(iso: string): string {
 // ── Stat card ─────────────────────────────────────────────────────────────────
 
 function StatCard({
-  label, value, sub, color, icon,
+  label, value, sub, color, icon, iconBg, pct,
 }: {
-  label: string; value: string; sub?: string; color?: string; icon: React.ReactNode;
+  label: string; value: string; sub?: string; color?: string; icon: React.ReactNode; iconBg?: string; pct?: number;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-50">{icon}</div>
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-        <p className="mt-0.5 text-2xl font-bold" style={{ color: color ?? "#111827" }}>{value}</p>
-        {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
+    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          style={{ background: iconBg ?? "#f9fafb" }}
+        >
+          {icon}
+        </div>
+        <p className="text-xs font-medium text-gray-400">{label}</p>
       </div>
+      <p className="mt-3 text-2xl font-bold tabular-nums" style={{ color: color ?? "#111827" }}>{value}</p>
+      {typeof pct === "number" && (
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${Math.min(100, pct)}%`, background: color ?? "#111827" }}
+          />
+        </div>
+      )}
+      {sub && <p className="mt-1.5 text-xs text-gray-400">{sub}</p>}
     </div>
   );
 }
@@ -138,25 +256,38 @@ export default function UsageClient() {
   const router = useRouter();
 
   const [credits, setCredits] = useState<UserInfo | null>(null);
-  const [history, setHistory] = useState<{ daily: DailyUsage[]; recent: RecentSearch[]; total: number } | null>(null);
+  const [history, setHistory] = useState<{
+    daily: DailyUsage[]; recent: RecentSearch[]; total: number; recentTotal: number;
+  } | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
-  const [historyLoading, setHistoryLoading] = useState(true);
+  // historyInitialLoading: true only until the first history fetch ever completes — drives the skeleton.
+  // historyFetching: true for every fetch (incl. filter/page/day changes) — drives a subtle stale-content dim.
+  const [historyInitialLoading, setHistoryInitialLoading] = useState(true);
+  const [historyFetching, setHistoryFetching] = useState(true);
   const [days, setDays] = useState(30);
+  const [logFilter, setLogFilter] = useState<"all" | SearchTypeFilter>("all");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const abortRef = useRef<AbortController | null>(null);
 
-  const fetchHistory = useCallback(async (d: number) => {
+  const fetchHistory = useCallback(async (d: number, filter: "all" | SearchTypeFilter, p: number) => {
     abortRef.current?.abort();
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    setHistoryLoading(true);
+    setHistoryFetching(true);
     try {
-      const h = await apiGetUsageHistory(d, ctrl.signal);
-      setHistory({ daily: h.daily_usage, recent: h.recent, total: h.total_logs });
+      const h = await apiGetUsageHistory(d, ctrl.signal, filter === "all" ? undefined : filter, p, PAGE_SIZE);
+      setHistory({ daily: h.daily_usage, recent: h.recent, total: h.total_logs, recentTotal: h.recent_total });
+      setHistoryFetching(false);
+      setHistoryInitialLoading(false);
     } catch {
-      // cancelled or network error — silently ignore
-    } finally {
-      setHistoryLoading(false);
+      // an aborted (superseded) request must not clear the fetching flag — the request
+      // that replaced it owns that responsibility. A genuine failure should stop the spinner.
+      if (!ctrl.signal.aborted) {
+        setHistoryFetching(false);
+        setHistoryInitialLoading(false);
+      }
     }
   }, []);
 
@@ -164,26 +295,61 @@ export default function UsageClient() {
     if (authLoading) return;
     if (!authUser) { router.replace("/login"); return; }
 
-    // Fetch credits and history in parallel for fast load
+    // Fetch credits in parallel with history for fast load
     apiGetMe()
       .then(setCredits)
       .catch(() => setCredits(authUser))
       .finally(() => setCreditsLoading(false));
-
-    void fetchHistory(days);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, authUser, router]);
 
   useEffect(() => {
-    if (!authLoading && authUser) void fetchHistory(days);
-  }, [days, fetchHistory, authLoading, authUser]);
+    if (!authLoading && authUser) void fetchHistory(days, logFilter, page);
+  }, [days, logFilter, page, fetchHistory, authLoading, authUser]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [logFilter, days]);
 
   if (authLoading || creditsLoading) {
     return (
       <>
-        <AppHeader title="Credit Usage" />
-        <div className="flex flex-1 items-center justify-center py-24 text-sm text-gray-400">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
+        <AppHeader title="Usage" />
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-6">
+          <div className="w-full space-y-5">
+            <CreditBalanceSkeleton />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </div>
+            <div className="animate-pulse rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-100 px-6 py-4 space-y-2">
+                <div className="h-4 w-32 rounded bg-gray-200" />
+                <div className="h-3 w-40 rounded bg-gray-100" />
+              </div>
+              <div className="flex h-[168px] items-end gap-1 px-6 py-4">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 rounded-t bg-gray-100"
+                    style={{ height: `${20 + ((i * 37) % 100)}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="animate-pulse rounded-xl border border-gray-200 bg-white shadow-sm">
+              <div className="border-b border-gray-100 px-6 py-4 space-y-2">
+                <div className="h-4 w-32 rounded bg-gray-200" />
+                <div className="h-3 w-24 rounded bg-gray-100" />
+              </div>
+              <div className="space-y-3 px-6 py-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-4 w-full rounded bg-gray-100" />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </>
     );
@@ -207,91 +373,82 @@ export default function UsageClient() {
   const totalCompany = daily.reduce((s, d) => s + d.company, 0);
   const totalAgentic = daily.reduce((s, d) => s + d.agentic, 0);
   const hasActivity  = daily.some((d) => d.total > 0);
+  const totalSearches = totalPerson + totalCompany + totalAgentic;
+
+  // Filtering and pagination for the recent-search log are handled server-side.
+  const recentTotal = history?.recentTotal ?? 0;
+  const pageCount = Math.max(1, Math.ceil(recentTotal / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const pagedRecent = recent;
 
   return (
     <>
-      <AppHeader title="Credit Usage" />
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-2 py-4 sm:px-4">
-        <div className="mx-auto w-full max-w-3xl space-y-5">
+      <AppHeader title="Usage" />
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-6">
+        <div className="w-full space-y-5">
 
-          {/* ── Credit balance card ─────────────────────────────────────── */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-100 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-gray-400" />
-                <h2 className="text-sm font-semibold text-gray-900">Search Credits</h2>
-              </div>
-              <p className="mt-0.5 text-xs text-gray-400">
+          {allocated === 0 ? (
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white py-10 text-center shadow-sm">
+              <Wallet className="h-8 w-8 text-gray-300" />
+              <p className="text-sm font-medium text-gray-500">No credits allocated yet</p>
+              <p className="text-xs text-gray-400">
                 {isEnterpriseUser
-                  ? "Credits allocated to you by your Enterprise Admin"
-                  : isEnterpriseAdmin
-                  ? "Your personal credit allocation"
-                  : "Your credit balance for People & Company searches"}
+                  ? "Your Enterprise Admin hasn't allocated any credits to your account."
+                  : "Contact your administrator to have credits added."}
               </p>
             </div>
-
-            <div className="px-6 py-5">
-              {allocated === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-8 text-center">
-                  <Wallet className="h-8 w-8 text-gray-300" />
-                  <p className="text-sm font-medium text-gray-500">No credits allocated yet</p>
-                  <p className="text-xs text-gray-400">
-                    {isEnterpriseUser
-                      ? "Your Enterprise Admin hasn't allocated any credits to your account."
-                      : "Contact your administrator to have credits added."}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-4 flex items-end gap-3">
-                    <span className="text-4xl font-bold" style={{ color: barColor }}>
-                      {remaining.toLocaleString()}
-                    </span>
-                    <span className="mb-1 text-sm text-gray-400">credits remaining</span>
-                  </div>
-                  <div className="h-3 w-full overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className="h-3 rounded-full transition-all"
-                      style={{ width: `${pctUsed}%`, background: barColor }}
-                    />
-                  </div>
-                  <p className="mt-2 text-xs text-gray-400">
-                    {used.toLocaleString()} used of {allocated.toLocaleString()} allocated ({pctUsed}% consumed)
-                  </p>
-                </>
-              )}
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                label="Credit Balance"
+                value={remaining.toLocaleString()}
+                sub={`${used.toLocaleString()} used · ${pctUsed}% consumed`}
+                color={barColor}
+                pct={pctUsed}
+                icon={<Wallet className="h-5 w-5" style={{ color: barColor }} />}
+                iconBg="#eff6ff"
+              />
+              <StatCard
+                label="People Searches"
+                value={totalPerson.toLocaleString()}
+                sub={totalSearches > 0 ? `${Math.round((totalPerson / totalSearches) * 100)}% of total this period` : "no activity yet"}
+                color="#10b981"
+                pct={totalSearches > 0 ? (totalPerson / totalSearches) * 100 : 0}
+                icon={<Users className="h-5 w-5 text-emerald-500" />}
+                iconBg="#ecfdf5"
+              />
+              <StatCard
+                label="Company Searches"
+                value={totalCompany.toLocaleString()}
+                sub={totalSearches > 0 ? `${Math.round((totalCompany / totalSearches) * 100)}% of total this period` : "no activity yet"}
+                color="#f59e0b"
+                pct={totalSearches > 0 ? (totalCompany / totalSearches) * 100 : 0}
+                icon={<Building2 className="h-5 w-5 text-amber-500" />}
+                iconBg="#fffbeb"
+              />
+              <StatCard
+                label="Agentic Searches"
+                value={totalAgentic.toLocaleString()}
+                sub={totalSearches > 0 ? `${Math.round((totalAgentic / totalSearches) * 100)}% of total this period` : "no activity yet"}
+                color="#8b5cf6"
+                pct={totalSearches > 0 ? (totalAgentic / totalSearches) * 100 : 0}
+                icon={<Zap className="h-5 w-5 text-violet-500" />}
+                iconBg="#f5f3ff"
+              />
             </div>
-          </div>
-
-          {/* ── Stat cards ──────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <StatCard
-              label="Allocated"
-              value={allocated.toLocaleString()}
-              sub={isEnterpriseUser ? "by Enterprise Admin" : "total credits"}
-              icon={<Wallet className="h-5 w-5 text-blue-500" />}
-            />
-            <StatCard
-              label="Used"
-              value={used.toLocaleString()}
-              sub="searches performed"
-              icon={<TrendingUp className="h-5 w-5 text-amber-500" />}
-            />
-            <StatCard
-              label="Remaining"
-              value={remaining.toLocaleString()}
-              sub="available to use"
-              color={barColor}
-              icon={<CreditCard className="h-5 w-5" style={{ color: barColor }} />}
-            />
-          </div>
+          )}
 
           {/* ── Activity chart ──────────────────────────────────────────── */}
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900">Search Activity</h3>
-                <p className="mt-0.5 text-xs text-gray-400">Credits consumed per day</p>
+              <div className="flex items-center gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Usage Over Time</h3>
+                  <p className="mt-0.5 text-xs text-gray-400">Daily searches — last {days} days</p>
+                </div>
+                {historyFetching && !historyInitialLoading && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-300" />
+                )}
               </div>
               <div className="flex items-center gap-1">
                 {([7, 30, 90] as const).map((n) => (
@@ -313,16 +470,26 @@ export default function UsageClient() {
             </div>
 
             <div className="px-6 py-4">
-              {historyLoading ? (
-                <div className="flex h-[144px] items-center justify-center text-sm text-gray-400">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading activity…
-                </div>
-              ) : !hasActivity ? (
-                <div className="flex h-[144px] items-center justify-center text-sm text-gray-400">
-                  No search activity in the last {days} days.
+              {historyInitialLoading ? (
+                <div className="flex h-[144px] animate-pulse items-end gap-1">
+                  {Array.from({ length: 24 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-t bg-gray-100"
+                      style={{ height: `${20 + ((i * 37) % 100)}%` }}
+                    />
+                  ))}
                 </div>
               ) : (
-                <BarChart data={daily} />
+                <div className={`transition-opacity ${historyFetching ? "opacity-40" : "opacity-100"}`}>
+                  {!hasActivity ? (
+                    <div className="flex h-[144px] items-center justify-center text-sm text-gray-400">
+                      No search activity in the last {days} days.
+                    </div>
+                  ) : (
+                    <BarChart data={daily} />
+                  )}
+                </div>
               )}
             </div>
 
@@ -339,45 +506,111 @@ export default function UsageClient() {
             )}
           </div>
 
-          {/* ── Recent searches table ───────────────────────────────────── */}
+          {/* ── Usage log table ──────────────────────────────────────────── */}
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-            <div className="border-b border-gray-100 px-6 py-4">
-              <h3 className="text-sm font-semibold text-gray-900">Recent Searches</h3>
-              <p className="mt-0.5 text-xs text-gray-400">
-                {history ? `${history.total.toLocaleString()} total searches` : "Last 20 searches"}
-              </p>
+            <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Usage Log</h3>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    {history ? `${history.total.toLocaleString()} total searches` : "Last 20 searches"}
+                  </p>
+                </div>
+                {historyFetching && !historyInitialLoading && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-300" />
+                )}
+              </div>
+              <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
+                {([
+                  { key: "all", label: "All" },
+                  { key: "person", label: "People" },
+                  { key: "company", label: "Company" },
+                  { key: "agentic", label: "Agentic" },
+                ] as const).map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setLogFilter(f.key)}
+                    disabled={historyFetching}
+                    className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed"
+                    style={
+                      logFilter === f.key
+                        ? { background: "#fff", color: "#111827", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }
+                        : { background: "transparent", color: "#9ca3af" }
+                    }
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {historyLoading ? (
-              <div className="flex items-center justify-center py-10 text-sm text-gray-400">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
-              </div>
-            ) : recent.length === 0 ? (
+            {historyInitialLoading ? (
+              <UsageLogTableSkeleton />
+            ) : recentTotal === 0 && !historyFetching ? (
               <p className="px-6 py-10 text-center text-sm text-gray-400">
-                No searches yet. Start by searching for People or Companies.
+                {(history?.total ?? 0) === 0
+                  ? "No searches yet. Start by searching for People or Companies."
+                  : "No searches match this filter."}
               </p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50 text-xs font-medium text-gray-500">
-                      <th className="px-4 py-2.5 text-left">#</th>
-                      <th className="px-4 py-2.5 text-left">Type</th>
-                      <th className="px-4 py-2.5 text-left">Date & Time</th>
-                      <th className="px-4 py-2.5 text-right">Credits</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recent.map((r, i) => (
-                      <tr key={r.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 text-gray-400">{i + 1}</td>
-                        <td className="px-4 py-3"><TypeBadge type={r.search_type} /></td>
-                        <td className="px-4 py-3 text-gray-600">{fmtDate(r.created_at)}</td>
-                        <td className="px-4 py-3 text-right font-medium text-gray-700">−1</td>
+              <div className={`transition-opacity ${historyFetching ? "pointer-events-none opacity-40" : "opacity-100"}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50/80 text-xs font-medium uppercase tracking-wide text-gray-400">
+                        <th className="px-4 py-2.5 text-left">#</th>
+                        <th className="px-4 py-2.5 text-left">Type</th>
+                        <th className="px-4 py-2.5 text-left">Date &amp; Time</th>
+                        <th className="px-4 py-2.5 text-right">Credits</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {pagedRecent.map((r, i) => (
+                        <tr
+                          key={r.id}
+                          className="border-b border-gray-50 transition-colors odd:bg-white even:bg-gray-50/40 hover:bg-blue-50/40"
+                        >
+                          <td className="px-4 py-3 tabular-nums text-gray-400">{(safePage - 1) * PAGE_SIZE + i + 1}</td>
+                          <td className="px-4 py-3"><TypeBadge type={r.search_type} /></td>
+                          <td className="px-4 py-3 text-gray-600">{fmtDate(r.created_at)}</td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold tabular-nums text-red-600">
+                              −1
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex flex-col gap-3 border-t border-gray-100 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-gray-400">
+                    Showing {(safePage - 1) * PAGE_SIZE + 1}-{Math.min(safePage * PAGE_SIZE, recentTotal)} of {recentTotal}
+                  </p>
+                  <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={safePage <= 1 || historyFetching}
+                      aria-label="Previous page"
+                      className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" /> Prev
+                    </button>
+                    <span className="px-2 text-xs font-medium text-gray-500">Page {safePage} / {pageCount}</span>
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      disabled={safePage >= pageCount || historyFetching}
+                      aria-label="Next page"
+                      className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                    >
+                      Next <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
