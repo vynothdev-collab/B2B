@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Section, InlineCode, CodeBlock, FieldTable, EndpointPageNav } from "../../_lib/docs-ui";
-import { PERSON_FIELDS, SAMPLE_PERSON_SEARCH_RESPONSE } from "../../_lib/docs-data";
+import { Section, InlineCode, CodeBlock, FieldTable, FilterGroupTable, EndpointPageNav } from "../../_lib/docs-ui";
+import { PERSON_FIELDS, PERSON_NESTED_FIELDS, SAMPLE_PERSON_SEARCH_RESPONSE } from "../../_lib/docs-data";
 
 export const metadata = { title: "leadsbuddy.ai: Person Search — Response" };
 
@@ -11,6 +11,9 @@ export default function PersonSearchResponsePage() {
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
         This page documents the shape of a successful <InlineCode>200 OK</InlineCode> response
         from <InlineCode>POST /persons/search</InlineCode>, and what every field in it means.
+        Each record includes the full profile data shown on that person&apos;s business card in
+        the web app — work history, education, certifications, and more — in addition to the
+        summary fields shown in the People search results table.
       </p>
 
       <div className="mt-6">
@@ -33,6 +36,15 @@ export default function PersonSearchResponsePage() {
 
       <Section id="fields" title="Field Reference">
         <FieldTable fields={PERSON_FIELDS} />
+      </Section>
+
+      <Section id="nested-fields" title="Nested Object Fields">
+        <p>
+          Fields marked <InlineCode>array</InlineCode> above (<InlineCode>work_history</InlineCode>, <InlineCode>education</InlineCode>,{" "}
+          <InlineCode>patents</InlineCode>, and the rest) are arrays of objects — every key
+          inside each object is documented below.
+        </p>
+        <FilterGroupTable groups={PERSON_NESTED_FIELDS} />
       </Section>
     </div>
   );

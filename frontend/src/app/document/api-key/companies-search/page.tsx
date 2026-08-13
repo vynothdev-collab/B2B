@@ -10,8 +10,10 @@ export default function CompanySearchIntroPage() {
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
         <InlineCode>POST /companies/search</InlineCode> searches companies using the same
         filters available in the web app&apos;s Company search — industry, location, revenue,
-        funding, technologies, and more — then lets you unlock the company&apos;s contact
-        email/phone as needed. Each call costs <span className="font-semibold text-gray-900">10 credits</span>.
+        funding, technologies, and more. Every result includes the same full profile data
+        shown on a company&apos;s business card in the web app — description, specialties,
+        tech stack, and the rest — not just the summary fields shown in a results table.
+        Each call costs <span className="font-semibold text-gray-900">10 credits</span>.
       </p>
 
       <div className="mt-6">

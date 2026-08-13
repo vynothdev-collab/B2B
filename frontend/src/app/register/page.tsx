@@ -114,13 +114,9 @@ function RegisterForm() {
           <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-white/5" />
         </div>
 
-        <div className="relative flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm">
-            LB
-          </div>
-          <span className="text-white font-bold text-lg tracking-tight">
-            leadsbuddy.ai
-          </span>
+        <div className="relative flex items-center gap-3 mb-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/leadsbuddy-logo-white.svg" alt="leadsbuddy.ai" className="h-11 w-auto" />
         </div>
 
         <div className="relative space-y-8">
@@ -188,10 +184,8 @@ function RegisterForm() {
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 bg-white overflow-y-auto">
         <div className="w-full max-w-[400px]">
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white font-bold text-xs">
-              LB
-            </div>
-            <span className="font-bold text-gray-900">leadsbuddy.ai</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/leadsbuddy-logo.svg" alt="leadsbuddy.ai" className="h-7 w-auto" />
           </div>
 
           <div className="mb-7">

@@ -21,7 +21,7 @@ async def public_person_search(
 ) -> SearchResponse:
     cost = CREDIT_COSTS["search"]
     await check_credits(current_user, db, cost)
-    result = await coresignal_service.search_persons(body, db=db)
+    result = await coresignal_service.search_persons(body, db=db, full_detail=True)
     await deduct_credit(
         current_user, db,
         reason="API People Search",
@@ -49,7 +49,7 @@ async def public_company_search(
 ) -> SearchResponse:
     cost = CREDIT_COSTS["search"]
     await check_credits(current_user, db, cost)
-    result = await coresignal_service.search_companies(body, db=db)
+    result = await coresignal_service.search_companies(body, db=db, full_detail=True)
     await deduct_credit(
         current_user, db,
         reason="API Company Search",

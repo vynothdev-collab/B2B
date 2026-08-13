@@ -23,7 +23,7 @@ export function MicrosoftSignInButton({ onError }: Props) {
   const handleClick = () => {
     setLoading(true);
     try {
-      window.location.href = "/api/auth/microsoft";
+      window.location.href = "/api/v1/auth/microsoft";
     } catch {
       setLoading(false);
       onError?.("Failed to initiate Microsoft sign-in. Please try again.");

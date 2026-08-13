@@ -57,9 +57,24 @@ export function DocsHeader() {
           <img src="/leadsbuddy-logo.svg" alt="leadsbuddy.ai" className="h-6 w-auto sm:h-7" />
           <span className="hidden text-sm font-semibold text-gray-400 sm:inline">Developer API</span>
         </Link>
-        <a href="/login" className="text-sm font-semibold text-red-600 hover:underline">
-          Sign in to get an API key
-        </a>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <a
+            href="/login"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-semibold text-gray-600 hover:text-red-600"
+          >
+            Log in
+          </a>
+          <a
+            href="/register"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg bg-red-600 px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-red-700"
+          >
+            Sign up
+          </a>
+        </div>
       </div>
     </header>
   );

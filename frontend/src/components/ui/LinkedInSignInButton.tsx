@@ -20,7 +20,7 @@ export function LinkedInSignInButton({ onError }: Props) {
   const handleClick = () => {
     setLoading(true);
     try {
-      window.location.href = "/api/auth/linkedin";
+      window.location.href = "/api/v1/auth/linkedin";
     } catch {
       setLoading(false);
       onError?.("Failed to initiate LinkedIn sign-in. Please try again.");

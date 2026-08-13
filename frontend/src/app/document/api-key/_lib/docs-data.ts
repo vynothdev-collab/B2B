@@ -57,6 +57,22 @@ export const PERSON_FIELDS: FieldDoc[] = [
   { name: "active_experience_company_categories_and_keywords", type: "string", description: "Current employer category/keyword tags." },
   { name: "active_experience_company_annual_revenue", type: "number", description: "Current employer estimated annual revenue." },
   { name: "awards_certifications", type: "string[]", description: "Awards and certifications." },
+  { name: "summary", type: "string", description: "Profile summary / bio, same as shown on the person's business card." },
+  { name: "work_history", type: "array", description: "Full employment history — company, title, dates, location, description per role." },
+  { name: "education", type: "array", description: "Schools attended — institution, degree, field, years." },
+  { name: "certifications", type: "array", description: "Professional certifications — title, issuer, date." },
+  { name: "languages", type: "array", description: "Spoken languages and proficiency." },
+  { name: "total_experience", type: "string", description: "Total career experience, computed from work_history (e.g. \"8 years\")." },
+  { name: "patents", type: "array", description: "Filed patents — title, status, date, inventors." },
+  { name: "projects", type: "array", description: "Notable projects — name, description, dates, members." },
+  { name: "publications", type: "array", description: "Publications — title, publisher, date, authors." },
+  { name: "volunteering", type: "array", description: "Volunteering positions — organization, role, cause, dates." },
+  { name: "organizations", type: "array", description: "Organization memberships — name, position, dates." },
+  { name: "courses", type: "array", description: "Completed courses — title, organizer." },
+  { name: "awards", type: "array", description: "Awards received — title, issuer, date, description." },
+  { name: "recommendations", type: "array", description: "Recommendations received — text, recommender name." },
+  { name: "test_scores", type: "array", description: "Standardized test scores — title, score, date." },
+  { name: "websites", type: "string[]", description: "Personal websites listed on the profile." },
 ];
 
 export const COMPANY_FIELDS: FieldDoc[] = [
@@ -88,6 +104,184 @@ export const COMPANY_FIELDS: FieldDoc[] = [
   { name: "company_employee_reviews_aggregate_score", type: "number", description: "Aggregate employee review score." },
   { name: "active_job_postings", type: "array", description: "Currently open job postings (ids)." },
   { name: "technologies_used", type: "array", description: "Detected technology stack." },
+  { name: "description", type: "string", description: "Company description, same as shown on the company's business card." },
+  { name: "specialties", type: "string[]", description: "Specialties listed on the company profile." },
+];
+
+// ── Nested object shapes ──────────────────────────────────────────────────────
+// Sub-fields of the array/object-typed response fields above (each array item
+// shares this shape; keys are omitted when not present on a given record).
+
+export const PERSON_NESTED_FIELDS: FilterGroup[] = [
+  {
+    section: "work_history[]",
+    fields: [
+      { name: "company_name", type: "string", description: "Employer name." },
+      { name: "company_logo_url", type: "string", description: "Employer logo URL." },
+      { name: "company_website", type: "string", description: "Employer website." },
+      { name: "company_linkedin_url", type: "string", description: "Employer LinkedIn URL." },
+      { name: "title", type: "string", description: "Job title held in this role." },
+      { name: "start_date", type: "string", description: "Role start date (ISO date)." },
+      { name: "end_date", type: "string | null", description: "Role end date, or null if current." },
+      { name: "is_current", type: "boolean", description: "Whether this is the person's current role." },
+      { name: "duration", type: "string", description: "Human-readable duration (e.g. \"2 yrs 3 mos\")." },
+      { name: "location", type: "string", description: "Role location." },
+      { name: "description", type: "string", description: "Role description / responsibilities." },
+    ],
+  },
+  {
+    section: "education[]",
+    fields: [
+      { name: "school", type: "string", description: "Institution name." },
+      { name: "school_logo_url", type: "string", description: "Institution logo URL." },
+      { name: "degree", type: "string", description: "Degree or program description." },
+      { name: "field", type: "string", description: "Field of study." },
+      { name: "start_year", type: "string", description: "Year started." },
+      { name: "end_year", type: "string", description: "Year completed." },
+      { name: "activities", type: "string", description: "Activities and societies." },
+    ],
+  },
+  {
+    section: "certifications[]",
+    fields: [
+      { name: "title", type: "string", description: "Certification name." },
+      { name: "issuer", type: "string", description: "Issuing organization." },
+      { name: "date", type: "string", description: "Date earned." },
+      { name: "url", type: "string", description: "Certificate URL." },
+    ],
+  },
+  {
+    section: "languages[]",
+    fields: [
+      { name: "language", type: "string", description: "Language name." },
+      { name: "proficiency", type: "string", description: "Proficiency level." },
+    ],
+  },
+  {
+    section: "patents[]",
+    fields: [
+      { name: "title", type: "string", description: "Patent title." },
+      { name: "status", type: "string", description: "Filing status (e.g. \"Granted\", \"Pending\")." },
+      { name: "date", type: "string", description: "Filing or grant date." },
+      { name: "url", type: "string", description: "Link to the patent." },
+      { name: "description", type: "string", description: "Patent description." },
+      { name: "patent_number", type: "string", description: "Patent or application number." },
+      { name: "inventors", type: "string[]", description: "Names of listed inventors." },
+    ],
+  },
+  {
+    section: "projects[]",
+    fields: [
+      { name: "name", type: "string", description: "Project name." },
+      { name: "url", type: "string | null", description: "Project URL, if any." },
+      { name: "description", type: "string", description: "Project description." },
+      { name: "start_date", type: "string", description: "Project start date." },
+      { name: "end_date", type: "string | null", description: "Project end date, or null if ongoing." },
+      { name: "members", type: "string[]", description: "Names of team members." },
+    ],
+  },
+  {
+    section: "publications[]",
+    fields: [
+      { name: "title", type: "string", description: "Publication title." },
+      { name: "publisher", type: "string", description: "Publisher name." },
+      { name: "date", type: "string", description: "Publication date." },
+      { name: "url", type: "string", description: "Link to the publication." },
+      { name: "description", type: "string", description: "Publication description." },
+      { name: "authors", type: "string[]", description: "Names of listed authors." },
+    ],
+  },
+  {
+    section: "volunteering[]",
+    fields: [
+      { name: "organization", type: "string", description: "Organization name." },
+      { name: "role", type: "string", description: "Volunteer role." },
+      { name: "cause", type: "string", description: "Cause supported." },
+      { name: "start_date", type: "string", description: "Start date." },
+      { name: "end_date", type: "string | null", description: "End date, or null if ongoing." },
+      { name: "duration", type: "string", description: "Human-readable duration." },
+      { name: "description", type: "string", description: "Role description." },
+    ],
+  },
+  {
+    section: "organizations[]",
+    fields: [
+      { name: "name", type: "string", description: "Organization name." },
+      { name: "position", type: "string", description: "Position held." },
+      { name: "description", type: "string", description: "Membership description." },
+      { name: "start_date", type: "string", description: "Start date." },
+      { name: "end_date", type: "string | null", description: "End date, or null if ongoing." },
+    ],
+  },
+  {
+    section: "courses[]",
+    fields: [
+      { name: "title", type: "string", description: "Course title." },
+      { name: "organizer", type: "string", description: "Course provider / organizer." },
+    ],
+  },
+  {
+    section: "awards[]",
+    fields: [
+      { name: "title", type: "string", description: "Award title." },
+      { name: "issuer", type: "string", description: "Issuing organization." },
+      { name: "date", type: "string", description: "Date received." },
+      { name: "description", type: "string", description: "Award description." },
+    ],
+  },
+  {
+    section: "recommendations[]",
+    fields: [
+      { name: "text", type: "string", description: "Recommendation text." },
+      { name: "from_name", type: "string", description: "Name of the person who gave the recommendation." },
+      { name: "from_url", type: "string", description: "Profile URL of the recommender." },
+    ],
+  },
+  {
+    section: "test_scores[]",
+    fields: [
+      { name: "title", type: "string", description: "Test name (e.g. \"GMAT\")." },
+      { name: "score", type: "string", description: "Score achieved." },
+      { name: "date", type: "string", description: "Date taken." },
+      { name: "description", type: "string", description: "Additional notes about the score." },
+    ],
+  },
+];
+
+export const COMPANY_NESTED_FIELDS: FilterGroup[] = [
+  {
+    section: "employees_count_change / total_website_visits_change",
+    note: "Same shape for both fields — one describes headcount change, the other website traffic change.",
+    fields: [
+      { name: "current", type: "number", description: "Current value." },
+      { name: "change_monthly", type: "number", description: "Absolute change over the last month." },
+      { name: "change_monthly_percentage", type: "number | null", description: "Percentage change over the last month." },
+      { name: "change_quarterly", type: "number", description: "Absolute change over the last quarter." },
+      { name: "change_quarterly_percentage", type: "number | null", description: "Percentage change over the last quarter." },
+      { name: "change_yearly", type: "number", description: "Absolute change over the last year." },
+      { name: "change_yearly_percentage", type: "number | null", description: "Percentage change over the last year." },
+    ],
+  },
+  {
+    section: "last_funding_round",
+    fields: [
+      { name: "type", type: "string", description: "Funding round type (e.g. \"Series C\")." },
+      { name: "amount_raised", type: "number", description: "Amount raised in this round." },
+      { name: "date", type: "string", description: "Date the round closed." },
+    ],
+  },
+  {
+    section: "active_job_postings[]",
+    fields: [
+      { name: "id", type: "string", description: "Job posting identifier." },
+    ],
+  },
+  {
+    section: "technologies_used[]",
+    fields: [
+      { name: "technology", type: "string", description: "Technology name." },
+    ],
+  },
 ];
 
 // ── Request filter references ────────────────────────────────────────────────
@@ -453,7 +647,100 @@ export const SAMPLE_PERSON_SEARCH_RESPONSE = `{
       "active_experience_company_hq_location": "San Francisco, California, United States",
       "active_experience_company_categories_and_keywords": "B2B SaaS, CRM, Sales Software",
       "active_experience_company_annual_revenue": 120000000,
-      "awards_certifications": ["Salesforce Certified Sales Professional"]
+      "awards_certifications": ["Salesforce Certified Sales Professional"],
+      "summary": "Sales leader with 14+ years scaling B2B SaaS revenue teams.",
+      "work_history": [
+        {
+          "company_name": "Acme Corp",
+          "title": "VP of Sales",
+          "start_date": "2022-03-01",
+          "end_date": null,
+          "is_current": true,
+          "location": "Austin, Texas",
+          "description": "Leading a 40-person sales organization."
+        }
+      ],
+      "education": [
+        { "school": "University of Texas at Austin", "degree": "BBA", "field": "Business", "start_year": "2006", "end_year": "2010" }
+      ],
+      "certifications": [
+        { "title": "Salesforce Certified Sales Professional", "issuer": "Salesforce", "date": "2021-05-01" }
+      ],
+      "languages": [{ "language": "English", "proficiency": "Native" }],
+      "total_experience": "14 years",
+      "patents": [
+        {
+          "title": "Method for automated lead scoring in CRM systems",
+          "status": "Granted",
+          "date": "2019-08-12",
+          "url": "https://patents.google.com/patent/US10123456B2",
+          "description": "A system for ranking sales leads using engagement signals.",
+          "patent_number": "US10123456B2",
+          "inventors": ["Jordan Lee", "Priya Nair"]
+        }
+      ],
+      "projects": [
+        {
+          "name": "Revenue Intelligence Rollout",
+          "url": null,
+          "description": "Led cross-functional rollout of a revenue intelligence platform across 3 regions.",
+          "start_date": "2023-01-01",
+          "end_date": "2023-09-01",
+          "members": ["Jordan Lee", "Sam Rivera"]
+        }
+      ],
+      "publications": [
+        {
+          "title": "Scaling B2B Sales Teams in a Downturn",
+          "publisher": "Harvard Business Review",
+          "date": "2023-11-02",
+          "url": "https://hbr.org/2023/11/scaling-b2b-sales-teams",
+          "description": "How Acme Corp restructured its sales org to grow through a slowdown.",
+          "authors": ["Jordan Lee"]
+        }
+      ],
+      "volunteering": [
+        {
+          "organization": "Junior Achievement",
+          "role": "Mentor",
+          "cause": "Education",
+          "start_date": "2018-01-01",
+          "end_date": null,
+          "duration": "6 years",
+          "description": "Mentoring high school students on entrepreneurship fundamentals."
+        }
+      ],
+      "organizations": [
+        {
+          "name": "Austin Sales Leaders Guild",
+          "position": "Board Member",
+          "description": "Community of VP+ sales leaders in the Austin tech scene.",
+          "start_date": "2021-06-01",
+          "end_date": null
+        }
+      ],
+      "courses": [
+        { "title": "Strategic Account Management", "organizer": "LinkedIn Learning" }
+      ],
+      "awards": [
+        {
+          "title": "Sales Leader of the Year",
+          "issuer": "Acme Corp",
+          "date": "2024-01-15",
+          "description": "Awarded for exceeding annual revenue targets by 32%."
+        }
+      ],
+      "recommendations": [
+        {
+          "text": "Jordan built our sales org from the ground up and consistently exceeded targets.",
+          "from_name": "Alex Chen",
+          "from_url": "https://linkedin.com/in/alexchen"
+        }
+      ],
+      "test_scores": [
+        { "title": "GMAT", "score": "710", "date": "2010-05-01", "description": null }
+      ],
+      "websites": ["https://jordanlee.com"]
     }
   ],
   "meta": {
@@ -500,10 +787,12 @@ export const SAMPLE_COMPANY_SEARCH_RESPONSE = `{
       "total_website_visits_monthly": 452000,
       "total_website_visits_change": { "monthly": 2.1 },
       "revenue_annual_range": "$100M-$250M",
-      "last_funding_round": { "stage": "Series C", "amount": 60000000, "date": "2023-06-01" },
+      "last_funding_round": { "type": "Series C", "amount_raised": 60000000, "date": "2023-06-01" },
       "company_employee_reviews_aggregate_score": 4.3,
       "active_job_postings": [{ "id": "job_00123" }, { "id": "job_00124" }],
-      "technologies_used": [{ "technology": "Salesforce" }, { "technology": "AWS" }]
+      "technologies_used": [{ "technology": "Salesforce" }, { "technology": "AWS" }],
+      "description": "Acme Corp builds sales engagement software for B2B revenue teams.",
+      "specialties": ["CRM", "Sales Engagement", "Revenue Intelligence"]
     }
   ],
   "meta": {

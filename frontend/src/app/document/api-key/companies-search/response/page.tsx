@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Section, InlineCode, CodeBlock, FieldTable, EndpointPageNav } from "../../_lib/docs-ui";
-import { COMPANY_FIELDS, SAMPLE_COMPANY_SEARCH_RESPONSE } from "../../_lib/docs-data";
+import { Section, InlineCode, CodeBlock, FieldTable, FilterGroupTable, EndpointPageNav } from "../../_lib/docs-ui";
+import { COMPANY_FIELDS, COMPANY_NESTED_FIELDS, SAMPLE_COMPANY_SEARCH_RESPONSE } from "../../_lib/docs-data";
 
 export const metadata = { title: "leadsbuddy.ai: Company Search — Response" };
 
@@ -11,6 +11,9 @@ export default function CompanySearchResponsePage() {
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
         This page documents the shape of a successful <InlineCode>200 OK</InlineCode> response
         from <InlineCode>POST /companies/search</InlineCode>, and what every field in it means.
+        Each record includes the full profile data shown on that company&apos;s business card
+        in the web app — description, specialties, and more — in addition to the summary
+        fields shown in the Company search results table.
       </p>
 
       <div className="mt-6">
@@ -33,6 +36,15 @@ export default function CompanySearchResponsePage() {
 
       <Section id="fields" title="Field Reference">
         <FieldTable fields={COMPANY_FIELDS} />
+      </Section>
+
+      <Section id="nested-fields" title="Nested Object Fields">
+        <p>
+          Fields marked <InlineCode>object</InlineCode> or <InlineCode>array</InlineCode> above
+          (<InlineCode>employees_count_change</InlineCode>, <InlineCode>last_funding_round</InlineCode>,
+          and the rest) have keys documented below.
+        </p>
+        <FilterGroupTable groups={COMPANY_NESTED_FIELDS} />
       </Section>
     </div>
   );
