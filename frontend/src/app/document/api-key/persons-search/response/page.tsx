@@ -22,7 +22,7 @@ export default function PersonSearchResponsePage() {
         <p>
           <InlineCode>data</InlineCode> is an array of person records. <InlineCode>meta</InlineCode> describes
           the total match count and how to fetch the next page — see{" "}
-          <Link href="/document/api-key#pagination" className="font-semibold text-red-600 hover:underline">Pagination</Link>.
+          <Link href="/document/api-key/pagination" className="font-semibold text-red-600 hover:underline">Pagination</Link>.
         </p>
         <p>
           <InlineCode>work_email</InlineCode>, <InlineCode>personal_email</InlineCode>, and{" "}

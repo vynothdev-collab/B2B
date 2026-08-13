@@ -11,15 +11,15 @@ class ContactUnlockField:
     WORK_EMAIL = "work_email"
     PERSONAL_EMAIL = "personal_email"
     MOBILE = "mobile"
-    EMAIL = "email"
-    PHONE = "phone"
     ALL_PERSON = {WORK_EMAIL, PERSONAL_EMAIL, MOBILE}
-    ALL_COMPANY = {EMAIL, PHONE}
 
 
 class ContactUnlockEntity:
+    """Kept as a class (rather than a bare constant) for historical rows and
+    forward-compat with the entity_type column — person is currently the
+    only supported entity for contact unlocking."""
+
     PERSON = "person"
-    COMPANY = "company"
 
 
 class ContactUnlock(Base):

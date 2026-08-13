@@ -60,7 +60,7 @@ export const PERSON_FIELDS: FieldDoc[] = [
 ];
 
 export const COMPANY_FIELDS: FieldDoc[] = [
-  { name: "id", type: "string", description: "Unique record identifier. Used for unlock calls." },
+  { name: "id", type: "string", description: "Unique record identifier." },
   { name: "company_name", type: "string", description: "Company name." },
   { name: "company_legal_name", type: "string", description: "Registered legal name." },
   { name: "website", type: "string", description: "Company website." },
@@ -88,8 +88,6 @@ export const COMPANY_FIELDS: FieldDoc[] = [
   { name: "company_employee_reviews_aggregate_score", type: "number", description: "Aggregate employee review score." },
   { name: "active_job_postings", type: "array", description: "Currently open job postings (ids)." },
   { name: "technologies_used", type: "array", description: "Detected technology stack." },
-  { name: "email", type: "string | null", description: "Locked by default — call the company email unlock endpoint." },
-  { name: "phone", type: "string | null", description: "Locked by default — call the company phone unlock endpoint." },
 ];
 
 // ── Request filter references ────────────────────────────────────────────────
@@ -391,11 +389,9 @@ export const COMPANY_FILTER_GROUPS: FilterGroup[] = [
 
 export const CREDIT_COSTS: { action: string; credits: number }[] = [
   { action: "Person / Company search (per request)", credits: 10 },
-  { action: "Work email unlock", credits: 1 },
-  { action: "Personal email unlock", credits: 1 },
-  { action: "Mobile number unlock", credits: 10 },
-  { action: "Company email unlock", credits: 1 },
-  { action: "Company phone unlock", credits: 10 },
+  { action: "Work email unlock (person)", credits: 1 },
+  { action: "Personal email unlock (person)", credits: 1 },
+  { action: "Mobile number unlock (person)", credits: 10 },
 ];
 
 // ── Sample requests / responses ──────────────────────────────────────────────
@@ -507,9 +503,7 @@ export const SAMPLE_COMPANY_SEARCH_RESPONSE = `{
       "last_funding_round": { "stage": "Series C", "amount": 60000000, "date": "2023-06-01" },
       "company_employee_reviews_aggregate_score": 4.3,
       "active_job_postings": [{ "id": "job_00123" }, { "id": "job_00124" }],
-      "technologies_used": [{ "technology": "Salesforce" }, { "technology": "AWS" }],
-      "email": null,
-      "phone": null
+      "technologies_used": [{ "technology": "Salesforce" }, { "technology": "AWS" }]
     }
   ],
   "meta": {
@@ -566,34 +560,6 @@ export const UNLOCK_ENDPOINTS: UnlockEndpointDoc[] = [
     sampleResponse: `{
   "record_id": "1029384756",
   "phone": "+1-512-555-0134",
-  "has_phone": true,
-  "already_unlocked": false,
-  "credits_charged": 10
-}`,
-  },
-  {
-    method: "GET",
-    path: "/companies/{id}/unlock/email",
-    title: "Unlock company email",
-    credits: 1,
-    description: "Reveals the company's general contact email.",
-    sampleResponse: `{
-  "record_id": "5647382910",
-  "email": "contact@acme.com",
-  "has_email": true,
-  "already_unlocked": false,
-  "credits_charged": 1
-}`,
-  },
-  {
-    method: "GET",
-    path: "/companies/{id}/unlock/phone",
-    title: "Unlock company phone",
-    credits: 10,
-    description: "Reveals the company's general contact phone number.",
-    sampleResponse: `{
-  "record_id": "5647382910",
-  "phone": "+1-415-555-0199",
   "has_phone": true,
   "already_unlocked": false,
   "credits_charged": 10

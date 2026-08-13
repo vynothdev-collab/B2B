@@ -368,14 +368,6 @@ export interface CompanyResult {
   >;
   active_job_postings?: unknown[];
   technologies_used?: Array<{ technology?: string } | string>;
-  email?: string | null;
-  phone?: string | null;
-  has_email?: boolean;
-  has_phone?: boolean;
-  unlocked?: {
-    email: boolean;
-    phone: boolean;
-  };
   [key: string]: unknown;
 }
 

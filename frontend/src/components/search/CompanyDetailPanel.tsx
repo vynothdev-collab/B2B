@@ -16,24 +16,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Layers,
-  Mail,
-  Phone,
 } from "lucide-react";
 
 import { fmtMoney, toStringArr } from "@/components/common/tableHelpers";
 import { apiClient } from "@/lib/api";
-import { unlockCompanyEmail, unlockCompanyPhone } from "@/lib/searchApi";
-import { toast } from "@/lib/toast";
 import type { CompanyResult } from "@/types/search";
 
 interface CompanyDetail extends CompanyResult {
   description: string | null;
   specialties: string | string[] | null;
-  phone: string | null;
-  email: string | null;
 }
-
-type CompanyUnlockField = "email" | "phone";
 
 interface Props {
   company: CompanyResult | null;
@@ -343,12 +335,6 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const [unlockOverrides, setUnlockOverrides] = useState<
-    Partial<Record<CompanyUnlockField, string | null>>
-  >({});
-  const [unlockingField, setUnlockingField] =
-    useState<CompanyUnlockField | null>(null);
-
   const overviewRef = useRef<HTMLDivElement>(null);
   const specialtiesRef = useRef<HTMLDivElement>(null);
   const techRef = useRef<HTMLDivElement>(null);
@@ -363,8 +349,6 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
       return;
     }
     setDetail(null);
-    setUnlockOverrides({});
-    setUnlockingField(null);
     setLoading(true);
     apiClient
       .get<CompanyDetail>(`/search/companies/${company.id}/detail`)
@@ -374,8 +358,6 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
           ...company,
           description: null,
           specialties: null,
-          phone: null,
-          email: null,
         }),
       )
       .finally(() => setLoading(false));
@@ -505,37 +487,6 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
 
   const companyWebsite = d?.website ?? null;
   const companyLinkedIn = d?.canonical_linkedin_url ?? null;
-
-  const emailUnlocked = "email" in unlockOverrides || !!d?.unlocked?.email;
-  const companyEmail: string | null =
-    "email" in unlockOverrides
-      ? (unlockOverrides.email ?? null)
-      : ((d?.email as string | null | undefined) ?? null);
-
-  const phoneUnlocked = "phone" in unlockOverrides || !!d?.unlocked?.phone;
-  const companyPhone: string | null =
-    "phone" in unlockOverrides
-      ? (unlockOverrides.phone ?? null)
-      : ((d?.phone as string | null | undefined) ?? null);
-
-  const hasContact = !!(d?.has_email || d?.has_phone);
-
-  const handleUnlock = async (field: CompanyUnlockField) => {
-    if (!company || unlockingField) return;
-    setUnlockingField(field);
-    try {
-      const result =
-        field === "email"
-          ? await unlockCompanyEmail(company.id)
-          : await unlockCompanyPhone(company.id);
-      const value = "email" in result ? result.email : (result.phone ?? null);
-      setUnlockOverrides((prev) => ({ ...prev, [field]: value ?? null }));
-    } catch (e: unknown) {
-      toast.apiError(e);
-    } finally {
-      setUnlockingField(null);
-    }
-  };
 
   const NAV: {
     label: string;
@@ -682,72 +633,6 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               </span>
             )}
           </div>
-
-          {hasContact && (
-            <div className="px-5 pb-4 space-y-2.5">
-              {d?.has_email && (
-                <div className="flex items-center gap-2.5">
-                  <Mail className="h-4 w-4 text-gray-400 shrink-0" />
-                  {emailUnlocked ? (
-                    companyEmail ? (
-                      <a
-                        href={`mailto:${companyEmail}`}
-                        className="text-[13px] text-gray-700 hover:text-red-500 transition-colors truncate"
-                      >
-                        {companyEmail}
-                      </a>
-                    ) : (
-                      <span className="text-[13px] text-gray-400">
-                        No email
-                      </span>
-                    )
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={unlockingField === "email"}
-                      onClick={() => handleUnlock("email")}
-                      className="flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
-                    >
-                      {unlockingField === "email"
-                        ? "Unlocking…"
-                        : "Unlock company email for 1 credit"}
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {d?.has_phone && (
-                <div className="flex items-center gap-2.5">
-                  <Phone className="h-4 w-4 text-gray-400 shrink-0" />
-                  {phoneUnlocked ? (
-                    companyPhone ? (
-                      <a
-                        href={`tel:${companyPhone}`}
-                        className="text-[13px] text-gray-700 hover:text-red-500 transition-colors"
-                      >
-                        {companyPhone}
-                      </a>
-                    ) : (
-                      <span className="text-[13px] text-gray-400">
-                        No number
-                      </span>
-                    )
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={unlockingField === "phone"}
-                      onClick={() => handleUnlock("phone")}
-                      className="flex items-center gap-1 rounded border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-wait disabled:opacity-50"
-                    >
-                      {unlockingField === "phone"
-                        ? "Unlocking…"
-                        : "Unlock company phone for 10 credits"}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="shrink-0 relative flex items-stretch bg-white border-b border-gray-200">

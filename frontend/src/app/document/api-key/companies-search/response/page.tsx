@@ -22,12 +22,12 @@ export default function CompanySearchResponsePage() {
         <p>
           <InlineCode>data</InlineCode> is an array of company records. <InlineCode>meta</InlineCode> describes
           the total match count and how to fetch the next page — see{" "}
-          <Link href="/document/api-key#pagination" className="font-semibold text-red-600 hover:underline">Pagination</Link>.
+          <Link href="/document/api-key/pagination" className="font-semibold text-red-600 hover:underline">Pagination</Link>.
         </p>
         <p>
-          <InlineCode>email</InlineCode> and <InlineCode>phone</InlineCode> always come back{" "}
-          <InlineCode>null</InlineCode> here — see{" "}
-          <Link href="/document/api-key/unlock" className="font-semibold text-red-600 hover:underline">Unlock Contacts</Link> to reveal them.
+          Company records don&apos;t have a locked contact field — unlocking is only
+          available for person records. See{" "}
+          <Link href="/document/api-key/unlock" className="font-semibold text-red-600 hover:underline">Unlock Contacts</Link>.
         </p>
       </Section>
 

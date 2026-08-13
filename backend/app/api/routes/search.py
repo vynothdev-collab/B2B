@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.contact_unlock import ContactUnlockEntity, ContactUnlockField
+from app.models.contact_unlock import ContactUnlockField
 from app.models.search_log import SearchLog
 from app.models.search_record import PersonSearchRecord, CompanySearchRecord
 from app.models.user import User, UserRole
@@ -26,7 +26,6 @@ from app.schemas.search import (
 )
 from app.services import coresignal_service
 from app.services.contact_unlock_service import (
-    apply_company_unlock_state,
     apply_unlock_state,
     get_unlock_map,
     unlock_contact_field,
@@ -169,52 +168,6 @@ async def unlock_person_phone(
 ) -> PhoneUnlockResponse:
     res = await unlock_contact_field(
         db, current_user, record_id, ContactUnlockField.MOBILE
-    )
-    return PhoneUnlockResponse(
-        record_id=record_id,
-        phone=res["value"],
-        has_phone=bool(res["value"]),
-        already_unlocked=res["already_unlocked"],
-        credits_charged=res["credits_charged"],
-    )
-
-
-@router.get(
-    "/companies/{record_id}/unlock/email",
-    response_model=EmailUnlockResponse,
-    summary="Unlock contact email for a company record",
-)
-async def unlock_company_email(
-    record_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> EmailUnlockResponse:
-    res = await unlock_contact_field(
-        db, current_user, record_id, ContactUnlockField.EMAIL,
-        entity_type=ContactUnlockEntity.COMPANY,
-    )
-    return EmailUnlockResponse(
-        record_id=record_id,
-        email=res["value"],
-        has_email=bool(res["value"]),
-        already_unlocked=res["already_unlocked"],
-        credits_charged=res["credits_charged"],
-    )
-
-
-@router.get(
-    "/companies/{record_id}/unlock/phone",
-    response_model=PhoneUnlockResponse,
-    summary="Unlock contact phone for a company record",
-)
-async def unlock_company_phone(
-    record_id: str,
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-) -> PhoneUnlockResponse:
-    res = await unlock_contact_field(
-        db, current_user, record_id, ContactUnlockField.PHONE,
-        entity_type=ContactUnlockEntity.COMPANY,
     )
     return PhoneUnlockResponse(
         record_id=record_id,
@@ -504,19 +457,10 @@ async def get_company_detail(
     raw = record.raw_data or {}
     mapped = coresignal_service._map_company(raw)
 
-    unlock_map = await get_unlock_map(
-        db, current_user.id, [record_id], entity_type=ContactUnlockEntity.COMPANY
-    )
-    has_email = bool(raw.get("email"))
-    has_phone = bool(raw.get("phone"))
-    apply_company_unlock_state(mapped, record_id, unlock_map)
-
     return {
         **mapped,
         "description": raw.get("description") or raw.get("summary"),
         "specialties": raw.get("specialties"),
-        "has_email": has_email,
-        "has_phone": has_phone,
     }
 
 

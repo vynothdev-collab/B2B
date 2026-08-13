@@ -8,12 +8,14 @@ export default function UnlockDocPage() {
     <div>
       <h1 className="text-2xl font-extrabold text-gray-900">Unlock Contacts</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
-        Work email, personal email, mobile number, company email, and company phone are{" "}
+        Unlocking is available for <span className="font-semibold text-gray-900">person
+        records only</span> — company records don&apos;t have a locked contact field. Work
+        email, personal email, and mobile number are{" "}
         <span className="font-semibold text-gray-900">never</span> included in{" "}
-        <InlineCode>/persons/search</InlineCode> or <InlineCode>/companies/search</InlineCode> responses
-        — they always come back <InlineCode>null</InlineCode>. Each field has its own
-        dedicated endpoint below that you call with the record&apos;s <InlineCode>id</InlineCode> to
-        reveal that one value.
+        <InlineCode>/persons/search</InlineCode> responses — they always come back{" "}
+        <InlineCode>null</InlineCode>. Each field has its own dedicated endpoint below that
+        you call with the person record&apos;s <InlineCode>id</InlineCode> to reveal that one
+        value.
       </p>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
         You&apos;re only charged the first time you unlock a given field on a given record —

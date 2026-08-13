@@ -17,7 +17,10 @@ export interface NavGroup {
 export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Getting Started",
-    items: [{ href: "/document/api-key", label: "Overview" }],
+    items: [
+      { href: "/document/api-key", label: "Overview" },
+      { href: "/document/api-key/pagination", label: "Pagination" },
+    ],
   },
   {
     title: "Person Search",

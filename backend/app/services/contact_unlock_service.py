@@ -9,7 +9,6 @@ async def get_unlock_map(
     db: AsyncSession,
     user_id: str,
     record_ids: list[str],
-    entity_type: str = ContactUnlockEntity.PERSON,
 ) -> dict[str, dict[str, str | None]]:
     """record_id -> {field: unlocked_value} for the given user, fields not present are locked."""
     if not record_ids:
@@ -18,7 +17,7 @@ async def get_unlock_map(
         select(ContactUnlock).where(
             ContactUnlock.user_id == user_id,
             ContactUnlock.record_id.in_(record_ids),
-            ContactUnlock.entity_type == entity_type,
+            ContactUnlock.entity_type == ContactUnlockEntity.PERSON,
         )
     )
     unlock_map: dict[str, dict[str, str | None]] = {}
@@ -41,29 +40,17 @@ def apply_unlock_state(item: dict, record_id: str, unlock_map: dict) -> None:
     }
 
 
-def apply_company_unlock_state(item: dict, record_id: str, unlock_map: dict) -> None:
-    """Mutate a mapped company dict so locked fields never carry their real value."""
-    fields = unlock_map.get(record_id, {})
-    item["email"] = fields.get(ContactUnlockField.EMAIL)
-    item["phone"] = fields.get(ContactUnlockField.PHONE)
-    item["unlocked"] = {
-        "email": ContactUnlockField.EMAIL in fields,
-        "phone": ContactUnlockField.PHONE in fields,
-    }
-
-
 async def get_existing_unlock(
     db: AsyncSession,
     user_id: str,
     record_id: str,
     field: str,
-    entity_type: str = ContactUnlockEntity.PERSON,
 ) -> ContactUnlock | None:
     result = await db.execute(
         select(ContactUnlock).where(
             ContactUnlock.user_id == user_id,
             ContactUnlock.record_id == record_id,
-            ContactUnlock.entity_type == entity_type,
+            ContactUnlock.entity_type == ContactUnlockEntity.PERSON,
             ContactUnlock.field == field,
         )
     )
@@ -74,16 +61,12 @@ _COST_KEY_BY_FIELD = {
     ContactUnlockField.WORK_EMAIL: "work_email",
     ContactUnlockField.PERSONAL_EMAIL: "personal_email",
     ContactUnlockField.MOBILE: "mobile",
-    ContactUnlockField.EMAIL: "company_email",
-    ContactUnlockField.PHONE: "company_phone",
 }
 
 _REASON_BY_FIELD = {
     ContactUnlockField.WORK_EMAIL: "Work Email Unlock",
     ContactUnlockField.PERSONAL_EMAIL: "Personal Email Unlock",
     ContactUnlockField.MOBILE: "Mobile Number Unlock",
-    ContactUnlockField.EMAIL: "Company Email Unlock",
-    ContactUnlockField.PHONE: "Company Phone Unlock",
 }
 
 
@@ -92,16 +75,16 @@ async def unlock_contact_field(
     user,
     record_id: str,
     field: str,
-    entity_type: str = ContactUnlockEntity.PERSON,
 ) -> dict:
     """
     Shared unlock logic used by both the internal (JWT) search API and the
-    public Developer API. Returns {value, already_unlocked, credits_charged}.
+    public Developer API. Person records only — work email, personal email,
+    and mobile. Returns {value, already_unlocked, credits_charged}.
     """
-    from app.models.search_record import CompanySearchRecord, PersonSearchRecord
+    from app.models.search_record import PersonSearchRecord
     from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
 
-    existing = await get_existing_unlock(db, user.id, record_id, field, entity_type)
+    existing = await get_existing_unlock(db, user.id, record_id, field)
     if existing:
         return {"value": existing.value, "already_unlocked": True, "credits_charged": 0}
 
@@ -109,14 +92,9 @@ async def unlock_contact_field(
     cost = CREDIT_COSTS[cost_key]
     await check_credits(user, db, cost)
 
-    if entity_type == ContactUnlockEntity.PERSON:
-        result = await db.execute(
-            select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
-        )
-    else:
-        result = await db.execute(
-            select(CompanySearchRecord).where(CompanySearchRecord.coresignal_id == record_id)
-        )
+    result = await db.execute(
+        select(PersonSearchRecord).where(PersonSearchRecord.coresignal_id == record_id)
+    )
     record = result.scalar_one_or_none()
     if not record:
         raise HTTPException(
@@ -129,12 +107,8 @@ async def unlock_contact_field(
         value = record.email
     elif field == ContactUnlockField.PERSONAL_EMAIL:
         value = raw.get("primary_personal_email") or raw.get("personal_email")
-    elif field == ContactUnlockField.MOBILE:
-        value = raw.get("mobile_phone")
-    elif field == ContactUnlockField.EMAIL:
-        value = raw.get("email")
     else:
-        value = raw.get("phone")
+        value = raw.get("mobile_phone")
 
     reason = _REASON_BY_FIELD[field]
     await deduct_credit(
@@ -147,7 +121,7 @@ async def unlock_contact_field(
         ContactUnlock(
             user_id=user.id,
             record_id=record_id,
-            entity_type=entity_type,
+            entity_type=ContactUnlockEntity.PERSON,
             field=field,
             value=value,
         )

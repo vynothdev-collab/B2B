@@ -32,7 +32,7 @@ export default function CompanySearchIntroPage() {
 
       <Section id="quick-example" title="Quick Example">
         <p>A minimal request — see <Link href="/document/api-key/companies-search/request" className="font-semibold text-red-600 hover:underline">Request Payload</Link> for the full filter list.</p>
-        <CodeBlock label="cURL">{`curl -X POST https://api.leadsbuddy.ai/public/v1/companies/search \\
+        <CodeBlock label="cURL">{`curl -X POST https://api.leadsbuddy.ai/api/public/v1/companies/search \\
   -H "X-API-Key: lb_live_xxxxxxxxxxxxxxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{"industries": ["Computer Software"], "location_countries": ["United States"], "page_size": 10}'`}</CodeBlock>

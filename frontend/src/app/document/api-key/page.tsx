@@ -19,8 +19,9 @@ export default function ApiOverviewPage() {
         </p>
         <ul className="list-inside list-disc space-y-1.5">
           <li>
-            <span className="font-semibold text-gray-900">Getting Started</span> — this page.
-            Covers authentication, pagination, and credits, which apply to every endpoint.
+            <span className="font-semibold text-gray-900">Getting Started</span> — this page,
+            plus <Link href="/document/api-key/pagination" className="font-semibold text-red-600 hover:underline">Pagination</Link> on
+            its own page. Both apply to every endpoint.
           </li>
           <li>
             <span className="font-semibold text-gray-900">Person Search</span> and{" "}
@@ -33,9 +34,9 @@ export default function ApiOverviewPage() {
             jumps between the three.
           </li>
           <li>
-            <span className="font-semibold text-gray-900">Unlock Contacts</span> — the 5
-            endpoints used to reveal work email, personal email, mobile, company email, and
-            company phone one field at a time.
+            <span className="font-semibold text-gray-900">Unlock Contacts</span> — the 3
+            endpoints used to reveal work email, personal email, and mobile, one field at a
+            time. Person records only — company records don&apos;t have a locked contact field.
           </li>
           <li>
             <span className="font-semibold text-gray-900">Reference</span> — error codes you
@@ -43,7 +44,9 @@ export default function ApiOverviewPage() {
           </li>
         </ul>
         <p>
-          If you&apos;re new here, read Authentication and Credits below, then jump to{" "}
+          If you&apos;re new here, read Authentication below and{" "}
+          <Link href="/document/api-key/pagination" className="font-semibold text-red-600 hover:underline">Pagination</Link>,
+          then jump to{" "}
           <Link href="/document/api-key/persons-search" className="font-semibold text-red-600 hover:underline">Person Search → Introduction</Link>{" "}
           or <Link href="/document/api-key/companies-search" className="font-semibold text-red-600 hover:underline">Company Search → Introduction</Link>.
         </p>
@@ -55,32 +58,22 @@ export default function ApiOverviewPage() {
           Generate a key from <span className="font-semibold text-gray-900">Search → API Keys</span> once
           signed in to your leadsbuddy.ai account.
         </p>
-        <CodeBlock label="cURL">{`curl https://api.leadsbuddy.ai/public/v1/persons/search \\
+        <CodeBlock label="cURL">{`curl https://api.leadsbuddy.ai/api/public/v1/persons/search \\
   -H "X-API-Key: lb_live_xxxxxxxxxxxxxxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{"job_title": ["VP Sales"], "page_size": 10}'`}</CodeBlock>
         <p>
-          Base URL: <InlineCode>https://api.leadsbuddy.ai/public/v1</InlineCode>
+          Base URL: <InlineCode>https://api.leadsbuddy.ai/api/public/v1</InlineCode>
         </p>
       </Section>
 
-      <Section id="pagination" title="Pagination">
+      <Section id="pagination-pointer" title="Pagination">
         <p>
           Search endpoints use cursor-based pagination — a normal REST pattern, not
-          Elasticsearch. Set <InlineCode>page_size</InlineCode> (1–1000, default 10) on your
-          request. Every response includes a <InlineCode>meta</InlineCode> object with the
-          total match count and a <InlineCode>scroll_token</InlineCode>. Pass that token back
-          as <InlineCode>scroll_token</InlineCode> on your next request to fetch the following
-          page; omit it to start from the first page.
+          Elasticsearch. See the dedicated{" "}
+          <Link href="/document/api-key/pagination" className="font-semibold text-red-600 hover:underline">Pagination</Link> page
+          for the full request/response contract.
         </p>
-        <CodeBlock label="Response meta">{`{
-  "data": [ /* array of person or company records */ ],
-  "meta": {
-    "total": 4231,
-    "total_pages": 424,
-    "scroll_token": "eyJvZmZzZXQiOj..."
-  }
-}`}</CodeBlock>
       </Section>
 
       <Section id="credits" title="Credits">
@@ -129,7 +122,7 @@ export default function ApiOverviewPage() {
           <li>
             <Link href="/document/api-key/unlock" className="font-semibold text-red-600 hover:underline">
               Unlock Contacts
-            </Link> — 5 endpoints to reveal work email, personal email, mobile, company email, and company phone
+            </Link> — 3 endpoints to reveal work email, personal email, and mobile for person records
           </li>
         </ul>
       </Section>
