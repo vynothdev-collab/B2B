@@ -28,5 +28,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api).*)"],
+  // Skip Next internals, the API proxy, and any static file in /public (logos, icons, etc.)
+  // so unauthenticated requests for them aren't bounced to /login.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|json)$).*)",
+  ],
 };
