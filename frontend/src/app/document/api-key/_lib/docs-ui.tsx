@@ -49,6 +49,10 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [{ href: "/document/api-key/unlock", label: "Endpoints" }],
   },
   {
+    title: "Autocomplete",
+    items: [{ href: "/document/api-key/autocomplete", label: "Endpoint" }],
+  },
+  {
     title: "Reference",
     items: [{ href: "/document/api-key/errors", label: "Errors" }],
   },

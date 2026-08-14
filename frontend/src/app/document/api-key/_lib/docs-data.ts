@@ -865,10 +865,32 @@ export const SAMPLE_ALREADY_UNLOCKED_RESPONSE = `{
   "credits_charged": 0
 }`;
 
+export const SAMPLE_RECORD_NOT_FOUND_RESPONSE = `{
+  "detail": "Record not found. Run a new search to refresh."
+}`;
+
 export const SAMPLE_AI_SEARCH_PERSON_REQUEST = `{
   "prompt": "VP of Sales at SaaS companies with 200+ employees in the US",
   "entity": "employee",
   "page_size": 10
+}`;
+
+export const SAMPLE_AI_SEARCH_PAGE2_REQUEST = `{
+  "prompt": "VP of Sales at SaaS companies with 200+ employees in the US",
+  "entity": "employee",
+  "page_size": 10,
+  "scroll_token": "eyJvZmZzZXQiOjEwfQ==",
+  "es_query": { "bool": { "must": [{ "match_phrase": { "active_experience_title": "VP of Sales" } }] } }
+}`;
+
+export const SAMPLE_AI_SEARCH_EMPTY_RESPONSE = `{
+  "data": [],
+  "meta": {
+    "total": 0,
+    "total_pages": 0,
+    "scroll_token": null,
+    "es_query": null
+  }
 }`;
 
 export const SAMPLE_AI_SEARCH_COMPANY_REQUEST = `{
@@ -899,6 +921,47 @@ export const SAMPLE_AI_SEARCH_RESPONSE = `{
     "scroll_token": "eyJvZmZzZXQiOjEwfQ==",
     "es_query": { "bool": { "must": [{ "match_phrase": { "active_experience_title": "VP of Sales" } }] } }
   }
+}`;
+
+export const SAMPLE_AUTOCOMPLETE_REQUEST = `GET /autocomplete?field=job_title&text=vp+sa&size=10`;
+
+export const SAMPLE_AUTOCOMPLETE_RESPONSE = `{
+  "suggestions": [
+    "vp sales",
+    "vp sales and marketing",
+    "vp sales operations",
+    "vp sales enablement",
+    "vp sales engineering"
+  ]
+}`;
+
+export const SAMPLE_AUTOCOMPLETE_INDUSTRY_REQUEST = `GET /autocomplete?field=industry&text=software&size=5`;
+
+export const SAMPLE_AUTOCOMPLETE_INDUSTRY_RESPONSE = `{
+  "suggestions": [
+    "Data Security Software Products",
+    "Desktop Computing Software Products",
+    "Embedded Software Products",
+    "IT System Custom Software Development",
+    "Mobile Computing Software Products"
+  ]
+}`;
+
+export const SAMPLE_AUTOCOMPLETE_SENIORITY_REQUEST = `GET /autocomplete?field=seniority&text=v`;
+
+export const SAMPLE_AUTOCOMPLETE_SENIORITY_RESPONSE = `{
+  "suggestions": ["vp"]
+}`;
+
+export const SAMPLE_AUTOCOMPLETE_VALIDATION_ERROR = `{
+  "detail": [
+    {
+      "type": "literal_error",
+      "loc": ["query", "field"],
+      "msg": "Input should be 'job_title', 'technology', 'seniority', 'department', 'industry', 'company_status', 'company_how_they_sell', 'company_more_flags', 'company_revenue_model', 'revenue_bucket', 'funding_stage', 'email_provider' or 'certification'",
+      "input": "location"
+    }
+  ]
 }`;
 
 export const SAMPLE_INSUFFICIENT_CREDITS_RESPONSE = `{

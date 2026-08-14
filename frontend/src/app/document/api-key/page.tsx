@@ -43,6 +43,11 @@ export default function ApiOverviewPage() {
             time. Person records only — company records don&apos;t have a locked contact field.
           </li>
           <li>
+            <span className="font-semibold text-gray-900">Autocomplete</span> — one endpoint
+            for type-ahead suggestions on job title, technology, and intent filters. Free —
+            doesn&apos;t deduct credits.
+          </li>
+          <li>
             <span className="font-semibold text-gray-900">Reference</span> — error codes you
             may encounter.
           </li>
@@ -132,6 +137,11 @@ export default function ApiOverviewPage() {
             <Link href="/document/api-key/unlock" className="font-semibold text-red-600 hover:underline">
               Unlock Contacts
             </Link> — 3 endpoints to reveal work email, personal email, and mobile for person records
+          </li>
+          <li>
+            <Link href="/document/api-key/autocomplete" className="font-semibold text-red-600 hover:underline">
+              Autocomplete
+            </Link> — <InlineCode>GET /autocomplete</InlineCode>, suggestions for job_title, technology, and intent filters
           </li>
         </ul>
       </Section>
