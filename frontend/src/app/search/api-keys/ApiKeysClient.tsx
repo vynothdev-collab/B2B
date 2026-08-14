@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import axios from "axios";
 import {
   Key, Loader2, PlusCircle, Copy, Check, Trash2, AlertCircle, ExternalLink,
+  Search, Unlock, Wallet, ShieldCheck,
 } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import {
@@ -15,9 +17,54 @@ import {
 
 const RED = "#dc2626";
 
+const FEATURES = [
+  {
+    icon: Search,
+    title: "Search people & companies",
+    text: "The same filters and data as People / Companies search, called from your own systems.",
+  },
+  {
+    icon: Unlock,
+    title: "Unlock verified contacts",
+    text: "Reveal work email, personal email, and mobile number per record, on demand.",
+  },
+  {
+    icon: Wallet,
+    title: "One shared credit balance",
+    text: "API usage draws from the same credits as the web app — no separate quota to manage.",
+  },
+];
+
 function formatDate(iso: string | null): string {
   if (!iso) return "Never";
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function StatCard({ label, value, tone }: { label: string; value: number; tone: "red" | "green" | "gray" }) {
+  const toneClasses = {
+    red: "text-red-600",
+    green: "text-emerald-600",
+    gray: "text-gray-500",
+  }[tone];
+  return (
+    <div className="flex-1 rounded-2xl border border-gray-100 bg-white px-5 py-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+      <p className={`mt-1 text-2xl font-extrabold ${toneClasses}`}>{value}</p>
+    </div>
+  );
+}
+
+function KeyRowSkeleton() {
+  return (
+    <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
+      <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-gray-100" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3.5 w-32 animate-pulse rounded bg-gray-100" />
+        <div className="h-3 w-48 animate-pulse rounded bg-gray-100" />
+      </div>
+      <div className="h-6 w-16 animate-pulse rounded-full bg-gray-100" />
+    </div>
+  );
 }
 
 export default function ApiKeysClient() {
@@ -39,10 +86,11 @@ export default function ApiKeysClient() {
     try {
       const data = await listApiKeys(signal);
       setKeys(data);
-    } catch {
+    } catch (err) {
+      if (axios.isCancel(err) || signal?.aborted) return;
       setError("Failed to load API keys.");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
@@ -91,104 +139,150 @@ export default function ApiKeysClient() {
     setNewKeyName("");
   }
 
+  const activeCount = keys.filter((k) => k.is_active).length;
+  const revokedCount = keys.length - activeCount;
+
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50">
       <AppHeader title="API Keys" />
 
-      <div className="mx-auto w-full max-w-4xl flex-1 p-4 sm:p-6">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-gray-500">
-              Use an API key to call the LeadsBuddy Developer API directly from your own
-              systems. Usage draws from the same credit balance as the web app.
-            </p>
-            <a
-              href="/document/api-key"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-red-600 hover:underline"
+      <div className="mx-auto w-full max-w-4xl flex-1 space-y-5 p-4 sm:p-6">
+        {/* Intro / hero */}
+        <div className="rounded-2xl border border-red-100 bg-white p-6">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50">
+                <Key className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">LeadsBuddy Developer API</h1>
+                <p className="mt-1 max-w-xl text-sm leading-relaxed text-gray-500">
+                  Generate an API key to call the LeadsBuddy Developer API directly from your
+                  own systems — search people and companies, then unlock verified contact
+                  details, all using the same data as this app.
+                </p>
+                <a
+                  href="/document/api-key"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-red-600 hover:underline"
+                >
+                  View API documentation <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowCreate(true)}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              style={{ background: RED }}
             >
-              View API documentation <ExternalLink className="h-3.5 w-3.5" />
-            </a>
+              <PlusCircle className="h-4 w-4" /> New API Key
+            </button>
           </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
-            style={{ background: RED }}
-          >
-            <PlusCircle className="h-4 w-4" /> New API Key
-          </button>
+
+          <div className="mt-5 grid grid-cols-1 gap-3 border-t border-gray-100 pt-5 sm:grid-cols-3">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="flex gap-2.5">
+                <f.icon className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                <div>
+                  <p className="text-xs font-bold text-gray-900">{f.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-gray-500">{f.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
+        {/* Stats */}
+        {!loading && keys.length > 0 && (
+          <div className="flex gap-3">
+            <StatCard label="Total Keys" value={keys.length} tone="gray" />
+            <StatCard label="Active" value={activeCount} tone="green" />
+            <StatCard label="Revoked" value={revokedCount} tone="red" />
+          </div>
+        )}
+
         {error && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
             <AlertCircle className="h-4 w-4 shrink-0" /> {error}
           </div>
         )}
 
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
-          {loading ? (
-            <div className="flex items-center justify-center gap-2 p-10 text-gray-400">
-              <Loader2 className="h-5 w-5 animate-spin" /> Loading…
+        {/* Keys list */}
+        {loading ? (
+          <div className="space-y-3">
+            <KeyRowSkeleton />
+            <KeyRowSkeleton />
+          </div>
+        ) : keys.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50">
+              <Key className="h-6 w-6 text-red-400" />
             </div>
-          ) : keys.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 p-10 text-center text-gray-400">
-              <Key className="h-8 w-8" />
-              <p className="text-sm font-medium text-gray-500">No API keys yet</p>
-              <p className="text-xs">Create one to start calling the Developer API.</p>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">No API keys yet</p>
+              <p className="mt-0.5 text-xs text-gray-400">Create one to start calling the Developer API.</p>
             </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  <th className="px-5 py-3">Name</th>
-                  <th className="px-5 py-3">Key</th>
-                  <th className="px-5 py-3">Created</th>
-                  <th className="px-5 py-3">Last Used</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {keys.map((k) => (
-                  <tr key={k.id} className="border-b border-gray-50 last:border-0">
-                    <td className="px-5 py-3 font-medium text-gray-900">{k.name}</td>
-                    <td className="px-5 py-3 font-mono text-xs text-gray-500">{k.key_prefix}…</td>
-                    <td className="px-5 py-3 text-gray-500">{formatDate(k.created_at)}</td>
-                    <td className="px-5 py-3 text-gray-500">{formatDate(k.last_used_at)}</td>
-                    <td className="px-5 py-3">
+            <button
+              onClick={() => setShowCreate(true)}
+              className="mt-1 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white"
+              style={{ background: RED }}
+            >
+              <PlusCircle className="h-4 w-4" /> New API Key
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {keys.map((k) => (
+              <div
+                key={k.id}
+                className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 transition hover:border-gray-200 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                      k.is_active ? "bg-red-50" : "bg-gray-100"
+                    }`}
+                  >
+                    <Key className={`h-4 w-4 ${k.is_active ? "text-red-500" : "text-gray-400"}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-bold text-gray-900">{k.name}</p>
                       {k.is_active ? (
-                        <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-                          Active
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                          <ShieldCheck className="h-3 w-3" /> Active
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500">
                           Revoked
                         </span>
                       )}
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      {k.is_active && (
-                        <button
-                          onClick={() => handleRevoke(k.id)}
-                          disabled={revokingId === k.id}
-                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                        >
-                          {revokingId === k.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-3.5 w-3.5" />
-                          )}
-                          Revoke
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+                    </div>
+                    <p className="mt-0.5 font-mono text-xs text-gray-400">{k.key_prefix}…</p>
+                    <p className="mt-0.5 text-xs text-gray-400">
+                      Created {formatDate(k.created_at)} · Last used {formatDate(k.last_used_at)}
+                    </p>
+                  </div>
+                </div>
+                {k.is_active && (
+                  <button
+                    onClick={() => handleRevoke(k.id)}
+                    disabled={revokingId === k.id}
+                    className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 sm:self-center"
+                  >
+                    {revokingId === k.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                    Revoke
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {showCreate && (
@@ -196,7 +290,10 @@ export default function ApiKeysClient() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             {!createdKey ? (
               <>
-                <h2 className="text-lg font-bold text-gray-900">Create API Key</h2>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50">
+                  <Key className="h-5 w-5 text-red-600" />
+                </div>
+                <h2 className="mt-3 text-lg font-bold text-gray-900">Create API Key</h2>
                 <p className="mt-1 text-sm text-gray-500">
                   Give this key a name so you can recognize it later.
                 </p>
@@ -227,7 +324,10 @@ export default function ApiKeysClient() {
               </>
             ) : (
               <>
-                <h2 className="text-lg font-bold text-gray-900">API Key Created</h2>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50">
+                  <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                </div>
+                <h2 className="mt-3 text-lg font-bold text-gray-900">API Key Created</h2>
                 <p className="mt-1 text-sm text-gray-500">
                   Copy and store this key now — you won&apos;t be able to see it again.
                 </p>

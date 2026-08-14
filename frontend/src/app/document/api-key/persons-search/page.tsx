@@ -6,8 +6,8 @@ export const metadata = { title: "leadsbuddy.ai: Person Search API" };
 export default function PersonSearchIntroPage() {
   return (
     <div>
-      <h1 className="text-2xl font-extrabold text-gray-900">Person Search</h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
+      <h1 className="text-lg font-extrabold text-gray-900 sm:text-2xl">Person Search</h1>
+      <p className="mt-2 max-w-2xl text-xs leading-relaxed text-gray-600 sm:text-sm">
         <InlineCode>POST /persons/search</InlineCode> searches people using the same filters
         available in the web app&apos;s People search — job title, location, industry, revenue,
         technologies, and more. Every result includes the same full profile data shown on a

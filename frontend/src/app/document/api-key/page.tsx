@@ -5,8 +5,8 @@ import { CREDIT_COSTS } from "./_lib/docs-data";
 export default function ApiOverviewPage() {
   return (
     <div>
-      <h1 className="text-3xl font-extrabold text-gray-900">Developer API Documentation</h1>
-      <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">
+      <h1 className="text-xl font-extrabold text-gray-900 sm:text-3xl">Developer API Documentation</h1>
+      <p className="mt-3 max-w-2xl text-xs leading-relaxed text-gray-600 sm:text-sm">
         The leadsbuddy.ai Developer API lets you search people and companies and unlock
         verified contact details directly from your own systems, using the same data and
         field names shown in the leadsbuddy.ai web app. No authentication is required to

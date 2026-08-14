@@ -7,8 +7,8 @@ export const metadata = { title: "leadsbuddy.ai: Person Search — Response" };
 export default function PersonSearchResponsePage() {
   return (
     <div>
-      <h1 className="text-2xl font-extrabold text-gray-900">Person Search — Response</h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
+      <h1 className="text-lg font-extrabold text-gray-900 sm:text-2xl">Person Search — Response</h1>
+      <p className="mt-2 max-w-2xl text-xs leading-relaxed text-gray-600 sm:text-sm">
         This page documents the shape of a successful <InlineCode>200 OK</InlineCode> response
         from <InlineCode>POST /persons/search</InlineCode>, and what every field in it means.
         Each record includes the full profile data shown on that person&apos;s business card in

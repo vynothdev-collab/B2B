@@ -13,8 +13,8 @@ const ERRORS: { status: string; meaning: string }[] = [
 export default function ErrorsDocPage() {
   return (
     <div>
-      <h1 className="text-2xl font-extrabold text-gray-900">Errors</h1>
-      <p className="mt-2 text-sm leading-relaxed text-gray-600">
+      <h1 className="text-lg font-extrabold text-gray-900 sm:text-2xl">Errors</h1>
+      <p className="mt-2 text-xs leading-relaxed text-gray-600 sm:text-sm">
         Errors are returned as a standard HTTP status code with a JSON body describing what
         went wrong.
       </p>

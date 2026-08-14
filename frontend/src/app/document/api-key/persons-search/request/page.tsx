@@ -6,8 +6,8 @@ export const metadata = { title: "leadsbuddy.ai: Person Search — Request Paylo
 export default function PersonSearchRequestPage() {
   return (
     <div>
-      <h1 className="text-2xl font-extrabold text-gray-900">Person Search — Request Payload</h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
+      <h1 className="text-lg font-extrabold text-gray-900 sm:text-2xl">Person Search — Request Payload</h1>
+      <p className="mt-2 max-w-2xl text-xs leading-relaxed text-gray-600 sm:text-sm">
         This page documents everything you can send in the JSON body of{" "}
         <InlineCode>POST /persons/search</InlineCode>. Every filter is optional — send only
         the ones you need. Filters are grouped exactly as they appear under People search in

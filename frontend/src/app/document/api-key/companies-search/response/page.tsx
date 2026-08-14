@@ -7,8 +7,8 @@ export const metadata = { title: "leadsbuddy.ai: Company Search — Response" };
 export default function CompanySearchResponsePage() {
   return (
     <div>
-      <h1 className="text-2xl font-extrabold text-gray-900">Company Search — Response</h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
+      <h1 className="text-lg font-extrabold text-gray-900 sm:text-2xl">Company Search — Response</h1>
+      <p className="mt-2 max-w-2xl text-xs leading-relaxed text-gray-600 sm:text-sm">
         This page documents the shape of a successful <InlineCode>200 OK</InlineCode> response
         from <InlineCode>POST /companies/search</InlineCode>, and what every field in it means.
         Each record includes the full profile data shown on that company&apos;s business card

@@ -6,8 +6,8 @@ export const metadata = { title: "leadsbuddy.ai: Company Search API" };
 export default function CompanySearchIntroPage() {
   return (
     <div>
-      <h1 className="text-2xl font-extrabold text-gray-900">Company Search</h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
+      <h1 className="text-lg font-extrabold text-gray-900 sm:text-2xl">Company Search</h1>
+      <p className="mt-2 max-w-2xl text-xs leading-relaxed text-gray-600 sm:text-sm">
         <InlineCode>POST /companies/search</InlineCode> searches companies using the same
         filters available in the web app&apos;s Company search — industry, location, revenue,
         funding, technologies, and more. Every result includes the same full profile data

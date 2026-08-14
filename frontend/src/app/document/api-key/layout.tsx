@@ -9,9 +9,9 @@ export default function ApiKeyDocsLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-dvh bg-white">
       <DocsHeader />
-      <div className="flex flex-col gap-8 px-6 py-10 sm:px-10 lg:flex-row lg:px-16">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-5 px-4 py-6 sm:gap-8 sm:px-10 sm:py-10 lg:flex-row lg:px-16">
         <DocsSidebar />
-        <main className="w-full min-w-0 max-w-4xl">{children}</main>
+        <main className="w-full min-w-0 max-w-6xl">{children}</main>
       </div>
     </div>
   );

@@ -6,8 +6,8 @@ export const metadata = { title: "leadsbuddy.ai: Pagination" };
 export default function PaginationDocPage() {
   return (
     <div>
-      <h1 className="text-2xl font-extrabold text-gray-900">Pagination</h1>
-      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
+      <h1 className="text-lg font-extrabold text-gray-900 sm:text-2xl">Pagination</h1>
+      <p className="mt-2 max-w-2xl text-xs leading-relaxed text-gray-600 sm:text-sm">
         This page documents how to page through results from{" "}
         <Link href="/document/api-key/persons-search" className="font-semibold text-red-600 hover:underline">Person Search</Link>{" "}
         and <Link href="/document/api-key/companies-search" className="font-semibold text-red-600 hover:underline">Company Search</Link>.
