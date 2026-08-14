@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ChevronDown, Menu } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { ChevronDown, Menu, Search, X } from "lucide-react";
 import type { FieldDoc, FilterGroup } from "./docs-data";
 
 export interface NavItem {
@@ -58,16 +58,193 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+function DocsSearch() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const allItems = useMemo(
+    () => NAV_GROUPS.flatMap((g) => g.items.map((item) => ({ ...item, group: g.title }))),
+    [],
+  );
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return allItems;
+    return allItems.filter(
+      (item) => item.label.toLowerCase().includes(q) || item.group.toLowerCase().includes(q),
+    );
+  }, [allItems, query]);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query, open]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        !!target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      if (!open && e.key === "/" && !isTyping) {
+        e.preventDefault();
+        openDropdown();
+        inputRef.current?.focus();
+      } else if (open && e.key === "Escape") {
+        setOpen(false);
+        inputRef.current?.blur();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
+  function openDropdown() {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 8, left: rect.left, width: Math.max(rect.width, 320) });
+    }
+    setOpen(true);
+  }
+
+  function go(href: string) {
+    setOpen(false);
+    setQuery("");
+    router.push(href);
+  }
+
+  function onInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.min(i + 1, results.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const item = results[activeIndex];
+      if (item) go(item.href);
+    }
+  }
+
+  return (
+    <>
+      <div
+        ref={containerRef}
+        className="relative z-50 flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-gray-400 shadow-sm transition focus-within:border-gray-300 focus-within:shadow hover:border-gray-300 sm:w-64 sm:px-3"
+      >
+        <Search className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            openDropdown();
+          }}
+          onFocus={openDropdown}
+          onKeyDown={onInputKeyDown}
+          placeholder="Search docs..."
+          className="hidden w-full text-sm text-gray-900 outline-none placeholder:text-gray-400 sm:inline"
+        />
+        {query ? (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              inputRef.current?.focus();
+            }}
+            className="ml-auto hidden shrink-0 text-gray-400 hover:text-gray-600 sm:inline-block"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        ) : (
+          <kbd className="ml-auto hidden rounded-md border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400 sm:inline-block">/</kbd>
+        )}
+      </div>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
+            style={{ top: pos.top, left: pos.left, width: pos.width }}
+          >
+            <div className="max-h-96 overflow-y-auto p-2">
+              {results.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 px-3 py-12 text-center">
+                  <Search className="h-6 w-6 text-gray-300" />
+                  <p className="text-sm font-medium text-gray-500">
+                    No pages match &quot;{query}&quot;
+                  </p>
+                  <p className="text-xs text-gray-400">Try a different search term.</p>
+                </div>
+              ) : (
+                results.map((item, i) => {
+                  const prevGroup = i > 0 ? results[i - 1].group : null;
+                  const showGroupHeader = item.group !== prevGroup;
+                  return (
+                    <div key={item.href}>
+                      {showGroupHeader && (
+                        <p className="mt-2 px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 first:mt-0.5">
+                          {item.group}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onMouseEnter={() => setActiveIndex(i)}
+                        onClick={() => go(item.href)}
+                        className={`group flex w-full items-center justify-between rounded-lg border-l-2 px-3 py-2 text-left text-sm transition ${
+                          i === activeIndex
+                            ? "border-red-500 bg-red-50 text-red-700"
+                            : "border-transparent text-gray-700 hover:border-gray-200 hover:bg-gray-50"
+                        }`}
+                      >
+                        <span className="font-medium">{item.label}</span>
+                        {i === activeIndex && (
+                          <kbd className="rounded border border-red-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-red-500">
+                            ↵
+                          </kbd>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 border-t border-gray-100 bg-gray-50 px-4 py-2 text-[11px] text-gray-500">
+              <span className="flex items-center gap-1">
+                <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 shadow-sm">↑↓</kbd> navigate
+              </span>
+              <span className="flex items-center gap-1">
+                <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 shadow-sm">Enter</kbd> open
+              </span>
+              <span className="flex items-center gap-1">
+                <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 shadow-sm">Esc</kbd> close
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 export function DocsHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-gray-100 bg-white/90 backdrop-blur">
-      <div className="flex items-center justify-between px-6 py-4 sm:px-10 lg:px-16">
-        <Link href="/document/api-key" className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center justify-between gap-3 px-6 py-4 sm:px-10 lg:px-16">
+        <Link href="/document/api-key" className="flex shrink-0 items-center gap-2 sm:gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/leadsbuddy-logo.svg" alt="leadsbuddy.ai" className="h-5 w-auto sm:h-7" />
           <span className="hidden text-sm font-semibold text-gray-400 sm:inline">Developer API</span>
         </Link>
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <DocsSearch />
           <a
             href="/login"
             target="_blank"
