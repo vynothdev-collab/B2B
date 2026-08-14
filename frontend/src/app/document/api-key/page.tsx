@@ -34,6 +34,10 @@ export default function ApiOverviewPage() {
             jumps between the three.
           </li>
           <li>
+            <span className="font-semibold text-gray-900">AI Search</span> — one endpoint that
+            searches with a plain-English prompt instead of structured filters.
+          </li>
+          <li>
             <span className="font-semibold text-gray-900">Unlock Contacts</span> — the 3
             endpoints used to reveal work email, personal email, and mobile, one field at a
             time. Person records only — company records don&apos;t have a locked contact field.
@@ -118,6 +122,11 @@ export default function ApiOverviewPage() {
             <Link href="/document/api-key/companies-search" className="font-semibold text-red-600 hover:underline">
               Company Search
             </Link> — <InlineCode>POST /companies/search</InlineCode>
+          </li>
+          <li>
+            <Link href="/document/api-key/ai-search" className="font-semibold text-red-600 hover:underline">
+              AI Search
+            </Link> — <InlineCode>POST /ai-search</InlineCode>
           </li>
           <li>
             <Link href="/document/api-key/unlock" className="font-semibold text-red-600 hover:underline">

@@ -1908,7 +1908,7 @@ _AGENTIC_URL = f"{settings.CORESIGNAL_BASE_URL}/v2/agentic_search/fast"
 
 
 async def agentic_search(
-    req: AgenticSearchRequest, db: AsyncSession | None = None
+    req: AgenticSearchRequest, db: AsyncSession | None = None, full_detail: bool = False
 ) -> SearchResponse:
     _require_api_key()
 
@@ -1971,7 +1971,10 @@ async def agentic_search(
             status_code=502, detail="Could not reach API. Please try again later."
         )
 
-    map_fn = _map_company if req.entity == "company" else _map_person
+    if full_detail:
+        map_fn = map_company_detail if req.entity == "company" else map_person_detail
+    else:
+        map_fn = _map_company if req.entity == "company" else _map_person
 
     if db is not None:
         try:

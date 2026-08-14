@@ -41,6 +41,10 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "AI Search",
+    items: [{ href: "/document/api-key/ai-search", label: "Endpoint" }],
+  },
+  {
     title: "Unlock Contacts",
     items: [{ href: "/document/api-key/unlock", label: "Endpoints" }],
   },

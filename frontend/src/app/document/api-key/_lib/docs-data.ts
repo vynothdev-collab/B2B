@@ -583,6 +583,7 @@ export const COMPANY_FILTER_GROUPS: FilterGroup[] = [
 
 export const CREDIT_COSTS: { action: string; credits: number }[] = [
   { action: "Person / Company search (per request)", credits: 10 },
+  { action: "AI search (per request)", credits: 10 },
   { action: "Work email unlock (person)", credits: 1 },
   { action: "Personal email unlock (person)", credits: 1 },
   { action: "Mobile number unlock (person)", credits: 10 },
@@ -862,6 +863,42 @@ export const SAMPLE_ALREADY_UNLOCKED_RESPONSE = `{
   "has_email": true,
   "already_unlocked": true,
   "credits_charged": 0
+}`;
+
+export const SAMPLE_AI_SEARCH_PERSON_REQUEST = `{
+  "prompt": "VP of Sales at SaaS companies with 200+ employees in the US",
+  "entity": "employee",
+  "page_size": 10
+}`;
+
+export const SAMPLE_AI_SEARCH_COMPANY_REQUEST = `{
+  "prompt": "Fast-growing fintech companies in Europe with 50-500 employees",
+  "entity": "company",
+  "page_size": 10
+}`;
+
+export const SAMPLE_AI_SEARCH_RESPONSE = `{
+  "data": [
+    {
+      "id": "1029384756",
+      "full_name": "Jordan Lee",
+      "headline": "VP of Sales at Acme Corp",
+      "location_country": "United States",
+      "active_experience_title": "VP of Sales",
+      "active_experience_company_name": "Acme Corp",
+      "active_experience_company_employees_count": 850,
+      "has_email": true,
+      "work_email": null,
+      "personal_email": null,
+      "mobile_phone": null
+    }
+  ],
+  "meta": {
+    "total": 187,
+    "total_pages": 19,
+    "scroll_token": "eyJvZmZzZXQiOjEwfQ==",
+    "es_query": { "bool": { "must": [{ "match_phrase": { "active_experience_title": "VP of Sales" } }] } }
+  }
 }`;
 
 export const SAMPLE_INSUFFICIENT_CREDITS_RESPONSE = `{
