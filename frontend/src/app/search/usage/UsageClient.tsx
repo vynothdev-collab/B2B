@@ -228,14 +228,14 @@ function StatCard({
     <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-center gap-3">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
           style={{ background: iconBg ?? "#f9fafb" }}
         >
           {icon}
         </div>
-        <p className="text-xs font-medium text-gray-400">{label}</p>
+        <p className="text-sm font-medium text-gray-400">{label}</p>
       </div>
-      <p className="mt-3 text-2xl font-bold tabular-nums" style={{ color: color ?? "#111827" }}>{value}</p>
+      <p className="mt-3 text-3xl font-bold tabular-nums" style={{ color: color ?? "#111827" }}>{value}</p>
       {typeof pct === "number" && (
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
           <div
@@ -244,7 +244,7 @@ function StatCard({
           />
         </div>
       )}
-      {sub && <p className="mt-1.5 text-xs text-gray-400">{sub}</p>}
+      {sub && <p className="mt-1.5 text-sm text-gray-400">{sub}</p>}
     </div>
   );
 }
@@ -315,8 +315,8 @@ export default function UsageClient() {
     return (
       <>
         <AppHeader title="Usage" />
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-6">
-          <div className="w-full space-y-5">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+          <div className="mx-auto w-full max-w-7xl space-y-5">
             <CreditBalanceSkeleton />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <StatCardSkeleton />
@@ -384,14 +384,14 @@ export default function UsageClient() {
   return (
     <>
       <AppHeader title="Usage" />
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-6">
-        <div className="w-full space-y-5">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+        <div className="mx-auto w-full max-w-7xl space-y-5">
 
           {allocated === 0 ? (
             <div className="flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white py-10 text-center shadow-sm">
               <Wallet className="h-8 w-8 text-gray-300" />
-              <p className="text-sm font-medium text-gray-500">No credits allocated yet</p>
-              <p className="text-xs text-gray-400">
+              <p className="text-base font-medium text-gray-500">No credits allocated yet</p>
+              <p className="text-sm text-gray-400">
                 {isEnterpriseUser
                   ? "Your Enterprise Admin hasn't allocated any credits to your account."
                   : "Contact your administrator to have credits added."}
@@ -443,8 +443,8 @@ export default function UsageClient() {
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
               <div className="flex items-center gap-2">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Usage Over Time</h3>
-                  <p className="mt-0.5 text-xs text-gray-400">Daily searches — last {days} days</p>
+                  <h3 className="text-base font-semibold text-gray-900">Usage Over Time</h3>
+                  <p className="mt-0.5 text-sm text-gray-400">Daily searches — last {days} days</p>
                 </div>
                 {historyFetching && !historyInitialLoading && (
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-300" />
@@ -456,7 +456,7 @@ export default function UsageClient() {
                     key={n}
                     type="button"
                     onClick={() => setDays(n)}
-                    className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+                    className="rounded-md px-2.5 py-1 text-sm font-medium transition-colors"
                     style={
                       days === n
                         ? { background: "#111827", color: "#fff" }
@@ -499,7 +499,7 @@ export default function UsageClient() {
                 <LegendDot color="#10b981" label={`People (${totalPerson.toLocaleString()})`} />
                 <LegendDot color="#f59e0b" label={`Company (${totalCompany.toLocaleString()})`} />
                 <LegendDot color="#8b5cf6" label={`Agentic (${totalAgentic.toLocaleString()})`} />
-                <span className="ml-auto text-xs text-gray-400">
+                <span className="ml-auto text-sm text-gray-400">
                   {(totalPerson + totalCompany + totalAgentic).toLocaleString()} searches in {days}d
                 </span>
               </div>
@@ -511,8 +511,8 @@ export default function UsageClient() {
             <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Usage Log</h3>
-                  <p className="mt-0.5 text-xs text-gray-400">
+                  <h3 className="text-base font-semibold text-gray-900">Usage Log</h3>
+                  <p className="mt-0.5 text-sm text-gray-400">
                     {history ? `${history.total.toLocaleString()} total searches` : "Last 20 searches"}
                   </p>
                 </div>
@@ -532,7 +532,7 @@ export default function UsageClient() {
                     type="button"
                     onClick={() => setLogFilter(f.key)}
                     disabled={historyFetching}
-                    className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed"
+                    className="rounded-md px-2.5 py-1 text-sm font-medium transition-colors disabled:cursor-not-allowed"
                     style={
                       logFilter === f.key
                         ? { background: "#fff", color: "#111827", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }
@@ -586,7 +586,7 @@ export default function UsageClient() {
                 </div>
 
                 <div className="flex flex-col gap-3 border-t border-gray-100 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm text-gray-400">
                     Showing {(safePage - 1) * PAGE_SIZE + 1}-{Math.min(safePage * PAGE_SIZE, recentTotal)} of {recentTotal}
                   </p>
                   <div className="flex items-center gap-1 rounded-lg bg-gray-50 p-1">
@@ -595,17 +595,17 @@ export default function UsageClient() {
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={safePage <= 1 || historyFetching}
                       aria-label="Previous page"
-                      className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                      className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" /> Prev
                     </button>
-                    <span className="px-2 text-xs font-medium text-gray-500">Page {safePage} / {pageCount}</span>
+                    <span className="px-2 text-sm font-medium text-gray-500">Page {safePage} / {pageCount}</span>
                     <button
                       type="button"
                       onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
                       disabled={safePage >= pageCount || historyFetching}
                       aria-label="Next page"
-                      className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                      className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
                     >
                       Next <ChevronRight className="h-3.5 w-3.5" />
                     </button>
@@ -619,7 +619,7 @@ export default function UsageClient() {
           {isEnterpriseUser && (
             <div className="rounded-xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm text-blue-700">
               <p className="font-medium">How your credits work</p>
-              <p className="mt-1 text-xs text-blue-600 leading-relaxed">
+              <p className="mt-1 text-sm text-blue-600 leading-relaxed">
                 Credits are allocated by your Enterprise Admin. Each People or Company search
                 consumes 1 credit. When credits run out, searches are paused until your admin
                 allocates more.
@@ -632,14 +632,14 @@ export default function UsageClient() {
               <div className="flex items-start justify-between gap-3">
                 <div className="text-sm text-amber-700">
                   <p className="font-medium">Manage your team's credits</p>
-                  <p className="mt-1 text-xs text-amber-600 leading-relaxed">
+                  <p className="mt-1 text-sm text-amber-600 leading-relaxed">
                     Allocate credits from your enterprise pool to team members so they can
                     perform searches.
                   </p>
                 </div>
                 <Link
                   href="/search/enterprise"
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500 transition-colors"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-500 transition-colors"
                 >
                   <Briefcase className="h-3.5 w-3.5" />
                   My Team

@@ -6,7 +6,7 @@ export default function AppHeader({ title }: { title: string }) {
   const { open } = useMobileSidebar();
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-3 sm:h-16 sm:px-6">
+    <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-3 sm:h-16 sm:px-6">
       <button
         type="button"
         onClick={open}

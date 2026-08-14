@@ -54,40 +54,40 @@ function CurrentPlanCard({ plan }: { plan: UserPlanOut }) {
             <Zap className="h-5 w-5 text-red-600" />
           </div>
           <div>
-            <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-700">
+            <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700">
               Current Plan
             </span>
-            <p className="mt-1 text-base font-bold text-gray-900">{plan.plan_name}</p>
-            <p className="text-xs text-gray-400">Validity Plan</p>
+            <p className="mt-1 text-lg font-bold text-gray-900">{plan.plan_name}</p>
+            <p className="text-sm text-gray-400">Validity Plan</p>
           </div>
         </div>
 
         {plan.starts_at && plan.expires_at && (
           <div className="sm:border-l sm:border-gray-100 sm:pl-6">
-            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <div className="flex items-center gap-1.5 text-sm text-gray-400">
               <CalendarDays className="h-3.5 w-3.5" /> Validity
             </div>
-            <p className="mt-0.5 text-sm font-semibold text-gray-900">
+            <p className="mt-0.5 text-base font-semibold text-gray-900">
               {formatDate(plan.starts_at)} – {formatDate(plan.expires_at)}
             </p>
             {days !== null && (
-              <p className="text-xs font-medium text-red-600">{days} days remaining</p>
+              <p className="text-sm font-medium text-red-600">{days} days remaining</p>
             )}
           </div>
         )}
 
         <div className="sm:min-w-[180px] sm:border-l sm:border-gray-100 sm:pl-6">
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+          <div className="flex items-center gap-1.5 text-sm text-gray-400">
             <CreditCard className="h-3.5 w-3.5" /> Credits Used
           </div>
-          <p className="mt-0.5 text-lg font-bold">
+          <p className="mt-0.5 text-xl font-bold">
             <span style={{ color: RED }}>{used.toLocaleString()}</span>
-            <span className="text-sm font-medium text-gray-400"> / {plan.credits_total.toLocaleString()}</span>
+            <span className="text-base font-medium text-gray-400"> / {plan.credits_total.toLocaleString()}</span>
           </p>
           <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
             <div className="h-full rounded-full transition-all" style={{ width: `${pctUsed}%`, background: RED }} />
           </div>
-          <p className="mt-1 text-[11px] text-gray-400">{pctUsed}% used</p>
+          <p className="mt-1 text-xs text-gray-400">{pctUsed}% used</p>
         </div>
       </div>
     </div>
@@ -102,14 +102,14 @@ function PaygPlanCard({ plan }: { plan: UserPlanOut }) {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Pay As You Go</p>
-          <p className="mt-0.5 font-semibold text-gray-900">{plan.plan_name}</p>
+          <p className="mt-0.5 text-base font-semibold text-gray-900">{plan.plan_name}</p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-sm font-medium text-red-700">
           <Infinity className="h-3.5 w-3.5" /> No expiry
         </span>
       </div>
-      <p className="text-2xl font-bold text-gray-900">{plan.credits_remaining.toLocaleString()}</p>
-      <p className="text-xs text-gray-400">of {plan.credits_total.toLocaleString()} credits remaining</p>
+      <p className="text-3xl font-bold text-gray-900">{plan.credits_remaining.toLocaleString()}</p>
+      <p className="text-sm text-gray-400">of {plan.credits_total.toLocaleString()} credits remaining</p>
     </div>
   );
 }
@@ -123,10 +123,10 @@ function QueuedPlanRow({ plan }: { plan: UserPlanOut }) {
         {plan.queue_position}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-gray-800 truncate">{plan.plan_name}</p>
-        <p className="text-xs text-gray-400">{plan.credits_total.toLocaleString()} credits · activates when current plan ends</p>
+        <p className="text-base font-medium text-gray-800 truncate">{plan.plan_name}</p>
+        <p className="text-sm text-gray-400">{plan.credits_total.toLocaleString()} credits · activates when current plan ends</p>
       </div>
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-700">
         <Clock className="h-3.5 w-3.5" /> Queued
       </span>
     </div>
@@ -140,57 +140,89 @@ function PricingCard({
   onBuy,
   buying,
   isCurrent,
+  featured,
 }: {
   plan: Plan;
   onBuy: (plan: Plan) => void;
   buying: boolean;
   isCurrent: boolean;
+  featured?: boolean;
 }) {
   const isFree = plan.price_cents === 0;
+  const isPayg = plan.plan_type === "payg";
 
-  const creditsLine =
-    plan.plan_type === "payg"
-      ? `${plan.credits.toLocaleString()} credits`
-      : `${plan.credits.toLocaleString()} credits${plan.validity_days ? ` · ${plan.validity_days} days` : ""}`;
+  const creditsLine = isPayg
+    ? `${plan.credits.toLocaleString()} credits`
+    : `${plan.credits.toLocaleString()} credits${plan.validity_days ? ` · ${plan.validity_days} days` : ""}`;
+
+  const features = isPayg
+    ? [
+        "Pay only for what you use",
+        "Credits never expire",
+        "Use for any search",
+      ]
+    : [
+        "One-time payment",
+        plan.validity_days ? `Credits valid for ${plan.validity_days} days` : "Limited-time validity",
+        "Use for any search",
+      ];
 
   return (
     <div
-      className={`relative flex w-64 shrink-0 snap-start flex-col rounded-2xl border p-5 pt-6 transition-shadow ${
-        isCurrent ? "border-red-300 bg-red-50/40 shadow-sm" : "border-gray-200 bg-white hover:shadow-md"
+      className={`group relative flex h-full w-80 shrink-0 snap-start flex-col rounded-2xl border p-6 pt-7 transition-all duration-200 ${
+        isCurrent
+          ? "border-red-300 bg-red-50/40 shadow-sm"
+          : featured
+          ? "border-red-200 bg-white shadow-md hover:-translate-y-0.5 hover:shadow-xl"
+          : "border-gray-200 bg-white hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-lg"
       }`}
     >
       {isCurrent && (
-        <span className="absolute top-3 right-3 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-700">
-          Current
+        <span className="absolute top-4 right-4 inline-flex items-center gap-1 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm">
+          <CheckCircle2 className="h-3 w-3" /> Current
+        </span>
+      )}
+      {!isCurrent && featured && (
+        <span className="absolute top-4 right-4 rounded-full bg-red-100 px-2.5 py-0.5 text-[10px] font-semibold text-red-700">
+          Popular
         </span>
       )}
 
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100">
-        {plan.plan_type === "payg"
-          ? <Zap className="h-6 w-6 text-red-600" />
-          : <Clock className="h-6 w-6 text-red-600" />}
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 transition-colors group-hover:bg-red-600">
+        {isPayg
+          ? <Zap className="h-6 w-6 text-red-600 transition-colors group-hover:text-white" />
+          : <Clock className="h-6 w-6 text-red-600 transition-colors group-hover:text-white" />}
       </div>
-      <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+      <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
       {plan.description && (
-        <p className="mt-1 text-xs leading-snug text-gray-400">{plan.description}</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-gray-400 min-h-[2.5rem]">{plan.description}</p>
       )}
 
-      <div className="mt-3 flex items-end gap-1.5">
-        <span className="text-3xl font-extrabold text-gray-900">{formatPrice(plan.price_cents)}</span>
-        {!isFree && <span className="mb-1 text-xs text-gray-400">one-time</span>}
+      <div className="mt-4 flex items-end gap-1.5">
+        <span className="text-4xl font-extrabold tracking-tight text-gray-900">{formatPrice(plan.price_cents)}</span>
+        {!isFree && <span className="mb-1.5 text-sm text-gray-400">one-time</span>}
       </div>
-      <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+      <p className="mt-2 inline-flex w-fit items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
         {creditsLine}
       </p>
+
+      <ul className="mt-4 space-y-2 border-t border-gray-100 pt-4">
+        {features.map((f) => (
+          <li key={f} className="flex items-start gap-2 text-sm text-gray-600">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
 
       <button
         type="button"
         onClick={() => onBuy(plan)}
         disabled={buying}
-        className={`mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition-colors disabled:opacity-60 ${
+        className={`mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-semibold transition-colors disabled:opacity-60 ${
           isCurrent
             ? "bg-red-600 text-white hover:bg-red-700"
-            : "border border-gray-200 bg-white text-gray-800 hover:bg-gray-50"
+            : "border border-gray-200 bg-white text-gray-800 hover:border-red-200 hover:bg-red-50 hover:text-red-700"
         }`}
       >
         {buying && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -202,13 +234,38 @@ function PricingCard({
 }
 
 // ── Plan Carousel ──────────────────────────────────────────────────────────────
+// Single horizontal row, left-aligned, with scroll buttons to move through cards.
 
 function PlanCarousel({ children }: { children: React.ReactNode }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const CARD_STEP = 336; // card width (320) + gap (16)
+
+  const updateScrollState = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
 
   const scroll = (dir: number) => {
-    scrollRef.current?.scrollBy({ left: dir * 288, behavior: "smooth" });
+    scrollRef.current?.scrollBy({ left: dir * CARD_STEP, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    updateScrollState();
+    const observer = new ResizeObserver(updateScrollState);
+    observer.observe(el);
+    el.addEventListener("scroll", updateScrollState, { passive: true });
+    return () => {
+      observer.disconnect();
+      el.removeEventListener("scroll", updateScrollState);
+    };
+  }, [children, updateScrollState]);
 
   return (
     <div className="relative">
@@ -216,13 +273,14 @@ function PlanCarousel({ children }: { children: React.ReactNode }) {
         type="button"
         onClick={() => scroll(-1)}
         aria-label="Scroll left"
-        className="absolute left-0 top-1/2 z-10 hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md hover:bg-gray-50 sm:flex"
+        disabled={!canScrollLeft}
+        className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md transition-opacity hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-0"
       >
         <ChevronLeft className="h-4 w-4 text-gray-600" />
       </button>
       <div
         ref={scrollRef}
-        className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth px-1 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-1 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
@@ -230,7 +288,8 @@ function PlanCarousel({ children }: { children: React.ReactNode }) {
         type="button"
         onClick={() => scroll(1)}
         aria-label="Scroll right"
-        className="absolute right-0 top-1/2 z-10 hidden h-9 w-9 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md hover:bg-gray-50 sm:flex"
+        disabled={!canScrollRight}
+        className="absolute right-0 top-1/2 z-10 flex h-10 w-10 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md transition-opacity hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-0"
       >
         <ChevronRight className="h-4 w-4 text-gray-600" />
       </button>
@@ -269,14 +328,41 @@ function CurrentPlanCardSkeleton() {
 
 function PricingCardSkeleton() {
   return (
-    <div className="flex w-64 shrink-0 snap-start flex-col rounded-2xl border border-gray-200 bg-white p-5 pt-6 animate-pulse">
-      <div className="mb-4 h-12 w-12 rounded-2xl bg-gray-200" />
-      <div className="h-4 w-28 rounded bg-gray-200" />
-      <div className="mt-2 h-3 w-full rounded bg-gray-100" />
-      <div className="mt-1 h-3 w-3/4 rounded bg-gray-100" />
-      <div className="mt-4 h-7 w-16 rounded bg-gray-200" />
-      <div className="mt-2 h-3 w-24 rounded bg-gray-100" />
-      <div className="mt-6 h-10 w-full rounded-xl bg-gray-200" />
+    <div className="flex h-full w-80 shrink-0 snap-start flex-col rounded-2xl border border-gray-200 bg-white p-6 pt-7 animate-pulse">
+      <div className="mb-5 h-12 w-12 rounded-2xl bg-gray-200" />
+      <div className="h-5 w-28 rounded bg-gray-200" />
+      <div className="mt-2.5 h-3 w-full rounded bg-gray-100" />
+      <div className="mt-1.5 h-3 w-2/3 rounded bg-gray-100" />
+
+      <div className="mt-4 h-9 w-20 rounded bg-gray-200" />
+      <div className="mt-2 h-5 w-28 rounded-md bg-gray-100" />
+
+      <div className="mt-4 space-y-2.5 border-t border-gray-100 pt-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <div className="h-4 w-4 shrink-0 rounded-full bg-gray-100" />
+            <div className={`h-3 rounded bg-gray-100 ${i === 1 ? "w-3/4" : "w-full"}`} />
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 h-11 w-full rounded-xl bg-gray-200" />
+    </div>
+  );
+}
+
+function PaygPlanCardSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3 rounded-xl border border-gray-200 bg-white p-5">
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <div className="h-3 w-24 rounded bg-gray-100" />
+          <div className="h-4 w-32 rounded bg-gray-200" />
+        </div>
+        <div className="h-6 w-20 rounded-full bg-gray-100" />
+      </div>
+      <div className="h-8 w-24 rounded bg-gray-200" />
+      <div className="h-3 w-40 rounded bg-gray-100" />
     </div>
   );
 }
@@ -547,13 +633,18 @@ export default function PlansClient() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-10">
+      <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto w-full max-w-[1440px] space-y-12">
 
         {/* My Plans */}
         <section>
           {loading && (
             <div className="space-y-3">
               <CurrentPlanCardSkeleton />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <PaygPlanCardSkeleton />
+                <PaygPlanCardSkeleton />
+              </div>
             </div>
           )}
 
@@ -584,7 +675,7 @@ export default function PlansClient() {
           <section>
             <div className="flex items-center gap-2 mb-3">
               <ListOrdered className="h-4 w-4 text-gray-400" />
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-700">Queued Plans</h2>
+              <h2 className="text-base font-semibold uppercase tracking-wider text-gray-700">Queued Plans</h2>
             </div>
             <div className="space-y-2">
               {myPlans.queued_validity.map((p) => (
@@ -596,12 +687,18 @@ export default function PlansClient() {
 
         {/* Available Plans */}
         <section>
-          <div className="mt-6 flex justify-center">
-            <PlanTypeToggle value={planType} onChange={setPlanType} />
+          <div className="mb-8 flex flex-col items-center gap-2 text-center">
+            <h2 className="text-2xl font-bold text-gray-900">Choose a plan that fits you</h2>
+            <p className="max-w-lg text-sm text-gray-400">
+              Switch between validity plans and pay-as-you-go credits at any time.
+            </p>
+            <div className="mt-4">
+              <PlanTypeToggle value={planType} onChange={setPlanType} />
+            </div>
           </div>
 
           {loading && (
-            <div className="flex snap-x gap-5 overflow-x-auto px-1 py-2">
+            <div className="flex gap-4 overflow-x-auto px-1 py-2">
               {Array.from({ length: 4 }).map((_, i) => (
                 <PricingCardSkeleton key={i} />
               ))}
@@ -609,17 +706,17 @@ export default function PlansClient() {
           )}
 
           {!loading && availablePlans.length === 0 && (
-            <p className="py-4 text-sm text-gray-400">No plans available at this time.</p>
+            <p className="py-4 text-center text-sm text-gray-400">No plans available at this time.</p>
           )}
 
           {!loading && availablePlans.length > 0 && (() => {
             const shown = planType === "validity" ? validityPlans : paygPlans;
             if (shown.length === 0) {
-              return <p className="py-4 text-sm text-gray-400">No plans available in this category.</p>;
+              return <p className="py-4 text-center text-sm text-gray-400">No plans available in this category.</p>;
             }
             return (
               <PlanCarousel>
-                {shown.map((plan) => {
+                {shown.map((plan, idx) => {
                   const isCurrent =
                     plan.plan_type === "validity"
                       ? myPlans?.active_validity?.plan_id === plan.id
@@ -631,6 +728,7 @@ export default function PlansClient() {
                       onBuy={(p: Plan) => setConfirmPlan(p)}
                       buying={buyingId === plan.id}
                       isCurrent={isCurrent}
+                      featured={!isCurrent && shown.length > 1 && idx === Math.floor(shown.length / 2)}
                     />
                   );
                 })}
@@ -645,8 +743,8 @@ export default function PlansClient() {
             <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900">Billing & Credit History</h3>
-                  <p className="mt-0.5 text-xs text-gray-400">
+                  <h3 className="text-base font-semibold text-gray-900">Billing & Credit History</h3>
+                  <p className="mt-0.5 text-sm text-gray-400">
                     Every plan purchase (credits added) and every search (credits deducted), with date &amp; time.
                   </p>
                 </div>
@@ -665,7 +763,7 @@ export default function PlansClient() {
                     type="button"
                     onClick={() => setHistoryFilter(f.key)}
                     disabled={historyFetching}
-                    className="rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed"
+                    className="rounded-md px-2.5 py-1 text-sm font-medium transition-colors disabled:cursor-not-allowed"
                     style={
                       historyFilter === f.key
                         ? { background: "#fff", color: "#111827", boxShadow: "0 1px 2px rgba(0,0,0,0.06)" }
@@ -691,7 +789,7 @@ export default function PlansClient() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-100 bg-gray-50 text-xs font-medium text-gray-500">
+                      <tr className="border-b border-gray-100 bg-gray-50/80 text-xs font-medium uppercase tracking-wide text-gray-400">
                         <th className="px-4 py-2.5 text-left">Date &amp; Time</th>
                         <th className="px-4 py-2.5 text-left">Event</th>
                         <th className="px-4 py-2.5 text-left">Details</th>
@@ -714,7 +812,7 @@ export default function PlansClient() {
                 </div>
 
                 <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3">
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm text-gray-400">
                     Showing {(safeHistoryPage - 1) * HISTORY_PAGE_SIZE + 1}-
                     {Math.min(safeHistoryPage * HISTORY_PAGE_SIZE, billingTotal)} of {billingTotal}
                   </p>
@@ -723,16 +821,16 @@ export default function PlansClient() {
                       type="button"
                       onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
                       disabled={safeHistoryPage <= 1 || historyFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" /> Prev
                     </button>
-                    <span className="text-xs text-gray-400">Page {safeHistoryPage} / {historyPageCount}</span>
+                    <span className="text-sm text-gray-400">Page {safeHistoryPage} / {historyPageCount}</span>
                     <button
                       type="button"
                       onClick={() => setHistoryPage((p) => Math.min(historyPageCount, p + 1))}
                       disabled={safeHistoryPage >= historyPageCount || historyFetching}
-                      className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2.5 py-1 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Next <ChevronRight className="h-3.5 w-3.5" />
                     </button>
@@ -743,6 +841,7 @@ export default function PlansClient() {
           </div>
         </section>
 
+      </div>
       </div>
     </div>
   );
