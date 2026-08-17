@@ -75,8 +75,8 @@ def set_connection_tokens(
     connection: SalesforceConnection, access_token: str, refresh_token: str
 ) -> None:
     """Encrypt and store a fresh access/refresh token pair on the connection."""
-    connection.access_token = encrypt_secret(access_token)
-    connection.refresh_token = encrypt_secret(refresh_token)
+    connection.access_token = encrypt_secret(access_token, settings.SALESFORCE_ENCRYPTION_KEY)
+    connection.refresh_token = encrypt_secret(refresh_token, settings.SALESFORCE_ENCRYPTION_KEY)
 
 
 async def refresh_access_token(connection: SalesforceConnection) -> bool:
@@ -85,7 +85,7 @@ async def refresh_access_token(connection: SalesforceConnection) -> bool:
             f"{SALESFORCE_LOGIN_BASE_URL}/services/oauth2/token",
             data={
                 "grant_type": "refresh_token",
-                "refresh_token": decrypt_secret(connection.refresh_token),
+                "refresh_token": decrypt_secret(connection.refresh_token, settings.SALESFORCE_ENCRYPTION_KEY),
                 "client_id": settings.SALESFORCE_CLIENT_ID,
                 "client_secret": settings.SALESFORCE_CLIENT_SECRET,
             },
@@ -96,7 +96,7 @@ async def refresh_access_token(connection: SalesforceConnection) -> bool:
     data = resp.json()
     new_access_token = data.get("access_token")
     if new_access_token:
-        connection.access_token = encrypt_secret(new_access_token)
+        connection.access_token = encrypt_secret(new_access_token, settings.SALESFORCE_ENCRYPTION_KEY)
     connection.instance_url = data.get("instance_url", connection.instance_url)
     connection.token_expires_at = datetime.now(UTC) + timedelta(hours=2)
     return True
@@ -140,14 +140,14 @@ async def create_lead(connection: SalesforceConnection, lead_fields: dict) -> st
                 headers={"Authorization": f"Bearer {access_token}"},
             )
 
-    resp = await _post(decrypt_secret(connection.access_token), connection.instance_url)
+    resp = await _post(decrypt_secret(connection.access_token, settings.SALESFORCE_ENCRYPTION_KEY), connection.instance_url)
     if resp.status_code == 401:
         if not await refresh_access_token(connection):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Salesforce connection expired. Please reconnect.",
             )
-        resp = await _post(decrypt_secret(connection.access_token), connection.instance_url)
+        resp = await _post(decrypt_secret(connection.access_token, settings.SALESFORCE_ENCRYPTION_KEY), connection.instance_url)
 
     if resp.status_code not in (200, 201):
         detail = resp.text

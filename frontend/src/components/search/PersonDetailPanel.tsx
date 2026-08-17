@@ -35,6 +35,7 @@ import {
   unlockPersonMobile,
 } from "@/lib/searchApi";
 import { pushToSalesforce } from "@/lib/salesforceApi";
+import { pushToHubspot } from "@/lib/hubspotApi";
 import { toast } from "@/lib/toast";
 
 type UnlockField = "work_email" | "personal_email" | "mobile";
@@ -631,6 +632,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   );
   const [pushingToSalesforce, setPushingToSalesforce] = useState(false);
   const [pushedToSalesforce, setPushedToSalesforce] = useState(false);
+  const [pushingToHubspot, setPushingToHubspot] = useState(false);
+  const [pushedToHubspot, setPushedToHubspot] = useState(false);
 
   const skillsRef = useRef<HTMLDivElement>(null);
   const expRef = useRef<HTMLDivElement>(null);
@@ -650,6 +653,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     setUnlockOverrides({});
     setUnlockingField(null);
     setPushedToSalesforce(false);
+    setPushedToHubspot(false);
     setLoading(true);
     apiClient
       .get<PersonDetail>(`/search/persons/${person.id}/detail`)
@@ -839,6 +843,26 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       toast.apiError(e);
     } finally {
       setPushingToSalesforce(false);
+    }
+  };
+
+  const handlePushToHubspot = async () => {
+    if (!person || pushingToHubspot) return;
+    setPushingToHubspot(true);
+    try {
+      const result = await pushToHubspot([
+        { record_id: person.id, item_type: "person", data: {} },
+      ]);
+      if (result.pushed > 0) {
+        toast.success("Pushed to HubSpot.");
+        setPushedToHubspot(true);
+      } else {
+        toast.error(result.results[0]?.error ?? "Failed to push to HubSpot.");
+      }
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setPushingToHubspot(false);
     }
   };
 
@@ -1066,6 +1090,29 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 <Upload className="h-3.5 w-3.5" />
               )}
               {pushedToSalesforce ? "Pushed" : "Push to Salesforce"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePushToHubspot}
+              disabled={!workEmailUnlocked || pushingToHubspot || pushedToHubspot}
+              title={
+                !workEmailUnlocked
+                  ? "Unlock work email before pushing to HubSpot"
+                  : pushedToHubspot
+                    ? "Already pushed"
+                    : "Push to HubSpot"
+              }
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pushingToHubspot ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : pushedToHubspot ? (
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {pushedToHubspot ? "Pushed" : "Push to HubSpot"}
             </button>
           </div>
         </div>

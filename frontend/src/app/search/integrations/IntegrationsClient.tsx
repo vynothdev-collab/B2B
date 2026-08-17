@@ -12,11 +12,18 @@ import {
   disconnectSalesforce,
   type SalesforceStatus,
 } from "@/lib/salesforceApi";
+import {
+  getHubspotStatus,
+  getHubspotAuthorizeUrl,
+  disconnectHubspot,
+  type HubspotStatus,
+} from "@/lib/hubspotApi";
 import { toast } from "@/lib/toast";
 
 const RED = "#dc2626";
+const ORANGE = "#ff7a59";
 
-const FEATURES = [
+const SALESFORCE_FEATURES = [
   {
     icon: Upload,
     title: "Push unlocked leads",
@@ -29,31 +36,163 @@ const FEATURES = [
   },
 ];
 
+const HUBSPOT_FEATURES = [
+  {
+    icon: Upload,
+    title: "Push unlocked leads",
+    text: "Send a person record straight to HubSpot as a Contact, from search results or a contact's detail panel.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Email required first",
+    text: "A record's work email must be unlocked before it can be pushed — HubSpot Contacts are matched by email.",
+  },
+];
+
+interface ConnectionCardProps {
+  name: string;
+  accent: string;
+  icon: React.ReactNode;
+  connected: boolean;
+  loading: boolean;
+  connecting: boolean;
+  subtitle: string;
+  docsHref: string;
+  features: typeof SALESFORCE_FEATURES;
+  onConnect: () => void;
+  onDisconnectRequest: () => void;
+}
+
+function ConnectionCard({
+  name, accent, icon, connected, loading, connecting, subtitle, docsHref, features, onConnect, onDisconnectRequest,
+}: ConnectionCardProps) {
+  if (loading) {
+    return (
+      <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
+        <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-gray-100" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3.5 w-32 animate-pulse rounded bg-gray-100" />
+          <div className="h-3 w-48 animate-pulse rounded bg-gray-100" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3.5">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+              connected ? "bg-emerald-50" : "bg-gray-100"
+            }`}
+          >
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-base font-bold text-gray-900">{name}</p>
+              {connected ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                  <ShieldCheck className="h-3 w-3" /> Connected
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500">
+                  Not connected
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-sm text-gray-400">{subtitle}</p>
+            <a
+              href={docsHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+              style={{ color: accent }}
+            >
+              View setup guide <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
+
+        {connected ? (
+          <button
+            onClick={onDisconnectRequest}
+            className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg px-3 py-1.5 text-sm font-semibold transition hover:bg-red-50 sm:self-center"
+            style={{ color: RED }}
+          >
+            <LogOut className="h-3.5 w-3.5" /> Disconnect
+          </button>
+        ) : (
+          <button
+            onClick={onConnect}
+            disabled={connecting}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-base font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+            style={{ background: accent }}
+          >
+            {connecting && <Loader2 className="h-4 w-4 animate-spin" />}
+            Connect to {name}
+          </button>
+        )}
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 gap-3 border-t border-gray-100 pt-5 sm:grid-cols-2">
+        {features.map((f) => (
+          <div key={f.title} className="flex gap-2.5">
+            <f.icon className="mt-0.5 h-4 w-4 shrink-0" style={{ color: accent }} />
+            <div>
+              <p className="text-sm font-bold text-gray-900">{f.title}</p>
+              <p className="mt-0.5 text-sm leading-relaxed text-gray-500">{f.text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function IntegrationsClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [status, setStatus] = useState<SalesforceStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [connecting, setConnecting] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
-  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [sfStatus, setSfStatus] = useState<SalesforceStatus | null>(null);
+  const [sfLoading, setSfLoading] = useState(true);
+  const [sfConnecting, setSfConnecting] = useState(false);
+  const [sfDisconnecting, setSfDisconnecting] = useState(false);
+  const [showSfDisconnectConfirm, setShowSfDisconnectConfirm] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const [hsStatus, setHsStatus] = useState<HubspotStatus | null>(null);
+  const [hsLoading, setHsLoading] = useState(true);
+  const [hsConnecting, setHsConnecting] = useState(false);
+  const [hsDisconnecting, setHsDisconnecting] = useState(false);
+  const [showHsDisconnectConfirm, setShowHsDisconnectConfirm] = useState(false);
+
+  const loadSalesforce = useCallback(async () => {
+    setSfLoading(true);
     try {
-      const data = await getSalesforceStatus();
-      setStatus(data);
+      setSfStatus(await getSalesforceStatus());
     } catch {
       toast.error("Failed to load Salesforce connection status.");
     } finally {
-      setLoading(false);
+      setSfLoading(false);
+    }
+  }, []);
+
+  const loadHubspot = useCallback(async () => {
+    setHsLoading(true);
+    try {
+      setHsStatus(await getHubspotStatus());
+    } catch {
+      toast.error("Failed to load HubSpot connection status.");
+    } finally {
+      setHsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadSalesforce();
+    loadHubspot();
+  }, [loadSalesforce, loadHubspot]);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -61,44 +200,73 @@ export default function IntegrationsClient() {
     if (connected === "salesforce") {
       toast.success("Salesforce connected successfully.");
       router.replace("/search/integrations");
+    } else if (connected === "hubspot") {
+      toast.success("HubSpot connected successfully.");
+      router.replace("/search/integrations");
     } else if (error) {
       const messages: Record<string, string> = {
-        cancelled: "Salesforce connection was cancelled.",
-        invalid_state: "Salesforce connection request expired. Please try again.",
-        auth_failed: "Failed to connect to Salesforce. This usually means the connected app isn't configured correctly (check the redirect URI, client ID/secret, or org access policy).",
+        cancelled: "Connection was cancelled.",
+        invalid_state: "Connection request expired. Please try again.",
+        auth_failed: "Failed to connect. This usually means the app isn't configured correctly (check the redirect URI, client ID/secret, or access policy).",
       };
-      toast.error(messages[error] ?? "Failed to connect to Salesforce.");
+      toast.error(messages[error] ?? "Failed to connect.");
       router.replace("/search/integrations");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  async function handleConnect() {
-    setConnecting(true);
+  async function handleConnectSalesforce() {
+    setSfConnecting(true);
     try {
       const url = await getSalesforceAuthorizeUrl();
       window.location.href = url;
     } catch {
       toast.error("Failed to start Salesforce connection.");
-      setConnecting(false);
+      setSfConnecting(false);
     }
   }
 
-  async function handleDisconnect() {
-    setDisconnecting(true);
+  async function handleDisconnectSalesforce() {
+    setSfDisconnecting(true);
     try {
       await disconnectSalesforce();
       toast.success("Salesforce disconnected.");
-      setShowDisconnectConfirm(false);
-      await load();
+      setShowSfDisconnectConfirm(false);
+      await loadSalesforce();
     } catch {
       toast.error("Failed to disconnect Salesforce.");
     } finally {
-      setDisconnecting(false);
+      setSfDisconnecting(false);
     }
   }
 
-  const connected = !!status?.connected;
+  async function handleConnectHubspot() {
+    setHsConnecting(true);
+    try {
+      const url = await getHubspotAuthorizeUrl();
+      window.location.href = url;
+    } catch {
+      toast.error("Failed to start HubSpot connection.");
+      setHsConnecting(false);
+    }
+  }
+
+  async function handleDisconnectHubspot() {
+    setHsDisconnecting(true);
+    try {
+      await disconnectHubspot();
+      toast.success("HubSpot disconnected.");
+      setShowHsDisconnectConfirm(false);
+      await loadHubspot();
+    } catch {
+      toast.error("Failed to disconnect HubSpot.");
+    } finally {
+      setHsDisconnecting(false);
+    }
+  }
+
+  const sfConnected = !!sfStatus?.connected;
+  const hsConnected = !!hsStatus?.connected;
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50">
@@ -117,99 +285,41 @@ export default function IntegrationsClient() {
                   Connect LeadsBuddy to the tools your team already uses. Push
                   unlocked contacts straight into your CRM without leaving search.
                 </p>
-                <a
-                  href="/document/api-key/salesforce"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-base font-semibold text-red-600 hover:underline"
-                >
-                  View Salesforce setup guide <ExternalLink className="h-3.5 w-3.5" />
-                </a>
               </div>
             </div>
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
-            <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-gray-100" />
-            <div className="flex-1 space-y-2">
-              <div className="h-3.5 w-32 animate-pulse rounded bg-gray-100" />
-              <div className="h-3 w-48 animate-pulse rounded bg-gray-100" />
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-gray-100 bg-white p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3.5">
-                <div
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                    connected ? "bg-emerald-50" : "bg-gray-100"
-                  }`}
-                >
-                  <SalesforceCloudIcon className={connected ? "text-emerald-600" : "text-gray-400"} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-base font-bold text-gray-900">Salesforce</p>
-                    {connected ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                        <ShieldCheck className="h-3 w-3" /> Connected
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500">
-                        Not connected
-                      </span>
-                    )}
-                  </div>
-                  {connected ? (
-                    <p className="mt-0.5 text-sm text-gray-400">
-                      {status?.salesforce_user_email ?? "Connected account"}
-                    </p>
-                  ) : (
-                    <p className="mt-0.5 text-sm text-gray-400">
-                      Push unlocked leads to your Salesforce org.
-                    </p>
-                  )}
-                </div>
-              </div>
+        <ConnectionCard
+          name="Salesforce"
+          accent={RED}
+          icon={<SalesforceCloudIcon className={sfConnected ? "text-emerald-600" : "text-gray-400"} />}
+          connected={sfConnected}
+          loading={sfLoading}
+          connecting={sfConnecting}
+          subtitle={sfConnected ? (sfStatus?.salesforce_user_email ?? "Connected account") : "Push unlocked leads to your Salesforce org."}
+          docsHref="/document/api-key/salesforce"
+          features={SALESFORCE_FEATURES}
+          onConnect={handleConnectSalesforce}
+          onDisconnectRequest={() => setShowSfDisconnectConfirm(true)}
+        />
 
-              {connected ? (
-                <button
-                  onClick={() => setShowDisconnectConfirm(true)}
-                  className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-lg px-3 py-1.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 sm:self-center"
-                >
-                  <LogOut className="h-3.5 w-3.5" /> Disconnect
-                </button>
-              ) : (
-                <button
-                  onClick={handleConnect}
-                  disabled={connecting}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-base font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
-                  style={{ background: RED }}
-                >
-                  {connecting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Connect to Salesforce
-                </button>
-              )}
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 gap-3 border-t border-gray-100 pt-5 sm:grid-cols-2">
-              {FEATURES.map((f) => (
-                <div key={f.title} className="flex gap-2.5">
-                  <f.icon className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{f.title}</p>
-                    <p className="mt-0.5 text-sm leading-relaxed text-gray-500">{f.text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <ConnectionCard
+          name="HubSpot"
+          accent={ORANGE}
+          icon={<HubspotIcon className={hsConnected ? "text-emerald-600" : "text-gray-400"} />}
+          connected={hsConnected}
+          loading={hsLoading}
+          connecting={hsConnecting}
+          subtitle={hsConnected ? (hsStatus?.hubspot_hub_domain ?? "Connected account") : "Push unlocked leads to your HubSpot account."}
+          docsHref="/document/api-key/hubspot"
+          features={HUBSPOT_FEATURES}
+          onConnect={handleConnectHubspot}
+          onDisconnectRequest={() => setShowHsDisconnectConfirm(true)}
+        />
       </div>
 
-      {showDisconnectConfirm && (
+      {showSfDisconnectConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50">
@@ -221,18 +331,49 @@ export default function IntegrationsClient() {
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
-                onClick={() => setShowDisconnectConfirm(false)}
+                onClick={() => setShowSfDisconnectConfirm(false)}
                 className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
-                onClick={handleDisconnect}
-                disabled={disconnecting}
+                onClick={handleDisconnectSalesforce}
+                disabled={sfDisconnecting}
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                 style={{ background: RED }}
               >
-                {disconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {sfDisconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showHsDisconnectConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: "#fff1ec" }}>
+              <AlertCircle className="h-5 w-5" style={{ color: ORANGE }} />
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-gray-900">Disconnect HubSpot?</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              You won&apos;t be able to push leads to HubSpot until you reconnect.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowHsDisconnectConfirm(false)}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisconnectHubspot}
+                disabled={hsDisconnecting}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: ORANGE }}
+              >
+                {hsDisconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
                 Disconnect
               </button>
             </div>
@@ -253,6 +394,22 @@ function SalesforceCloudIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function HubspotIcon({ className }: { className?: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="12" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M12 9.6V5.5M17 8l-3 3M8 16l-3 3"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <circle cx="17.5" cy="6.5" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="5.5" cy="18.5" r="1.6" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   );
 }

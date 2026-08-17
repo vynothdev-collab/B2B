@@ -15,6 +15,7 @@ import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import AddToListModal from "./AddToListModal";
 import PushToSalesforceModal from "./PushToSalesforceModal";
+import PushToHubspotModal from "./PushToHubspotModal";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
@@ -51,6 +52,7 @@ export default function PeopleSearchPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
+  const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
   const isAgenticRef = useRef(false);
   const agenticPromptRef = useRef<string>("");
@@ -388,6 +390,15 @@ export default function PeopleSearchPage() {
                   <Upload className="h-3.5 w-3.5" />
                   Push to Salesforce
                 </button>
+                <button
+                  type="button"
+                  disabled={selected.size === 0}
+                  onClick={() => setHubspotPushOpen(true)}
+                  className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-xs"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Push to HubSpot
+                </button>
               </div>
             </div>
 
@@ -457,6 +468,14 @@ export default function PeopleSearchPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setHubspotPushOpen(true)}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
+                  >
+                    <Upload className="h-3 w-3" />
+                    Push to HubSpot
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setSelected(new Set())}
                     className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white"
                   >
@@ -511,6 +530,12 @@ export default function PeopleSearchPage() {
       <PushToSalesforceModal
         open={salesforcePushOpen}
         onClose={() => setSalesforcePushOpen(false)}
+        items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
+      />
+
+      <PushToHubspotModal
+        open={hubspotPushOpen}
+        onClose={() => setHubspotPushOpen(false)}
         items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
       />
 
