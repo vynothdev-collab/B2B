@@ -60,6 +60,20 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "HubSpot Integration",
+    items: [
+      { href: "/document/api-key/hubspot", label: "Overview & Setup" },
+      { href: "/document/api-key/hubspot/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
+    title: "Instantly Integration",
+    items: [
+      { href: "/document/api-key/instantly", label: "Overview & Setup" },
+      { href: "/document/api-key/instantly/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
     title: "Reference",
     items: [{ href: "/document/api-key/errors", label: "Errors" }],
   },

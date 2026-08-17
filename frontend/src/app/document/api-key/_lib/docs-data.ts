@@ -587,6 +587,7 @@ export const CREDIT_COSTS: { action: string; credits: number }[] = [
   { action: "Work email unlock (person)", credits: 1 },
   { action: "Personal email unlock (person)", credits: 1 },
   { action: "Mobile number unlock (person)", credits: 10 },
+  { action: "Push to Salesforce / HubSpot / Instantly (per record)", credits: 1 },
 ];
 
 // ── Sample requests / responses ──────────────────────────────────────────────
@@ -1006,5 +1007,76 @@ export const SAMPLE_SALESFORCE_PUSH_RESPONSE = `{
     { "record_id": "abc123", "salesforce_id": "00Q5g000001AbCdEFG", "error": null },
     { "record_id": "def456", "salesforce_id": "00Q5g000001AbCeFGH", "error": null },
     { "record_id": "ghi789", "salesforce_id": null, "error": "Work email must be unlocked before pushing." }
+  ]
+}`;
+
+export interface HubspotFieldMapping {
+  leadsbuddyField: string;
+  hubspotField: string;
+  notes: string;
+}
+
+export const HUBSPOT_FIELD_MAPPING: HubspotFieldMapping[] = [
+  { leadsbuddyField: "first_name", hubspotField: "firstname", notes: "Only sent if known." },
+  { leadsbuddyField: "last_name", hubspotField: "lastname", notes: "Falls back to the person's full name if the last name isn't known. Omitted entirely if neither is available." },
+  { leadsbuddyField: "Unlocked work email", hubspotField: "email", notes: "Only sent if the record's work email has been unlocked. Also used as the match key — pushing the same person again updates their existing HubSpot Contact instead of creating a duplicate." },
+  { leadsbuddyField: "Unlocked mobile number", hubspotField: "phone", notes: "Only sent if the mobile number has been unlocked." },
+  { leadsbuddyField: "active_experience_title", hubspotField: "jobtitle", notes: "Current job title, if known." },
+  { leadsbuddyField: "active_experience_company_name", hubspotField: "company", notes: "Current employer, if known." },
+  { leadsbuddyField: "active_experience_company_website", hubspotField: "website", notes: "Current employer's website, if known." },
+  { leadsbuddyField: "location_city / location_state / location_country", hubspotField: "city / state / country", notes: "Person's location, if known." },
+];
+
+export const SAMPLE_HUBSPOT_STATUS_RESPONSE = `{
+  "connected": true,
+  "hubspot_hub_id": "12345678",
+  "hubspot_hub_domain": "yourcompany.hubspot.com",
+  "connected_at": "2026-08-01T09:12:00Z"
+}`;
+
+export const SAMPLE_HUBSPOT_PUSH_RESPONSE = `{
+  "pushed": 2,
+  "failed": 1,
+  "results": [
+    { "record_id": "abc123", "hubspot_id": "51234567890", "error": null },
+    { "record_id": "def456", "hubspot_id": "51234567891", "error": null },
+    { "record_id": "ghi789", "hubspot_id": null, "error": "Work email must be unlocked before pushing." }
+  ]
+}`;
+
+export interface InstantlyFieldMapping {
+  leadsbuddyField: string;
+  instantlyField: string;
+  notes: string;
+}
+
+export const INSTANTLY_FIELD_MAPPING: InstantlyFieldMapping[] = [
+  { leadsbuddyField: "Unlocked work email", instantlyField: "email", notes: "Only sent if the record's work email has been unlocked. A push is rejected if no work email is unlocked." },
+  { leadsbuddyField: "first_name", instantlyField: "first_name", notes: "Only sent if known." },
+  { leadsbuddyField: "last_name", instantlyField: "last_name", notes: "Falls back to the person's full name if the last name isn't known." },
+  { leadsbuddyField: "active_experience_company_name", instantlyField: "company_name", notes: "Current employer, if known." },
+  { leadsbuddyField: "Unlocked mobile number", instantlyField: "phone", notes: "Only sent if the mobile number has been unlocked." },
+  { leadsbuddyField: "(you choose)", instantlyField: "campaign", notes: "The Instantly campaign the lead is added to — picked from a dropdown each time you push." },
+];
+
+export const SAMPLE_INSTANTLY_STATUS_RESPONSE = `{
+  "connected": true,
+  "connected_at": "2026-08-01T09:12:00Z"
+}`;
+
+export const SAMPLE_INSTANTLY_CAMPAIGNS_RESPONSE = `{
+  "campaigns": [
+    { "id": "9f2b6e2a-1234-4a3d-8b21-abcdef123456", "name": "Q3 Outbound — SaaS founders" },
+    { "id": "1a7c9d3e-5678-4b2f-9c34-fedcba654321", "name": "Warm follow-up sequence" }
+  ]
+}`;
+
+export const SAMPLE_INSTANTLY_PUSH_RESPONSE = `{
+  "pushed": 2,
+  "failed": 1,
+  "results": [
+    { "record_id": "abc123", "instantly_lead_id": "l_8f2a1c", "error": null },
+    { "record_id": "def456", "instantly_lead_id": "l_9d3b2e", "error": null },
+    { "record_id": "ghi789", "instantly_lead_id": null, "error": "Work email must be unlocked before pushing." }
   ]
 }`;

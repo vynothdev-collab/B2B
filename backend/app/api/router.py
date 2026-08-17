@@ -9,6 +9,7 @@ from app.api.routes.admin import plans as admin_plans
 from app.api.routes.admin import users as admin_customers
 from app.api.routes.enterprise import users as ent_users
 from app.api.routes.integrations import hubspot as integrations_hubspot
+from app.api.routes.integrations import instantly as integrations_instantly
 from app.api.routes.integrations import salesforce as integrations_salesforce
 from app.core.security import get_current_user
 
@@ -60,5 +61,10 @@ api_router.include_router(
 api_router.include_router(
     integrations_hubspot.router,
     prefix="/integrations/hubspot",
+    tags=["integrations"],
+)
+api_router.include_router(
+    integrations_instantly.router,
+    prefix="/integrations/instantly",
     tags=["integrations"],
 )

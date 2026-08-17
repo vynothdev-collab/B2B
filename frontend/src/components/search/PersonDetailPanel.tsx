@@ -37,6 +37,7 @@ import {
 import { pushToSalesforce } from "@/lib/salesforceApi";
 import { pushToHubspot } from "@/lib/hubspotApi";
 import { toast } from "@/lib/toast";
+import PushToInstantlyModal from "./PushToInstantlyModal";
 
 type UnlockField = "work_email" | "personal_email" | "mobile";
 
@@ -634,6 +635,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [pushedToSalesforce, setPushedToSalesforce] = useState(false);
   const [pushingToHubspot, setPushingToHubspot] = useState(false);
   const [pushedToHubspot, setPushedToHubspot] = useState(false);
+  const [instantlyModalOpen, setInstantlyModalOpen] = useState(false);
+  const [pushedToInstantly, setPushedToInstantly] = useState(false);
 
   const skillsRef = useRef<HTMLDivElement>(null);
   const expRef = useRef<HTMLDivElement>(null);
@@ -654,6 +657,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     setUnlockingField(null);
     setPushedToSalesforce(false);
     setPushedToHubspot(false);
+    setPushedToInstantly(false);
     setLoading(true);
     apiClient
       .get<PersonDetail>(`/search/persons/${person.id}/detail`)
@@ -1114,8 +1118,36 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               )}
               {pushedToHubspot ? "Pushed" : "Push to HubSpot"}
             </button>
+
+            <button
+              type="button"
+              onClick={() => setInstantlyModalOpen(true)}
+              disabled={!workEmailUnlocked}
+              title={
+                !workEmailUnlocked
+                  ? "Unlock work email before pushing to Instantly"
+                  : "Push to Instantly"
+              }
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pushedToInstantly ? (
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {pushedToInstantly ? "Pushed" : "Push to Instantly"}
+            </button>
           </div>
         </div>
+
+        {person && (
+          <PushToInstantlyModal
+            open={instantlyModalOpen}
+            onClose={() => setInstantlyModalOpen(false)}
+            items={[{ record_id: person.id, item_type: "person" }]}
+            onPushed={() => setPushedToInstantly(true)}
+          />
+        )}
 
         <div className="shrink-0 relative flex items-stretch bg-white border-b border-gray-200">
           <button

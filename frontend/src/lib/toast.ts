@@ -2,10 +2,16 @@ import { toast as sonner } from "sonner";
 
 function extractDetail(e: unknown): { msg: string; status?: number } {
   const res = (
-    e as { response?: { data?: { detail?: string }; status?: number } }
+    e as {
+      response?: {
+        data?: { detail?: string | { message?: string } };
+        status?: number;
+      };
+    }
   )?.response;
+  const detail = res?.data?.detail;
   const msg =
-    res?.data?.detail ??
+    (typeof detail === "string" ? detail : detail?.message) ??
     (e instanceof Error ? e.message : "Something went wrong");
   return { msg, status: res?.status };
 }

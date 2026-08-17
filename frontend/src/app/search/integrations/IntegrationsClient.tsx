@@ -18,10 +18,13 @@ import {
   disconnectHubspot,
   type HubspotStatus,
 } from "@/lib/hubspotApi";
+import { getInstantlyStatus, disconnectInstantly, type InstantlyStatus } from "@/lib/instantlyApi";
+import ConnectInstantlyModal from "@/components/search/ConnectInstantlyModal";
 import { toast } from "@/lib/toast";
 
 const RED = "#dc2626";
 const ORANGE = "#ff7a59";
+const BLUE = "#1a56db";
 
 const SALESFORCE_FEATURES = [
   {
@@ -46,6 +49,19 @@ const HUBSPOT_FEATURES = [
     icon: ShieldCheck,
     title: "Email required first",
     text: "A record's work email must be unlocked before it can be pushed — HubSpot Contacts are matched by email.",
+  },
+];
+
+const INSTANTLY_FEATURES = [
+  {
+    icon: Upload,
+    title: "Add leads to a campaign",
+    text: "Send unlocked people straight into an Instantly outreach campaign of your choice, from search results or a contact's detail panel.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Email required first",
+    text: "A record's work email must be unlocked before it can be added — Instantly leads are matched by email.",
   },
 ];
 
@@ -167,6 +183,12 @@ export default function IntegrationsClient() {
   const [hsDisconnecting, setHsDisconnecting] = useState(false);
   const [showHsDisconnectConfirm, setShowHsDisconnectConfirm] = useState(false);
 
+  const [inStatus, setInStatus] = useState<InstantlyStatus | null>(null);
+  const [inLoading, setInLoading] = useState(true);
+  const [inDisconnecting, setInDisconnecting] = useState(false);
+  const [showInDisconnectConfirm, setShowInDisconnectConfirm] = useState(false);
+  const [showInConnectModal, setShowInConnectModal] = useState(false);
+
   const loadSalesforce = useCallback(async () => {
     setSfLoading(true);
     try {
@@ -189,10 +211,22 @@ export default function IntegrationsClient() {
     }
   }, []);
 
+  const loadInstantly = useCallback(async () => {
+    setInLoading(true);
+    try {
+      setInStatus(await getInstantlyStatus());
+    } catch {
+      toast.error("Failed to load Instantly connection status.");
+    } finally {
+      setInLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSalesforce();
     loadHubspot();
-  }, [loadSalesforce, loadHubspot]);
+    loadInstantly();
+  }, [loadSalesforce, loadHubspot, loadInstantly]);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -265,8 +299,23 @@ export default function IntegrationsClient() {
     }
   }
 
+  async function handleDisconnectInstantly() {
+    setInDisconnecting(true);
+    try {
+      await disconnectInstantly();
+      toast.success("Instantly disconnected.");
+      setShowInDisconnectConfirm(false);
+      await loadInstantly();
+    } catch {
+      toast.error("Failed to disconnect Instantly.");
+    } finally {
+      setInDisconnecting(false);
+    }
+  }
+
   const sfConnected = !!sfStatus?.connected;
   const hsConnected = !!hsStatus?.connected;
+  const inConnected = !!inStatus?.connected;
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50">
@@ -316,6 +365,20 @@ export default function IntegrationsClient() {
           features={HUBSPOT_FEATURES}
           onConnect={handleConnectHubspot}
           onDisconnectRequest={() => setShowHsDisconnectConfirm(true)}
+        />
+
+        <ConnectionCard
+          name="Instantly"
+          accent={BLUE}
+          icon={<InstantlyIcon className={inConnected ? "text-emerald-600" : "text-gray-400"} />}
+          connected={inConnected}
+          loading={inLoading}
+          connecting={false}
+          subtitle={inConnected ? "Connected account" : "Add unlocked leads to your Instantly campaigns."}
+          docsHref="/document/api-key/instantly"
+          features={INSTANTLY_FEATURES}
+          onConnect={() => setShowInConnectModal(true)}
+          onDisconnectRequest={() => setShowInDisconnectConfirm(true)}
         />
       </div>
 
@@ -380,6 +443,43 @@ export default function IntegrationsClient() {
           </div>
         </div>
       )}
+
+      {showInDisconnectConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: "#eaf0fe" }}>
+              <AlertCircle className="h-5 w-5" style={{ color: BLUE }} />
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-gray-900">Disconnect Instantly?</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              You won&apos;t be able to add leads to Instantly campaigns until you reconnect.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowInDisconnectConfirm(false)}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisconnectInstantly}
+                disabled={inDisconnecting}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: BLUE }}
+              >
+                {inDisconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConnectInstantlyModal
+        open={showInConnectModal}
+        onClose={() => setShowInConnectModal(false)}
+        onConnected={loadInstantly}
+      />
     </div>
   );
 }
@@ -410,6 +510,20 @@ function HubspotIcon({ className }: { className?: string }) {
       />
       <circle cx="17.5" cy="6.5" r="1.6" stroke="currentColor" strokeWidth="1.6" />
       <circle cx="5.5" cy="18.5" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function InstantlyIcon({ className }: { className?: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M13 3 4 13.5h6.5L11 21l9-10.5h-6.5L13 3Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

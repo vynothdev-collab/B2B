@@ -26,6 +26,7 @@ from app.schemas.salesforce import (
 from app.services import salesforce_service
 from app.services.contact_unlock_service import get_unlock_map
 from app.services.coresignal_service import _map_person
+from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -223,6 +224,16 @@ async def salesforce_push(
             failed += 1
             continue
 
+        push_cost = CREDIT_COSTS["crm_push"]
+        try:
+            await check_credits(current_user, db, push_cost)
+        except HTTPException:
+            results.append(SalesforcePushItemResult(
+                record_id=item.record_id, error="Not enough credits to push this record."
+            ))
+            failed += 1
+            continue
+
         raw = raw_data_map.get(item.record_id)
         mapped = _map_person(raw) if raw else (item.data if isinstance(item.data, dict) else {})
         unlocked_phone = unlocked.get("mobile")
@@ -230,6 +241,10 @@ async def salesforce_push(
         lead_fields = salesforce_service.map_person_to_lead(mapped, unlocked_email, unlocked_phone)
         try:
             salesforce_id = await salesforce_service.create_lead(connection, lead_fields)
+            await deduct_credit(
+                current_user, db, reason="Salesforce Push",
+                description=f"Pushed to Salesforce — {push_cost} credit(s) deducted", amount=push_cost,
+            )
             results.append(SalesforcePushItemResult(record_id=item.record_id, salesforce_id=salesforce_id))
             pushed += 1
         except HTTPException as e:

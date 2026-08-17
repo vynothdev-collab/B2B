@@ -10,6 +10,7 @@ from app.models.user_plan import UserPlan, UserPlanStatus
 from app.models.api_key import ApiKey
 from app.models.salesforce_connection import SalesforceConnection
 from app.models.hubspot_connection import HubspotConnection
+from app.models.instantly_connection import InstantlyConnection
 
 __all__ = [
     "User",
@@ -30,4 +31,5 @@ __all__ = [
     "ApiKey",
     "SalesforceConnection",
     "HubspotConnection",
+    "InstantlyConnection",
 ]

@@ -76,8 +76,10 @@ export default function SalesforceOverviewDocPage() {
           <Link href="/document/api-key/salesforce/field-mapping" className="font-semibold text-red-600 hover:underline">
             Field Mapping
           </Link>{" "}
-          for exactly which fields are sent. Pushing does not cost credits — the credit
-          for a contact was already spent when its work email was unlocked.
+          for exactly which fields are sent. Each successfully pushed record
+          costs <span className="font-semibold text-gray-900">1 credit</span>, on
+          top of whatever the contact&apos;s unlock already cost — you&apos;re
+          only charged for records that are actually delivered to Salesforce.
         </p>
       </Section>
 

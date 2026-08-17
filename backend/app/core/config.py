@@ -79,5 +79,8 @@ class Settings(BaseSettings):
     HUBSPOT_CALLBACK_URL: str = ""  # e.g. http://localhost:8000/api/v1/integrations/hubspot/callback
     HUBSPOT_ENCRYPTION_KEY: str = ""  # used to encrypt stored HubSpot access/refresh tokens at rest
 
+    # Instantly (API-key based, no OAuth)
+    INSTANTLY_ENCRYPTION_KEY: str = ""  # used to encrypt stored Instantly API keys at rest
+
 
 settings = Settings()
