@@ -22,6 +22,9 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Upload,
+  Loader2,
+  Check,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api";
@@ -31,6 +34,7 @@ import {
   unlockPersonPersonalEmail,
   unlockPersonMobile,
 } from "@/lib/searchApi";
+import { pushToSalesforce } from "@/lib/salesforceApi";
 import { toast } from "@/lib/toast";
 
 type UnlockField = "work_email" | "personal_email" | "mobile";
@@ -625,6 +629,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [unlockingField, setUnlockingField] = useState<UnlockField | null>(
     null,
   );
+  const [pushingToSalesforce, setPushingToSalesforce] = useState(false);
+  const [pushedToSalesforce, setPushedToSalesforce] = useState(false);
 
   const skillsRef = useRef<HTMLDivElement>(null);
   const expRef = useRef<HTMLDivElement>(null);
@@ -643,6 +649,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     setDetail(null);
     setUnlockOverrides({});
     setUnlockingField(null);
+    setPushedToSalesforce(false);
     setLoading(true);
     apiClient
       .get<PersonDetail>(`/search/persons/${person.id}/detail`)
@@ -812,6 +819,26 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       toast.apiError(e);
     } finally {
       setUnlockingField(null);
+    }
+  };
+
+  const handlePushToSalesforce = async () => {
+    if (!person || pushingToSalesforce) return;
+    setPushingToSalesforce(true);
+    try {
+      const result = await pushToSalesforce([
+        { record_id: person.id, item_type: "person", data: {} },
+      ]);
+      if (result.pushed > 0) {
+        toast.success("Pushed to Salesforce.");
+        setPushedToSalesforce(true);
+      } else {
+        toast.error(result.results[0]?.error ?? "Failed to push to Salesforce.");
+      }
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setPushingToSalesforce(false);
     }
   };
 
@@ -1017,6 +1044,29 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 <LinkedInSVG />
               </span>
             )}
+
+            <button
+              type="button"
+              onClick={handlePushToSalesforce}
+              disabled={!workEmailUnlocked || pushingToSalesforce || pushedToSalesforce}
+              title={
+                !workEmailUnlocked
+                  ? "Unlock work email before pushing to Salesforce"
+                  : pushedToSalesforce
+                    ? "Already pushed"
+                    : "Push to Salesforce"
+              }
+              className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pushingToSalesforce ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : pushedToSalesforce ? (
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {pushedToSalesforce ? "Pushed" : "Push to Salesforce"}
+            </button>
           </div>
         </div>
 

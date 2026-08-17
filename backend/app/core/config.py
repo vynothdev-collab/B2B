@@ -66,5 +66,12 @@ class Settings(BaseSettings):
     MICROSOFT_TENANT_ID: str = "common"  # "common" = personal + work/school accounts
     MICROSOFT_CALLBACK_URL: str = ""     # e.g. http://localhost:8000/api/v1/auth/microsoft/callback
 
+    # Salesforce OAuth (production orgs only — login.salesforce.com)
+    SALESFORCE_CLIENT_ID: str = ""
+    SALESFORCE_CLIENT_SECRET: str = ""
+    SALESFORCE_CALLBACK_URL: str = ""  # e.g. http://localhost:8000/api/v1/integrations/salesforce/callback
+    SALESFORCE_API_VERSION: str = "v59.0"  # bump when Salesforce deprecates this REST API version
+    SALESFORCE_ENCRYPTION_KEY: str = ""  # used to encrypt stored Salesforce access/refresh tokens at rest
+
 
 settings = Settings()

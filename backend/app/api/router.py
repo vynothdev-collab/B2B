@@ -8,6 +8,7 @@ from app.api.routes.admin import manage as admin_manage
 from app.api.routes.admin import plans as admin_plans
 from app.api.routes.admin import users as admin_customers
 from app.api.routes.enterprise import users as ent_users
+from app.api.routes.integrations import salesforce as integrations_salesforce
 from app.core.security import get_current_user
 
 api_router = APIRouter()
@@ -49,4 +50,9 @@ api_router.include_router(
     prefix="/api-keys",
     tags=["api-keys"],
     dependencies=[Depends(get_current_user)],
+)
+api_router.include_router(
+    integrations_salesforce.router,
+    prefix="/integrations/salesforce",
+    tags=["integrations"],
 )

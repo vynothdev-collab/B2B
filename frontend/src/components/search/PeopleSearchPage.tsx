@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
-import { Eye, ListPlus, SearchX, SlidersHorizontal, X } from "lucide-react";
+import { Eye, ListPlus, SearchX, SlidersHorizontal, Upload, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import PeopleFilterPanel, {
@@ -14,6 +14,7 @@ import PersonDetailPanel from "./PersonDetailPanel";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import AddToListModal from "./AddToListModal";
+import PushToSalesforceModal from "./PushToSalesforceModal";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
@@ -49,6 +50,7 @@ export default function PeopleSearchPage() {
   const [tokenHistory, setTokenHistory] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
+  const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
   const isAgenticRef = useRef(false);
   const agenticPromptRef = useRef<string>("");
@@ -377,6 +379,15 @@ export default function PeopleSearchPage() {
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
                 </button>
+                <button
+                  type="button"
+                  disabled={selected.size === 0}
+                  onClick={() => setSalesforcePushOpen(true)}
+                  className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-xs"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Push to Salesforce
+                </button>
               </div>
             </div>
 
@@ -438,6 +449,14 @@ export default function PeopleSearchPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setSalesforcePushOpen(true)}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
+                  >
+                    <Upload className="h-3 w-3" />
+                    Push to Salesforce
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setSelected(new Set())}
                     className="ml-1 rounded-full p-1 text-gray-400 hover:bg-gray-700 hover:text-white"
                   >
@@ -487,6 +506,12 @@ export default function PeopleSearchPage() {
         onClose={() => setListModalItems([])}
         items={listModalItems}
         itemType="person"
+      />
+
+      <PushToSalesforceModal
+        open={salesforcePushOpen}
+        onClose={() => setSalesforcePushOpen(false)}
+        items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
       />
 
       <ConfirmDialog

@@ -53,6 +53,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [{ href: "/document/api-key/autocomplete", label: "Endpoint" }],
   },
   {
+    title: "Salesforce Integration",
+    items: [
+      { href: "/document/api-key/salesforce", label: "Overview & Setup" },
+      { href: "/document/api-key/salesforce/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
     title: "Reference",
     items: [{ href: "/document/api-key/errors", label: "Errors" }],
   },

@@ -973,3 +973,38 @@ export const SAMPLE_INSUFFICIENT_CREDITS_RESPONSE = `{
     "availableCredits": 4
   }
 }`;
+
+export interface SalesforceFieldMapping {
+  leadsbuddyField: string;
+  salesforceField: string;
+  notes: string;
+}
+
+export const SALESFORCE_FIELD_MAPPING: SalesforceFieldMapping[] = [
+  { leadsbuddyField: "first_name", salesforceField: "FirstName", notes: "Optional on the Lead object." },
+  { leadsbuddyField: "last_name", salesforceField: "LastName", notes: "Required by Salesforce — falls back to the person's full name, then \"Unknown\", if missing." },
+  { leadsbuddyField: "Unlocked work email", salesforceField: "Email", notes: "Only sent if the record's work email has been unlocked. A push is rejected if no work email is unlocked." },
+  { leadsbuddyField: "Unlocked mobile number", salesforceField: "Phone / MobilePhone", notes: "Only sent if the mobile number has been unlocked." },
+  { leadsbuddyField: "active_experience_title", salesforceField: "Title", notes: "Current job title, if known." },
+  { leadsbuddyField: "active_experience_company_name", salesforceField: "Company", notes: "Required by Salesforce — falls back to \"Unknown Company\" if missing." },
+  { leadsbuddyField: "active_experience_company_website", salesforceField: "Website", notes: "Current employer's website, if known." },
+  { leadsbuddyField: "location_city / location_state / location_country", salesforceField: "City / State / Country", notes: "Person's location, if known." },
+  { leadsbuddyField: "(fixed value)", salesforceField: "LeadSource", notes: "Always set to \"LeadsBuddy\" so pushed leads are identifiable in Salesforce reports." },
+];
+
+export const SAMPLE_SALESFORCE_STATUS_RESPONSE = `{
+  "connected": true,
+  "salesforce_org_id": "00D5g000000ABCDEFG",
+  "salesforce_user_email": "you@yourcompany.com",
+  "connected_at": "2026-08-01T09:12:00Z"
+}`;
+
+export const SAMPLE_SALESFORCE_PUSH_RESPONSE = `{
+  "pushed": 2,
+  "failed": 1,
+  "results": [
+    { "record_id": "abc123", "salesforce_id": "00Q5g000001AbCdEFG", "error": null },
+    { "record_id": "def456", "salesforce_id": "00Q5g000001AbCeFGH", "error": null },
+    { "record_id": "ghi789", "salesforce_id": null, "error": "Work email must be unlocked before pushing." }
+  ]
+}`;

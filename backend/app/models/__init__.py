@@ -8,6 +8,7 @@ from app.models.credit_transaction import CreditTransaction
 from app.models.plan import Plan, PlanType
 from app.models.user_plan import UserPlan, UserPlanStatus
 from app.models.api_key import ApiKey
+from app.models.salesforce_connection import SalesforceConnection
 
 __all__ = [
     "User",
@@ -26,4 +27,5 @@ __all__ = [
     "UserPlan",
     "UserPlanStatus",
     "ApiKey",
+    "SalesforceConnection",
 ]
