@@ -130,6 +130,11 @@ class EnterpriseStats(BaseModel):
     total_credits: int
 
 
+class EnterpriseOption(BaseModel):
+    id:   str
+    name: str
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 async def _load_enterprise(db: AsyncSession, enterprise_id: str) -> Enterprise:
@@ -299,6 +304,14 @@ async def list_enterprises(
         page=page,
         page_size=page_size,
     )
+
+
+@router.get("/options", response_model=list[EnterpriseOption])
+async def list_enterprise_options(db: AsyncSession = Depends(get_db)) -> list[EnterpriseOption]:
+    rows = (
+        await db.execute(select(Enterprise.id, Enterprise.name).order_by(Enterprise.name.asc()))
+    ).all()
+    return [EnterpriseOption(id=row[0], name=row[1]) for row in rows]
 
 
 @router.get("/stats", response_model=EnterpriseStats)

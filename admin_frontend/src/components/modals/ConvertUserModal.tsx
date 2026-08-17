@@ -5,7 +5,7 @@ import axios from "axios";
 import Modal, { Field, FieldSelect } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { updateCustomerRole, type Customer, type CustomerRole } from "@/services/customers";
-import { listEnterprises, type Enterprise } from "@/services/enterprises";
+import { listEnterpriseOptions, type EnterpriseOption } from "@/services/enterprises";
 
 interface Props {
   open: boolean;
@@ -18,7 +18,7 @@ export default function ConvertUserModal({ open, onClose, customer, onConverted 
   const toast = useToast();
   const [role, setRole] = useState<CustomerRole>("enterprise_user");
   const [enterpriseId, setEnterpriseId] = useState<string>("");
-  const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
+  const [enterprises, setEnterprises] = useState<EnterpriseOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,8 +27,8 @@ export default function ConvertUserModal({ open, onClose, customer, onConverted 
     setRole((customer?.role as CustomerRole) === "individual" ? "enterprise_user" : "individual");
     setEnterpriseId(customer?.enterprise_id ?? "");
     setLoading(true);
-    listEnterprises({ page: 1, page_size: 100 })
-      .then((paged) => setEnterprises(paged.items))
+    listEnterpriseOptions()
+      .then(setEnterprises)
       .catch(() => toast.error("Load failed", "Could not load enterprises."))
       .finally(() => setLoading(false));
   }, [open, customer, toast]);

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Briefcase,
   Building2,
+  CheckCircle2,
   CreditCard,
   Globe,
   Loader2,
@@ -13,7 +13,9 @@ import {
   Plus,
   Search,
   ShieldCheck,
+  Users,
 } from "lucide-react";
+import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   apiAllocateCreditsToMember,
@@ -116,211 +118,242 @@ export default function EnterpriseClient() {
 
   if (authLoading || (user && user.role !== "enterprise_admin")) {
     return (
-      <div className="flex h-full items-center justify-center py-24 text-sm text-gray-400">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> loading…
-      </div>
+      <>
+        <AppHeader title="My Team" />
+        <div className="flex h-full items-center justify-center py-24 text-sm text-gray-400">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> loading…
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-      {/* ── Header ────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-600">
-            <Briefcase className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">My Team</h1>
-            <p className="text-sm text-gray-500">
-              Manage members of {enterprise?.name ?? "your enterprise"}.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => setInviteOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-500 transition-colors"
-        >
-          <Plus className="h-4 w-4" /> Add Team Member
-        </button>
-      </div>
+    <>
+      <AppHeader title="My Team" />
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+        <div className="mx-auto w-full max-w-7xl space-y-5">
 
-      {/* ── Enterprise summary card ───────────────────────────── */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        {loading && !enterprise ? (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <Loader2 className="h-4 w-4 animate-spin" /> loading enterprise…
+          {/* ── Page intro + primary action ──────────────────────── */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-gray-500">
+              Manage the people at{" "}
+              <span className="font-medium text-gray-700">{enterprise?.name ?? "your enterprise"}</span>{" "}
+              and how their search credits are allocated.
+            </p>
+            <button
+              type="button"
+              onClick={() => setInviteOpen(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-500"
+            >
+              <Plus className="h-4 w-4" /> Add Team Member
+            </button>
           </div>
-        ) : enterprise ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
-                <Building2 className="h-5 w-5" />
+
+          {/* ── Enterprise summary card ──────────────────────────── */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            {loading && !enterprise ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Loader2 className="h-4 w-4 animate-spin" /> loading enterprise…
               </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                  Company
-                </p>
-                <p className="text-sm font-semibold text-gray-900">{enterprise.name}</p>
-                <p className="text-xs text-gray-500">{enterprise.industry ?? "—"}</p>
+            ) : enterprise ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                      Company
+                    </p>
+                    <p className="truncate text-sm font-semibold text-gray-900">{enterprise.name}</p>
+                    <p className="truncate text-xs text-gray-500">{enterprise.industry ?? "—"}</p>
+                  </div>
+                </div>
+                <InfoTile label="Plan" value={enterprise.plan} icon={<CreditCard className="h-4 w-4" />} />
+                <InfoTile
+                  label="Available Pool"
+                  value={`${enterprise.credits.toLocaleString()} credits`}
+                  icon={<CreditCard className="h-4 w-4" />}
+                />
+                {enterprise.website && (
+                  <InfoTile
+                    label="Website"
+                    value={enterprise.website}
+                    icon={<Globe className="h-4 w-4" />}
+                  />
+                )}
+                {enterprise.phone && (
+                  <InfoTile label="Phone" value={enterprise.phone} icon={<Phone className="h-4 w-4" />} />
+                )}
+                {enterprise.country && <InfoTile label="Country" value={enterprise.country} />}
+                {enterprise.size && <InfoTile label="Size" value={enterprise.size} />}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">Enterprise not found.</p>
+            )}
+          </div>
+
+          {/* ── Stat strip ────────────────────────────────────────── */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <StatCard
+              label="Total Members"
+              value={totalMembers}
+              icon={<Users className="h-5 w-5" />}
+              tint="bg-gray-100 text-gray-600"
+              valueColor="text-gray-900"
+            />
+            <StatCard
+              label="Active"
+              value={activeMembers}
+              icon={<CheckCircle2 className="h-5 w-5" />}
+              tint="bg-emerald-50 text-emerald-600"
+              valueColor="text-emerald-600"
+            />
+            <StatCard
+              label="Admins"
+              value={adminCount}
+              icon={<ShieldCheck className="h-5 w-5" />}
+              tint="bg-red-50 text-red-600"
+              valueColor="text-red-600"
+            />
+          </div>
+
+          {/* ── Members table ─────────────────────────────────────── */}
+          <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+              <div className="flex items-center gap-3">
+                <p className="text-sm font-semibold text-gray-800">Team Members</p>
+                {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
+              </div>
+              <div className="relative min-w-[220px]">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by name or email…"
+                  className="h-9 w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
+                />
               </div>
             </div>
-            <InfoTile label="Plan" value={enterprise.plan} icon={<CreditCard className="h-4 w-4" />} />
-            <InfoTile
-              label="Available Pool"
-              value={enterprise.credits.toLocaleString()}
-              icon={<CreditCard className="h-4 w-4" />}
-            />
-            {enterprise.website && (
-              <InfoTile
-                label="Website"
-                value={enterprise.website}
-                icon={<Globe className="h-4 w-4" />}
-              />
-            )}
-            {enterprise.phone && (
-              <InfoTile label="Phone" value={enterprise.phone} icon={<Phone className="h-4 w-4" />} />
-            )}
-            {enterprise.country && <InfoTile label="Country" value={enterprise.country} />}
-            {enterprise.size && <InfoTile label="Size" value={enterprise.size} />}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500">Enterprise not found.</p>
-        )}
-      </div>
-
-      {/* ── Stat strip ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard label="Total Members" value={totalMembers} color="text-gray-900" />
-        <StatCard label="Active" value={activeMembers} color="text-emerald-600" />
-        <StatCard label="Admins" value={adminCount} color="text-red-600" />
-      </div>
-
-      {/* ── Members table ─────────────────────────────────────── */}
-      <div className="rounded-xl border border-gray-200 bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <p className="text-sm font-semibold text-gray-800">Team Members</p>
-            {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />}
-          </div>
-          <div className="relative min-w-[220px]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or email…"
-              className="h-9 w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
-            />
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-xs font-medium text-gray-500">
-                <th className="px-4 py-2.5 text-left">Name</th>
-                <th className="px-4 py-2.5 text-left">Email</th>
-                <th className="px-4 py-2.5 text-left">Role</th>
-                <th className="px-4 py-2.5 text-left">Status</th>
-                <th className="px-4 py-2.5 text-right">Allocated</th>
-                <th className="px-4 py-2.5 text-right">Used</th>
-                <th className="px-4 py-2.5 text-right">Remaining</th>
-                <th className="px-4 py-2.5 text-left">Added</th>
-                <th className="px-4 py-2.5 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMembers.map((m) => (
-                <tr key={m.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-[10px] font-bold text-red-600">
-                        {initials(m.name)}
-                      </div>
-                      <span className="font-medium text-gray-800">{m.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{m.email}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={
-                        m.role === "enterprise_admin"
-                          ? "rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700"
-                          : "rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600"
-                      }
-                    >
-                      {m.role === "enterprise_admin" ? "Admin" : "Member"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={
-                        m.is_active
-                          ? "rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
-                          : "rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500"
-                      }
-                    >
-                      {m.is_active ? "Active" : "Suspended"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm font-medium text-gray-700">
-                    {m.allocated_credits.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm text-gray-500">
-                    {m.used_credits.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span
-                      className={
-                        m.remaining_credits <= 0
-                          ? "text-sm font-semibold text-red-600"
-                          : m.allocated_credits > 0 && m.remaining_credits / m.allocated_credits < 0.2
-                          ? "text-sm font-semibold text-amber-600"
-                          : "text-sm font-semibold text-emerald-600"
-                      }
-                    >
-                      {m.remaining_credits.toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{formatDate(m.created_at)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setAllocateTarget(m)}
-                        className="rounded-md border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50"
-                      >
-                        Allocate Credits
-                      </button>
-                      {m.id === user?.id ? (
-                        <span className="text-xs text-gray-400">You</span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setPendingToggle(m)}
-                          disabled={busyId === m.id}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-xs font-medium text-gray-500">
+                    <th className="px-4 py-2.5 text-left">Name</th>
+                    <th className="px-4 py-2.5 text-left">Email</th>
+                    <th className="px-4 py-2.5 text-left">Role</th>
+                    <th className="px-4 py-2.5 text-left">Status</th>
+                    <th className="px-4 py-2.5 text-right">Allocated</th>
+                    <th className="px-4 py-2.5 text-right">Used</th>
+                    <th className="px-4 py-2.5 text-right">Remaining</th>
+                    <th className="px-4 py-2.5 text-left">Added</th>
+                    <th className="px-4 py-2.5 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMembers.map((m) => (
+                    <tr key={m.id} className="border-b border-gray-100 transition-colors hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50 text-[10px] font-bold text-red-600">
+                            {initials(m.name)}
+                          </div>
+                          <span className="font-medium text-gray-800">{m.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{m.email}</td>
+                      <td className="px-4 py-3">
+                        <span
                           className={
-                            m.is_active
-                              ? "rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                              : "rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                            m.role === "enterprise_admin"
+                              ? "rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700"
+                              : "rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600"
                           }
                         >
-                          {m.is_active ? "Suspend" : "Activate"}
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {!loading && filteredMembers.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-gray-400">
-                    {query ? "No members match your search." : "No team members yet — click Add Team Member to invite one."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                          {m.role === "enterprise_admin" ? "Admin" : "Member"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={
+                            m.is_active
+                              ? "rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700"
+                              : "rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500"
+                          }
+                        >
+                          {m.is_active ? "Active" : "Suspended"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-medium text-gray-700">
+                        {m.allocated_credits.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-gray-500">
+                        {m.used_credits.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span
+                          className={
+                            m.remaining_credits <= 0
+                              ? "text-sm font-semibold text-red-600"
+                              : m.allocated_credits > 0 && m.remaining_credits / m.allocated_credits < 0.2
+                              ? "text-sm font-semibold text-amber-600"
+                              : "text-sm font-semibold text-emerald-600"
+                          }
+                        >
+                          {m.remaining_credits.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">{formatDate(m.created_at)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setAllocateTarget(m)}
+                            className="rounded-md border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                          >
+                            Allocate Credits
+                          </button>
+                          {m.id === user?.id ? (
+                            <span className="text-xs text-gray-400">You</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setPendingToggle(m)}
+                              disabled={busyId === m.id}
+                              className={
+                                m.is_active
+                                  ? "rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                                  : "rounded-md border border-emerald-200 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                              }
+                            >
+                              {m.is_active ? "Suspend" : "Activate"}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {!loading && filteredMembers.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-14 text-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                            <Users className="h-5 w-5" />
+                          </div>
+                          <p className="text-sm text-gray-400">
+                            {query
+                              ? "No members match your search."
+                              : "No team members yet — click Add Team Member to invite one."}
+                          </p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -361,7 +394,7 @@ export default function EnterpriseClient() {
         onClose={() => setPendingToggle(null)}
         onConfirm={() => pendingToggle && handleToggleStatus(pendingToggle)}
       />
-    </div>
+    </>
   );
 }
 
@@ -371,19 +404,36 @@ function InfoTile({ label, value, icon }: { label: string; value: string; icon?:
   return (
     <div className="flex items-start gap-2">
       {icon && <span className="mt-0.5 text-gray-400">{icon}</span>}
-      <div>
+      <div className="min-w-0">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-        <p className="text-sm font-medium text-gray-800 break-all">{value}</p>
+        <p className="truncate text-sm font-medium text-gray-800">{value}</p>
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function StatCard({
+  label,
+  value,
+  icon,
+  tint,
+  valueColor,
+}: {
+  label: string;
+  value: number;
+  icon: React.ReactNode;
+  tint: string;
+  valueColor: string;
+}) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-      <p className={`mt-1 text-2xl font-bold ${color}`}>{value}</p>
+    <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tint}`}>
+        {icon}
+      </div>
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+        <p className={`mt-0.5 text-2xl font-bold ${valueColor}`}>{value}</p>
+      </div>
     </div>
   );
 }
@@ -462,7 +512,7 @@ function InviteMemberModal({ open, onClose, onCreated }: InviteProps) {
               value={form.name}
               onChange={(e) => update("name", e.target.value)}
               placeholder="Jane Doe"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
               autoFocus
             />
           </Field>
@@ -472,7 +522,7 @@ function InviteMemberModal({ open, onClose, onCreated }: InviteProps) {
               value={form.email}
               onChange={(e) => update("email", e.target.value)}
               placeholder="jane@company.com"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
             />
           </Field>
           <Field label="Temporary password" hint="min 8 chars">
@@ -481,7 +531,7 @@ function InviteMemberModal({ open, onClose, onCreated }: InviteProps) {
               value={form.password}
               onChange={(e) => update("password", e.target.value)}
               placeholder="••••••••"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
             />
           </Field>
           <Field label="Phone" hint="optional">
@@ -490,7 +540,7 @@ function InviteMemberModal({ open, onClose, onCreated }: InviteProps) {
               value={form.phone}
               onChange={(e) => update("phone", e.target.value)}
               placeholder="+1 555-0100"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-red-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
             />
           </Field>
         </div>
@@ -616,7 +666,7 @@ function AllocateCreditsModal({ open, member, enterprisePool, onClose, onAllocat
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="e.g. 500"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none"
               autoFocus
             />
           </Field>

@@ -52,6 +52,17 @@ class UpdateStatusRequest(BaseModel):
     is_active: bool
 
 
+class UpdatePasswordRequest(BaseModel):
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
+
+
 class CreateCustomerRequest(BaseModel):
     name:          str
     email:         EmailStr
@@ -336,6 +347,19 @@ async def update_customer_role(
         user.role = payload.role
         user.enterprise_id = ent.id
 
+    await db.flush()
+    await db.refresh(user)
+    return await _serialize(db, user)
+
+
+@router.patch("/{user_id}/password", response_model=CustomerResponse)
+async def update_customer_password(
+    user_id: str,
+    payload: UpdatePasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> CustomerResponse:
+    user = await _load_user(db, user_id)
+    user.hashed_password = hash_password(payload.new_password)
     await db.flush()
     await db.refresh(user)
     return await _serialize(db, user)

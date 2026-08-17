@@ -72,11 +72,21 @@ export interface EnterpriseStats {
   total_credits: number;
 }
 
+export interface EnterpriseOption {
+  id: string;
+  name: string;
+}
+
 export async function listEnterprises(
   params: ListEnterprisesParams = {},
   signal?: AbortSignal,
 ): Promise<PagedEnterprises> {
   const { data } = await api.get<PagedEnterprises>("/admin/enterprises", { params, signal });
+  return data;
+}
+
+export async function listEnterpriseOptions(signal?: AbortSignal): Promise<EnterpriseOption[]> {
+  const { data } = await api.get<EnterpriseOption[]>("/admin/enterprises/options", { signal });
   return data;
 }
 

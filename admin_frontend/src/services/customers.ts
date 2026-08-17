@@ -91,3 +91,8 @@ export async function updateCustomerStatus(id: string, is_active: boolean): Prom
   const { data } = await api.patch<Customer>(`/admin/customers/${id}/status`, { is_active });
   return data;
 }
+
+export async function updateCustomerPassword(id: string, new_password: string): Promise<Customer> {
+  const { data } = await api.patch<Customer>(`/admin/customers/${id}/password`, { new_password });
+  return data;
+}

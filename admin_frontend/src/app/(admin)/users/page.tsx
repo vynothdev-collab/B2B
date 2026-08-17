@@ -11,15 +11,21 @@ import {
   Building2,
   Plus,
   UserX,
+  Coins,
+  Ban,
+  KeyRound,
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
+import ActionMenu from "@/components/ui/ActionMenu";
 import { useToast } from "@/components/ui/Toast";
 import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
 import ConvertUserModal from "@/components/modals/ConvertUserModal";
 import CreateCustomerModal from "@/components/modals/CreateCustomerModal";
+import AddCreditsModal from "@/components/modals/AddCreditsModal";
+import ChangePasswordModal from "@/components/modals/ChangePasswordModal";
 import {
   getCustomerStats,
   listCustomers,
@@ -53,11 +59,15 @@ function UserDetail({
   user,
   onConvert,
   onToggleStatus,
+  onAddCredits,
+  onChangePassword,
   busy,
 }: {
   user: Customer;
   onConvert: () => void;
   onToggleStatus: () => void;
+  onAddCredits: () => void;
+  onChangePassword: () => void;
   busy: boolean;
 }) {
   return (
@@ -111,6 +121,24 @@ function UserDetail({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            onClick={onAddCredits}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60"
+            style={{ background: "rgba(23,50,41,.08)", color: "var(--forest)" }}
+          >
+            <Coins className="h-4 w-4" /> Add Credits
+          </button>
+          <button
+            type="button"
+            onClick={onChangePassword}
+            disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60"
+            style={{ background: "rgba(23,50,41,.08)", color: "var(--forest)" }}
+          >
+            <KeyRound className="h-4 w-4" /> Change Password
+          </button>
+          <button
+            type="button"
             onClick={onConvert}
             disabled={busy}
             className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60"
@@ -154,6 +182,12 @@ export default function UsersPage() {
   const [convertOpen, setConvertOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [addCreditsTarget, setAddCreditsTarget] = useState<{
+    type: "individual";
+    id: string;
+    name: string;
+  } | null>(null);
+  const [passwordTarget, setPasswordTarget] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     setPage(1);
@@ -361,32 +395,40 @@ export default function UsersPage() {
                   <td className="px-4 py-3 text-slate-500">{u.phone ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-500">{formatDate(u.created_at)}</td>
                   <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelected(u);
-                          setConvertOpen(true);
-                        }}
-                        className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                        style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-                      >
-                        Change Role
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStatus(u)}
-                        disabled={busyId === u.id}
-                        className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
-                        style={
-                          u.is_active
-                            ? { borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }
-                            : { borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }
-                        }
-                      >
-                        {u.is_active ? "Suspend" : "Activate"}
-                      </button>
-                    </div>
+                    <ActionMenu
+                      items={[
+                        {
+                          label: "Add Credits",
+                          icon: <Coins className="h-4 w-4" />,
+                          onClick: () =>
+                            setAddCreditsTarget({ type: "individual", id: u.id, name: u.name }),
+                        },
+                        {
+                          label: "Change Password",
+                          icon: <KeyRound className="h-4 w-4" />,
+                          onClick: () => setPasswordTarget({ id: u.id, name: u.name }),
+                        },
+                        {
+                          label: "Change Role",
+                          icon: <UserCog className="h-4 w-4" />,
+                          onClick: () => {
+                            setSelected(u);
+                            setConvertOpen(true);
+                          },
+                        },
+                        {
+                          label: u.is_active ? "Suspend" : "Activate",
+                          icon: u.is_active ? (
+                            <Ban className="h-4 w-4" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4" />
+                          ),
+                          onClick: () => handleToggleStatus(u),
+                          danger: u.is_active,
+                          disabled: busyId === u.id,
+                        },
+                      ]}
+                    />
                   </td>
                 </tr>
               ))}
@@ -423,6 +465,10 @@ export default function UsersPage() {
             busy={busyId === selected.id}
             onConvert={() => setConvertOpen(true)}
             onToggleStatus={() => handleToggleStatus(selected)}
+            onAddCredits={() =>
+              setAddCreditsTarget({ type: "individual", id: selected.id, name: selected.name })
+            }
+            onChangePassword={() => setPasswordTarget({ id: selected.id, name: selected.name })}
           />
         )}
       </SlidePanel>
@@ -438,6 +484,24 @@ export default function UsersPage() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={(user) => setCustomers((prev) => [user, ...prev])}
+      />
+
+      <AddCreditsModal
+        open={!!addCreditsTarget}
+        target={addCreditsTarget}
+        onClose={() => setAddCreditsTarget(null)}
+        onSuccess={() => {
+          setAddCreditsTarget(null);
+          void loadList();
+          void loadStats();
+        }}
+      />
+
+      <ChangePasswordModal
+        open={!!passwordTarget}
+        target={passwordTarget}
+        onClose={() => setPasswordTarget(null)}
+        onSuccess={() => setPasswordTarget(null)}
       />
     </div>
   );

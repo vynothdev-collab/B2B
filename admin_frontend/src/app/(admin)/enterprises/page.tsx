@@ -14,21 +14,28 @@ import {
   Mail,
   ShieldCheck,
   CheckCircle2,
+  Coins,
+  Ban,
+  KeyRound,
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Pagination from "@/components/ui/Pagination";
 import SlidePanel from "@/components/ui/SlidePanel";
+import ActionMenu from "@/components/ui/ActionMenu";
 import { useToast } from "@/components/ui/Toast";
 import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { useDebounce } from "@/hooks/useDebounce";
 import CreateEnterpriseModal from "@/components/modals/CreateEnterpriseModal";
 import CreateEnterpriseAdminModal from "@/components/modals/CreateEnterpriseAdminModal";
 import AddCreditsModal from "@/components/modals/AddCreditsModal";
+import ChangePasswordModal from "@/components/modals/ChangePasswordModal";
 import {
   getEnterpriseStats,
   listEnterprises,
+  listEnterpriseOptions,
   updateEnterprise,
   type Enterprise,
+  type EnterpriseOption,
   type EnterpriseStats,
 } from "@/services/enterprises";
 import { listCustomers, updateCustomerStatus, type Customer } from "@/services/customers";
@@ -255,11 +262,16 @@ export default function EnterprisesPage() {
   const [euEnterpriseFilter, setEuEnterpriseFilter] = useState<string>("all");
   const [euPage, setEuPage] = useState(1);
 
-  const [enterpriseOptions, setEnterpriseOptions] = useState<Enterprise[]>([]);
+  const [enterpriseOptions, setEnterpriseOptions] = useState<EnterpriseOption[]>([]);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
-  const [addCreditsTarget, setAddCreditsTarget] = useState<{ type: "enterprise"; id: string; name: string } | null>(null);
+  const [addCreditsTarget, setAddCreditsTarget] = useState<{
+    type: "individual" | "enterprise";
+    id: string;
+    name: string;
+  } | null>(null);
+  const [passwordTarget, setPasswordTarget] = useState<{ id: string; name: string } | null>(null);
   const [busyEntId, setBusyEntId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -309,8 +321,8 @@ export default function EnterprisesPage() {
 
   const loadEnterpriseOptions = useCallback(async (signal?: AbortSignal) => {
     try {
-      const paged = await listEnterprises({ page: 1, page_size: 100 }, signal);
-      setEnterpriseOptions(paged.items);
+      const options = await listEnterpriseOptions(signal);
+      setEnterpriseOptions(options);
     } catch (err: unknown) {
       if (axios.isCancel(err)) return;
     }
@@ -374,12 +386,28 @@ export default function EnterprisesPage() {
       return;
     }
     const controller = new AbortController();
-    listCustomers(
-      { roles: ["enterprise_admin", "enterprise_user"], enterprise_id: selected.id, page: 1, page_size: 100 },
-      controller.signal,
-    )
-      .then((paged) => setPanelEntUsers(paged.items))
-      .catch((err) => { if (!axios.isCancel(err)) setPanelEntUsers([]); });
+    const MAX_PAGE_SIZE = 100; // backend hard cap (Query(..., le=100)) — page through it, don't truncate at it
+    (async () => {
+      const items: Customer[] = [];
+      let page = 1;
+      for (;;) {
+        const paged = await listCustomers(
+          {
+            roles: ["enterprise_admin", "enterprise_user"],
+            enterprise_id: selected.id,
+            page,
+            page_size: MAX_PAGE_SIZE,
+          },
+          controller.signal,
+        );
+        items.push(...paged.items);
+        if (items.length >= paged.total || paged.items.length === 0) break;
+        page += 1;
+      }
+      setPanelEntUsers(items);
+    })().catch((err) => {
+      if (!axios.isCancel(err)) setPanelEntUsers([]);
+    });
     return () => controller.abort();
   }, [selected]);
 
@@ -558,32 +586,36 @@ export default function EnterprisesPage() {
                     <td className="px-4 py-3 text-slate-600">{e.credits.toLocaleString()}</td>
                     <td className="px-4 py-3 text-slate-500">{formatDate(e.created_at)}</td>
                     <td className="px-4 py-3" onClick={(ev) => ev.stopPropagation()}>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelected(e);
-                            setAdminModalOpen(true);
-                          }}
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors"
-                          style={{ borderColor: "var(--line)", color: "var(--ink-dim)", background: "transparent" }}
-                        >
-                          Add Admin
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleEntStatus(e)}
-                          disabled={busyEntId === e.id}
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
-                          style={
-                            e.status === "active"
-                              ? { borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }
-                              : { borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }
-                          }
-                        >
-                          {e.status === "active" ? "Suspend" : "Activate"}
-                        </button>
-                      </div>
+                      <ActionMenu
+                        items={[
+                          {
+                            label: "Add Credits",
+                            icon: <Coins className="h-4 w-4" />,
+                            onClick: () =>
+                              setAddCreditsTarget({ type: "enterprise", id: e.id, name: e.name }),
+                          },
+                          {
+                            label: "Add Admin",
+                            icon: <UserPlus className="h-4 w-4" />,
+                            onClick: () => {
+                              setSelected(e);
+                              setAdminModalOpen(true);
+                            },
+                          },
+                          {
+                            label: e.status === "active" ? "Suspend" : "Activate",
+                            icon:
+                              e.status === "active" ? (
+                                <Ban className="h-4 w-4" />
+                              ) : (
+                                <CheckCircle2 className="h-4 w-4" />
+                              ),
+                            onClick: () => handleToggleEntStatus(e),
+                            danger: e.status === "active",
+                            disabled: busyEntId === e.id,
+                          },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -616,6 +648,20 @@ export default function EnterprisesPage() {
             <div className="flex items-center gap-3">
               <p className="text-sm font-semibold text-slate-800">Enterprise Users & Admins</p>
             </div>
+            {euEnterpriseFilter !== "all" && (
+              <button
+                type="button"
+                onClick={() => {
+                  const ent = enterpriseOptions.find((e) => e.id === euEnterpriseFilter);
+                  if (!ent) return;
+                  setAddCreditsTarget({ type: "enterprise", id: ent.id, name: ent.name });
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+                style={{ background: "var(--gold)", color: "#3C2400" }}
+              >
+                <Coins className="h-4 w-4" /> Add Credits to Enterprise
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
             <div className="relative flex-1 min-w-[200px]">
@@ -689,22 +735,47 @@ export default function EnterprisesPage() {
                       <Badge status={u.is_active ? "active" : "suspended"} />
                     </td>
                     <td className="px-4 py-3 text-slate-500">{formatDate(u.created_at)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleEuStatus(u)}
-                          disabled={euBusyId === u.id}
-                          className="rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-60"
-                          style={
-                            u.is_active
-                              ? { borderColor: "var(--rose)", color: "var(--rose)", background: "transparent" }
-                              : { borderColor: "var(--sage)", color: "var(--sage-dark, #3E6A44)", background: "transparent" }
-                          }
-                        >
-                          {u.is_active ? "Suspend" : "Activate"}
-                        </button>
-                      </div>
+                    <td className="px-4 py-3" onClick={(ev) => ev.stopPropagation()}>
+                      <ActionMenu
+                        items={[
+                          {
+                            label: "Add Credits to User",
+                            icon: <Coins className="h-4 w-4" />,
+                            onClick: () =>
+                              setAddCreditsTarget({ type: "individual", id: u.id, name: u.name }),
+                          },
+                          {
+                            label: "Change Password",
+                            icon: <KeyRound className="h-4 w-4" />,
+                            onClick: () => setPasswordTarget({ id: u.id, name: u.name }),
+                          },
+                          ...(u.enterprise_id
+                            ? [
+                                {
+                                  label: "Add Credits to Enterprise",
+                                  icon: <Coins className="h-4 w-4" />,
+                                  onClick: () =>
+                                    setAddCreditsTarget({
+                                      type: "enterprise" as const,
+                                      id: u.enterprise_id as string,
+                                      name: u.enterprise_name ?? "Enterprise",
+                                    }),
+                                },
+                              ]
+                            : []),
+                          {
+                            label: u.is_active ? "Suspend" : "Activate",
+                            icon: u.is_active ? (
+                              <Ban className="h-4 w-4" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ),
+                            onClick: () => handleToggleEuStatus(u),
+                            danger: u.is_active,
+                            disabled: euBusyId === u.id,
+                          },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -779,7 +850,15 @@ export default function EnterprisesPage() {
           setAddCreditsTarget(null);
           void loadEnterprises();
           void loadStats();
+          if (activeTab === "Enterprise Users") void loadEnterpriseUsers();
         }}
+      />
+
+      <ChangePasswordModal
+        open={!!passwordTarget}
+        target={passwordTarget}
+        onClose={() => setPasswordTarget(null)}
+        onSuccess={() => setPasswordTarget(null)}
       />
     </div>
   );
