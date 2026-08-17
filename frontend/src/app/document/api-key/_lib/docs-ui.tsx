@@ -85,6 +85,10 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Custom CRM (Webhook)",
+    items: [{ href: "/document/api-key/webhook", label: "Overview & Setup" }],
+  },
+  {
     title: "Reference",
     items: [{ href: "/document/api-key/errors", label: "Errors" }],
   },

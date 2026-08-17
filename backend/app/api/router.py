@@ -13,6 +13,7 @@ from app.api.routes.integrations import hubspot as integrations_hubspot
 from app.api.routes.integrations import instantly as integrations_instantly
 from app.api.routes.integrations import salesforce as integrations_salesforce
 from app.api.routes.integrations import smartreach as integrations_smartreach
+from app.api.routes.integrations import webhook as integrations_webhook
 from app.core.security import get_current_user
 
 api_router = APIRouter()
@@ -78,5 +79,10 @@ api_router.include_router(
 api_router.include_router(
     integrations_smartreach.router,
     prefix="/integrations/smartreach",
+    tags=["integrations"],
+)
+api_router.include_router(
+    integrations_webhook.router,
+    prefix="/integrations/webhook",
     tags=["integrations"],
 )

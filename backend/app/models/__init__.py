@@ -13,6 +13,7 @@ from app.models.hubspot_connection import HubspotConnection
 from app.models.instantly_connection import InstantlyConnection
 from app.models.calendly_connection import CalendlyConnection
 from app.models.smartreach_connection import SmartreachConnection
+from app.models.webhook_connection import WebhookConnection
 
 __all__ = [
     "User",
@@ -36,4 +37,5 @@ __all__ = [
     "InstantlyConnection",
     "CalendlyConnection",
     "SmartreachConnection",
+    "WebhookConnection",
 ]

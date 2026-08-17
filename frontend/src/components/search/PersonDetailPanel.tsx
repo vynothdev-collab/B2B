@@ -36,6 +36,7 @@ import {
 } from "@/lib/searchApi";
 import { pushToSalesforce } from "@/lib/salesforceApi";
 import { pushToHubspot } from "@/lib/hubspotApi";
+import { pushToWebhook } from "@/lib/webhookApi";
 import { toast } from "@/lib/toast";
 import PushToInstantlyModal from "./PushToInstantlyModal";
 import PushToSmartreachModal from "./PushToSmartreachModal";
@@ -640,6 +641,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [pushedToInstantly, setPushedToInstantly] = useState(false);
   const [smartreachModalOpen, setSmartreachModalOpen] = useState(false);
   const [pushedToSmartreach, setPushedToSmartreach] = useState(false);
+  const [pushingToWebhook, setPushingToWebhook] = useState(false);
+  const [pushedToWebhook, setPushedToWebhook] = useState(false);
 
   const skillsRef = useRef<HTMLDivElement>(null);
   const expRef = useRef<HTMLDivElement>(null);
@@ -662,6 +665,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     setPushedToHubspot(false);
     setPushedToInstantly(false);
     setPushedToSmartreach(false);
+    setPushedToWebhook(false);
     setLoading(true);
     apiClient
       .get<PersonDetail>(`/search/persons/${person.id}/detail`)
@@ -871,6 +875,26 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       toast.apiError(e);
     } finally {
       setPushingToHubspot(false);
+    }
+  };
+
+  const handlePushToWebhook = async () => {
+    if (!person || pushingToWebhook) return;
+    setPushingToWebhook(true);
+    try {
+      const result = await pushToWebhook([
+        { record_id: person.id, item_type: "person", data: {} },
+      ]);
+      if (result.pushed > 0) {
+        toast.success("Pushed to your CRM.");
+        setPushedToWebhook(true);
+      } else {
+        toast.error(result.results[0]?.error ?? "Failed to push to your CRM.");
+      }
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setPushingToWebhook(false);
     }
   };
 
@@ -1159,6 +1183,29 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 <Upload className="h-3.5 w-3.5" />
               )}
               {pushedToSmartreach ? "Pushed" : "Push to Smartreach"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePushToWebhook}
+              disabled={!workEmailUnlocked || pushingToWebhook || pushedToWebhook}
+              title={
+                !workEmailUnlocked
+                  ? "Unlock work email before pushing to your CRM"
+                  : pushedToWebhook
+                    ? "Already pushed"
+                    : "Push to CRM"
+              }
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-violet-300 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pushingToWebhook ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : pushedToWebhook ? (
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {pushedToWebhook ? "Pushed" : "Push to CRM"}
             </button>
           </div>
         </div>
