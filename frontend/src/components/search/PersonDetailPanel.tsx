@@ -38,6 +38,7 @@ import { pushToSalesforce } from "@/lib/salesforceApi";
 import { pushToHubspot } from "@/lib/hubspotApi";
 import { toast } from "@/lib/toast";
 import PushToInstantlyModal from "./PushToInstantlyModal";
+import PushToSmartreachModal from "./PushToSmartreachModal";
 
 type UnlockField = "work_email" | "personal_email" | "mobile";
 
@@ -637,6 +638,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [pushedToHubspot, setPushedToHubspot] = useState(false);
   const [instantlyModalOpen, setInstantlyModalOpen] = useState(false);
   const [pushedToInstantly, setPushedToInstantly] = useState(false);
+  const [smartreachModalOpen, setSmartreachModalOpen] = useState(false);
+  const [pushedToSmartreach, setPushedToSmartreach] = useState(false);
 
   const skillsRef = useRef<HTMLDivElement>(null);
   const expRef = useRef<HTMLDivElement>(null);
@@ -658,6 +661,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     setPushedToSalesforce(false);
     setPushedToHubspot(false);
     setPushedToInstantly(false);
+    setPushedToSmartreach(false);
     setLoading(true);
     apiClient
       .get<PersonDetail>(`/search/persons/${person.id}/detail`)
@@ -1137,6 +1141,25 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               )}
               {pushedToInstantly ? "Pushed" : "Push to Instantly"}
             </button>
+
+            <button
+              type="button"
+              onClick={() => setSmartreachModalOpen(true)}
+              disabled={!workEmailUnlocked}
+              title={
+                !workEmailUnlocked
+                  ? "Unlock work email before pushing to Smartreach"
+                  : "Push to Smartreach"
+              }
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-emerald-300 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {pushedToSmartreach ? (
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {pushedToSmartreach ? "Pushed" : "Push to Smartreach"}
+            </button>
           </div>
         </div>
 
@@ -1146,6 +1169,15 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
             onClose={() => setInstantlyModalOpen(false)}
             items={[{ record_id: person.id, item_type: "person" }]}
             onPushed={() => setPushedToInstantly(true)}
+          />
+        )}
+
+        {person && (
+          <PushToSmartreachModal
+            open={smartreachModalOpen}
+            onClose={() => setSmartreachModalOpen(false)}
+            items={[{ record_id: person.id, item_type: "person" }]}
+            onPushed={() => setPushedToSmartreach(true)}
           />
         )}
 

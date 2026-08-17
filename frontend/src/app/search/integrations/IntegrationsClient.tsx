@@ -22,12 +22,15 @@ import { getInstantlyStatus, disconnectInstantly, type InstantlyStatus } from "@
 import ConnectInstantlyModal from "@/components/search/ConnectInstantlyModal";
 import { getCalendlyStatus, disconnectCalendly, type CalendlyStatus } from "@/lib/calendlyApi";
 import ConnectCalendlyModal from "@/components/search/ConnectCalendlyModal";
+import { getSmartreachStatus, disconnectSmartreach, type SmartreachStatus } from "@/lib/smartreachApi";
+import ConnectSmartreachModal from "@/components/search/ConnectSmartreachModal";
 import { toast } from "@/lib/toast";
 
 const RED = "#dc2626";
 const ORANGE = "#ff7a59";
 const BLUE = "#1a56db";
 const CALENDLY_BLUE = "#006bff";
+const GREEN = "#00b67a";
 
 const SALESFORCE_FEATURES = [
   {
@@ -65,6 +68,19 @@ const INSTANTLY_FEATURES = [
     icon: ShieldCheck,
     title: "Email required first",
     text: "A record's work email must be unlocked before it can be added — Instantly leads are matched by email.",
+  },
+];
+
+const SMARTREACH_FEATURES = [
+  {
+    icon: Upload,
+    title: "Add prospects to a campaign",
+    text: "Send unlocked people straight into a Smartreach outreach campaign of your choice, from search results or a contact's detail panel.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Email required first",
+    text: "A record's work email must be unlocked before it can be added — Smartreach prospects are matched by email.",
   },
 ];
 
@@ -211,6 +227,12 @@ export default function IntegrationsClient() {
   const [showClDisconnectConfirm, setShowClDisconnectConfirm] = useState(false);
   const [showClConnectModal, setShowClConnectModal] = useState(false);
 
+  const [srStatus, setSrStatus] = useState<SmartreachStatus | null>(null);
+  const [srLoading, setSrLoading] = useState(true);
+  const [srDisconnecting, setSrDisconnecting] = useState(false);
+  const [showSrDisconnectConfirm, setShowSrDisconnectConfirm] = useState(false);
+  const [showSrConnectModal, setShowSrConnectModal] = useState(false);
+
   const loadSalesforce = useCallback(async () => {
     setSfLoading(true);
     try {
@@ -255,12 +277,24 @@ export default function IntegrationsClient() {
     }
   }, []);
 
+  const loadSmartreach = useCallback(async () => {
+    setSrLoading(true);
+    try {
+      setSrStatus(await getSmartreachStatus());
+    } catch {
+      toast.error("Failed to load Smartreach connection status.");
+    } finally {
+      setSrLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSalesforce();
     loadHubspot();
     loadInstantly();
     loadCalendly();
-  }, [loadSalesforce, loadHubspot, loadInstantly, loadCalendly]);
+    loadSmartreach();
+  }, [loadSalesforce, loadHubspot, loadInstantly, loadCalendly, loadSmartreach]);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -361,10 +395,25 @@ export default function IntegrationsClient() {
     }
   }
 
+  async function handleDisconnectSmartreach() {
+    setSrDisconnecting(true);
+    try {
+      await disconnectSmartreach();
+      toast.success("Smartreach disconnected.");
+      setShowSrDisconnectConfirm(false);
+      await loadSmartreach();
+    } catch {
+      toast.error("Failed to disconnect Smartreach.");
+    } finally {
+      setSrDisconnecting(false);
+    }
+  }
+
   const sfConnected = !!sfStatus?.connected;
   const hsConnected = !!hsStatus?.connected;
   const inConnected = !!inStatus?.connected;
   const clConnected = !!clStatus?.connected;
+  const srConnected = !!srStatus?.connected;
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50">
@@ -442,6 +491,20 @@ export default function IntegrationsClient() {
           features={CALENDLY_FEATURES}
           onConnect={() => setShowClConnectModal(true)}
           onDisconnectRequest={() => setShowClDisconnectConfirm(true)}
+        />
+
+        <ConnectionCard
+          name="Smartreach"
+          accent={GREEN}
+          icon={<SmartreachIcon className={srConnected ? "text-emerald-600" : "text-gray-400"} />}
+          connected={srConnected}
+          loading={srLoading}
+          connecting={false}
+          subtitle={srConnected ? "Connected account" : "Add unlocked leads to your Smartreach campaigns."}
+          docsHref="/document/api-key/smartreach"
+          features={SMARTREACH_FEATURES}
+          onConnect={() => setShowSrConnectModal(true)}
+          onDisconnectRequest={() => setShowSrDisconnectConfirm(true)}
         />
       </div>
 
@@ -569,6 +632,37 @@ export default function IntegrationsClient() {
         </div>
       )}
 
+      {showSrDisconnectConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: "#e5f9f1" }}>
+              <AlertCircle className="h-5 w-5" style={{ color: GREEN }} />
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-gray-900">Disconnect Smartreach?</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              You won&apos;t be able to add leads to Smartreach campaigns until you reconnect.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowSrDisconnectConfirm(false)}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisconnectSmartreach}
+                disabled={srDisconnecting}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: GREEN }}
+              >
+                {srDisconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ConnectInstantlyModal
         open={showInConnectModal}
         onClose={() => setShowInConnectModal(false)}
@@ -579,6 +673,12 @@ export default function IntegrationsClient() {
         open={showClConnectModal}
         onClose={() => setShowClConnectModal(false)}
         onConnected={loadCalendly}
+      />
+
+      <ConnectSmartreachModal
+        open={showSrConnectModal}
+        onClose={() => setShowSrConnectModal(false)}
+        onConnected={loadSmartreach}
       />
     </div>
   );
@@ -634,6 +734,20 @@ function CalendlyIcon({ className }: { className?: string }) {
       <rect x="4" y="5.5" width="16" height="14.5" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
       <path d="M8 3.5v4M16 3.5v4M4 10h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
       <circle cx="12" cy="15" r="1.6" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function SmartreachIcon({ className }: { className?: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M4 18 10 8l4 6 3-4.5L20 14"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

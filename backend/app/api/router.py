@@ -12,6 +12,7 @@ from app.api.routes.integrations import calendly as integrations_calendly
 from app.api.routes.integrations import hubspot as integrations_hubspot
 from app.api.routes.integrations import instantly as integrations_instantly
 from app.api.routes.integrations import salesforce as integrations_salesforce
+from app.api.routes.integrations import smartreach as integrations_smartreach
 from app.core.security import get_current_user
 
 api_router = APIRouter()
@@ -72,5 +73,10 @@ api_router.include_router(
 api_router.include_router(
     integrations_calendly.router,
     prefix="/integrations/calendly",
+    tags=["integrations"],
+)
+api_router.include_router(
+    integrations_smartreach.router,
+    prefix="/integrations/smartreach",
     tags=["integrations"],
 )

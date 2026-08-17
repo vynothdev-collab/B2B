@@ -587,7 +587,7 @@ export const CREDIT_COSTS: { action: string; credits: number }[] = [
   { action: "Work email unlock (person)", credits: 1 },
   { action: "Personal email unlock (person)", credits: 1 },
   { action: "Mobile number unlock (person)", credits: 10 },
-  { action: "Push to Salesforce / HubSpot / Instantly (per record)", credits: 1 },
+  { action: "Push to a connected CRM/outreach integration (per record)", credits: 1 },
 ];
 
 // ── Sample requests / responses ──────────────────────────────────────────────
@@ -1087,4 +1087,41 @@ export const SAMPLE_CALENDLY_STATUS_RESPONSE = `{
   "connected": true,
   "scheduling_url": "https://calendly.com/you/30min",
   "connected_at": "2026-08-01T09:12:00Z"
+}`;
+
+export interface SmartreachFieldMapping {
+  leadsbuddyField: string;
+  smartreachField: string;
+  notes: string;
+}
+
+export const SMARTREACH_FIELD_MAPPING: SmartreachFieldMapping[] = [
+  { leadsbuddyField: "Unlocked work email", smartreachField: "email", notes: "Only sent if the record's work email has been unlocked. A push is rejected if no work email is unlocked." },
+  { leadsbuddyField: "first_name", smartreachField: "first_name", notes: "Only sent if known." },
+  { leadsbuddyField: "last_name", smartreachField: "last_name", notes: "Falls back to the person's full name if the last name isn't known." },
+  { leadsbuddyField: "active_experience_company_name", smartreachField: "company_name", notes: "Current employer, if known." },
+  { leadsbuddyField: "Unlocked mobile number", smartreachField: "phone", notes: "Only sent if the mobile number has been unlocked." },
+  { leadsbuddyField: "(you choose)", smartreachField: "campaign_id", notes: "The Smartreach campaign the prospect is added to — picked from a dropdown each time you push." },
+];
+
+export const SAMPLE_SMARTREACH_STATUS_RESPONSE = `{
+  "connected": true,
+  "connected_at": "2026-08-01T09:12:00Z"
+}`;
+
+export const SAMPLE_SMARTREACH_CAMPAIGNS_RESPONSE = `{
+  "campaigns": [
+    { "id": "5821", "name": "Q3 Outbound — SaaS founders" },
+    { "id": "5834", "name": "Warm follow-up sequence" }
+  ]
+}`;
+
+export const SAMPLE_SMARTREACH_PUSH_RESPONSE = `{
+  "pushed": 2,
+  "failed": 1,
+  "results": [
+    { "record_id": "abc123", "smartreach_prospect_id": "9182734", "error": null },
+    { "record_id": "def456", "smartreach_prospect_id": "9182735", "error": null },
+    { "record_id": "ghi789", "smartreach_prospect_id": null, "error": "Work email must be unlocked before pushing." }
+  ]
 }`;

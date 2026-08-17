@@ -78,6 +78,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [{ href: "/document/api-key/calendly", label: "Overview & Setup" }],
   },
   {
+    title: "Smartreach Integration",
+    items: [
+      { href: "/document/api-key/smartreach", label: "Overview & Setup" },
+      { href: "/document/api-key/smartreach/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
     title: "Reference",
     items: [{ href: "/document/api-key/errors", label: "Errors" }],
   },
