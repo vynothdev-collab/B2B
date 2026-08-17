@@ -991,6 +991,7 @@ export const SALESFORCE_FIELD_MAPPING: SalesforceFieldMapping[] = [
   { leadsbuddyField: "active_experience_company_website", salesforceField: "Website", notes: "Current employer's website, if known." },
   { leadsbuddyField: "location_city / location_state / location_country", salesforceField: "City / State / Country", notes: "Person's location, if known." },
   { leadsbuddyField: "(fixed value)", salesforceField: "LeadSource", notes: "Always set to \"LeadsBuddy\" so pushed leads are identifiable in Salesforce reports." },
+  { leadsbuddyField: "Calendly scheduling link", salesforceField: "Description", notes: "Only sent if Calendly is connected — see the Calendly Integration docs. Omitted if not connected." },
 ];
 
 export const SAMPLE_SALESFORCE_STATUS_RESPONSE = `{
@@ -1057,6 +1058,7 @@ export const INSTANTLY_FIELD_MAPPING: InstantlyFieldMapping[] = [
   { leadsbuddyField: "active_experience_company_name", instantlyField: "company_name", notes: "Current employer, if known." },
   { leadsbuddyField: "Unlocked mobile number", instantlyField: "phone", notes: "Only sent if the mobile number has been unlocked." },
   { leadsbuddyField: "(you choose)", instantlyField: "campaign", notes: "The Instantly campaign the lead is added to — picked from a dropdown each time you push." },
+  { leadsbuddyField: "Calendly scheduling link", instantlyField: "personalization", notes: "Only sent if Calendly is connected — see the Calendly Integration docs. Omitted if not connected." },
 ];
 
 export const SAMPLE_INSTANTLY_STATUS_RESPONSE = `{
@@ -1079,4 +1081,10 @@ export const SAMPLE_INSTANTLY_PUSH_RESPONSE = `{
     { "record_id": "def456", "instantly_lead_id": "l_9d3b2e", "error": null },
     { "record_id": "ghi789", "instantly_lead_id": null, "error": "Work email must be unlocked before pushing." }
   ]
+}`;
+
+export const SAMPLE_CALENDLY_STATUS_RESPONSE = `{
+  "connected": true,
+  "scheduling_url": "https://calendly.com/you/30min",
+  "connected_at": "2026-08-01T09:12:00Z"
 }`;

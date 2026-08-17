@@ -8,6 +8,7 @@ from app.api.routes.admin import manage as admin_manage
 from app.api.routes.admin import plans as admin_plans
 from app.api.routes.admin import users as admin_customers
 from app.api.routes.enterprise import users as ent_users
+from app.api.routes.integrations import calendly as integrations_calendly
 from app.api.routes.integrations import hubspot as integrations_hubspot
 from app.api.routes.integrations import instantly as integrations_instantly
 from app.api.routes.integrations import salesforce as integrations_salesforce
@@ -66,5 +67,10 @@ api_router.include_router(
 api_router.include_router(
     integrations_instantly.router,
     prefix="/integrations/instantly",
+    tags=["integrations"],
+)
+api_router.include_router(
+    integrations_calendly.router,
+    prefix="/integrations/calendly",
     tags=["integrations"],
 )

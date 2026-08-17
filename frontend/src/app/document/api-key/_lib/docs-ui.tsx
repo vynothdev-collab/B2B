@@ -74,6 +74,10 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Calendly Integration",
+    items: [{ href: "/document/api-key/calendly", label: "Overview & Setup" }],
+  },
+  {
     title: "Reference",
     items: [{ href: "/document/api-key/errors", label: "Errors" }],
   },

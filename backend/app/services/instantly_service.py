@@ -43,7 +43,12 @@ async def list_campaigns(connection: InstantlyConnection) -> list[dict]:
     return await validate_key_and_list_campaigns(api_key)
 
 
-def map_person_to_lead(mapped_person: dict, unlocked_email: str | None, unlocked_phone: str | None) -> dict:
+def map_person_to_lead(
+    mapped_person: dict,
+    unlocked_email: str | None,
+    unlocked_phone: str | None,
+    calendly_url: str | None = None,
+) -> dict:
     lead: dict = {}
     if unlocked_email:
         lead["email"] = unlocked_email
@@ -56,6 +61,8 @@ def map_person_to_lead(mapped_person: dict, unlocked_email: str | None, unlocked
         lead["company_name"] = mapped_person["active_experience_company_name"]
     if unlocked_phone:
         lead["phone"] = unlocked_phone
+    if calendly_url:
+        lead["personalization"] = f"Book a meeting: {calendly_url}"
     return lead
 
 

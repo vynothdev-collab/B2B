@@ -20,11 +20,14 @@ import {
 } from "@/lib/hubspotApi";
 import { getInstantlyStatus, disconnectInstantly, type InstantlyStatus } from "@/lib/instantlyApi";
 import ConnectInstantlyModal from "@/components/search/ConnectInstantlyModal";
+import { getCalendlyStatus, disconnectCalendly, type CalendlyStatus } from "@/lib/calendlyApi";
+import ConnectCalendlyModal from "@/components/search/ConnectCalendlyModal";
 import { toast } from "@/lib/toast";
 
 const RED = "#dc2626";
 const ORANGE = "#ff7a59";
 const BLUE = "#1a56db";
+const CALENDLY_BLUE = "#006bff";
 
 const SALESFORCE_FEATURES = [
   {
@@ -62,6 +65,19 @@ const INSTANTLY_FEATURES = [
     icon: ShieldCheck,
     title: "Email required first",
     text: "A record's work email must be unlocked before it can be added — Instantly leads are matched by email.",
+  },
+];
+
+const CALENDLY_FEATURES = [
+  {
+    icon: Upload,
+    title: "Auto-attached to pushes",
+    text: "Your scheduling link is added to Salesforce and Instantly pushes automatically, so recipients can self-book a meeting.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "No extra credits",
+    text: "Connecting Calendly and attaching your link is free — it enriches a push you're already paying for.",
   },
 ];
 
@@ -189,6 +205,12 @@ export default function IntegrationsClient() {
   const [showInDisconnectConfirm, setShowInDisconnectConfirm] = useState(false);
   const [showInConnectModal, setShowInConnectModal] = useState(false);
 
+  const [clStatus, setClStatus] = useState<CalendlyStatus | null>(null);
+  const [clLoading, setClLoading] = useState(true);
+  const [clDisconnecting, setClDisconnecting] = useState(false);
+  const [showClDisconnectConfirm, setShowClDisconnectConfirm] = useState(false);
+  const [showClConnectModal, setShowClConnectModal] = useState(false);
+
   const loadSalesforce = useCallback(async () => {
     setSfLoading(true);
     try {
@@ -222,11 +244,23 @@ export default function IntegrationsClient() {
     }
   }, []);
 
+  const loadCalendly = useCallback(async () => {
+    setClLoading(true);
+    try {
+      setClStatus(await getCalendlyStatus());
+    } catch {
+      toast.error("Failed to load Calendly connection status.");
+    } finally {
+      setClLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSalesforce();
     loadHubspot();
     loadInstantly();
-  }, [loadSalesforce, loadHubspot, loadInstantly]);
+    loadCalendly();
+  }, [loadSalesforce, loadHubspot, loadInstantly, loadCalendly]);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -313,9 +347,24 @@ export default function IntegrationsClient() {
     }
   }
 
+  async function handleDisconnectCalendly() {
+    setClDisconnecting(true);
+    try {
+      await disconnectCalendly();
+      toast.success("Calendly disconnected.");
+      setShowClDisconnectConfirm(false);
+      await loadCalendly();
+    } catch {
+      toast.error("Failed to disconnect Calendly.");
+    } finally {
+      setClDisconnecting(false);
+    }
+  }
+
   const sfConnected = !!sfStatus?.connected;
   const hsConnected = !!hsStatus?.connected;
   const inConnected = !!inStatus?.connected;
+  const clConnected = !!clStatus?.connected;
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50">
@@ -379,6 +428,20 @@ export default function IntegrationsClient() {
           features={INSTANTLY_FEATURES}
           onConnect={() => setShowInConnectModal(true)}
           onDisconnectRequest={() => setShowInDisconnectConfirm(true)}
+        />
+
+        <ConnectionCard
+          name="Calendly"
+          accent={CALENDLY_BLUE}
+          icon={<CalendlyIcon className={clConnected ? "text-emerald-600" : "text-gray-400"} />}
+          connected={clConnected}
+          loading={clLoading}
+          connecting={false}
+          subtitle={clConnected ? (clStatus?.scheduling_url ?? "Connected account") : "Attach your booking link to Salesforce and Instantly pushes."}
+          docsHref="/document/api-key/calendly"
+          features={CALENDLY_FEATURES}
+          onConnect={() => setShowClConnectModal(true)}
+          onDisconnectRequest={() => setShowClDisconnectConfirm(true)}
         />
       </div>
 
@@ -475,10 +538,47 @@ export default function IntegrationsClient() {
         </div>
       )}
 
+      {showClDisconnectConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: "#e6f0ff" }}>
+              <AlertCircle className="h-5 w-5" style={{ color: CALENDLY_BLUE }} />
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-gray-900">Disconnect Calendly?</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Your booking link will no longer be attached to Salesforce or Instantly pushes.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowClDisconnectConfirm(false)}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisconnectCalendly}
+                disabled={clDisconnecting}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: CALENDLY_BLUE }}
+              >
+                {clDisconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ConnectInstantlyModal
         open={showInConnectModal}
         onClose={() => setShowInConnectModal(false)}
         onConnected={loadInstantly}
+      />
+
+      <ConnectCalendlyModal
+        open={showClConnectModal}
+        onClose={() => setShowClConnectModal(false)}
+        onConnected={loadCalendly}
       />
     </div>
   );
@@ -524,6 +624,16 @@ function InstantlyIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function CalendlyIcon({ className }: { className?: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="4" y="5.5" width="16" height="14.5" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 3.5v4M16 3.5v4M4 10h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="15" r="1.6" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   );
 }

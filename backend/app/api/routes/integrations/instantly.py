@@ -18,7 +18,7 @@ from app.schemas.instantly import (
     InstantlyPushResponse,
     InstantlyStatusResponse,
 )
-from app.services import instantly_service
+from app.services import calendly_service, instantly_service
 from app.services.contact_unlock_service import get_unlock_map
 from app.services.coresignal_service import _map_person
 from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
@@ -124,6 +124,7 @@ async def instantly_push(
     )
     raw_data_map = {row[0]: row[1] for row in raw_result.fetchall()}
     unlock_map = await get_unlock_map(db, current_user.id, record_ids)
+    calendly_url = await calendly_service.get_scheduling_url(current_user.id, db)
 
     results: list[InstantlyPushItemResult] = []
     pushed = 0
@@ -160,7 +161,7 @@ async def instantly_push(
         mapped = _map_person(raw) if raw else (item.data if isinstance(item.data, dict) else {})
         unlocked_phone = unlocked.get("mobile")
 
-        lead_fields = instantly_service.map_person_to_lead(mapped, unlocked_email, unlocked_phone)
+        lead_fields = instantly_service.map_person_to_lead(mapped, unlocked_email, unlocked_phone, calendly_url)
         try:
             instantly_lead_id = await instantly_service.add_lead_to_campaign(
                 connection, data.campaign_id, lead_fields

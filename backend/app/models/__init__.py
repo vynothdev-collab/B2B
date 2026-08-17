@@ -11,6 +11,7 @@ from app.models.api_key import ApiKey
 from app.models.salesforce_connection import SalesforceConnection
 from app.models.hubspot_connection import HubspotConnection
 from app.models.instantly_connection import InstantlyConnection
+from app.models.calendly_connection import CalendlyConnection
 
 __all__ = [
     "User",
@@ -32,4 +33,5 @@ __all__ = [
     "SalesforceConnection",
     "HubspotConnection",
     "InstantlyConnection",
+    "CalendlyConnection",
 ]
