@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Building2, CreditCard, Coins,
-  Tag, Receipt, MessageSquare, Ticket, BarChart3, Settings, LogOut, Activity,
+  Receipt, Ticket, BarChart3, Settings, LogOut, Activity,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -26,15 +26,13 @@ const NAV_GROUPS = [
     items: [
       { label: "Plans",               href: "/plans",    icon: CreditCard, badge: undefined },
       { label: "Credits & Usage",     href: "/credits",  icon: Coins,      badge: undefined },
-      { label: "Offers & Discounts",  href: "/offers",   icon: Tag,        badge: undefined },
       { label: "Payments & Invoices", href: "/payments", icon: Receipt,    badge: undefined },
     ],
   },
   {
     label: "Support",
     items: [
-      { label: "Live Chat",         href: "/live-chat", icon: MessageSquare, badge: 3 as number | undefined },
-      { label: "Submitted Tickets", href: "/tickets",   icon: Ticket,        badge: 5 as number | undefined },
+      { label: "Submitted Tickets", href: "/tickets", icon: Ticket, badge: 5 as number | undefined },
     ],
   },
   {

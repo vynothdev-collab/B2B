@@ -154,24 +154,8 @@ export default function CreditsPage() {
   return (
     <div className="space-y-5">
 
-      {/* ── Header ───────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Credits & Usage</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Monitor credit usage, assignments, and transactions.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setAddCreditsOpen(true)}
-          className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
-          style={{ background: accent.bg }}
-        >
-          + Add Credits
-        </button>
-      </div>
-
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200">
+      <div className="flex items-center justify-between border-b border-slate-200">
         <div className="flex gap-0">
           {TABS.map((tab) => {
             const isActive = activeTab === tab;
@@ -193,6 +177,14 @@ export default function CreditsPage() {
             );
           })}
         </div>
+        <button
+          type="button"
+          onClick={() => setAddCreditsOpen(true)}
+          className="mb-2 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+          style={{ background: accent.bg }}
+        >
+          + Add Credits
+        </button>
       </div>
 
       {/* ── Stat Cards ───────────────────────────────────────────────── */}
