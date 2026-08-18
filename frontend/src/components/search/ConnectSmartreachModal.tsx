@@ -14,6 +14,7 @@ const GREEN = "#00b67a";
 
 export default function ConnectSmartreachModal({ open, onClose, onConnected }: Props) {
   const [apiKey, setApiKey] = useState("");
+  const [teamId, setTeamId] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,9 +25,10 @@ export default function ConnectSmartreachModal({ open, onClose, onConnected }: P
     setConnecting(true);
     setError(null);
     try {
-      await connectSmartreach(apiKey.trim());
+      await connectSmartreach(apiKey.trim(), teamId.trim());
       toast.success("Smartreach connected successfully.");
       setApiKey("");
+      setTeamId("");
       onConnected();
       onClose();
     } catch (e) {
@@ -54,8 +56,7 @@ export default function ConnectSmartreachModal({ open, onClose, onConnected }: P
 
         <div className="px-4 py-4">
           <p className="text-xs leading-snug text-gray-500">
-            Paste an API key from Smartreach → Settings → API. Your key is
-            encrypted at rest and used only to push prospects on your behalf.
+            Paste your API key and Team ID from Smartreach → Settings → Integrations → API Key.
           </p>
 
           <div className="relative mt-3">
@@ -64,10 +65,23 @@ export default function ConnectSmartreachModal({ open, onClose, onConnected }: P
               type="text"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Smartreach API key"
+              placeholder="Smartreach API key (uk_...)"
               className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition-colors focus:border-gray-400"
               autoFocus
             />
+          </div>
+
+          <div className="relative mt-2.5">
+            <input
+              type="text"
+              value={teamId}
+              onChange={(e) => setTeamId(e.target.value)}
+              placeholder="Smartreach Team ID (e.g. 30153)"
+              className="w-full rounded-xl border border-gray-200 py-2.5 px-3 text-sm text-gray-900 outline-none transition-colors focus:border-gray-400"
+            />
+            <p className="mt-1 text-[11px] text-gray-400">
+              Required by Smartreach. Found under Team ID in Smartreach API settings or `tid` in dashboard URL.
+            </p>
           </div>
 
           {error && <p className="mt-2 text-xs text-red-600">{error}</p>}

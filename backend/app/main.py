@@ -59,6 +59,9 @@ async def lifespan(app: FastAPI):
             _alter_column_type, "smartreach_connections", "api_key", "VARCHAR(2048)"
         )
         await conn.run_sync(
+            _add_column_if_missing, "smartreach_connections", "team_id", "VARCHAR(64)"
+        )
+        await conn.run_sync(
             _alter_column_type, "webhook_connections", "signing_secret", "VARCHAR(2048)"
         )
         await conn.run_sync(

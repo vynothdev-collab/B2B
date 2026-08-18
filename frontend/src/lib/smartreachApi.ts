@@ -33,8 +33,11 @@ export async function getSmartreachStatus(): Promise<SmartreachStatus> {
   return data;
 }
 
-export async function connectSmartreach(apiKey: string): Promise<SmartreachStatus> {
-  const { data } = await api.post<SmartreachStatus>("/integrations/smartreach/connect", { api_key: apiKey });
+export async function connectSmartreach(apiKey: string, teamId?: string): Promise<SmartreachStatus> {
+  const { data } = await api.post<SmartreachStatus>("/integrations/smartreach/connect", {
+    api_key: apiKey,
+    team_id: teamId || undefined,
+  });
   return data;
 }
 

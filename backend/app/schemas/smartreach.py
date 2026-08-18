@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class SmartreachConnectRequest(BaseModel):
     api_key: str
+    team_id: str | None = None
 
 
 class SmartreachStatusResponse(BaseModel):

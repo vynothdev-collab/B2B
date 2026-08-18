@@ -33,7 +33,7 @@ async def smartreach_connect(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SmartreachStatusResponse:
-    await smartreach_service.validate_key_and_list_campaigns(data.api_key)
+    await smartreach_service.validate_key_and_list_campaigns(data.api_key, data.team_id)
 
     result = await db.execute(
         select(SmartreachConnection).where(SmartreachConnection.user_id == current_user.id)
@@ -43,7 +43,7 @@ async def smartreach_connect(
         connection = SmartreachConnection(user_id=current_user.id, api_key="")
         db.add(connection)
 
-    smartreach_service.set_connection_key(connection, data.api_key)
+    smartreach_service.set_connection_key(connection, data.api_key, data.team_id)
     await db.flush()
     await db.refresh(connection)
 
