@@ -16,7 +16,7 @@ class CalendlyConnection(Base):
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
     )
-    api_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    api_key: Mapped[str] = mapped_column(String(2048), nullable=False)
     scheduling_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     calendly_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     calendly_email: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -34,10 +34,33 @@ def _drop_column_if_exists(sync_conn, table: str, column: str) -> None:
         sync_conn.execute(text(f"ALTER TABLE {table} DROP COLUMN {column}"))
 
 
+def _alter_column_type(sync_conn, table: str, column: str, new_type: str) -> None:
+    insp = inspect(sync_conn)
+    tables = insp.get_table_names()
+    if table in tables:
+        cols = {c["name"]: c for c in insp.get_columns(table)}
+        if column in cols:
+            sync_conn.execute(
+                text(f"ALTER TABLE {table} ALTER COLUMN {column} TYPE {new_type}")
+            )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            _alter_column_type, "calendly_connections", "api_key", "VARCHAR(2048)"
+        )
+        await conn.run_sync(
+            _alter_column_type, "instantly_connections", "api_key", "VARCHAR(2048)"
+        )
+        await conn.run_sync(
+            _alter_column_type, "smartreach_connections", "api_key", "VARCHAR(2048)"
+        )
+        await conn.run_sync(
+            _alter_column_type, "webhook_connections", "signing_secret", "VARCHAR(2048)"
+        )
         await conn.run_sync(
             _add_column_if_missing, "lists", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
         )
