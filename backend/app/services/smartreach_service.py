@@ -10,8 +10,6 @@ from app.models.smartreach_connection import SmartreachConnection
 
 logger = logging.getLogger(__name__)
 
-SMARTREACH_API_BASE = "https://api.smartreach.io/api/v1"
-
 
 def _auth_headers(api_key: str) -> dict:
     clean_key = api_key.strip() if api_key else ""
@@ -146,10 +144,21 @@ def map_person_to_prospect(mapped_person: dict, unlocked_email: str | None, unlo
     if last_name:
         prospect["last_name"] = last_name
     if mapped_person.get("active_experience_company_name"):
-        prospect["company_name"] = mapped_person["active_experience_company_name"]
+        prospect["company"] = mapped_person["active_experience_company_name"]
     if unlocked_phone:
-        prospect["phone"] = unlocked_phone
+        prospect["phone_number"] = unlocked_phone
     return prospect
+
+
+def _extract_error_message(resp: httpx.Response) -> str:
+    detail = resp.text
+    try:
+        body = resp.json()
+        if isinstance(body, dict) and (body.get("message") or body.get("error")):
+            detail = body.get("message") or body.get("error")
+    except Exception:
+        pass
+    return detail
 
 
 async def add_prospect_to_campaign(connection: SmartreachConnection, campaign_id: str, prospect_fields: dict) -> str:
@@ -157,42 +166,37 @@ async def add_prospect_to_campaign(connection: SmartreachConnection, campaign_id
     team_id = connection.team_id
     headers = _auth_headers(api_key)
     params = {"team_id": team_id} if team_id else {}
+    base = "https://api.smartreach.io/api/v3"
 
-    endpoints = [
-        f"{SMARTREACH_API_BASE}/prospects/add_prospects_to_campaign",
-        "https://api.smartreach.io/api/v3/prospects",
-    ]
-
-    last_error = ""
     async with httpx.AsyncClient(timeout=10) as client:
-        for url in endpoints:
-            try:
-                payload = (
-                    {"campaign_id": campaign_id, "prospects": [prospect_fields]}
-                    if "v1" in url
-                    else {"campaign_id": campaign_id, "prospect": prospect_fields}
-                )
-                resp = await client.post(url, json=payload, headers=headers, params=params)
-                if resp.status_code in (200, 201):
-                    body = resp.json()
-                    prospects = body.get("prospects") if isinstance(body, dict) else None
-                    if isinstance(prospects, list) and prospects:
-                        return str(prospects[0].get("id", ""))
-                    return str(body.get("id", "")) if isinstance(body, dict) else ""
+        create_resp = await client.post(
+            f"{base}/prospects", json=[prospect_fields], headers=headers, params=params
+        )
+        if create_resp.status_code not in (200, 201):
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Smartreach error: {_extract_error_message(create_resp)}",
+            )
 
-                if resp.status_code != 404:
-                    detail = resp.text
-                    try:
-                        b = resp.json()
-                        if isinstance(b, dict) and b.get("message"):
-                            detail = b["message"]
-                    except Exception:
-                        pass
-                    last_error = detail
-            except httpx.RequestError as e:
-                last_error = str(e)
+        created = create_resp.json()
+        prospect = created[0] if isinstance(created, list) and created else created
+        prospect_id = prospect.get("id") if isinstance(prospect, dict) else None
+        if not prospect_id:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Smartreach error: prospect was created but no id was returned.",
+            )
 
-    raise HTTPException(
-        status_code=status.HTTP_502_BAD_GATEWAY,
-        detail=f"Smartreach error: {last_error}" if last_error else "Failed to push prospect to Smartreach.",
-    )
+        assign_resp = await client.post(
+            f"{base}/campaigns/{campaign_id}/prospects",
+            json={"prospect_ids": [prospect_id]},
+            headers=headers,
+            params=params,
+        )
+        if assign_resp.status_code not in (200, 201):
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Smartreach error: {_extract_error_message(assign_resp)}",
+            )
+
+        return str(prospect_id)

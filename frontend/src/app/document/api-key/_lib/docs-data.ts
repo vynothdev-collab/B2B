@@ -1099,8 +1099,8 @@ export const SMARTREACH_FIELD_MAPPING: SmartreachFieldMapping[] = [
   { leadsbuddyField: "Unlocked work email", smartreachField: "email", notes: "Only sent if the record's work email has been unlocked. A push is rejected if no work email is unlocked." },
   { leadsbuddyField: "first_name", smartreachField: "first_name", notes: "Only sent if known." },
   { leadsbuddyField: "last_name", smartreachField: "last_name", notes: "Falls back to the person's full name if the last name isn't known." },
-  { leadsbuddyField: "active_experience_company_name", smartreachField: "company_name", notes: "Current employer, if known." },
-  { leadsbuddyField: "Unlocked mobile number", smartreachField: "phone", notes: "Only sent if the mobile number has been unlocked." },
+  { leadsbuddyField: "active_experience_company_name", smartreachField: "company", notes: "Current employer, if known." },
+  { leadsbuddyField: "Unlocked mobile number", smartreachField: "phone_number", notes: "Only sent if the mobile number has been unlocked." },
   { leadsbuddyField: "(you choose)", smartreachField: "campaign_id", notes: "The Smartreach campaign the prospect is added to — picked from a dropdown each time you push." },
 ];
 

@@ -83,9 +83,10 @@ export default function PushToSmartreachModal({ open, onClose, items, onPushed }
           {!result ? (
             <>
               <p className="text-xs leading-snug text-gray-500">
-                {items.length} record{items.length !== 1 ? "s" : ""} selected. Records
-                are added as Smartreach prospects with whatever contact info is
-                unlocked.
+                {items.length} record{items.length !== 1 ? "s" : ""} selected. Only
+                records with an unlocked work email will be added as Smartreach
+                prospects — Smartreach requires an email to add a prospect to a
+                campaign.
               </p>
 
               <label className="mt-3 block text-xs font-medium text-gray-600">

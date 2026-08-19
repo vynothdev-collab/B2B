@@ -1132,10 +1132,12 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                       <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />
                     ),
                     group: "Cold outreach software",
-                    disabled: !connections.instantly || pushedToInstantly,
+                    disabled: !connections.instantly || !workEmailUnlocked || pushedToInstantly,
                     disabledReason: !connections.instantly
                       ? "Connect Instantly in Integrations first"
-                      : undefined,
+                      : !workEmailUnlocked
+                        ? "Unlock work email — Instantly requires it to add a lead"
+                        : undefined,
                     onSelect: () => setInstantlyModalOpen(true),
                   },
                   {
@@ -1147,10 +1149,12 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                       <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />
                     ),
                     group: "Cold outreach software",
-                    disabled: !connections.smartreach || pushedToSmartreach,
+                    disabled: !connections.smartreach || !workEmailUnlocked || pushedToSmartreach,
                     disabledReason: !connections.smartreach
                       ? "Connect Smartreach in Integrations first"
-                      : undefined,
+                      : !workEmailUnlocked
+                        ? "Unlock work email — Smartreach requires it to add a prospect"
+                        : undefined,
                     onSelect: () => setSmartreachModalOpen(true),
                   },
                 ] as PushToDropdownEntry[]

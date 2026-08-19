@@ -142,6 +142,14 @@ async def instantly_push(
         unlocked_email = unlocked.get("work_email")
         unlocked_phone = unlocked.get("mobile")
 
+        if not unlocked_email:
+            results.append(InstantlyPushItemResult(
+                record_id=item.record_id,
+                error="Instantly requires an email address to add a lead to a campaign — unlock this record's work email and try again.",
+            ))
+            failed += 1
+            continue
+
         push_cost = CREDIT_COSTS["crm_push"]
         try:
             await check_credits(current_user, db, push_cost)

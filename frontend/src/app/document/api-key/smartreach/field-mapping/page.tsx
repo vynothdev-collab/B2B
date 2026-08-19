@@ -51,9 +51,10 @@ export default function SmartreachFieldMappingDocPage() {
 
       <Section id="requirements" title="Required Fields">
         <p>
-          Work email is optional — a push goes through even if it hasn&apos;t been
-          unlocked yet, using whatever contact fields are unlocked at push time.
-          A push is only rejected outright if no campaign was selected.
+          A push is rejected outright — before it reaches Smartreach — if the record&apos;s
+          work email hasn&apos;t been unlocked yet, since <InlineCode>email</InlineCode> is
+          required by Smartreach to add a prospect to a campaign, and if no campaign was
+          selected.
         </p>
       </Section>
 
