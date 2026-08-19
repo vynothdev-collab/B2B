@@ -83,9 +83,8 @@ export default function PushToInstantlyModal({ open, onClose, items, onPushed }:
           {!result ? (
             <>
               <p className="text-xs leading-snug text-gray-500">
-                {items.length} record{items.length !== 1 ? "s" : ""} selected. Only
-                records with an unlocked work email will be added as Instantly
-                leads.
+                {items.length} record{items.length !== 1 ? "s" : ""} selected. Records
+                are added as Instantly leads with whatever contact info is unlocked.
               </p>
 
               <label className="mt-3 block text-xs font-medium text-gray-600">

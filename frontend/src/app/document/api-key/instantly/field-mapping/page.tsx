@@ -51,10 +51,9 @@ export default function InstantlyFieldMappingDocPage() {
 
       <Section id="requirements" title="Required Fields">
         <p>
-          A push is rejected outright — before it reaches Instantly — if the record&apos;s
-          work email hasn&apos;t been unlocked yet, since <InlineCode>email</InlineCode> is
-          the field Instantly uses to identify a lead, and if no campaign was
-          selected.
+          Work email is optional — a push goes through even if it hasn&apos;t been
+          unlocked yet, using whatever contact fields are unlocked at push time.
+          A push is only rejected outright if no campaign was selected.
         </p>
       </Section>
 

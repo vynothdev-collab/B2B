@@ -139,12 +139,7 @@ async def smartreach_push(
 
         unlocked = unlock_map.get(item.record_id, {})
         unlocked_email = unlocked.get("work_email")
-        if not unlocked_email:
-            results.append(SmartreachPushItemResult(
-                record_id=item.record_id, error="Work email must be unlocked before pushing."
-            ))
-            failed += 1
-            continue
+        unlocked_phone = unlocked.get("mobile")
 
         push_cost = CREDIT_COSTS["crm_push"]
         try:
@@ -158,7 +153,6 @@ async def smartreach_push(
 
         raw = raw_data_map.get(item.record_id)
         mapped = _map_person(raw) if raw else (item.data if isinstance(item.data, dict) else {})
-        unlocked_phone = unlocked.get("mobile")
 
         prospect_fields = smartreach_service.map_person_to_prospect(mapped, unlocked_email, unlocked_phone)
         try:

@@ -140,12 +140,7 @@ async def instantly_push(
 
         unlocked = unlock_map.get(item.record_id, {})
         unlocked_email = unlocked.get("work_email")
-        if not unlocked_email:
-            results.append(InstantlyPushItemResult(
-                record_id=item.record_id, error="Work email must be unlocked before pushing."
-            ))
-            failed += 1
-            continue
+        unlocked_phone = unlocked.get("mobile")
 
         push_cost = CREDIT_COSTS["crm_push"]
         try:
@@ -159,7 +154,6 @@ async def instantly_push(
 
         raw = raw_data_map.get(item.record_id)
         mapped = _map_person(raw) if raw else (item.data if isinstance(item.data, dict) else {})
-        unlocked_phone = unlocked.get("mobile")
 
         lead_fields = instantly_service.map_person_to_lead(mapped, unlocked_email, unlocked_phone, calendly_url)
         try:
