@@ -16,9 +16,7 @@ class HubspotConnection(Base):
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
     )
-    access_token: Mapped[str] = mapped_column(String(2048), nullable=False)
-    refresh_token: Mapped[str] = mapped_column(String(2048), nullable=False)
-    token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    api_key: Mapped[str] = mapped_column(String(2048), nullable=False)
     hubspot_hub_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     hubspot_hub_domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(

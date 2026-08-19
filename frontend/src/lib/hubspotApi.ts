@@ -30,9 +30,11 @@ export async function getHubspotStatus(): Promise<HubspotStatus> {
   return data;
 }
 
-export async function getHubspotAuthorizeUrl(): Promise<string> {
-  const { data } = await api.get<{ url: string }>("/integrations/hubspot/authorize");
-  return data.url;
+export async function connectHubspot(apiKey: string): Promise<HubspotStatus> {
+  const { data } = await api.post<HubspotStatus>("/integrations/hubspot/connect", {
+    api_key: apiKey,
+  });
+  return data;
 }
 
 export async function disconnectHubspot(): Promise<void> {

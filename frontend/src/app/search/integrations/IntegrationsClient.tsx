@@ -14,10 +14,10 @@ import {
 } from "@/lib/salesforceApi";
 import {
   getHubspotStatus,
-  getHubspotAuthorizeUrl,
   disconnectHubspot,
   type HubspotStatus,
 } from "@/lib/hubspotApi";
+import ConnectHubspotModal from "@/components/search/ConnectHubspotModal";
 import { getInstantlyStatus, disconnectInstantly, type InstantlyStatus } from "@/lib/instantlyApi";
 import ConnectInstantlyModal from "@/components/search/ConnectInstantlyModal";
 import { getCalendlyStatus, disconnectCalendly, type CalendlyStatus } from "@/lib/calendlyApi";
@@ -227,9 +227,9 @@ export default function IntegrationsClient() {
 
   const [hsStatus, setHsStatus] = useState<HubspotStatus | null>(null);
   const [hsLoading, setHsLoading] = useState(true);
-  const [hsConnecting, setHsConnecting] = useState(false);
   const [hsDisconnecting, setHsDisconnecting] = useState(false);
   const [showHsDisconnectConfirm, setShowHsDisconnectConfirm] = useState(false);
+  const [showHsConnectModal, setShowHsConnectModal] = useState(false);
 
   const [inStatus, setInStatus] = useState<InstantlyStatus | null>(null);
   const [inLoading, setInLoading] = useState(true);
@@ -339,9 +339,6 @@ export default function IntegrationsClient() {
     if (connected === "salesforce") {
       toast.success("Salesforce connected successfully.");
       router.replace("/search/integrations");
-    } else if (connected === "hubspot") {
-      toast.success("HubSpot connected successfully.");
-      router.replace("/search/integrations");
     } else if (error) {
       const defaultAuthFailed = "Failed to connect. Check your Salesforce Connected App settings (redirect URI, client ID/secret).";
       const messages: Record<string, string> = {
@@ -377,17 +374,6 @@ export default function IntegrationsClient() {
       toast.error("Failed to disconnect Salesforce.");
     } finally {
       setSfDisconnecting(false);
-    }
-  }
-
-  async function handleConnectHubspot() {
-    setHsConnecting(true);
-    try {
-      const url = await getHubspotAuthorizeUrl();
-      window.location.href = url;
-    } catch {
-      toast.error("Failed to start HubSpot connection.");
-      setHsConnecting(false);
     }
   }
 
@@ -524,11 +510,11 @@ export default function IntegrationsClient() {
           icon={<HubspotIcon className={hsConnected ? "text-emerald-600" : "text-gray-400"} />}
           connected={hsConnected}
           loading={hsLoading}
-          connecting={hsConnecting}
+          connecting={false}
           subtitle={hsConnected ? (hsStatus?.hubspot_hub_domain ?? "Connected account") : "Push unlocked leads to your HubSpot account."}
           docsHref="/document/api-key/hubspot"
           features={HUBSPOT_FEATURES}
-          onConnect={handleConnectHubspot}
+          onConnect={() => setShowHsConnectModal(true)}
           onDisconnectRequest={() => setShowHsDisconnectConfirm(true)}
         />
 
@@ -826,6 +812,12 @@ export default function IntegrationsClient() {
         open={showSrConnectModal}
         onClose={() => setShowSrConnectModal(false)}
         onConnected={loadSmartreach}
+      />
+
+      <ConnectHubspotModal
+        open={showHsConnectModal}
+        onClose={() => setShowHsConnectModal(false)}
+        onConnected={loadHubspot}
       />
 
       <ConnectWebhookModal

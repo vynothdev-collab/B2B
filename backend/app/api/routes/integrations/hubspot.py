@@ -1,24 +1,16 @@
-import base64
-import hashlib
-import hmac
 import logging
-import secrets
-import time
-from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.hubspot_connection import HubspotConnection
 from app.models.search_record import PersonSearchRecord
 from app.models.user import User
 from app.schemas.hubspot import (
-    HubspotAuthorizeResponse,
+    HubspotConnectRequest,
     HubspotPushItemResult,
     HubspotPushRequest,
     HubspotPushResponse,
@@ -33,95 +25,34 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-# ── Signed state carrying the authenticated user id (separate from the login
-# OAuth state helpers in auth.py, which don't need to identify a user) ──────
-
-def _make_integration_state(user_id: str) -> str:
-    nonce = secrets.token_hex(16)
-    ts = str(int(time.time()))
-    payload = f"{user_id}:{nonce}:{ts}"
-    sig = hmac.new(settings.SECRET_KEY.encode(), payload.encode(), hashlib.sha256).hexdigest()
-    raw = f"{payload}:{sig}"
-    return base64.urlsafe_b64encode(raw.encode()).decode()
-
-
-def _verify_integration_state(state: str, max_age: int = 600) -> str | None:
-    try:
-        raw = base64.urlsafe_b64decode(state.encode()).decode()
-        user_id, nonce, ts, sig = raw.split(":", 3)
-        if int(time.time()) - int(ts) > max_age:
-            return None
-        payload = f"{user_id}:{nonce}:{ts}"
-        expected = hmac.new(settings.SECRET_KEY.encode(), payload.encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(sig, expected):
-            return None
-        return user_id
-    except Exception:
-        return None
-
-
-@router.get("/authorize", response_model=HubspotAuthorizeResponse)
-async def hubspot_authorize(
+@router.post("/connect", response_model=HubspotStatusResponse)
+async def hubspot_connect(
+    data: HubspotConnectRequest,
     current_user: User = Depends(get_current_user),
-) -> HubspotAuthorizeResponse:
-    state = _make_integration_state(current_user.id)
-    return HubspotAuthorizeResponse(url=hubspot_service.get_authorize_url(state))
-
-
-@router.get("/callback")
-async def hubspot_callback(
-    code: str | None = None,
-    state: str | None = None,
-    error: str | None = None,
     db: AsyncSession = Depends(get_db),
-) -> RedirectResponse:
-    base = (settings.FRONTEND_URL or "http://localhost:3000").rstrip("/")
-    frontend_cb = base + "/search/integrations"
-
-    if error:
-        logger.warning("HubSpot OAuth callback returned error=%s", error)
-        error_code = "cancelled" if error == "access_denied" else "auth_failed"
-        return RedirectResponse(url=f"{frontend_cb}?error={error_code}", status_code=302)
-
-    user_id = _verify_integration_state(state) if state else None
-    if not user_id:
-        logger.warning("HubSpot OAuth callback failed state verification (state=%r)", state)
-        return RedirectResponse(url=f"{frontend_cb}?error=invalid_state", status_code=302)
-
-    if not code:
-        logger.warning("HubSpot OAuth callback missing code (user_id=%s)", user_id)
-        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
-
-    token_data = await hubspot_service.exchange_code_for_token(code)
-    access_token = token_data.get("access_token")
-    refresh_token = token_data.get("refresh_token")
-
-    if not access_token or not refresh_token:
-        logger.warning(
-            "HubSpot OAuth token exchange incomplete (user_id=%s, keys=%s)",
-            user_id, list(token_data.keys()),
-        )
-        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
-
-    token_info = await hubspot_service.fetch_token_info(access_token)
+) -> HubspotStatusResponse:
+    token_info = await hubspot_service.validate_api_key(data.api_key)
 
     result = await db.execute(
-        select(HubspotConnection).where(HubspotConnection.user_id == user_id)
+        select(HubspotConnection).where(HubspotConnection.user_id == current_user.id)
     )
     connection = result.scalar_one_or_none()
     if not connection:
-        connection = HubspotConnection(user_id=user_id, access_token="", refresh_token="")
+        connection = HubspotConnection(user_id=current_user.id, api_key="")
         db.add(connection)
 
-    hubspot_service.set_connection_tokens(connection, access_token, refresh_token)
+    hubspot_service.set_connection_key(connection, data.api_key)
     connection.hubspot_hub_id = str(token_info.get("hub_id")) if token_info.get("hub_id") else None
     connection.hubspot_hub_domain = token_info.get("hub_domain")
-    expires_in = token_data.get("expires_in")
-    if expires_in:
-        connection.token_expires_at = datetime.now(UTC) + timedelta(seconds=int(expires_in))
     await db.flush()
+    await db.refresh(connection)
 
-    return RedirectResponse(url=f"{frontend_cb}?connected=hubspot", status_code=302)
+    return HubspotStatusResponse(
+        connected=True,
+        hubspot_hub_id=connection.hubspot_hub_id,
+        hubspot_hub_domain=connection.hubspot_hub_domain,
+        connected_at=connection.created_at,
+    )
 
 
 @router.get("/status", response_model=HubspotStatusResponse)

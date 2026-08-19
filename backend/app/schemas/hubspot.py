@@ -4,8 +4,8 @@ from typing import Any
 from pydantic import BaseModel
 
 
-class HubspotAuthorizeResponse(BaseModel):
-    url: str
+class HubspotConnectRequest(BaseModel):
+    api_key: str
 
 
 class HubspotStatusResponse(BaseModel):

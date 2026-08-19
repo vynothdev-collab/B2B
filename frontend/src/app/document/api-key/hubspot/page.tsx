@@ -20,32 +20,45 @@ export default function HubspotOverviewDocPage() {
       <Section id="connect" title="Connecting Your Account">
         <ol className="list-decimal space-y-2 pl-4">
           <li>
-            Go to{" "}
+            In HubSpot, create a{" "}
+            <span className="font-semibold text-gray-900">private app</span> and
+            copy its access token — see{" "}
+            <Link href="#api-key" className="font-semibold text-orange-600 hover:underline">
+              Getting Your HubSpot API Key
+            </Link>{" "}
+            below for the exact steps.
+          </li>
+          <li>
+            In LeadsBuddy, go to{" "}
             <Link href="/search/integrations" className="font-semibold text-orange-600 hover:underline">
               Integrations
             </Link>{" "}
-            in the LeadsBuddy sidebar.
-          </li>
-          <li>Click <span className="font-semibold text-gray-900">Connect to HubSpot</span>.</li>
-          <li>
-            Log in to your HubSpot account and approve the connection request. You&apos;ll
-            be redirected back to LeadsBuddy automatically.
+            in the sidebar and click{" "}
+            <span className="font-semibold text-gray-900">Connect to HubSpot</span>.
           </li>
           <li>
-            Once connected, the Integrations page shows your HubSpot account domain
-            and a <span className="font-semibold text-emerald-700">Connected</span> badge.
+            Paste the access token and click{" "}
+            <span className="font-semibold text-gray-900">Connect</span>. LeadsBuddy
+            verifies the token against your HubSpot account before saving it —
+            there&apos;s no redirect or consent screen.
+          </li>
+          <li>
+            Once connected, the Integrations page shows a{" "}
+            <span className="font-semibold text-emerald-700">Connected</span> badge
+            (and your account domain, if the private app also has account
+            info access).
           </li>
         </ol>
       </Section>
 
-      <Section id="permissions" title="What Access Is Requested">
+      <Section id="permissions" title="What Access Is Used">
         <p>
-          LeadsBuddy requests the <InlineCode>crm.objects.contacts.write</InlineCode>,{" "}
-          <InlineCode>crm.objects.contacts.read</InlineCode>, and{" "}
-          <InlineCode>oauth</InlineCode> scopes from HubSpot — enough to create and
-          update Contact records on your behalf and keep the connection alive.
-          LeadsBuddy never reads, modifies, or deletes any other object type in
-          your HubSpot account.
+          Your HubSpot access token is <InlineCode>encrypted at rest</InlineCode> and
+          used only to create and update Contact records on your behalf. LeadsBuddy
+          never reads, modifies, or deletes any other object type in your HubSpot
+          account — make sure the private app you create only grants the{" "}
+          <InlineCode>crm.objects.contacts.write</InlineCode> and{" "}
+          <InlineCode>crm.objects.contacts.read</InlineCode> scopes.
         </p>
       </Section>
 
@@ -91,16 +104,82 @@ export default function HubspotOverviewDocPage() {
 
       <Section id="troubleshooting" title="Troubleshooting">
         <p>
-          <span className="font-semibold text-gray-900">&quot;HubSpot connection expired&quot;</span> —
-          your account&apos;s refresh token was revoked or expired (e.g. an admin
-          revoked third-party app access). Go to Integrations, disconnect, and
-          reconnect.
+          <span className="font-semibold text-gray-900">&quot;Invalid HubSpot API key&quot;</span> —
+          the token was mistyped, or belongs to a private app that was deleted.
+          Copy the token again from HubSpot and reconnect.
+        </p>
+        <p>
+          <span className="font-semibold text-gray-900">&quot;HubSpot API key is no longer valid&quot;</span> —
+          the private app&apos;s access token was regenerated or the app was
+          uninstalled. Go to Integrations, disconnect, and reconnect with the
+          new token.
         </p>
         <p>
           <span className="font-semibold text-gray-900">Push button is disabled</span> — the
           record&apos;s work email hasn&apos;t been unlocked yet, or HubSpot isn&apos;t
           connected. Unlock the work email first, or connect HubSpot from the
           Integrations page.
+        </p>
+      </Section>
+
+      <Section id="api-key" title="Getting Your HubSpot API Key">
+        <p>
+          HubSpot no longer issues a single account-wide API key — access is
+          granted through a <span className="font-semibold text-gray-900">private app</span>,
+          which gives you a scoped, revocable access token that behaves the
+          same way. Here&apos;s how to create one:
+        </p>
+        <ol className="list-decimal space-y-2 pl-4">
+          <li>
+            Log in to HubSpot and click the{" "}
+            <span className="font-semibold text-gray-900">settings gear icon</span> in
+            the top navigation bar.
+          </li>
+          <li>
+            In the left sidebar, go to{" "}
+            <span className="font-semibold text-gray-900">Integrations → Private Apps</span>.
+          </li>
+          <li>
+            Click <span className="font-semibold text-gray-900">Create a private app</span>.
+          </li>
+          <li>
+            Under the <span className="font-semibold text-gray-900">Basic Info</span> tab,
+            give the app a name, e.g. <InlineCode>LeadsBuddy</InlineCode>, so it&apos;s
+            easy to recognize later.
+          </li>
+          <li>
+            Switch to the <span className="font-semibold text-gray-900">Scopes</span> tab
+            and, under CRM, enable{" "}
+            <InlineCode>crm.objects.contacts.write</InlineCode> and{" "}
+            <InlineCode>crm.objects.contacts.read</InlineCode>. Leave every other
+            scope unchecked — LeadsBuddy doesn&apos;t need them.
+          </li>
+          <li>
+            Click <span className="font-semibold text-gray-900">Create app</span> in
+            the top-right corner, then confirm in the dialog that appears.
+          </li>
+          <li>
+            On the next screen, click{" "}
+            <span className="font-semibold text-gray-900">Show token</span> and copy
+            the access token (it starts with <InlineCode>pat-</InlineCode>).
+            HubSpot only shows it once, so copy it somewhere safe.
+          </li>
+          <li>
+            Paste that token into the{" "}
+            <span className="font-semibold text-gray-900">Connect HubSpot</span> dialog
+            on the LeadsBuddy{" "}
+            <Link href="/search/integrations" className="font-semibold text-orange-600 hover:underline">
+              Integrations
+            </Link>{" "}
+            page.
+          </li>
+        </ol>
+        <p>
+          If you ever need to revoke access, go back to{" "}
+          <span className="font-semibold text-gray-900">Integrations → Private Apps</span> in
+          HubSpot and delete the app, or simply click{" "}
+          <span className="font-semibold text-gray-900">Disconnect</span> on the
+          LeadsBuddy Integrations page.
         </p>
       </Section>
     </div>
