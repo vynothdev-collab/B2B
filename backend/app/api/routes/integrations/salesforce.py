@@ -84,16 +84,13 @@ async def salesforce_callback(
     frontend_cb = base + "/search/integrations"
 
     if error:
-        # Salesforce sends `error` for many reasons beyond the user clicking "Deny"
-        # (misconfigured redirect_uri, disabled connected app, IP restrictions, etc).
-        # Log the real reason so a failed connection is diagnosable; only surface
-        # the generic "cancelled" copy to the user when they actually denied access.
         logger.warning(
             "Salesforce OAuth callback returned error=%s description=%s",
             error, error_description,
         )
         error_code = "cancelled" if error == "access_denied" else "auth_failed"
-        return RedirectResponse(url=f"{frontend_cb}?error={error_code}", status_code=302)
+        detail_param = f"&detail={error_description}" if error_description else f"&detail={error}"
+        return RedirectResponse(url=f"{frontend_cb}?error={error_code}{detail_param}", status_code=302)
 
     verified = _verify_integration_state(state) if state else None
     if not verified:
@@ -103,20 +100,25 @@ async def salesforce_callback(
 
     if not code:
         logger.warning("Salesforce OAuth callback missing code (user_id=%s)", user_id)
-        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
+        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed&detail=Missing+code", status_code=302)
 
     token_data = await salesforce_service.exchange_code_for_token(code, code_verifier)
+    if "error" in token_data:
+        err_msg = token_data.get("error_description") or token_data.get("error") or "Token exchange failed"
+        logger.warning("Salesforce OAuth token exchange error for user %s: %s", user_id, err_msg)
+        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed&detail={err_msg}", status_code=302)
+
     access_token = token_data.get("access_token")
-    refresh_token = token_data.get("refresh_token")
+    refresh_token = token_data.get("refresh_token") or ""
     instance_url = token_data.get("instance_url")
     identity_url = token_data.get("id")
 
-    if not access_token or not refresh_token or not instance_url:
+    if not access_token or not instance_url:
         logger.warning(
             "Salesforce OAuth token exchange incomplete (user_id=%s, keys=%s)",
             user_id, list(token_data.keys()),
         )
-        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed", status_code=302)
+        return RedirectResponse(url=f"{frontend_cb}?error=auth_failed&detail=Incomplete+token+response", status_code=302)
 
     identity = (
         await salesforce_service.fetch_identity(instance_url, access_token, identity_url)

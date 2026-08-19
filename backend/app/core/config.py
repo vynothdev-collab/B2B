@@ -66,7 +66,8 @@ class Settings(BaseSettings):
     MICROSOFT_TENANT_ID: str = "common"  # "common" = personal + work/school accounts
     MICROSOFT_CALLBACK_URL: str = ""     # e.g. http://localhost:8000/api/v1/auth/microsoft/callback
 
-    # Salesforce OAuth (production orgs only — login.salesforce.com)
+    # Salesforce OAuth
+    SALESFORCE_LOGIN_URL: str = "https://login.salesforce.com"  # override with your My Domain URL e.g. https://your-domain.my.salesforce.com if using Local External Client App
     SALESFORCE_CLIENT_ID: str = ""
     SALESFORCE_CLIENT_SECRET: str = ""
     SALESFORCE_CALLBACK_URL: str = ""  # e.g. http://localhost:8000/api/v1/integrations/salesforce/callback

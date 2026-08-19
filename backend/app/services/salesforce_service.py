@@ -13,7 +13,8 @@ from app.models.salesforce_connection import SalesforceConnection
 
 logger = logging.getLogger(__name__)
 
-SALESFORCE_LOGIN_BASE_URL = "https://login.salesforce.com"
+def _get_login_base_url() -> str:
+    return (getattr(settings, "SALESFORCE_LOGIN_URL", None) or "https://login.salesforce.com").rstrip("/")
 
 
 def make_code_challenge(code_verifier: str) -> str:
@@ -32,17 +33,17 @@ def get_authorize_url(state: str, code_challenge: str) -> str:
         "client_id": settings.SALESFORCE_CLIENT_ID,
         "redirect_uri": settings.SALESFORCE_CALLBACK_URL,
         "state": state,
-        "scope": "api refresh_token id",
+        "scope": "api refresh_token id openid",
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
     })
-    return f"{SALESFORCE_LOGIN_BASE_URL}/services/oauth2/authorize?{params}"
+    return f"{_get_login_base_url()}/services/oauth2/authorize?{params}"
 
 
 async def exchange_code_for_token(code: str, code_verifier: str) -> dict:
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.post(
-            f"{SALESFORCE_LOGIN_BASE_URL}/services/oauth2/token",
+            f"{_get_login_base_url()}/services/oauth2/token",
             data={
                 "grant_type": "authorization_code",
                 "code": code,
@@ -55,7 +56,10 @@ async def exchange_code_for_token(code: str, code_verifier: str) -> dict:
         )
     if resp.status_code != 200:
         logger.error("Salesforce token exchange failed (%s): %s", resp.status_code, resp.text)
-        return {}
+        try:
+            return resp.json()
+        except Exception:
+            return {"error": f"HTTP {resp.status_code}", "error_description": resp.text}
     return resp.json()
 
 
@@ -72,17 +76,17 @@ async def fetch_identity(instance_url: str, access_token: str, identity_url: str
 
 
 def set_connection_tokens(
-    connection: SalesforceConnection, access_token: str, refresh_token: str
+    connection: SalesforceConnection, access_token: str, refresh_token: str | None = None
 ) -> None:
     """Encrypt and store a fresh access/refresh token pair on the connection."""
     connection.access_token = encrypt_secret(access_token, settings.SALESFORCE_ENCRYPTION_KEY)
-    connection.refresh_token = encrypt_secret(refresh_token, settings.SALESFORCE_ENCRYPTION_KEY)
+    connection.refresh_token = encrypt_secret(refresh_token or "", settings.SALESFORCE_ENCRYPTION_KEY)
 
 
 async def refresh_access_token(connection: SalesforceConnection) -> bool:
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.post(
-            f"{SALESFORCE_LOGIN_BASE_URL}/services/oauth2/token",
+            f"{_get_login_base_url()}/services/oauth2/token",
             data={
                 "grant_type": "refresh_token",
                 "refresh_token": decrypt_secret(connection.refresh_token, settings.SALESFORCE_ENCRYPTION_KEY),

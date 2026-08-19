@@ -335,6 +335,7 @@ export default function IntegrationsClient() {
   useEffect(() => {
     const connected = searchParams.get("connected");
     const error = searchParams.get("error");
+    const detail = searchParams.get("detail");
     if (connected === "salesforce") {
       toast.success("Salesforce connected successfully.");
       router.replace("/search/integrations");
@@ -342,12 +343,13 @@ export default function IntegrationsClient() {
       toast.success("HubSpot connected successfully.");
       router.replace("/search/integrations");
     } else if (error) {
+      const defaultAuthFailed = "Failed to connect. Check your Salesforce Connected App settings (redirect URI, client ID/secret).";
       const messages: Record<string, string> = {
         cancelled: "Connection was cancelled.",
-        invalid_state: "Connection request expired. Please try again.",
-        auth_failed: "Failed to connect. This usually means the app isn't configured correctly (check the redirect URI, client ID/secret, or access policy).",
+        invalid_state: detail ? `Connection failed: ${detail}` : "Connection request expired. Please try again.",
+        auth_failed: detail ? `Salesforce connection error: ${detail}` : defaultAuthFailed,
       };
-      toast.error(messages[error] ?? "Failed to connect.");
+      toast.error(messages[error] ?? (detail ? `Connection error: ${detail}` : "Failed to connect."));
       router.replace("/search/integrations");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
