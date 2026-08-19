@@ -1082,7 +1082,6 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
 
             <PushToDropdown
               className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!workEmailUnlocked}
               label={
                 pushedToSalesforce || pushedToHubspot || pushedToInstantly || pushedToSmartreach
                   ? "Pushed"
@@ -1133,10 +1132,12 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                       <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />
                     ),
                     group: "Cold outreach software",
-                    disabled: !connections.instantly || pushedToInstantly,
+                    disabled: !connections.instantly || !workEmailUnlocked || pushedToInstantly,
                     disabledReason: !connections.instantly
                       ? "Connect Instantly in Integrations first"
-                      : undefined,
+                      : !workEmailUnlocked
+                        ? "Unlock work email before pushing to Instantly"
+                        : undefined,
                     onSelect: () => setInstantlyModalOpen(true),
                   },
                   {
@@ -1148,10 +1149,12 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                       <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />
                     ),
                     group: "Cold outreach software",
-                    disabled: !connections.smartreach || pushedToSmartreach,
+                    disabled: !connections.smartreach || !workEmailUnlocked || pushedToSmartreach,
                     disabledReason: !connections.smartreach
                       ? "Connect Smartreach in Integrations first"
-                      : undefined,
+                      : !workEmailUnlocked
+                        ? "Unlock work email before pushing to Smartreach"
+                        : undefined,
                     onSelect: () => setSmartreachModalOpen(true),
                   },
                 ] as PushToDropdownEntry[]

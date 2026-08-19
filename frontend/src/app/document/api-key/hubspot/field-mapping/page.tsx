@@ -43,10 +43,11 @@ export default function HubspotFieldMappingDocPage() {
           forced fallback values.
         </p>
         <p>
-          A push is rejected outright — before it reaches HubSpot — if the record&apos;s
-          work email hasn&apos;t been unlocked yet, since <InlineCode>email</InlineCode> is
-          both the whole point of sending a contact to your CRM and the field
-          HubSpot uses to match against an existing Contact.
+          Work email is optional — a push goes through even if it hasn&apos;t been
+          unlocked yet. When it is unlocked, LeadsBuddy uses{" "}
+          <InlineCode>email</InlineCode> to match against an existing Contact
+          (updating it instead of creating a duplicate); without it, a new
+          Contact is created.
         </p>
       </Section>
 

@@ -65,7 +65,7 @@ export default function PushToSalesforceModal({ open, onClose, items }: Props) {
                 {items.length} record{items.length !== 1 ? "s" : ""} selected.{" "}
                 {itemType === "company"
                   ? "Records will be pushed as Salesforce Accounts."
-                  : "Only records with an unlocked work email will be pushed as Salesforce Leads."}
+                  : "Records will be pushed as Salesforce Leads with whatever contact info is unlocked."}
               </p>
               <button
                 type="button"

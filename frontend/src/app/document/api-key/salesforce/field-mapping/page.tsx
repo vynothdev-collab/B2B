@@ -46,9 +46,10 @@ export default function SalesforceFieldMappingDocPage() {
           failing the push.
         </p>
         <p>
-          A push is rejected outright — before it reaches Salesforce — if the record&apos;s
-          work email hasn&apos;t been unlocked yet, since <InlineCode>Email</InlineCode> is
-          the whole point of sending a lead to your CRM.
+          Work email and mobile number are optional — a push goes through even if
+          neither has been unlocked yet, using whichever contact fields are
+          unlocked at push time. <InlineCode>Email</InlineCode>/<InlineCode>Phone</InlineCode>{" "}
+          are simply omitted from the Lead when locked.
         </p>
       </Section>
 

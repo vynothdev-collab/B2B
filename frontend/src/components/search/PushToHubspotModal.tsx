@@ -68,7 +68,7 @@ export default function PushToHubspotModal({ open, onClose, items }: Props) {
                 {items.length} record{items.length !== 1 ? "s" : ""} selected.{" "}
                 {itemType === "company"
                   ? "Records will be pushed as HubSpot Companies."
-                  : "Only records with an unlocked work email will be pushed as HubSpot Contacts."}
+                  : "Records will be pushed as HubSpot Contacts with whatever contact info is unlocked."}
               </p>
               <button
                 type="button"

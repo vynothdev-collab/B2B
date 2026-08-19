@@ -85,16 +85,23 @@ def map_person_to_contact(mapped_person: dict, unlocked_email: str | None, unloc
     return {"properties": properties}
 
 
-async def create_or_update_contact(connection: HubspotConnection, contact_fields: dict, email: str) -> str:
+async def create_or_update_contact(connection: HubspotConnection, contact_fields: dict, email: str | None) -> str:
     api_key = decrypt_secret(connection.api_key, settings.HUBSPOT_ENCRYPTION_KEY)
 
     async with httpx.AsyncClient(timeout=10) as client:
-        resp = await client.put(
-            f"{HUBSPOT_API_BASE_URL}/crm/v3/objects/contacts/{email}",
-            params={"idProperty": "email"},
-            json=contact_fields,
-            headers={"Authorization": f"Bearer {api_key}"},
-        )
+        if email:
+            resp = await client.put(
+                f"{HUBSPOT_API_BASE_URL}/crm/v3/objects/contacts/{email}",
+                params={"idProperty": "email"},
+                json=contact_fields,
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+        else:
+            resp = await client.post(
+                f"{HUBSPOT_API_BASE_URL}/crm/v3/objects/contacts",
+                json=contact_fields,
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
 
     return _handle_object_response(resp).get("id", "")
 

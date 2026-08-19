@@ -187,6 +187,17 @@ async def _create_sobject(connection: SalesforceConnection, sobject: str, fields
         resp = await _post(decrypt_secret(connection.access_token, settings.SALESFORCE_ENCRYPTION_KEY), connection.instance_url)
 
     if resp.status_code not in (200, 201):
+        # Orgs with "State and Country/Territory Picklists" enabled reject any
+        # State/Country value that isn't in their restricted picklist — CoreSignal's
+        # free-text values frequently don't match. Retry once without those fields
+        # rather than failing the whole push over a non-essential field.
+        retry_fields = _strip_invalid_picklist_fields(resp, fields)
+        if retry_fields is not None:
+            logger.info("Salesforce rejected a State/Country picklist value on %s; retrying without it", sobject)
+            fields = retry_fields
+            resp = await _post(decrypt_secret(connection.access_token, settings.SALESFORCE_ENCRYPTION_KEY), connection.instance_url)
+
+    if resp.status_code not in (200, 201):
         detail = resp.text
         try:
             body = resp.json()
@@ -197,3 +208,39 @@ async def _create_sobject(connection: SalesforceConnection, sobject: str, fields
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Salesforce error: {detail}")
 
     return resp.json().get("id", "")
+
+
+def _strip_invalid_picklist_fields(resp: httpx.Response, fields: dict) -> dict | None:
+    """Return `fields` with the offending State/Country keys removed if Salesforce
+    rejected the request because a free-text State/Country value didn't match the
+    org's restricted picklist; None if that wasn't the error.
+
+    Salesforce reports this under different errorCodes depending on org/API version
+    (STATE_COUNTRY_PICKLIST_NOT_VALID, FIELD_INTEGRITY_EXCEPTION, ...), so this
+    matches on the message text and uses the error's own "fields" list to know
+    exactly which keys to drop, falling back to any State/Country-suffixed key.
+    """
+    try:
+        body = resp.json()
+    except Exception:
+        return None
+    if not isinstance(body, list):
+        return None
+
+    offending_keys: set[str] = set()
+    for e in body:
+        if not isinstance(e, dict):
+            continue
+        message = (e.get("message") or "").lower()
+        if "valid state" not in message and "valid countr" not in message:
+            continue
+        for field_name in e.get("fields") or []:
+            if field_name in fields:
+                offending_keys.add(field_name)
+        if not e.get("fields"):
+            offending_keys.update(k for k in fields if k.endswith("State") or k.endswith("Country"))
+
+    if not offending_keys:
+        return None
+    stripped = {k: v for k, v in fields.items() if k not in offending_keys}
+    return stripped if len(stripped) != len(fields) else None
