@@ -22,7 +22,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Upload,
   Loader2,
   Check,
 } from "lucide-react";
@@ -39,6 +38,8 @@ import { pushToHubspot } from "@/lib/hubspotApi";
 import { toast } from "@/lib/toast";
 import PushToInstantlyModal from "./PushToInstantlyModal";
 import PushToSmartreachModal from "./PushToSmartreachModal";
+import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
+import { useCrmConnections } from "@/hooks/useCrmConnections";
 
 type UnlockField = "work_email" | "personal_email" | "mobile";
 
@@ -640,6 +641,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [pushedToInstantly, setPushedToInstantly] = useState(false);
   const [smartreachModalOpen, setSmartreachModalOpen] = useState(false);
   const [pushedToSmartreach, setPushedToSmartreach] = useState(false);
+  const { connections } = useCrmConnections();
 
   const skillsRef = useRef<HTMLDivElement>(null);
   const expRef = useRef<HTMLDivElement>(null);
@@ -1078,89 +1080,83 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
               </span>
             )}
 
-            <button
-              type="button"
-              onClick={handlePushToSalesforce}
-              disabled={!workEmailUnlocked || pushingToSalesforce || pushedToSalesforce}
-              title={
-                !workEmailUnlocked
-                  ? "Unlock work email before pushing to Salesforce"
-                  : pushedToSalesforce
-                    ? "Already pushed"
-                    : "Push to Salesforce"
-              }
-              className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {pushingToSalesforce ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : pushedToSalesforce ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <Upload className="h-3.5 w-3.5" />
-              )}
-              {pushedToSalesforce ? "Pushed" : "Push to Salesforce"}
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePushToHubspot}
-              disabled={!workEmailUnlocked || pushingToHubspot || pushedToHubspot}
-              title={
-                !workEmailUnlocked
-                  ? "Unlock work email before pushing to HubSpot"
-                  : pushedToHubspot
-                    ? "Already pushed"
-                    : "Push to HubSpot"
-              }
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {pushingToHubspot ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : pushedToHubspot ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <Upload className="h-3.5 w-3.5" />
-              )}
-              {pushedToHubspot ? "Pushed" : "Push to HubSpot"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setInstantlyModalOpen(true)}
+            <PushToDropdown
+              className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!workEmailUnlocked}
-              title={
-                !workEmailUnlocked
-                  ? "Unlock work email before pushing to Instantly"
-                  : "Push to Instantly"
+              label={
+                pushedToSalesforce || pushedToHubspot || pushedToInstantly || pushedToSmartreach
+                  ? "Pushed"
+                  : "Push to..."
               }
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {pushedToInstantly ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <Upload className="h-3.5 w-3.5" />
-              )}
-              {pushedToInstantly ? "Pushed" : "Push to Instantly"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSmartreachModalOpen(true)}
-              disabled={!workEmailUnlocked}
-              title={
-                !workEmailUnlocked
-                  ? "Unlock work email before pushing to Smartreach"
-                  : "Push to Smartreach"
+              entries={
+                [
+                  {
+                    key: "salesforce",
+                    label: pushedToSalesforce ? "Pushed to Salesforce" : "Salesforce",
+                    icon: pushingToSalesforce ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : pushedToSalesforce ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="SF" bg="#fde8e8" color="#dc2626" />
+                    ),
+                    group: "CRMs",
+                    disabled: !connections.salesforce || pushingToSalesforce || pushedToSalesforce,
+                    disabledReason: !connections.salesforce
+                      ? "Connect Salesforce in Integrations first"
+                      : undefined,
+                    onSelect: handlePushToSalesforce,
+                  },
+                  {
+                    key: "hubspot",
+                    label: pushedToHubspot ? "Pushed to HubSpot" : "HubSpot",
+                    icon: pushingToHubspot ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : pushedToHubspot ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="H" bg="#ffe8df" color="#ff7a59" />
+                    ),
+                    group: "CRMs",
+                    disabled: !connections.hubspot || pushingToHubspot || pushedToHubspot,
+                    disabledReason: !connections.hubspot
+                      ? "Connect HubSpot in Integrations first"
+                      : undefined,
+                    onSelect: handlePushToHubspot,
+                  },
+                  {
+                    key: "instantly",
+                    label: pushedToInstantly ? "Pushed to Instantly" : "Instantly",
+                    icon: pushedToInstantly ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />
+                    ),
+                    group: "Cold outreach software",
+                    disabled: !connections.instantly || pushedToInstantly,
+                    disabledReason: !connections.instantly
+                      ? "Connect Instantly in Integrations first"
+                      : undefined,
+                    onSelect: () => setInstantlyModalOpen(true),
+                  },
+                  {
+                    key: "smartreach",
+                    label: pushedToSmartreach ? "Pushed to Smartreach" : "Smartreach",
+                    icon: pushedToSmartreach ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />
+                    ),
+                    group: "Cold outreach software",
+                    disabled: !connections.smartreach || pushedToSmartreach,
+                    disabledReason: !connections.smartreach
+                      ? "Connect Smartreach in Integrations first"
+                      : undefined,
+                    onSelect: () => setSmartreachModalOpen(true),
+                  },
+                ] as PushToDropdownEntry[]
               }
-              className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-emerald-300 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {pushedToSmartreach ? (
-                <Check className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <Upload className="h-3.5 w-3.5" />
-              )}
-              {pushedToSmartreach ? "Pushed" : "Push to Smartreach"}
-            </button>
+            />
           </div>
         </div>
 

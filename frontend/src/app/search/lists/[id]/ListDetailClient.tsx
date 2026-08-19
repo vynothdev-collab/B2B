@@ -50,6 +50,12 @@ import {
 import { toast } from "@/lib/toast";
 import PersonDetailPanel from "@/components/search/PersonDetailPanel";
 import CompanyDetailPanel from "@/components/search/CompanyDetailPanel";
+import PushToSalesforceModal from "@/components/search/PushToSalesforceModal";
+import PushToHubspotModal from "@/components/search/PushToHubspotModal";
+import PushToInstantlyModal from "@/components/search/PushToInstantlyModal";
+import PushToSmartreachModal from "@/components/search/PushToSmartreachModal";
+import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "@/components/search/PushToDropdown";
+import { useCrmConnections } from "@/hooks/useCrmConnections";
 import type { PersonResult, CompanyResult } from "@/types/search";
 
 function getItemDisplayName(item: ListItemRecord): string {
@@ -1397,6 +1403,11 @@ export default function ListDetailPage() {
     useState<ListItemRecord | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
+  const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
+  const [instantlyPushOpen, setInstantlyPushOpen] = useState(false);
+  const [smartreachPushOpen, setSmartreachPushOpen] = useState(false);
+  const { connections } = useCrmConnections();
   const listFetched = useRef(false);
 
   const isPeople = list?.list_type === "people";
@@ -1590,6 +1601,57 @@ export default function ListDetailPage() {
   const pageStart = (page - 1) * pageSize;
   const pageEnd = Math.min(pageStart + pageSize, total);
 
+  const selectedListItems = pageItems.filter((i: ListItemRecord) =>
+    selected.has(i.id),
+  );
+
+  const crmEntries: PushToDropdownEntry[] = [
+    {
+      key: "salesforce",
+      label: "Salesforce",
+      icon: <BrandBadge letter="SF" bg="#fde8e8" color="#dc2626" />,
+      group: "CRMs",
+      disabled: !connections.salesforce,
+      disabledReason: !connections.salesforce ? "Connect Salesforce in Integrations first" : undefined,
+      onSelect: () => setSalesforcePushOpen(true),
+    },
+    {
+      key: "hubspot",
+      label: "HubSpot",
+      icon: <BrandBadge letter="H" bg="#ffe8df" color="#ff7a59" />,
+      group: "CRMs",
+      disabled: !connections.hubspot,
+      disabledReason: !connections.hubspot ? "Connect HubSpot in Integrations first" : undefined,
+      onSelect: () => setHubspotPushOpen(true),
+    },
+    {
+      key: "instantly",
+      label: "Instantly",
+      icon: <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />,
+      group: "Cold outreach software",
+      disabled: !isPeople || !connections.instantly,
+      disabledReason: !isPeople
+        ? "Only supports people records"
+        : !connections.instantly
+          ? "Connect Instantly in Integrations first"
+          : undefined,
+      onSelect: () => setInstantlyPushOpen(true),
+    },
+    {
+      key: "smartreach",
+      label: "Smartreach",
+      icon: <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />,
+      group: "Cold outreach software",
+      disabled: !isPeople || !connections.smartreach,
+      disabledReason: !isPeople
+        ? "Only supports people records"
+        : !connections.smartreach
+          ? "Connect Smartreach in Integrations first"
+          : undefined,
+      onSelect: () => setSmartreachPushOpen(true),
+    },
+  ];
+
   const tableColumns = isPeople
     ? buildPeopleListColumns(visibleColumns, (item) =>
         setSelectedListItem(item),
@@ -1665,6 +1727,10 @@ export default function ListDetailPage() {
                   {selected.size} selected
                 </span>
                 <div className="mx-1 h-4 w-px bg-gray-600" />
+                <PushToDropdown
+                  entries={crmEntries}
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
+                />
                 <button
                   type="button"
                   disabled={bulkRemoving || bulkMovingToList !== null}
@@ -1788,6 +1854,30 @@ export default function ListDetailPage() {
           </div>
         )}
       </div>
+
+      <PushToSalesforceModal
+        open={salesforcePushOpen}
+        onClose={() => setSalesforcePushOpen(false)}
+        items={selectedListItems.map((i) => ({ record_id: i.record_id, item_type: i.item_type }))}
+      />
+
+      <PushToHubspotModal
+        open={hubspotPushOpen}
+        onClose={() => setHubspotPushOpen(false)}
+        items={selectedListItems.map((i) => ({ record_id: i.record_id, item_type: i.item_type }))}
+      />
+
+      <PushToInstantlyModal
+        open={instantlyPushOpen}
+        onClose={() => setInstantlyPushOpen(false)}
+        items={selectedListItems.map((i) => ({ record_id: i.record_id, item_type: "person" as const }))}
+      />
+
+      <PushToSmartreachModal
+        open={smartreachPushOpen}
+        onClose={() => setSmartreachPushOpen(false)}
+        items={selectedListItems.map((i) => ({ record_id: i.record_id, item_type: "person" as const }))}
+      />
 
       {isPeople ? (
         <PersonDetailPanel

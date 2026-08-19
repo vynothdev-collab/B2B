@@ -7,10 +7,11 @@ import { toast } from "@/lib/toast";
 interface Props {
   open: boolean;
   onClose: () => void;
-  items: { record_id: string; item_type: "person" }[];
+  items: { record_id: string; item_type: "person" | "company" }[];
 }
 
 export default function PushToSalesforceModal({ open, onClose, items }: Props) {
+  const itemType = items[0]?.item_type ?? "person";
   const [pushing, setPushing] = useState(false);
   const [result, setResult] = useState<{
     pushed: number;
@@ -32,7 +33,8 @@ export default function PushToSalesforceModal({ open, onClose, items }: Props) {
       );
       setResult(res);
       if (res.pushed > 0 && res.failed === 0) {
-        toast.success(`Pushed ${res.pushed} lead${res.pushed !== 1 ? "s" : ""} to Salesforce.`);
+        const noun = itemType === "company" ? "account" : "lead";
+        toast.success(`Pushed ${res.pushed} ${noun}${res.pushed !== 1 ? "s" : ""} to Salesforce.`);
       }
     } catch (e) {
       toast.apiError(e);
@@ -60,9 +62,10 @@ export default function PushToSalesforceModal({ open, onClose, items }: Props) {
           {!result ? (
             <>
               <p className="text-xs leading-snug text-gray-500">
-                {items.length} record{items.length !== 1 ? "s" : ""} selected. Only
-                records with an unlocked work email will be pushed as Salesforce
-                Leads.
+                {items.length} record{items.length !== 1 ? "s" : ""} selected.{" "}
+                {itemType === "company"
+                  ? "Records will be pushed as Salesforce Accounts."
+                  : "Only records with an unlocked work email will be pushed as Salesforce Leads."}
               </p>
               <button
                 type="button"

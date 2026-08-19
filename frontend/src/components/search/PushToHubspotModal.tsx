@@ -7,10 +7,11 @@ import { toast } from "@/lib/toast";
 interface Props {
   open: boolean;
   onClose: () => void;
-  items: { record_id: string; item_type: "person" }[];
+  items: { record_id: string; item_type: "person" | "company" }[];
 }
 
 export default function PushToHubspotModal({ open, onClose, items }: Props) {
+  const itemType = items[0]?.item_type ?? "person";
   const [pushing, setPushing] = useState(false);
   const [result, setResult] = useState<{
     pushed: number;
@@ -32,7 +33,11 @@ export default function PushToHubspotModal({ open, onClose, items }: Props) {
       );
       setResult(res);
       if (res.pushed > 0 && res.failed === 0) {
-        toast.success(`Pushed ${res.pushed} contact${res.pushed !== 1 ? "s" : ""} to HubSpot.`);
+        const noun =
+          itemType === "company"
+            ? `compan${res.pushed !== 1 ? "ies" : "y"}`
+            : `contact${res.pushed !== 1 ? "s" : ""}`;
+        toast.success(`Pushed ${res.pushed} ${noun} to HubSpot.`);
       }
     } catch (e) {
       toast.apiError(e);
@@ -60,9 +65,10 @@ export default function PushToHubspotModal({ open, onClose, items }: Props) {
           {!result ? (
             <>
               <p className="text-xs leading-snug text-gray-500">
-                {items.length} record{items.length !== 1 ? "s" : ""} selected. Only
-                records with an unlocked work email will be pushed as HubSpot
-                Contacts.
+                {items.length} record{items.length !== 1 ? "s" : ""} selected.{" "}
+                {itemType === "company"
+                  ? "Records will be pushed as HubSpot Companies."
+                  : "Only records with an unlocked work email will be pushed as HubSpot Contacts."}
               </p>
               <button
                 type="button"

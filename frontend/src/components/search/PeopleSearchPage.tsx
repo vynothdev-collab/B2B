@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
-import { Eye, ListPlus, SearchX, SlidersHorizontal, Upload, X } from "lucide-react";
+import { Eye, ListPlus, SearchX, SlidersHorizontal, X } from "lucide-react";
 import AppHeader from "@/components/layout/AppHeader";
 import FilterPanelShell from "./FilterPanelShell";
 import PeopleFilterPanel, {
@@ -18,6 +18,8 @@ import PushToSalesforceModal from "./PushToSalesforceModal";
 import PushToHubspotModal from "./PushToHubspotModal";
 import PushToInstantlyModal from "./PushToInstantlyModal";
 import PushToSmartreachModal from "./PushToSmartreachModal";
+import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
+import { useCrmConnections } from "@/hooks/useCrmConnections";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
@@ -57,6 +59,7 @@ export default function PeopleSearchPage() {
   const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
   const [instantlyPushOpen, setInstantlyPushOpen] = useState(false);
   const [smartreachPushOpen, setSmartreachPushOpen] = useState(false);
+  const { connections } = useCrmConnections();
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
   const isAgenticRef = useRef(false);
   const agenticPromptRef = useRef<string>("");
@@ -332,6 +335,45 @@ export default function PeopleSearchPage() {
     ? ((results.data ?? []) as PersonResult[]).filter((r) => selected.has(r.id))
     : [];
 
+  const crmEntries: PushToDropdownEntry[] = [
+    {
+      key: "salesforce",
+      label: "Salesforce",
+      icon: <BrandBadge letter="SF" bg="#fde8e8" color="#dc2626" />,
+      group: "CRMs",
+      disabled: !connections.salesforce,
+      disabledReason: !connections.salesforce ? "Connect Salesforce in Integrations first" : undefined,
+      onSelect: () => setSalesforcePushOpen(true),
+    },
+    {
+      key: "hubspot",
+      label: "HubSpot",
+      icon: <BrandBadge letter="H" bg="#ffe8df" color="#ff7a59" />,
+      group: "CRMs",
+      disabled: !connections.hubspot,
+      disabledReason: !connections.hubspot ? "Connect HubSpot in Integrations first" : undefined,
+      onSelect: () => setHubspotPushOpen(true),
+    },
+    {
+      key: "instantly",
+      label: "Instantly",
+      icon: <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />,
+      group: "Cold outreach software",
+      disabled: !connections.instantly,
+      disabledReason: !connections.instantly ? "Connect Instantly in Integrations first" : undefined,
+      onSelect: () => setInstantlyPushOpen(true),
+    },
+    {
+      key: "smartreach",
+      label: "Smartreach",
+      icon: <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />,
+      group: "Cold outreach software",
+      disabled: !connections.smartreach,
+      disabledReason: !connections.smartreach ? "Connect Smartreach in Integrations first" : undefined,
+      onSelect: () => setSmartreachPushOpen(true),
+    },
+  ];
+
   return (
     <>
       <AppHeader title="People search" />
@@ -385,42 +427,7 @@ export default function PeopleSearchPage() {
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
                 </button>
-                <button
-                  type="button"
-                  disabled={selected.size === 0}
-                  onClick={() => setSalesforcePushOpen(true)}
-                  className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-xs"
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  Push to Salesforce
-                </button>
-                <button
-                  type="button"
-                  disabled={selected.size === 0}
-                  onClick={() => setHubspotPushOpen(true)}
-                  className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-xs"
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  Push to HubSpot
-                </button>
-                <button
-                  type="button"
-                  disabled={selected.size === 0}
-                  onClick={() => setInstantlyPushOpen(true)}
-                  className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:border-blue-300 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-xs"
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  Push to Instantly
-                </button>
-                <button
-                  type="button"
-                  disabled={selected.size === 0}
-                  onClick={() => setSmartreachPushOpen(true)}
-                  className="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-gray-600 transition-colors hover:border-emerald-300 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-40 sm:px-3 sm:text-xs"
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  Push to Smartreach
-                </button>
+                <PushToDropdown disabled={selected.size === 0} entries={crmEntries} />
               </div>
             </div>
 
@@ -480,38 +487,10 @@ export default function PeopleSearchPage() {
                     <ListPlus className="h-3 w-3" />
                     Add to list
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setSalesforcePushOpen(true)}
+                  <PushToDropdown
+                    entries={crmEntries}
                     className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
-                  >
-                    <Upload className="h-3 w-3" />
-                    Push to Salesforce
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setHubspotPushOpen(true)}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
-                  >
-                    <Upload className="h-3 w-3" />
-                    Push to HubSpot
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInstantlyPushOpen(true)}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
-                  >
-                    <Upload className="h-3 w-3" />
-                    Push to Instantly
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSmartreachPushOpen(true)}
-                    className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
-                  >
-                    <Upload className="h-3 w-3" />
-                    Push to Smartreach
-                  </button>
+                  />
                   <button
                     type="button"
                     onClick={() => setSelected(new Set())}

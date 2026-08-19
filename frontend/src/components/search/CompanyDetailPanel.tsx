@@ -21,6 +21,10 @@ import {
 import { fmtMoney, toStringArr } from "@/components/common/tableHelpers";
 import { apiClient } from "@/lib/api";
 import type { CompanyResult } from "@/types/search";
+import PushToSalesforceModal from "./PushToSalesforceModal";
+import PushToHubspotModal from "./PushToHubspotModal";
+import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
+import { useCrmConnections } from "@/hooks/useCrmConnections";
 
 interface CompanyDetail extends CompanyResult {
   description: string | null;
@@ -334,6 +338,9 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
   const [activeTab, setActiveTab] = useState("Overview");
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
+  const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
+  const { connections } = useCrmConnections();
 
   const overviewRef = useRef<HTMLDivElement>(null);
   const specialtiesRef = useRef<HTMLDivElement>(null);
@@ -631,6 +638,56 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
               >
                 <WebsiteSVG />
               </span>
+            )}
+
+            {company && (
+              <PushToDropdown
+                className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+                entries={
+                  [
+                    {
+                      key: "salesforce",
+                      label: "Salesforce",
+                      icon: <BrandBadge letter="SF" bg="#fde8e8" color="#dc2626" />,
+                      group: "CRMs",
+                      disabled: !connections.salesforce,
+                      disabledReason: !connections.salesforce
+                        ? "Connect Salesforce in Integrations first"
+                        : undefined,
+                      onSelect: () => setSalesforcePushOpen(true),
+                    },
+                    {
+                      key: "hubspot",
+                      label: "HubSpot",
+                      icon: <BrandBadge letter="H" bg="#ffe8df" color="#ff7a59" />,
+                      group: "CRMs",
+                      disabled: !connections.hubspot,
+                      disabledReason: !connections.hubspot
+                        ? "Connect HubSpot in Integrations first"
+                        : undefined,
+                      onSelect: () => setHubspotPushOpen(true),
+                    },
+                    {
+                      key: "instantly",
+                      label: "Instantly",
+                      icon: <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />,
+                      group: "Cold outreach software",
+                      disabled: true,
+                      disabledReason: "Only supports people records",
+                      onSelect: () => {},
+                    },
+                    {
+                      key: "smartreach",
+                      label: "Smartreach",
+                      icon: <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />,
+                      group: "Cold outreach software",
+                      disabled: true,
+                      disabledReason: "Only supports people records",
+                      onSelect: () => {},
+                    },
+                  ] as PushToDropdownEntry[]
+                }
+              />
             )}
           </div>
         </div>
@@ -1048,6 +1105,21 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
           )}
         </div>
       </aside>
+
+      {company && (
+        <>
+          <PushToSalesforceModal
+            open={salesforcePushOpen}
+            onClose={() => setSalesforcePushOpen(false)}
+            items={[{ record_id: company.id, item_type: "company" }]}
+          />
+          <PushToHubspotModal
+            open={hubspotPushOpen}
+            onClose={() => setHubspotPushOpen(false)}
+            items={[{ record_id: company.id, item_type: "company" }]}
+          />
+        </>
+      )}
     </>
   );
 }

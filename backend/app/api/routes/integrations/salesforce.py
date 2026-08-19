@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.salesforce_connection import SalesforceConnection
-from app.models.search_record import PersonSearchRecord
+from app.models.search_record import CompanySearchRecord, PersonSearchRecord
 from app.models.user import User
 from app.schemas.salesforce import (
     SalesforceAuthorizeResponse,
@@ -25,7 +25,7 @@ from app.schemas.salesforce import (
 )
 from app.services import calendly_service, salesforce_service
 from app.services.contact_unlock_service import get_unlock_map
-from app.services.coresignal_service import _map_person
+from app.services.coresignal_service import _map_company, _map_person
 from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
 
 router = APIRouter()
@@ -194,35 +194,80 @@ async def salesforce_push(
     if not connection:
         raise HTTPException(status_code=400, detail="Salesforce is not connected")
 
-    person_items = [i for i in data.items if i.item_type == "person"]
-    record_ids = [i.record_id for i in person_items]
+    person_record_ids = [i.record_id for i in data.items if i.item_type == "person"]
+    company_record_ids = [i.record_id for i in data.items if i.item_type == "company"]
 
-    raw_result = await db.execute(
+    person_raw_result = await db.execute(
         select(PersonSearchRecord.coresignal_id, PersonSearchRecord.raw_data).where(
-            PersonSearchRecord.coresignal_id.in_(record_ids)
+            PersonSearchRecord.coresignal_id.in_(person_record_ids)
         )
     )
-    raw_data_map = {row[0]: row[1] for row in raw_result.fetchall()}
-    unlock_map = await get_unlock_map(db, current_user.id, record_ids)
+    person_raw_map = {row[0]: row[1] for row in person_raw_result.fetchall()}
+    unlock_map = await get_unlock_map(db, current_user.id, person_record_ids)
     calendly_url = await calendly_service.get_scheduling_url(current_user.id, db)
+
+    company_raw_result = await db.execute(
+        select(CompanySearchRecord.coresignal_id, CompanySearchRecord.raw_data).where(
+            CompanySearchRecord.coresignal_id.in_(company_record_ids)
+        )
+    )
+    company_raw_map = {row[0]: row[1] for row in company_raw_result.fetchall()}
 
     results: list[SalesforcePushItemResult] = []
     pushed = 0
     failed = 0
 
     for item in data.items:
-        if item.item_type != "person":
+        if item.item_type not in ("person", "company"):
             results.append(SalesforcePushItemResult(
-                record_id=item.record_id, error="Only person records can be pushed to Salesforce."
+                record_id=item.record_id, error="Only person and company records can be pushed to Salesforce."
             ))
             failed += 1
             continue
 
-        unlocked = unlock_map.get(item.record_id, {})
-        unlocked_email = unlocked.get("work_email")
-        if not unlocked_email:
+        if item.item_type == "person":
+            unlocked = unlock_map.get(item.record_id, {})
+            unlocked_email = unlocked.get("work_email")
+            if not unlocked_email:
+                results.append(SalesforcePushItemResult(
+                    record_id=item.record_id, error="Work email must be unlocked before pushing."
+                ))
+                failed += 1
+                continue
+
+            push_cost = CREDIT_COSTS["crm_push"]
+            try:
+                await check_credits(current_user, db, push_cost)
+            except HTTPException:
+                results.append(SalesforcePushItemResult(
+                    record_id=item.record_id, error="Not enough credits to push this record."
+                ))
+                failed += 1
+                continue
+
+            raw = person_raw_map.get(item.record_id)
+            mapped = _map_person(raw) if raw else (item.data if isinstance(item.data, dict) else {})
+            unlocked_phone = unlocked.get("mobile")
+
+            lead_fields = salesforce_service.map_person_to_lead(mapped, unlocked_email, unlocked_phone, calendly_url)
+            try:
+                salesforce_id = await salesforce_service.create_lead(connection, lead_fields)
+                await deduct_credit(
+                    current_user, db, reason="Salesforce Push",
+                    description=f"Pushed to Salesforce — {push_cost} credit(s) deducted", amount=push_cost,
+                )
+                results.append(SalesforcePushItemResult(record_id=item.record_id, salesforce_id=salesforce_id))
+                pushed += 1
+            except HTTPException as e:
+                results.append(SalesforcePushItemResult(record_id=item.record_id, error=str(e.detail)))
+                failed += 1
+            continue
+
+        raw = company_raw_map.get(item.record_id)
+        mapped = _map_company(raw) if raw else (item.data if isinstance(item.data, dict) else {})
+        if not (mapped.get("company_name") or mapped.get("company_legal_name")):
             results.append(SalesforcePushItemResult(
-                record_id=item.record_id, error="Work email must be unlocked before pushing."
+                record_id=item.record_id, error="Company record is missing a name."
             ))
             failed += 1
             continue
@@ -237,13 +282,9 @@ async def salesforce_push(
             failed += 1
             continue
 
-        raw = raw_data_map.get(item.record_id)
-        mapped = _map_person(raw) if raw else (item.data if isinstance(item.data, dict) else {})
-        unlocked_phone = unlocked.get("mobile")
-
-        lead_fields = salesforce_service.map_person_to_lead(mapped, unlocked_email, unlocked_phone, calendly_url)
+        account_fields = salesforce_service.map_company_to_account(mapped)
         try:
-            salesforce_id = await salesforce_service.create_lead(connection, lead_fields)
+            salesforce_id = await salesforce_service.create_account(connection, account_fields)
             await deduct_credit(
                 current_user, db, reason="Salesforce Push",
                 description=f"Pushed to Salesforce — {push_cost} credit(s) deducted", amount=push_cost,

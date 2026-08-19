@@ -96,6 +96,51 @@ async def create_or_update_contact(connection: HubspotConnection, contact_fields
             headers={"Authorization": f"Bearer {api_key}"},
         )
 
+    return _handle_object_response(resp).get("id", "")
+
+
+def map_company_to_company(mapped_company: dict) -> dict:
+    properties: dict = {}
+    name = mapped_company.get("company_name") or mapped_company.get("company_legal_name")
+    if name:
+        properties["name"] = name
+    if mapped_company.get("website"):
+        properties["domain"] = mapped_company["website"].replace("https://", "").replace("http://", "").rstrip("/")
+    if mapped_company.get("industry"):
+        properties["industry"] = mapped_company["industry"]
+    if mapped_company.get("hq_city"):
+        properties["city"] = mapped_company["hq_city"]
+    if mapped_company.get("hq_state"):
+        properties["state"] = mapped_company["hq_state"]
+    if mapped_company.get("hq_country"):
+        properties["country"] = mapped_company["hq_country"]
+    if mapped_company.get("employees_count"):
+        properties["numberofemployees"] = mapped_company["employees_count"]
+    return {"properties": properties}
+
+
+async def create_or_update_company(connection: HubspotConnection, company_fields: dict, domain: str | None) -> str:
+    api_key = decrypt_secret(connection.api_key, settings.HUBSPOT_ENCRYPTION_KEY)
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        if domain:
+            resp = await client.put(
+                f"{HUBSPOT_API_BASE_URL}/crm/v3/objects/companies/{domain}",
+                params={"idProperty": "domain"},
+                json=company_fields,
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+        else:
+            resp = await client.post(
+                f"{HUBSPOT_API_BASE_URL}/crm/v3/objects/companies",
+                json=company_fields,
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+
+    return _handle_object_response(resp).get("id", "")
+
+
+def _handle_object_response(resp: httpx.Response) -> dict:
     if resp.status_code == 401:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -112,4 +157,4 @@ async def create_or_update_contact(connection: HubspotConnection, contact_fields
             pass
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"HubSpot error: {detail}")
 
-    return resp.json().get("id", "")
+    return resp.json()

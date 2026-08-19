@@ -143,11 +143,37 @@ def map_person_to_lead(
 
 
 async def create_lead(connection: SalesforceConnection, lead_fields: dict) -> str:
+    return await _create_sobject(connection, "Lead", lead_fields)
+
+
+def map_company_to_account(mapped_company: dict) -> dict:
+    name = mapped_company.get("company_name") or mapped_company.get("company_legal_name")
+    account: dict = {"Name": name or "Unknown Company"}
+    if mapped_company.get("website"):
+        account["Website"] = mapped_company["website"]
+    if mapped_company.get("industry"):
+        account["Industry"] = mapped_company["industry"]
+    if mapped_company.get("hq_city"):
+        account["BillingCity"] = mapped_company["hq_city"]
+    if mapped_company.get("hq_state"):
+        account["BillingState"] = mapped_company["hq_state"]
+    if mapped_company.get("hq_country"):
+        account["BillingCountry"] = mapped_company["hq_country"]
+    if mapped_company.get("employees_count"):
+        account["NumberOfEmployees"] = mapped_company["employees_count"]
+    return account
+
+
+async def create_account(connection: SalesforceConnection, account_fields: dict) -> str:
+    return await _create_sobject(connection, "Account", account_fields)
+
+
+async def _create_sobject(connection: SalesforceConnection, sobject: str, fields: dict) -> str:
     async def _post(access_token: str, instance_url: str) -> httpx.Response:
         async with httpx.AsyncClient(timeout=10) as client:
             return await client.post(
-                f"{instance_url}/services/data/{settings.SALESFORCE_API_VERSION}/sobjects/Lead",
-                json=lead_fields,
+                f"{instance_url}/services/data/{settings.SALESFORCE_API_VERSION}/sobjects/{sobject}",
+                json=fields,
                 headers={"Authorization": f"Bearer {access_token}"},
             )
 
