@@ -24,8 +24,6 @@ import { getCalendlyStatus, disconnectCalendly, type CalendlyStatus } from "@/li
 import ConnectCalendlyModal from "@/components/search/ConnectCalendlyModal";
 import { getSmartreachStatus, disconnectSmartreach, type SmartreachStatus } from "@/lib/smartreachApi";
 import ConnectSmartreachModal from "@/components/search/ConnectSmartreachModal";
-import { getWebhookStatus, disconnectWebhook, regenerateWebhookSecret, type WebhookStatus } from "@/lib/webhookApi";
-import ConnectWebhookModal from "@/components/search/ConnectWebhookModal";
 import { toast } from "@/lib/toast";
 
 const RED = "#dc2626";
@@ -33,7 +31,6 @@ const ORANGE = "#ff7a59";
 const BLUE = "#1a56db";
 const CALENDLY_BLUE = "#006bff";
 const GREEN = "#00b67a";
-const PURPLE = "#7c3aed";
 
 const SALESFORCE_FEATURES = [
   {
@@ -84,19 +81,6 @@ const SMARTREACH_FEATURES = [
     icon: ShieldCheck,
     title: "Email required first",
     text: "A record's work email must be unlocked before it can be added — Smartreach prospects are matched by email.",
-  },
-];
-
-const WEBHOOK_FEATURES = [
-  {
-    icon: Upload,
-    title: "Works with any CRM",
-    text: "Deliver unlocked people to a webhook URL — wire it into Zapier, Make, n8n, or any CRM that accepts incoming webhooks.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Signed & verifiable",
-    text: "Every request is signed with a secret only you know, so your receiver can verify it actually came from LeadsBuddy.",
   },
 ];
 
@@ -249,14 +233,6 @@ export default function IntegrationsClient() {
   const [showSrDisconnectConfirm, setShowSrDisconnectConfirm] = useState(false);
   const [showSrConnectModal, setShowSrConnectModal] = useState(false);
 
-  const [whStatus, setWhStatus] = useState<WebhookStatus | null>(null);
-  const [whLoading, setWhLoading] = useState(true);
-  const [whDisconnecting, setWhDisconnecting] = useState(false);
-  const [showWhDisconnectConfirm, setShowWhDisconnectConfirm] = useState(false);
-  const [showWhConnectModal, setShowWhConnectModal] = useState(false);
-  const [whRegenerating, setWhRegenerating] = useState(false);
-  const [whNewSecret, setWhNewSecret] = useState<string | null>(null);
-
   const loadSalesforce = useCallback(async () => {
     setSfLoading(true);
     try {
@@ -312,25 +288,13 @@ export default function IntegrationsClient() {
     }
   }, []);
 
-  const loadWebhook = useCallback(async () => {
-    setWhLoading(true);
-    try {
-      setWhStatus(await getWebhookStatus());
-    } catch {
-      toast.error("Failed to load webhook connection status.");
-    } finally {
-      setWhLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     loadSalesforce();
     loadHubspot();
     loadInstantly();
     loadCalendly();
     loadSmartreach();
-    loadWebhook();
-  }, [loadSalesforce, loadHubspot, loadInstantly, loadCalendly, loadSmartreach, loadWebhook]);
+  }, [loadSalesforce, loadHubspot, loadInstantly, loadCalendly, loadSmartreach]);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -433,40 +397,11 @@ export default function IntegrationsClient() {
     }
   }
 
-  async function handleDisconnectWebhook() {
-    setWhDisconnecting(true);
-    try {
-      await disconnectWebhook();
-      toast.success("Webhook disconnected.");
-      setShowWhDisconnectConfirm(false);
-      setWhNewSecret(null);
-      await loadWebhook();
-    } catch {
-      toast.error("Failed to disconnect webhook.");
-    } finally {
-      setWhDisconnecting(false);
-    }
-  }
-
-  async function handleRegenerateSecret() {
-    setWhRegenerating(true);
-    try {
-      const res = await regenerateWebhookSecret();
-      setWhNewSecret(res.signing_secret);
-      toast.success("Signing secret regenerated.");
-    } catch {
-      toast.error("Failed to regenerate secret.");
-    } finally {
-      setWhRegenerating(false);
-    }
-  }
-
   const sfConnected = !!sfStatus?.connected;
   const hsConnected = !!hsStatus?.connected;
   const inConnected = !!inStatus?.connected;
   const clConnected = !!clStatus?.connected;
   const srConnected = !!srStatus?.connected;
-  const whConnected = !!whStatus?.connected;
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50">
@@ -560,54 +495,6 @@ export default function IntegrationsClient() {
           onDisconnectRequest={() => setShowSrDisconnectConfirm(true)}
         />
 
-        <ConnectionCard
-          name="Custom CRM (Webhook)"
-          accent={PURPLE}
-          icon={<WebhookIcon className={whConnected ? "text-emerald-600" : "text-gray-400"} />}
-          connected={whConnected}
-          loading={whLoading}
-          connecting={false}
-          subtitle={
-            whConnected
-              ? (whStatus?.webhook_url ?? "Connected")
-              : "Deliver unlocked leads to any CRM via a signed webhook."
-          }
-          docsHref="/document/api-key/webhook"
-          features={WEBHOOK_FEATURES}
-          onConnect={() => setShowWhConnectModal(true)}
-          onDisconnectRequest={() => setShowWhDisconnectConfirm(true)}
-        />
-
-        {whConnected && (
-          <div className="-mt-3 rounded-2xl border border-gray-100 bg-white px-5 py-3">
-            {whNewSecret ? (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-xs font-semibold text-amber-700">
-                  Copy your new signing secret now — it won&apos;t be shown again.
-                </p>
-                <code className="truncate rounded-lg bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700">
-                  {whNewSecret}
-                </code>
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs text-gray-400">
-                  {whStatus?.last_delivery_status
-                    ? `Last delivery: ${whStatus.last_delivery_status}${whStatus.last_delivery_at ? ` at ${new Date(whStatus.last_delivery_at).toLocaleString()}` : ""}`
-                    : "No deliveries yet."}
-                </p>
-                <button
-                  onClick={handleRegenerateSecret}
-                  disabled={whRegenerating}
-                  className="text-xs font-semibold hover:underline disabled:opacity-60"
-                  style={{ color: PURPLE }}
-                >
-                  {whRegenerating ? "Regenerating…" : "Regenerate secret"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {showSfDisconnectConfirm && (
@@ -765,37 +652,6 @@ export default function IntegrationsClient() {
         </div>
       )}
 
-      {showWhDisconnectConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: "#f3ebfe" }}>
-              <AlertCircle className="h-5 w-5" style={{ color: PURPLE }} />
-            </div>
-            <h2 className="mt-3 text-lg font-bold text-gray-900">Disconnect webhook?</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              You won&apos;t be able to push leads to your CRM until you reconnect.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                onClick={() => setShowWhDisconnectConfirm(false)}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDisconnectWebhook}
-                disabled={whDisconnecting}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                style={{ background: PURPLE }}
-              >
-                {whDisconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
-                Disconnect
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <ConnectInstantlyModal
         open={showInConnectModal}
         onClose={() => setShowInConnectModal(false)}
@@ -820,11 +676,6 @@ export default function IntegrationsClient() {
         onConnected={loadHubspot}
       />
 
-      <ConnectWebhookModal
-        open={showWhConnectModal}
-        onClose={() => setShowWhConnectModal(false)}
-        onConnected={loadWebhook}
-      />
     </div>
   );
 }
@@ -897,13 +748,3 @@ function SmartreachIcon({ className }: { className?: string }) {
   );
 }
 
-function WebhookIcon({ className }: { className?: string }) {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={className}>
-      <circle cx="7" cy="7" r="2.2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="17.5" cy="17.5" r="2.2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="17.5" cy="6.5" r="2.2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M9 7.8 15.5 6.9M8.5 8.7l7 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}

@@ -86,8 +86,5 @@ class Settings(BaseSettings):
     # Smartreach (API-key based, no OAuth)
     SMARTREACH_ENCRYPTION_KEY: str = ""  # used to encrypt stored Smartreach API keys at rest
 
-    # Generic CRM webhook (no OAuth, no third-party API — user-owned URL)
-    WEBHOOK_ENCRYPTION_KEY: str = ""  # used to encrypt stored webhook signing secrets at rest
-
 
 settings = Settings()
