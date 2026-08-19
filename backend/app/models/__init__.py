@@ -12,6 +12,7 @@ from app.models.salesforce_connection import SalesforceConnection
 from app.models.hubspot_connection import HubspotConnection
 from app.models.instantly_connection import InstantlyConnection
 from app.models.smartreach_connection import SmartreachConnection
+from app.models.zoho_connection import ZohoConnection
 
 __all__ = [
     "User",
@@ -34,4 +35,5 @@ __all__ = [
     "HubspotConnection",
     "InstantlyConnection",
     "SmartreachConnection",
+    "ZohoConnection",
 ]

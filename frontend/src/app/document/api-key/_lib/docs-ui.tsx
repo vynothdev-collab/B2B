@@ -67,6 +67,13 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "Zoho CRM Integration",
+    items: [
+      { href: "/document/api-key/zoho", label: "Overview & Setup" },
+      { href: "/document/api-key/zoho/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
     title: "Instantly Integration",
     items: [
       { href: "/document/api-key/instantly", label: "Overview & Setup" },

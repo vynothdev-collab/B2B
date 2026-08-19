@@ -23,6 +23,7 @@ import { apiClient } from "@/lib/api";
 import type { CompanyResult } from "@/types/search";
 import PushToSalesforceModal from "./PushToSalesforceModal";
 import PushToHubspotModal from "./PushToHubspotModal";
+import PushToZohoModal from "./PushToZohoModal";
 import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
 import { useCrmConnections } from "@/hooks/useCrmConnections";
 
@@ -340,6 +341,7 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
   const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
+  const [zohoPushOpen, setZohoPushOpen] = useState(false);
   const { connections } = useCrmConnections();
 
   const overviewRef = useRef<HTMLDivElement>(null);
@@ -666,6 +668,17 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
                         ? "Connect HubSpot in Integrations first"
                         : undefined,
                       onSelect: () => setHubspotPushOpen(true),
+                    },
+                    {
+                      key: "zoho",
+                      label: "Zoho CRM",
+                      icon: <BrandBadge letter="Z" bg="#fde8e8" color="#e42527" />,
+                      group: "CRMs",
+                      disabled: !connections.zoho,
+                      disabledReason: !connections.zoho
+                        ? "Connect Zoho CRM in Integrations first"
+                        : undefined,
+                      onSelect: () => setZohoPushOpen(true),
                     },
                     {
                       key: "instantly",
@@ -1116,6 +1129,11 @@ export default function CompanyDetailPanel({ company, onClose }: Props) {
           <PushToHubspotModal
             open={hubspotPushOpen}
             onClose={() => setHubspotPushOpen(false)}
+            items={[{ record_id: company.id, item_type: "company" }]}
+          />
+          <PushToZohoModal
+            open={zohoPushOpen}
+            onClose={() => setZohoPushOpen(false)}
             items={[{ record_id: company.id, item_type: "company" }]}
           />
         </>

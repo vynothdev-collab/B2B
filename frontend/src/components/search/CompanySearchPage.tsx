@@ -13,6 +13,7 @@ import EmptyState from "./EmptyState";
 import AddToListModal from "./AddToListModal";
 import PushToSalesforceModal from "./PushToSalesforceModal";
 import PushToHubspotModal from "./PushToHubspotModal";
+import PushToZohoModal from "./PushToZohoModal";
 import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
 import { useCrmConnections } from "@/hooks/useCrmConnections";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
@@ -46,6 +47,7 @@ export default function CompanySearchPage() {
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
   const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
+  const [zohoPushOpen, setZohoPushOpen] = useState(false);
   const { connections } = useCrmConnections();
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
   const isAgenticRef = useRef(false);
@@ -250,6 +252,15 @@ export default function CompanySearchPage() {
       onSelect: () => setHubspotPushOpen(true),
     },
     {
+      key: "zoho",
+      label: "Zoho CRM",
+      icon: <BrandBadge letter="Z" bg="#fde8e8" color="#e42527" />,
+      group: "CRMs",
+      disabled: !connections.zoho,
+      disabledReason: !connections.zoho ? "Connect Zoho CRM in Integrations first" : undefined,
+      onSelect: () => setZohoPushOpen(true),
+    },
+    {
       key: "instantly",
       label: "Instantly",
       icon: <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />,
@@ -438,6 +449,12 @@ export default function CompanySearchPage() {
       <PushToHubspotModal
         open={hubspotPushOpen}
         onClose={() => setHubspotPushOpen(false)}
+        items={selectedCompanies.map((c) => ({ record_id: c.id, item_type: "company" as const }))}
+      />
+
+      <PushToZohoModal
+        open={zohoPushOpen}
+        onClose={() => setZohoPushOpen(false)}
         items={selectedCompanies.map((c) => ({ record_id: c.id, item_type: "company" as const }))}
       />
 

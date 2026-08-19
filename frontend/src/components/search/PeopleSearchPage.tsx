@@ -16,6 +16,7 @@ import EmptyState from "./EmptyState";
 import AddToListModal from "./AddToListModal";
 import PushToSalesforceModal from "./PushToSalesforceModal";
 import PushToHubspotModal from "./PushToHubspotModal";
+import PushToZohoModal from "./PushToZohoModal";
 import PushToInstantlyModal from "./PushToInstantlyModal";
 import PushToSmartreachModal from "./PushToSmartreachModal";
 import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
@@ -57,6 +58,7 @@ export default function PeopleSearchPage() {
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
   const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
   const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
+  const [zohoPushOpen, setZohoPushOpen] = useState(false);
   const [instantlyPushOpen, setInstantlyPushOpen] = useState(false);
   const [smartreachPushOpen, setSmartreachPushOpen] = useState(false);
   const { connections } = useCrmConnections();
@@ -355,6 +357,15 @@ export default function PeopleSearchPage() {
       onSelect: () => setHubspotPushOpen(true),
     },
     {
+      key: "zoho",
+      label: "Zoho CRM",
+      icon: <BrandBadge letter="Z" bg="#fde8e8" color="#e42527" />,
+      group: "CRMs",
+      disabled: !connections.zoho,
+      disabledReason: !connections.zoho ? "Connect Zoho CRM in Integrations first" : undefined,
+      onSelect: () => setZohoPushOpen(true),
+    },
+    {
       key: "instantly",
       label: "Instantly",
       icon: <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />,
@@ -553,6 +564,12 @@ export default function PeopleSearchPage() {
       <PushToHubspotModal
         open={hubspotPushOpen}
         onClose={() => setHubspotPushOpen(false)}
+        items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
+      />
+
+      <PushToZohoModal
+        open={zohoPushOpen}
+        onClose={() => setZohoPushOpen(false)}
         items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
       />
 

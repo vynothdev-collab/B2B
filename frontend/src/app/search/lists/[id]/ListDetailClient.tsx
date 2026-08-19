@@ -52,6 +52,7 @@ import PersonDetailPanel from "@/components/search/PersonDetailPanel";
 import CompanyDetailPanel from "@/components/search/CompanyDetailPanel";
 import PushToSalesforceModal from "@/components/search/PushToSalesforceModal";
 import PushToHubspotModal from "@/components/search/PushToHubspotModal";
+import PushToZohoModal from "@/components/search/PushToZohoModal";
 import PushToInstantlyModal from "@/components/search/PushToInstantlyModal";
 import PushToSmartreachModal from "@/components/search/PushToSmartreachModal";
 import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "@/components/search/PushToDropdown";
@@ -1405,6 +1406,7 @@ export default function ListDetailPage() {
   const [pageSize, setPageSize] = useState(25);
   const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
   const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
+  const [zohoPushOpen, setZohoPushOpen] = useState(false);
   const [instantlyPushOpen, setInstantlyPushOpen] = useState(false);
   const [smartreachPushOpen, setSmartreachPushOpen] = useState(false);
   const { connections } = useCrmConnections();
@@ -1623,6 +1625,15 @@ export default function ListDetailPage() {
       disabled: !connections.hubspot,
       disabledReason: !connections.hubspot ? "Connect HubSpot in Integrations first" : undefined,
       onSelect: () => setHubspotPushOpen(true),
+    },
+    {
+      key: "zoho",
+      label: "Zoho CRM",
+      icon: <BrandBadge letter="Z" bg="#fde8e8" color="#e42527" />,
+      group: "CRMs",
+      disabled: !connections.zoho,
+      disabledReason: !connections.zoho ? "Connect Zoho CRM in Integrations first" : undefined,
+      onSelect: () => setZohoPushOpen(true),
     },
     {
       key: "instantly",
@@ -1864,6 +1875,12 @@ export default function ListDetailPage() {
       <PushToHubspotModal
         open={hubspotPushOpen}
         onClose={() => setHubspotPushOpen(false)}
+        items={selectedListItems.map((i) => ({ record_id: i.record_id, item_type: i.item_type }))}
+      />
+
+      <PushToZohoModal
+        open={zohoPushOpen}
+        onClose={() => setZohoPushOpen(false)}
         items={selectedListItems.map((i) => ({ record_id: i.record_id, item_type: i.item_type }))}
       />
 

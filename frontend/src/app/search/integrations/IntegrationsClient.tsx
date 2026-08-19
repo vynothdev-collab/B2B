@@ -18,6 +18,12 @@ import {
   type HubspotStatus,
 } from "@/lib/hubspotApi";
 import ConnectHubspotModal from "@/components/search/ConnectHubspotModal";
+import {
+  getZohoStatus,
+  getZohoAuthorizeUrl,
+  disconnectZoho,
+  type ZohoStatus,
+} from "@/lib/zohoApi";
 import { getInstantlyStatus, disconnectInstantly, type InstantlyStatus } from "@/lib/instantlyApi";
 import ConnectInstantlyModal from "@/components/search/ConnectInstantlyModal";
 import { getSmartreachStatus, disconnectSmartreach, type SmartreachStatus } from "@/lib/smartreachApi";
@@ -28,6 +34,7 @@ const RED = "#dc2626";
 const ORANGE = "#ff7a59";
 const BLUE = "#1a56db";
 const GREEN = "#00b67a";
+const ZOHO_RED = "#e42527";
 
 const SALESFORCE_FEATURES = [
   {
@@ -52,6 +59,19 @@ const HUBSPOT_FEATURES = [
     icon: ShieldCheck,
     title: "Email required first",
     text: "A record's work email must be unlocked before it can be pushed — HubSpot Contacts are matched by email.",
+  },
+];
+
+const ZOHO_FEATURES = [
+  {
+    icon: Upload,
+    title: "Push leads and accounts",
+    text: "Send a person record to Zoho CRM as a Lead, or a company record as an Account, from search results or a contact's detail panel.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Works with whatever's unlocked",
+    text: "Leads are pushed with whichever contact fields are unlocked — no email required upfront.",
   },
 ];
 
@@ -199,6 +219,12 @@ export default function IntegrationsClient() {
   const [showHsDisconnectConfirm, setShowHsDisconnectConfirm] = useState(false);
   const [showHsConnectModal, setShowHsConnectModal] = useState(false);
 
+  const [zhStatus, setZhStatus] = useState<ZohoStatus | null>(null);
+  const [zhLoading, setZhLoading] = useState(true);
+  const [zhConnecting, setZhConnecting] = useState(false);
+  const [zhDisconnecting, setZhDisconnecting] = useState(false);
+  const [showZhDisconnectConfirm, setShowZhDisconnectConfirm] = useState(false);
+
   const [inStatus, setInStatus] = useState<InstantlyStatus | null>(null);
   const [inLoading, setInLoading] = useState(true);
   const [inDisconnecting, setInDisconnecting] = useState(false);
@@ -233,6 +259,17 @@ export default function IntegrationsClient() {
     }
   }, []);
 
+  const loadZoho = useCallback(async () => {
+    setZhLoading(true);
+    try {
+      setZhStatus(await getZohoStatus());
+    } catch {
+      toast.error("Failed to load Zoho CRM connection status.");
+    } finally {
+      setZhLoading(false);
+    }
+  }, []);
+
   const loadInstantly = useCallback(async () => {
     setInLoading(true);
     try {
@@ -258,9 +295,10 @@ export default function IntegrationsClient() {
   useEffect(() => {
     loadSalesforce();
     loadHubspot();
+    loadZoho();
     loadInstantly();
     loadSmartreach();
-  }, [loadSalesforce, loadHubspot, loadInstantly, loadSmartreach]);
+  }, [loadSalesforce, loadHubspot, loadZoho, loadInstantly, loadSmartreach]);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -269,12 +307,15 @@ export default function IntegrationsClient() {
     if (connected === "salesforce") {
       toast.success("Salesforce connected successfully.");
       router.replace("/search/integrations");
+    } else if (connected === "zoho") {
+      toast.success("Zoho CRM connected successfully.");
+      router.replace("/search/integrations");
     } else if (error) {
-      const defaultAuthFailed = "Failed to connect. Check your Salesforce Connected App settings (redirect URI, client ID/secret).";
+      const defaultAuthFailed = "Failed to connect. Check your Connected App settings (redirect URI, client ID/secret).";
       const messages: Record<string, string> = {
         cancelled: "Connection was cancelled.",
         invalid_state: detail ? `Connection failed: ${detail}` : "Connection request expired. Please try again.",
-        auth_failed: detail ? `Salesforce connection error: ${detail}` : defaultAuthFailed,
+        auth_failed: detail ? `Connection error: ${detail}` : defaultAuthFailed,
       };
       toast.error(messages[error] ?? (detail ? `Connection error: ${detail}` : "Failed to connect."));
       router.replace("/search/integrations");
@@ -304,6 +345,31 @@ export default function IntegrationsClient() {
       toast.error("Failed to disconnect Salesforce.");
     } finally {
       setSfDisconnecting(false);
+    }
+  }
+
+  async function handleConnectZoho() {
+    setZhConnecting(true);
+    try {
+      const url = await getZohoAuthorizeUrl();
+      window.location.href = url;
+    } catch {
+      toast.error("Failed to start Zoho CRM connection.");
+      setZhConnecting(false);
+    }
+  }
+
+  async function handleDisconnectZoho() {
+    setZhDisconnecting(true);
+    try {
+      await disconnectZoho();
+      toast.success("Zoho CRM disconnected.");
+      setShowZhDisconnectConfirm(false);
+      await loadZoho();
+    } catch {
+      toast.error("Failed to disconnect Zoho CRM.");
+    } finally {
+      setZhDisconnecting(false);
     }
   }
 
@@ -351,6 +417,7 @@ export default function IntegrationsClient() {
 
   const sfConnected = !!sfStatus?.connected;
   const hsConnected = !!hsStatus?.connected;
+  const zhConnected = !!zhStatus?.connected;
   const inConnected = !!inStatus?.connected;
   const srConnected = !!srStatus?.connected;
 
@@ -402,6 +469,20 @@ export default function IntegrationsClient() {
           features={HUBSPOT_FEATURES}
           onConnect={() => setShowHsConnectModal(true)}
           onDisconnectRequest={() => setShowHsDisconnectConfirm(true)}
+        />
+
+        <ConnectionCard
+          name="Zoho CRM"
+          accent={ZOHO_RED}
+          icon={<ZohoIcon className={zhConnected ? "text-emerald-600" : "text-gray-400"} />}
+          connected={zhConnected}
+          loading={zhLoading}
+          connecting={zhConnecting}
+          subtitle={zhConnected ? (zhStatus?.zoho_user_email ?? "Connected account") : "Push unlocked leads and accounts to your Zoho CRM."}
+          docsHref="/document/api-key/zoho"
+          features={ZOHO_FEATURES}
+          onConnect={handleConnectZoho}
+          onDisconnectRequest={() => setShowZhDisconnectConfirm(true)}
         />
 
         <ConnectionCard
@@ -458,6 +539,37 @@ export default function IntegrationsClient() {
                 style={{ background: RED }}
               >
                 {sfDisconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showZhDisconnectConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl" style={{ background: "#fde8e8" }}>
+              <AlertCircle className="h-5 w-5" style={{ color: ZOHO_RED }} />
+            </div>
+            <h2 className="mt-3 text-lg font-bold text-gray-900">Disconnect Zoho CRM?</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              You won&apos;t be able to push leads or accounts to Zoho CRM until you reconnect.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowZhDisconnectConfirm(false)}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisconnectZoho}
+                disabled={zhDisconnecting}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                style={{ background: ZOHO_RED }}
+              >
+                {zhDisconnecting && <Loader2 className="h-4 w-4 animate-spin" />}
                 Disconnect
               </button>
             </div>
@@ -590,6 +702,16 @@ function SalesforceCloudIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function ZohoIcon({ className }: { className?: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="3" y="8" width="7" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="14" y="8" width="7" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M10 6.5 12 4l2 2.5M10 17.5 12 20l2-2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

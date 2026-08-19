@@ -1044,6 +1044,48 @@ export const SAMPLE_HUBSPOT_PUSH_RESPONSE = `{
   ]
 }`;
 
+export interface ZohoFieldMapping {
+  leadsbuddyField: string;
+  zohoField: string;
+  notes: string;
+}
+
+export const ZOHO_LEAD_FIELD_MAPPING: ZohoFieldMapping[] = [
+  { leadsbuddyField: "first_name", zohoField: "First_Name", notes: "Optional on the Lead object." },
+  { leadsbuddyField: "last_name", zohoField: "Last_Name", notes: "Required by Zoho — falls back to the person's full name, then \"Unknown\", if missing." },
+  { leadsbuddyField: "Unlocked work email", zohoField: "Email", notes: "Only sent if the record's work email has been unlocked." },
+  { leadsbuddyField: "Unlocked mobile number", zohoField: "Phone / Mobile", notes: "Only sent if the mobile number has been unlocked." },
+  { leadsbuddyField: "active_experience_title", zohoField: "Designation", notes: "Current job title, if known." },
+  { leadsbuddyField: "active_experience_company_name", zohoField: "Company", notes: "Required by Zoho — falls back to \"Unknown Company\" if missing." },
+  { leadsbuddyField: "active_experience_company_website", zohoField: "Website", notes: "Current employer's website, if known." },
+  { leadsbuddyField: "location_city / location_state / location_country", zohoField: "City / State / Country", notes: "Person's location, if known." },
+  { leadsbuddyField: "(fixed value)", zohoField: "Lead_Source", notes: "Always set to \"LeadsBuddy\" so pushed leads are identifiable in Zoho reports." },
+];
+
+export const ZOHO_ACCOUNT_FIELD_MAPPING: ZohoFieldMapping[] = [
+  { leadsbuddyField: "company_name / company_legal_name", zohoField: "Account_Name", notes: "Required by Zoho — falls back to \"Unknown Company\" if missing." },
+  { leadsbuddyField: "website", zohoField: "Website", notes: "Company website, if known." },
+  { leadsbuddyField: "industry", zohoField: "Industry", notes: "Company industry, if known." },
+  { leadsbuddyField: "hq_city / hq_state / hq_country", zohoField: "Billing_City / Billing_State / Billing_Country", notes: "Company headquarters location, if known." },
+  { leadsbuddyField: "employees_count", zohoField: "Employees", notes: "Employee count, if known." },
+];
+
+export const SAMPLE_ZOHO_STATUS_RESPONSE = `{
+  "connected": true,
+  "zoho_user_email": "you@yourcompany.com",
+  "connected_at": "2026-08-01T09:12:00Z"
+}`;
+
+export const SAMPLE_ZOHO_PUSH_RESPONSE = `{
+  "pushed": 2,
+  "failed": 1,
+  "results": [
+    { "record_id": "abc123", "zoho_id": "4876876000000123456", "error": null },
+    { "record_id": "def456", "zoho_id": "4876876000000123457", "error": null },
+    { "record_id": "ghi789", "zoho_id": null, "error": "Zoho error: INVALID_DATA" }
+  ]
+}`;
+
 export interface InstantlyFieldMapping {
   leadsbuddyField: string;
   instantlyField: string;

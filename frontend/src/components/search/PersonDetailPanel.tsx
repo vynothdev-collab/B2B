@@ -34,6 +34,7 @@ import {
   unlockPersonMobile,
 } from "@/lib/searchApi";
 import { pushToSalesforce } from "@/lib/salesforceApi";
+import { pushToZoho } from "@/lib/zohoApi";
 import { pushToHubspot } from "@/lib/hubspotApi";
 import { toast } from "@/lib/toast";
 import PushToInstantlyModal from "./PushToInstantlyModal";
@@ -637,6 +638,8 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [pushedToSalesforce, setPushedToSalesforce] = useState(false);
   const [pushingToHubspot, setPushingToHubspot] = useState(false);
   const [pushedToHubspot, setPushedToHubspot] = useState(false);
+  const [pushingToZoho, setPushingToZoho] = useState(false);
+  const [pushedToZoho, setPushedToZoho] = useState(false);
   const [instantlyModalOpen, setInstantlyModalOpen] = useState(false);
   const [pushedToInstantly, setPushedToInstantly] = useState(false);
   const [smartreachModalOpen, setSmartreachModalOpen] = useState(false);
@@ -662,6 +665,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     setUnlockingField(null);
     setPushedToSalesforce(false);
     setPushedToHubspot(false);
+    setPushedToZoho(false);
     setPushedToInstantly(false);
     setPushedToSmartreach(false);
     setLoading(true);
@@ -876,6 +880,25 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     }
   };
 
+  const handlePushToZoho = async () => {
+    if (!person || pushingToZoho) return;
+    setPushingToZoho(true);
+    try {
+      const result = await pushToZoho([
+        { record_id: person.id, item_type: "person", data: {} },
+      ]);
+      if (result.pushed > 0) {
+        toast.success("Pushed to Zoho CRM.");
+        setPushedToZoho(true);
+      } else {
+        toast.error(result.results[0]?.error ?? "Failed to push to Zoho CRM.");
+      }
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setPushingToZoho(false);
+    }
+  };
 
   const currentWork =
     detail?.work_history?.find((w) => w.is_current) ??
@@ -1083,7 +1106,7 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
             <PushToDropdown
               className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
               label={
-                pushedToSalesforce || pushedToHubspot || pushedToInstantly || pushedToSmartreach
+                pushedToSalesforce || pushedToHubspot || pushedToZoho || pushedToInstantly || pushedToSmartreach
                   ? "Pushed"
                   : "Push to..."
               }
@@ -1122,6 +1145,23 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                       ? "Connect HubSpot in Integrations first"
                       : undefined,
                     onSelect: handlePushToHubspot,
+                  },
+                  {
+                    key: "zoho",
+                    label: pushedToZoho ? "Pushed to Zoho CRM" : "Zoho CRM",
+                    icon: pushingToZoho ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : pushedToZoho ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="Z" bg="#fde8e8" color="#e42527" />
+                    ),
+                    group: "CRMs",
+                    disabled: !connections.zoho || pushingToZoho || pushedToZoho,
+                    disabledReason: !connections.zoho
+                      ? "Connect Zoho CRM in Integrations first"
+                      : undefined,
+                    onSelect: handlePushToZoho,
                   },
                   {
                     key: "instantly",
