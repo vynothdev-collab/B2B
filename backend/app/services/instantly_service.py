@@ -47,7 +47,6 @@ def map_person_to_lead(
     mapped_person: dict,
     unlocked_email: str | None,
     unlocked_phone: str | None,
-    calendly_url: str | None = None,
 ) -> dict:
     lead: dict = {}
     if unlocked_email:
@@ -61,8 +60,6 @@ def map_person_to_lead(
         lead["company_name"] = mapped_person["active_experience_company_name"]
     if unlocked_phone:
         lead["phone"] = unlocked_phone
-    if calendly_url:
-        lead["personalization"] = f"Book a meeting: {calendly_url}"
     return lead
 
 

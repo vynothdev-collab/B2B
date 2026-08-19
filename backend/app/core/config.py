@@ -80,9 +80,6 @@ class Settings(BaseSettings):
     # Instantly (API-key based, no OAuth)
     INSTANTLY_ENCRYPTION_KEY: str = ""  # used to encrypt stored Instantly API keys at rest
 
-    # Calendly (API-key based, no OAuth)
-    CALENDLY_ENCRYPTION_KEY: str = ""  # used to encrypt stored Calendly Personal Access Tokens at rest
-
     # Smartreach (API-key based, no OAuth)
     SMARTREACH_ENCRYPTION_KEY: str = ""  # used to encrypt stored Smartreach API keys at rest
 

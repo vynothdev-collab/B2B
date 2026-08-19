@@ -23,7 +23,7 @@ from app.schemas.salesforce import (
     SalesforcePushResponse,
     SalesforceStatusResponse,
 )
-from app.services import calendly_service, salesforce_service
+from app.services import salesforce_service
 from app.services.contact_unlock_service import get_unlock_map
 from app.services.coresignal_service import _map_company, _map_person
 from app.services.credit_service import CREDIT_COSTS, check_credits, deduct_credit
@@ -204,7 +204,6 @@ async def salesforce_push(
     )
     person_raw_map = {row[0]: row[1] for row in person_raw_result.fetchall()}
     unlock_map = await get_unlock_map(db, current_user.id, person_record_ids)
-    calendly_url = await calendly_service.get_scheduling_url(current_user.id, db)
 
     company_raw_result = await db.execute(
         select(CompanySearchRecord.coresignal_id, CompanySearchRecord.raw_data).where(
@@ -243,7 +242,7 @@ async def salesforce_push(
             raw = person_raw_map.get(item.record_id)
             mapped = _map_person(raw) if raw else (item.data if isinstance(item.data, dict) else {})
 
-            lead_fields = salesforce_service.map_person_to_lead(mapped, unlocked_email, unlocked_phone, calendly_url)
+            lead_fields = salesforce_service.map_person_to_lead(mapped, unlocked_email, unlocked_phone)
             try:
                 salesforce_id = await salesforce_service.create_lead(connection, lead_fields)
                 await deduct_credit(

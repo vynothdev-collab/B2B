@@ -110,7 +110,6 @@ def map_person_to_lead(
     mapped_person: dict,
     unlocked_email: str | None,
     unlocked_phone: str | None,
-    calendly_url: str | None = None,
 ) -> dict:
     last_name = mapped_person.get("last_name") or mapped_person.get("full_name") or "Unknown"
     company = mapped_person.get("active_experience_company_name") or "Unknown Company"
@@ -137,8 +136,6 @@ def map_person_to_lead(
         lead["Country"] = mapped_person["location_country"]
     if mapped_person.get("active_experience_company_website"):
         lead["Website"] = mapped_person["active_experience_company_website"]
-    if calendly_url:
-        lead["Description"] = f"Book a meeting: {calendly_url}"
     return lead
 
 

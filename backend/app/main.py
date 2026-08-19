@@ -50,9 +50,6 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await conn.run_sync(
-            _alter_column_type, "calendly_connections", "api_key", "VARCHAR(2048)"
-        )
-        await conn.run_sync(
             _alter_column_type, "instantly_connections", "api_key", "VARCHAR(2048)"
         )
         await conn.run_sync(

@@ -11,7 +11,6 @@ from app.models.api_key import ApiKey
 from app.models.salesforce_connection import SalesforceConnection
 from app.models.hubspot_connection import HubspotConnection
 from app.models.instantly_connection import InstantlyConnection
-from app.models.calendly_connection import CalendlyConnection
 from app.models.smartreach_connection import SmartreachConnection
 
 __all__ = [
@@ -34,6 +33,5 @@ __all__ = [
     "SalesforceConnection",
     "HubspotConnection",
     "InstantlyConnection",
-    "CalendlyConnection",
     "SmartreachConnection",
 ]
