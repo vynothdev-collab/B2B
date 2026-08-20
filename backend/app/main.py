@@ -137,6 +137,16 @@ async def lifespan(app: FastAPI):
             _add_column_if_missing, "users", "email_verified",
             "BOOLEAN NOT NULL DEFAULT FALSE"
         )
+        # platform_settings — seed the singleton row (id=1) so concurrent
+        # first-requests to get_platform_settings() never race to insert it.
+        await conn.execute(
+            text(
+                "INSERT INTO platform_settings (id, platform_name, support_email, "
+                "default_plan, new_registrations, maintenance_mode, updated_at) "
+                "VALUES (1, 'LeadsBuddy', 'support@leadsbuddy.ai', 'Free', TRUE, FALSE, NOW()) "
+                "ON CONFLICT (id) DO NOTHING"
+            )
+        )
     yield
 
 
@@ -146,14 +156,6 @@ app = FastAPI(
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan,
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 @app.middleware("http")
@@ -177,6 +179,18 @@ async def maintenance_mode_gate(request: Request, call_next):
 
     return await call_next(request)
 
+
+# Registered AFTER the maintenance gate above so it ends up OUTERMOST in the
+# middleware stack (Starlette wraps in reverse-registration order) — that way
+# CORS headers still get attached to the 503 short-circuit response, instead
+# of only to responses that reach call_next().
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(public_api_router, prefix="/public/v1")

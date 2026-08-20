@@ -6,6 +6,7 @@ import { Plus, Save, MailWarning, Loader2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Modal, { Field, FieldInput, FieldSelect, FieldRow } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   listAdminAccounts,
   createAdminAccount,
@@ -17,14 +18,15 @@ import { getPlatformSettings, updatePlatformSettings } from "@/services/platform
 
 const TABS = ["General Settings", "Email & Notifications", "Admin Accounts"];
 
-function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
+function Toggle({ on, onChange, disabled }: { on: boolean; onChange: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
+      disabled={disabled}
       onClick={onChange}
-      className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors"
+      className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50"
       style={{ background: on ? "#173229" : "#CBD5E1" }}
     >
       <span className={`inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : "translate-x-0.5"}`} />
@@ -65,6 +67,8 @@ const levelLabel = (role: AdminLevel) => (role === "super_admin" ? "Super Admin"
 
 export default function SettingsPage() {
   const toast = useToast();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin" || user?.role === "SUPER_ADMIN";
   const [activeTab, setActiveTab] = useState("General Settings");
 
   /* ── General Settings (persisted via /admin/settings) ──────────────── */
@@ -290,6 +294,15 @@ export default function SettingsPage() {
               <p>Maintenance Mode is currently ON. All users are being shown the maintenance page.</p>
             </div>
           )}
+          {!generalLoading && !isSuperAdmin && (
+            <div
+              className="flex items-start gap-2.5 px-6 py-3 text-xs"
+              style={{ background: "#FDF8EC", color: "#8A6222" }}
+            >
+              <MailWarning className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>Only Super Admins can change these settings. You can view the current values below.</p>
+            </div>
+          )}
           {!generalLoading && (
           <>
           {/* Platform Name */}
@@ -300,8 +313,9 @@ export default function SettingsPage() {
             </div>
             <input
               value={general.platformName}
+              disabled={!isSuperAdmin}
               onChange={(e) => setGeneral((g) => ({ ...g, platformName: e.target.value }))}
-              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
+              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)] disabled:bg-slate-50 disabled:text-slate-500"
             />
           </div>
 
@@ -314,8 +328,9 @@ export default function SettingsPage() {
             <input
               type="email"
               value={general.supportEmail}
+              disabled={!isSuperAdmin}
               onChange={(e) => setGeneral((g) => ({ ...g, supportEmail: e.target.value }))}
-              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
+              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)] disabled:bg-slate-50 disabled:text-slate-500"
             />
           </div>
 
@@ -327,8 +342,9 @@ export default function SettingsPage() {
             </div>
             <select
               value={general.defaultPlan}
+              disabled={!isSuperAdmin}
               onChange={(e) => setGeneral((g) => ({ ...g, defaultPlan: e.target.value }))}
-              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
+              className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)] disabled:bg-slate-50 disabled:text-slate-500"
             >
               <option>Free</option>
               <option>Pro</option>
@@ -342,7 +358,11 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold text-slate-800">New Registrations</p>
               <p className="text-xs text-slate-500 mt-0.5">Allow new users to register on the platform.</p>
             </div>
-            <Toggle on={general.newRegistrations} onChange={() => setGeneral((g) => ({ ...g, newRegistrations: !g.newRegistrations }))} />
+            <Toggle
+              on={general.newRegistrations}
+              disabled={!isSuperAdmin}
+              onChange={() => setGeneral((g) => ({ ...g, newRegistrations: !g.newRegistrations }))}
+            />
           </div>
 
           {/* Maintenance Mode */}
@@ -351,23 +371,29 @@ export default function SettingsPage() {
               <p className="text-sm font-semibold text-slate-800">Maintenance Mode</p>
               <p className="text-xs text-slate-500 mt-0.5">Temporarily disables the platform for all users.</p>
             </div>
-            <Toggle on={general.maintenanceMode} onChange={() => setGeneral((g) => ({ ...g, maintenanceMode: !g.maintenanceMode }))} />
+            <Toggle
+              on={general.maintenanceMode}
+              disabled={!isSuperAdmin}
+              onChange={() => setGeneral((g) => ({ ...g, maintenanceMode: !g.maintenanceMode }))}
+            />
           </div>
 
           {/* Save */}
-          <div className="flex items-center justify-between px-6 py-4">
-            <p className="text-xs text-slate-400">Changes apply immediately to all users on the customer app.</p>
-            <button
-              type="button"
-              disabled={savingGeneral}
-              onClick={saveGeneral}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60"
-              style={{ background: "#173229", color: "#EFEAD9" }}
-            >
-              {savingGeneral ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {savingGeneral ? "Saving…" : "Save Settings"}
-            </button>
-          </div>
+          {isSuperAdmin && (
+            <div className="flex items-center justify-between px-6 py-4">
+              <p className="text-xs text-slate-400">Changes apply immediately to all users on the customer app.</p>
+              <button
+                type="button"
+                disabled={savingGeneral}
+                onClick={saveGeneral}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60"
+                style={{ background: "#173229", color: "#EFEAD9" }}
+              >
+                {savingGeneral ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                {savingGeneral ? "Saving…" : "Save Settings"}
+              </button>
+            </div>
+          )}
           </>
           )}
         </div>

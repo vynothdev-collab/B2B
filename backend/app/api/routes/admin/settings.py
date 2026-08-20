@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -23,11 +23,18 @@ class PlatformSettingsResponse(BaseModel):
 
 class UpdatePlatformSettingsRequest(BaseModel):
     platform_name: str | None = None
-    support_email: str | None = None
+    support_email: EmailStr | None = None
     default_plan: str | None = None
     new_registrations: bool | None = None
     maintenance_mode: bool | None = None
     maintenance_message: str | None = None
+
+    @field_validator("platform_name", "default_plan")
+    @classmethod
+    def not_blank(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("Value cannot be empty")
+        return v.strip() if v is not None else v
 
 
 def _serialize(row) -> PlatformSettingsResponse:
@@ -61,7 +68,7 @@ async def update_settings(
 
     data = payload.model_dump(exclude_unset=True)
     for field, value in data.items():
-        setattr(row, field, value)
+        setattr(row, field, str(value) if isinstance(value, str) else value)
 
     await db.commit()
     await db.refresh(row)
