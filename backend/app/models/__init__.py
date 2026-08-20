@@ -13,6 +13,7 @@ from app.models.hubspot_connection import HubspotConnection
 from app.models.instantly_connection import InstantlyConnection
 from app.models.smartreach_connection import SmartreachConnection
 from app.models.zoho_connection import ZohoConnection
+from app.models.platform_setting import PlatformSetting
 
 __all__ = [
     "User",
@@ -36,4 +37,5 @@ __all__ = [
     "InstantlyConnection",
     "SmartreachConnection",
     "ZohoConnection",
+    "PlatformSetting",
 ]

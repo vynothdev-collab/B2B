@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Save, Pencil, MailWarning } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import axios from "axios";
+import { Plus, Save, MailWarning, Loader2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
-import Modal, { Field, FieldInput, FieldSelect, FieldRow, FieldTextarea } from "@/components/ui/Modal";
+import Modal, { Field, FieldInput, FieldSelect, FieldRow } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import {
+  listAdminAccounts,
+  createAdminAccount,
+  updateAdminAccount,
+  setAdminAccountStatus,
+  type AdminAccountRecord,
+} from "@/services/adminUsers";
+import { getPlatformSettings, updatePlatformSettings } from "@/services/platformSettings";
 
 const TABS = ["General Settings", "Email & Notifications", "Admin Accounts"];
 
@@ -41,90 +50,24 @@ const EMAIL_NOTIFICATIONS: EmailNotification[] = [
   { name: "Ticket Escalation", description: "Alert when a ticket is marked as urgent", on: true, extra: null },
 ];
 
-interface EmailTemplate {
-  key: string;
-  name: string;
-  description: string;
-  subject: string;
-  body: string;
-}
-
-const EMAIL_TEMPLATES: EmailTemplate[] = [
-  {
-    key: "welcome",
-    name: "Welcome Email",
-    description: "Sent when a new account finishes registration",
-    subject: "Welcome to {{platform_name}}, {{first_name}}!",
-    body: "Hi {{first_name}},\n\nYour {{platform_name}} account is ready. Log in to start searching for leads.\n\n— The {{platform_name}} Team",
-  },
-  {
-    key: "password_reset",
-    name: "Password Reset",
-    description: "Sent when a user requests a password reset",
-    subject: "Reset your {{platform_name}} password",
-    body: "Hi {{first_name}},\n\nClick the link below to reset your password. This link expires in 30 minutes.\n\n{{reset_link}}\n\nIf you didn't request this, you can ignore this email.",
-  },
-  {
-    key: "payment_receipt",
-    name: "Payment Receipt",
-    description: "Sent after a successful payment or subscription renewal",
-    subject: "Your {{platform_name}} receipt — {{invoice_number}}",
-    body: "Hi {{first_name}},\n\nThanks for your payment of {{amount}} for the {{plan_name}} plan.\n\nInvoice: {{invoice_number}}\nDate: {{payment_date}}",
-  },
-  {
-    key: "subscription_expiry",
-    name: "Subscription Expiry Warning",
-    description: "Sent before a subscription lapses",
-    subject: "Your {{platform_name}} plan expires in {{days_left}} days",
-    body: "Hi {{first_name}},\n\nYour {{plan_name}} plan expires on {{expiry_date}}. Renew now to avoid interruption to your searches and unlocks.",
-  },
-  {
-    key: "credit_limit_warning",
-    name: "Credit Limit Warning",
-    description: "Sent when an account crosses the configured credit threshold",
-    subject: "You've used {{percent_used}}% of your {{platform_name}} credits",
-    body: "Hi {{first_name}},\n\nYou've used {{percent_used}}% of your monthly credit allocation. Consider upgrading your plan to avoid running out mid-month.",
-  },
-  {
-    key: "ticket_confirmation",
-    name: "Support Ticket Confirmation",
-    description: "Sent when a support ticket is submitted",
-    subject: "We've received your ticket #{{ticket_id}}",
-    body: "Hi {{first_name}},\n\nThanks for reaching out. Our team will respond to ticket #{{ticket_id}} within 24 hours.",
-  },
-];
-
-interface AdminAccount {
-  name: string;
-  initials: string;
-  email: string;
-  level: "Super Admin" | "Admin" | "Read Only";
-  status: "active" | "inactive";
-  added: string;
-  lastLogin: string;
-  isYou: boolean;
-}
-
-const ADMIN_ACCOUNTS: AdminAccount[] = [
-  { name: "System Administrator", initials: "SA", email: "admin@leadsbuddy.ai", level: "Super Admin", status: "active", added: "Jan 1, 2025", lastLogin: "Today, 8:00 AM", isYou: true },
-  { name: "Ravi Kumar", initials: "RK", email: "ravi@leadsbuddy.ai", level: "Admin", status: "active", added: "Mar 15, 2025", lastLogin: "Yesterday, 5:30 PM", isYou: false },
-  { name: "Jessica Moore", initials: "JM", email: "jessica@leadsbuddy.ai", level: "Admin", status: "active", added: "Apr 10, 2025", lastLogin: "Jul 12, 2025", isYou: false },
-  { name: "Dev Reviewer", initials: "DR", email: "dev@leadsbuddy.ai", level: "Read Only", status: "inactive", added: "Feb 28, 2025", lastLogin: "Jun 20, 2025", isYou: false },
-];
-
 function initialsOf(name: string) {
   const parts = name.trim().split(/\s+/);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "??";
 }
 
-const todayLabel = () =>
-  new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+type AdminLevel = "admin" | "super_admin";
+
+const levelLabel = (role: AdminLevel) => (role === "super_admin" ? "Super Admin" : "Admin");
 
 export default function SettingsPage() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState("General Settings");
 
-  /* ── General Settings (static — no backend yet) ────────────────────── */
+  /* ── General Settings (persisted via /admin/settings) ──────────────── */
   const [general, setGeneral] = useState({
     platformName: "LeadsBuddy",
     supportEmail: "support@leadsbuddy.ai",
@@ -132,9 +75,58 @@ export default function SettingsPage() {
     newRegistrations: true,
     maintenanceMode: false,
   });
+  const [generalLoading, setGeneralLoading] = useState(true);
+  const [savingGeneral, setSavingGeneral] = useState(false);
 
-  const saveGeneral = () => {
-    toast.success("Settings saved", "General platform settings have been updated.");
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const data = await getPlatformSettings(controller.signal);
+        setGeneral({
+          platformName: data.platform_name,
+          supportEmail: data.support_email,
+          defaultPlan: data.default_plan,
+          newRegistrations: data.new_registrations,
+          maintenanceMode: data.maintenance_mode,
+        });
+      } catch (err: unknown) {
+        if (axios.isCancel(err)) return;
+        toast.error("Failed to load settings", "Please try again.");
+      } finally {
+        setGeneralLoading(false);
+      }
+    })();
+    return () => controller.abort();
+  }, [toast]);
+
+  const saveGeneral = async () => {
+    setSavingGeneral(true);
+    try {
+      const data = await updatePlatformSettings({
+        platform_name: general.platformName,
+        support_email: general.supportEmail,
+        default_plan: general.defaultPlan,
+        new_registrations: general.newRegistrations,
+        maintenance_mode: general.maintenanceMode,
+      });
+      setGeneral({
+        platformName: data.platform_name,
+        supportEmail: data.support_email,
+        defaultPlan: data.default_plan,
+        newRegistrations: data.new_registrations,
+        maintenanceMode: data.maintenance_mode,
+      });
+      toast.success("Settings saved", "General platform settings have been updated.");
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && typeof err.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Please try again.";
+      toast.error("Couldn't save settings", message);
+    } finally {
+      setSavingGeneral(false);
+    }
   };
 
   /* ── Email & Notifications (static — integrated later) ─────────────── */
@@ -154,94 +146,72 @@ export default function SettingsPage() {
     toast.success("Notification preferences saved", "These rules will take effect once email delivery is wired up.");
   };
 
-  /* ── Email Sender Configuration (static — no email provider integrated yet) ── */
-  const [sender, setSender] = useState({
-    provider: "SMTP",
-    fromName: "LeadsBuddy",
-    fromEmail: "no-reply@leadsbuddy.ai",
-    replyTo: "support@leadsbuddy.ai",
-    sendingEnabled: false,
-  });
-
-  const saveSender = () => {
-    toast.info(
-      "Saved locally",
-      "Sender details are stored for later — no email provider is connected yet, so no mail will send."
-    );
-  };
-
-  /* ── Email Templates (static — content only, not wired to a mailer) ── */
-  const [templates, setTemplates] = useState(EMAIL_TEMPLATES);
-  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
-  const [templateForm, setTemplateForm] = useState({ subject: "", body: "" });
-
-  const openEditTemplate = (tpl: EmailTemplate) => {
-    setTemplateForm({ subject: tpl.subject, body: tpl.body });
-    setEditingTemplate(tpl);
-  };
-
-  const submitTemplate = () => {
-    if (!editingTemplate) return;
-    if (!templateForm.subject.trim() || !templateForm.body.trim()) {
-      toast.warning("Missing information", "Both subject and body are required.");
-      return;
-    }
-    setTemplates((prev) =>
-      prev.map((t) =>
-        t.key === editingTemplate.key ? { ...t, subject: templateForm.subject, body: templateForm.body } : t
-      )
-    );
-    toast.success("Template saved", `${editingTemplate.name} has been updated. It will be used once email sending is enabled.`);
-    setEditingTemplate(null);
-  };
-
-  /* ── Admin Accounts (local mock — creation isn't wired to a real API) ── */
-  const [admins, setAdmins] = useState(ADMIN_ACCOUNTS);
+  /* ── Admin Accounts (wired to the backend AdminUser table) ─────────── */
+  const [admins, setAdmins] = useState<AdminAccountRecord[]>([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
   const [showAddAdmin, setShowAddAdmin] = useState(false);
-  const [editingAdmin, setEditingAdmin] = useState<AdminAccount | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", level: "Admin" as AdminAccount["level"] });
+  const [editingAdmin, setEditingAdmin] = useState<AdminAccountRecord | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", password: "", level: "admin" as AdminLevel });
+
+  const fetchAdmins = useCallback(async () => {
+    setAdminsLoading(true);
+    try {
+      const data = await listAdminAccounts();
+      setAdmins(data);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+      toast.error("Failed to load admin accounts", "Please try again.");
+    } finally {
+      setAdminsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    void fetchAdmins();
+  }, [fetchAdmins]);
 
   const openAdd = () => {
-    setForm({ name: "", email: "", level: "Admin" });
+    setForm({ name: "", email: "", password: "", level: "admin" });
     setShowAddAdmin(true);
   };
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const submitAdd = () => {
+  const submitAdd = async () => {
     const name = form.name.trim();
     const email = form.email.trim();
     if (!name || !EMAIL_RE.test(email)) {
       toast.warning("Missing information", "Enter a valid name and email address.");
       return;
     }
-    if (admins.some((a) => a.email.toLowerCase() === email.toLowerCase())) {
-      toast.error("Already exists", "An admin with this email is already listed.");
+    if (form.password.length < 8) {
+      toast.warning("Weak password", "Password must be at least 8 characters.");
       return;
     }
-    setAdmins((prev) => [
-      ...prev,
-      {
-        name,
-        initials: initialsOf(name),
-        email,
-        level: form.level,
-        status: "active",
-        added: todayLabel(),
-        lastLogin: "—",
-        isYou: false,
-      },
-    ]);
-    toast.success("Admin added", `${name} has been added to Admin Accounts.`);
-    setShowAddAdmin(false);
+    setSaving(true);
+    try {
+      await createAdminAccount({ name, email, password: form.password, role: form.level });
+      toast.success("Admin added", `${name} has been added to Admin Accounts.`);
+      setShowAddAdmin(false);
+      void fetchAdmins();
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && typeof err.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Please try again.";
+      toast.error("Couldn't add admin", message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const openEdit = (admin: AdminAccount) => {
-    setForm({ name: admin.name, email: admin.email, level: admin.level });
+  const openEdit = (admin: AdminAccountRecord) => {
+    setForm({ name: admin.name, email: admin.email, password: "", level: admin.role });
     setEditingAdmin(admin);
   };
 
-  const submitEdit = () => {
+  const submitEdit = async () => {
     if (!editingAdmin) return;
     const name = form.name.trim();
     const email = form.email.trim();
@@ -249,20 +219,39 @@ export default function SettingsPage() {
       toast.warning("Missing information", "Enter a valid name and email address.");
       return;
     }
-    setAdmins((prev) =>
-      prev.map((a) => (a.email === editingAdmin.email ? { ...a, name, email, level: form.level } : a))
-    );
-    toast.success("Admin updated", `Changes to ${name} have been saved.`);
-    setEditingAdmin(null);
+    setSaving(true);
+    try {
+      await updateAdminAccount(editingAdmin.id, { name, email, role: form.level });
+      toast.success("Admin updated", `Changes to ${name} have been saved.`);
+      setEditingAdmin(null);
+      void fetchAdmins();
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && typeof err.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Please try again.";
+      toast.error("Couldn't update admin", message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const toggleDeactivate = (admin: AdminAccount) => {
-    const nextStatus = admin.status === "active" ? "inactive" : "active";
-    setAdmins((prev) => prev.map((a) => (a.email === admin.email ? { ...a, status: nextStatus } : a)));
-    toast.info(
-      nextStatus === "inactive" ? "Admin deactivated" : "Admin reactivated",
-      `${admin.name} is now ${nextStatus}.`
-    );
+  const toggleDeactivate = async (admin: AdminAccountRecord) => {
+    const nextActive = !admin.is_active;
+    try {
+      await setAdminAccountStatus(admin.id, nextActive);
+      toast.info(
+        nextActive ? "Admin reactivated" : "Admin deactivated",
+        `${admin.name} is now ${nextActive ? "active" : "inactive"}.`
+      );
+      void fetchAdmins();
+    } catch (err: unknown) {
+      const message =
+        axios.isAxiosError(err) && typeof err.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Please try again.";
+      toast.error("Couldn't update status", message);
+    }
   };
 
   return (
@@ -287,6 +276,22 @@ export default function SettingsPage() {
 
       {activeTab === "General Settings" && (
         <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+          {generalLoading && (
+            <div className="flex items-center justify-center px-6 py-12">
+              <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
+            </div>
+          )}
+          {!generalLoading && general.maintenanceMode && (
+            <div
+              className="flex items-start gap-2.5 px-6 py-3 text-xs"
+              style={{ background: "#FDEEEE", color: "#B42318" }}
+            >
+              <MailWarning className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>Maintenance Mode is currently ON. All users are being shown the maintenance page.</p>
+            </div>
+          )}
+          {!generalLoading && (
+          <>
           {/* Platform Name */}
           <div className="flex items-center justify-between px-6 py-5">
             <div className="flex-1 max-w-sm">
@@ -350,34 +355,26 @@ export default function SettingsPage() {
           </div>
 
           {/* Save */}
-          <div className="flex justify-end px-6 py-4">
+          <div className="flex items-center justify-between px-6 py-4">
+            <p className="text-xs text-slate-400">Changes apply immediately to all users on the customer app.</p>
             <button
               type="button"
+              disabled={savingGeneral}
               onClick={saveGeneral}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:opacity-60"
               style={{ background: "#173229", color: "#EFEAD9" }}
             >
-              <Save className="h-4 w-4" /> Save Settings
+              {savingGeneral ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {savingGeneral ? "Saving…" : "Save Settings"}
             </button>
           </div>
+          </>
+          )}
         </div>
       )}
 
       {activeTab === "Email & Notifications" && (
         <div className="space-y-5">
-          {/* Not-integrated banner */}
-          <div
-            className="flex items-start gap-2.5 rounded-xl border px-4 py-3 text-xs"
-            style={{ background: "#FDF8EC", borderColor: "#E8D5A3", color: "#8A6222" }}
-          >
-            <MailWarning className="h-4 w-4 shrink-0 mt-0.5" />
-            <p>
-              No email provider is connected yet. Sender details, templates, and notification rules below are saved
-              locally in the admin panel so they&apos;re ready to go — nothing here sends real email until an SMTP
-              or transactional email service is integrated on the backend.
-            </p>
-          </div>
-
           {/* Notification rules */}
           <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
             <div className="px-6 py-4 border-b border-slate-100">
@@ -416,116 +413,6 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-
-          {/* Sender configuration */}
-          <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
-            <div className="px-6 py-4 border-b border-slate-100">
-              <p className="text-sm font-semibold text-slate-800">Email Sender Configuration</p>
-              <p className="text-xs text-slate-500 mt-0.5">Who outgoing mail will appear to be from, once a provider is connected.</p>
-            </div>
-
-            <div className="flex items-center justify-between px-6 py-5">
-              <div className="flex-1 max-w-sm">
-                <p className="text-sm font-semibold text-slate-800">Email Provider</p>
-                <p className="text-xs text-slate-500 mt-0.5">Transactional email service used to send platform emails.</p>
-              </div>
-              <select
-                value={sender.provider}
-                onChange={(e) => setSender((s) => ({ ...s, provider: e.target.value }))}
-                className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
-              >
-                <option>SMTP</option>
-                <option>SendGrid</option>
-                <option>Mailgun</option>
-                <option>Amazon SES</option>
-              </select>
-            </div>
-
-            <div className="flex items-center justify-between px-6 py-5">
-              <div className="flex-1 max-w-sm">
-                <p className="text-sm font-semibold text-slate-800">From Name</p>
-                <p className="text-xs text-slate-500 mt-0.5">Display name recipients see in their inbox.</p>
-              </div>
-              <input
-                value={sender.fromName}
-                onChange={(e) => setSender((s) => ({ ...s, fromName: e.target.value }))}
-                className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
-              />
-            </div>
-
-            <div className="flex items-center justify-between px-6 py-5">
-              <div className="flex-1 max-w-sm">
-                <p className="text-sm font-semibold text-slate-800">From Email</p>
-                <p className="text-xs text-slate-500 mt-0.5">Sending address used for all outbound notifications.</p>
-              </div>
-              <input
-                type="email"
-                value={sender.fromEmail}
-                onChange={(e) => setSender((s) => ({ ...s, fromEmail: e.target.value }))}
-                className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
-              />
-            </div>
-
-            <div className="flex items-center justify-between px-6 py-5">
-              <div className="flex-1 max-w-sm">
-                <p className="text-sm font-semibold text-slate-800">Reply-To Email</p>
-                <p className="text-xs text-slate-500 mt-0.5">Where user replies to platform emails are routed.</p>
-              </div>
-              <input
-                type="email"
-                value={sender.replyTo}
-                onChange={(e) => setSender((s) => ({ ...s, replyTo: e.target.value }))}
-                className="w-64 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]"
-              />
-            </div>
-
-            <div className="flex items-center justify-between px-6 py-5">
-              <div className="flex-1 max-w-sm">
-                <p className="text-sm font-semibold text-slate-800">Email Sending</p>
-                <p className="text-xs text-slate-500 mt-0.5">Stays off until a provider is connected on the backend.</p>
-              </div>
-              <Toggle on={sender.sendingEnabled} onChange={() => setSender((s) => ({ ...s, sendingEnabled: !s.sendingEnabled }))} />
-            </div>
-
-            <div className="flex justify-end px-6 py-4">
-              <button
-                type="button"
-                onClick={saveSender}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
-                style={{ background: "#173229", color: "#EFEAD9" }}
-              >
-                <Save className="h-4 w-4" /> Save Settings
-              </button>
-            </div>
-          </div>
-
-          {/* Email templates */}
-          <div className="bg-white rounded-xl border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-100">
-              <p className="text-sm font-semibold text-slate-800">Email Templates</p>
-              <p className="text-xs text-slate-500 mt-0.5">Subject and body content used once each notification is sent.</p>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {templates.map((tpl) => (
-                <div key={tpl.key} className="flex items-start justify-between gap-6 px-6 py-5">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-800">{tpl.name}</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{tpl.description}</p>
-                    <p className="text-xs text-slate-400 mt-2">
-                      Subject: <span className="text-slate-600">{tpl.subject}</span>
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => openEditTemplate(tpl)}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-                  >
-                    <Pencil className="h-3.5 w-3.5" /> Edit
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
@@ -551,25 +438,38 @@ export default function SettingsPage() {
                   <th className="px-4 py-2.5 text-left">Access Level</th>
                   <th className="px-4 py-2.5 text-left">Status</th>
                   <th className="px-4 py-2.5 text-left">Date Added</th>
-                  <th className="px-4 py-2.5 text-left">Last Login</th>
                   <th className="px-4 py-2.5 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
+                {adminsLoading && admins.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center">
+                      <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
+                    </td>
+                  </tr>
+                )}
+                {!adminsLoading && admins.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-400">
+                      No admin accounts found.
+                    </td>
+                  </tr>
+                )}
                 {admins.map((admin) => (
                   <tr
-                    key={admin.email}
+                    key={admin.id}
                     className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                    style={admin.isYou ? { background: "rgba(23,50,41,.04)" } : {}}
+                    style={admin.is_you ? { background: "rgba(23,50,41,.04)" } : {}}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ background: "rgba(23,50,41,.10)", color: "#173229" }}>
-                          {admin.initials}
+                          {initialsOf(admin.name)}
                         </div>
                         <div>
                           <p className="font-medium text-slate-800">{admin.name}</p>
-                          {admin.isYou && (
+                          {admin.is_you && (
                             <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "#173229" }}>You</span>
                           )}
                         </div>
@@ -580,19 +480,16 @@ export default function SettingsPage() {
                       <span
                         className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
                         style={
-                          admin.level === "Super Admin"
+                          admin.role === "super_admin"
                             ? { background: "rgba(23,50,41,.08)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }
-                            : admin.level === "Admin"
-                            ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
-                            : { background: "#F1F5F9", color: "#64748B", borderColor: "#CBD5E1" }
+                            : { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
                         }
                       >
-                        {admin.level}
+                        {levelLabel(admin.role)}
                       </span>
                     </td>
-                    <td className="px-4 py-3"><Badge status={admin.status} /></td>
-                    <td className="px-4 py-3 text-slate-500">{admin.added}</td>
-                    <td className="px-4 py-3 text-slate-500">{admin.lastLogin}</td>
+                    <td className="px-4 py-3"><Badge status={admin.is_active ? "active" : "inactive"} /></td>
+                    <td className="px-4 py-3 text-slate-500">{fmtDate(admin.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <button
@@ -602,7 +499,7 @@ export default function SettingsPage() {
                         >
                           Edit
                         </button>
-                        {!admin.isYou && (
+                        {!admin.is_you && (
                           <button
                             type="button"
                             onClick={() => toggleDeactivate(admin)}
@@ -611,7 +508,7 @@ export default function SettingsPage() {
                             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "rgba(177,81,105,.07)")}
                             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "")}
                           >
-                            {admin.status === "active" ? "Deactivate" : "Reactivate"}
+                            {admin.is_active ? "Deactivate" : "Reactivate"}
                           </button>
                         )}
                       </div>
@@ -625,38 +522,12 @@ export default function SettingsPage() {
       )}
 
       <Modal
-        open={!!editingTemplate}
-        onClose={() => setEditingTemplate(null)}
-        eyebrow="Email Templates · edit"
-        title={editingTemplate?.name ?? ""}
-        submitLabel="Save Template"
-        onSubmit={submitTemplate}
-        footerHint="Saved locally — won't send until an email provider is connected."
-      >
-        <Field label="Subject" hint="supports {{placeholders}}">
-          <FieldInput
-            value={templateForm.subject}
-            onChange={(e) => setTemplateForm((f) => ({ ...f, subject: e.target.value }))}
-            autoFocus
-          />
-        </Field>
-        <Field label="Body" hint="supports {{placeholders}}">
-          <FieldTextarea
-            value={templateForm.body}
-            onChange={(e) => setTemplateForm((f) => ({ ...f, body: e.target.value }))}
-            rows={8}
-          />
-        </Field>
-      </Modal>
-
-      <Modal
         open={showAddAdmin}
         onClose={() => setShowAddAdmin(false)}
         eyebrow="Admin Accounts · new record"
         title="Add Admin"
-        submitLabel="Add Admin"
+        submitLabel={saving ? "Adding…" : "Add Admin"}
         onSubmit={submitAdd}
-        footerHint="This adds a local record only — account creation isn't wired to the backend yet."
       >
         <Field label="Full name">
           <FieldInput
@@ -678,14 +549,21 @@ export default function SettingsPage() {
           <Field label="Access Level">
             <FieldSelect
               value={form.level}
-              onChange={(e) => setForm((f) => ({ ...f, level: e.target.value as AdminAccount["level"] }))}
+              onChange={(e) => setForm((f) => ({ ...f, level: e.target.value as AdminLevel }))}
             >
-              <option>Admin</option>
-              <option>Super Admin</option>
-              <option>Read Only</option>
+              <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
             </FieldSelect>
           </Field>
         </FieldRow>
+        <Field label="Temporary password" hint="At least 8 characters">
+          <FieldInput
+            type="password"
+            value={form.password}
+            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+            placeholder="••••••••"
+          />
+        </Field>
       </Modal>
 
       <Modal
@@ -693,7 +571,7 @@ export default function SettingsPage() {
         onClose={() => setEditingAdmin(null)}
         eyebrow="Admin Accounts · edit"
         title="Edit Admin"
-        submitLabel="Save Changes"
+        submitLabel={saving ? "Saving…" : "Save Changes"}
         onSubmit={submitEdit}
       >
         <Field label="Full name">
@@ -714,11 +592,10 @@ export default function SettingsPage() {
           <Field label="Access Level">
             <FieldSelect
               value={form.level}
-              onChange={(e) => setForm((f) => ({ ...f, level: e.target.value as AdminAccount["level"] }))}
+              onChange={(e) => setForm((f) => ({ ...f, level: e.target.value as AdminLevel }))}
             >
-              <option>Admin</option>
-              <option>Super Admin</option>
-              <option>Read Only</option>
+              <option value="admin">Admin</option>
+              <option value="super_admin">Super Admin</option>
             </FieldSelect>
           </Field>
         </FieldRow>

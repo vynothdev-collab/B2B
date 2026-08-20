@@ -1,14 +1,24 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import inspect, text
 
 import app.models  # noqa: F401
 from app.api.router import api_router
 from app.api.routes.public_api import public_api_router
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import AsyncSessionLocal, Base, engine
+from app.services.platform_settings_service import get_platform_settings
+
+# Path prefixes that stay reachable while maintenance mode is on: admins (so
+# they can turn it back off), health checks, and the status endpoint itself.
+_MAINTENANCE_EXEMPT_PREFIXES = (
+    "/api/v1/admin",
+    "/api/v1/health",
+    "/api/v1/platform",
+)
 
 
 def _add_column_if_missing(sync_conn, table: str, column: str, definition: str) -> None:
@@ -145,6 +155,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def maintenance_mode_gate(request: Request, call_next):
+    path = request.url.path
+    if request.method == "OPTIONS" or path.startswith(_MAINTENANCE_EXEMPT_PREFIXES):
+        return await call_next(request)
+
+    if path.startswith("/api/v1/") or path.startswith("/public/v1/"):
+        async with AsyncSessionLocal() as db:
+            row = await get_platform_settings(db)
+        if row.maintenance_mode:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "detail": row.maintenance_message
+                    or "The platform is currently undergoing scheduled maintenance. Please check back shortly.",
+                    "maintenance_mode": True,
+                },
+            )
+
+    return await call_next(request)
+
 
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(public_api_router, prefix="/public/v1")
