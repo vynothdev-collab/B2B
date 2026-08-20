@@ -1,60 +1,73 @@
 "use client";
 
-import { useState } from "react";
-import { Download } from "lucide-react";
-import Badge from "@/components/ui/Badge";
+import { useCallback, useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { Loader2 } from "lucide-react";
+import Pagination from "@/components/ui/Pagination";
+import { useToast } from "@/components/ui/Toast";
+import {
+  listSearchActivity,
+  listUnlocks,
+  type PagedSearchActivity,
+  type PagedUnlocks,
+} from "@/services/reports";
 
-const TABS = ["Search Activity", "Email Unlocks", "Login History", "Exported Reports"];
+const TABS = ["Search Activity", "Email Unlocks", "Mobile Unlocks", "Login History"] as const;
+type Tab = typeof TABS[number];
 
-const SEARCH_ACTIVITY = [
-  { user: "Laura Chen", type: "Enterprise", company: "Nexus Technologies", searchType: "Company Search", filters: "Industry: SaaS, Country: US", results: 142, datetime: "Jul 13, 2025 9:02 AM" },
-  { user: "John Carter", type: "Individual", company: "—", searchType: "People Search", filters: "Title: CEO, Country: UK", results: 58, datetime: "Jul 13, 2025 8:48 AM" },
-  { user: "James Okafor", type: "Enterprise", company: "Vantage Capital", searchType: "Company Search", filters: "Revenue: >$10M, Country: NG", results: 204, datetime: "Jul 13, 2025 8:30 AM" },
-  { user: "Priya Patel", type: "Individual", company: "—", searchType: "People Search", filters: "Dept: Engineering, Size: 50–200", results: 37, datetime: "Jul 13, 2025 8:15 AM" },
-  { user: "Tom Richards", type: "Enterprise", company: "Nexus Technologies", searchType: "People Search", filters: "Title: VP Sales, Country: US", results: 178, datetime: "Jul 12, 2025 5:10 PM" },
-  { user: "Emma Laurent", type: "Individual", company: "—", searchType: "Company Search", filters: "Country: FR, Industry: Marketing", results: 92, datetime: "Jul 12, 2025 3:00 PM" },
-  { user: "Kevin Zhou", type: "Enterprise", company: "Vantage Capital", searchType: "People Search", filters: "Title: CFO, Country: SG", results: 196, datetime: "Jul 12, 2025 1:45 PM" },
-  { user: "Amara Diallo", type: "Individual", company: "—", searchType: "People Search", filters: "Dept: HR, Country: GH", results: 14, datetime: "Jul 12, 2025 11:30 AM" },
-  { user: "Mark Ellis", type: "Enterprise", company: "DataSync Ltd", searchType: "Company Search", filters: "Industry: Analytics, Country: UK", results: 56, datetime: "Jul 12, 2025 10:00 AM" },
-  { user: "Ryan Nguyen", type: "Individual", company: "—", searchType: "People Search", filters: "Title: CTO, Country: AU", results: 28, datetime: "Jul 11, 2025 4:30 PM" },
-];
+const PAGE_SIZE = 10;
 
-const EMAIL_UNLOCKS = [
-  { user: "Laura Chen", type: "Enterprise", company: "Nexus Technologies", contact: "Michael Bauer", datetime: "Jul 13, 2025 9:10 AM" },
-  { user: "James Okafor", type: "Enterprise", company: "Vantage Capital", contact: "Chioma Eze", datetime: "Jul 13, 2025 8:35 AM" },
-  { user: "John Carter", type: "Individual", company: "—", contact: "Sarah Thompson", datetime: "Jul 13, 2025 8:52 AM" },
-  { user: "Tom Richards", type: "Enterprise", company: "Nexus Technologies", contact: "David Park", datetime: "Jul 12, 2025 5:20 PM" },
-  { user: "Priya Patel", type: "Individual", company: "—", contact: "Liam O'Brien", datetime: "Jul 12, 2025 2:45 PM" },
-  { user: "Kevin Zhou", type: "Enterprise", company: "Vantage Capital", contact: "Mei Lin", datetime: "Jul 12, 2025 1:50 PM" },
-  { user: "Emma Laurent", type: "Individual", company: "—", contact: "François Dubois", datetime: "Jul 12, 2025 3:05 PM" },
-  { user: "Mark Ellis", type: "Enterprise", company: "DataSync Ltd", contact: "Alice Johnson", datetime: "Jul 12, 2025 10:15 AM" },
-];
+const SELECT_CLASS =
+  "h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]";
 
-const LOGIN_HISTORY = [
-  { user: "Super Admin", email: "admin@leadsbuddy.ai", type: "Admin", datetime: "Jul 13, 2025 8:00 AM", status: "successful" },
-  { user: "Laura Chen", email: "laura@nexustech.io", type: "Enterprise", datetime: "Jul 13, 2025 9:00 AM", status: "successful" },
-  { user: "John Carter", email: "john.carter@example.com", type: "Individual", datetime: "Jul 13, 2025 9:14 AM", status: "successful" },
-  { user: "David Osei", email: "d.osei@innovate.gh", type: "Individual", datetime: "Jul 13, 2025 7:30 AM", status: "failed" },
-  { user: "Priya Patel", email: "priya.patel@techco.in", type: "Individual", datetime: "Jul 13, 2025 11:30 AM", status: "successful" },
-  { user: "James Okafor", email: "james@vantagecap.ng", type: "Enterprise", datetime: "Jul 13, 2025 8:28 AM", status: "successful" },
-  { user: "Emma Laurent", email: "emma.laurent@agence.fr", type: "Individual", datetime: "Jul 13, 2025 8:55 AM", status: "successful" },
-  { user: "Unknown", email: "hacker@bad.com", type: "—", datetime: "Jul 12, 2025 11:59 PM", status: "failed" },
-  { user: "Amara Diallo", email: "amara@datasuite.co", type: "Individual", datetime: "Jul 13, 2025 7:40 AM", status: "successful" },
-  { user: "Ryan Nguyen", email: "ryan.n@devshop.io", type: "Individual", datetime: "Jul 12, 2025 6:20 PM", status: "successful" },
-];
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
 
-const EXPORTED_REPORTS = [
-  { name: "User Activity Report", description: "Comprehensive activity log for all users", contents: "Searches, unlocks, logins, date range filters" },
-  { name: "Revenue Report", description: "Complete payment and revenue analytics", contents: "Transactions, refunds, plan breakdown, MRR" },
-  { name: "Enterprise Usage Report", description: "Usage metrics for all enterprise accounts", contents: "Team usage, credit consumption, search activity" },
-  { name: "Support & Tickets Report", description: "Ticket volume, resolution times, SLA compliance", contents: "Ticket status, priority, category, response times" },
-  { name: "Plan & Subscription Report", description: "Subscription health and plan distribution", contents: "Plan counts, upgrades, downgrades, churn" },
-  { name: "Credit Consumption Report", description: "Credit allocation and usage across all accounts", contents: "Allocated, used, remaining, exceeded accounts" },
-  { name: "Login & Security Report", description: "Authentication logs and failed login attempts", contents: "Login success/fail, IP, device, timestamps" },
-];
+function AccountTypeBadge({ type }: { type: string }) {
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
+      style={
+        type === "Enterprise"
+          ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
+          : { background: "rgba(23,50,41,.07)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }
+      }
+    >
+      {type}
+    </span>
+  );
+}
+
+function LoadingRow({ colSpan }: { colSpan: number }) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className="px-4 py-12 text-center">
+        <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
+      </td>
+    </tr>
+  );
+}
+
+function EmptyRow({ colSpan, label }: { colSpan: number; label: string }) {
+  return (
+    <tr>
+      <td colSpan={colSpan} className="px-4 py-12 text-center text-sm text-slate-400">
+        {label}
+      </td>
+    </tr>
+  );
+}
 
 export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState("Search Activity");
+  const [activeTab, setActiveTab] = useState<Tab>("Search Activity");
 
   return (
     <div className="space-y-5">
@@ -76,188 +89,208 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {activeTab === "Search Activity" && (
-        <div className="bg-white rounded-xl border border-slate-200">
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
-              <option>All Time</option><option>Today</option><option>This Week</option><option>This Month</option>
-            </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
-              <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
-            </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
-              <option>All Search Types</option><option>People Search</option><option>Company Search</option>
-            </select>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
-                  <th className="px-4 py-2.5 text-left">User</th>
-                  <th className="px-4 py-2.5 text-left">Account Type</th>
-                  <th className="px-4 py-2.5 text-left">Company</th>
-                  <th className="px-4 py-2.5 text-left">Search Type</th>
-                  <th className="px-4 py-2.5 text-left">Filters Applied</th>
-                  <th className="px-4 py-2.5 text-left">Results</th>
-                  <th className="px-4 py-2.5 text-left">Date & Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {SEARCH_ACTIVITY.map((row, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
-                        style={row.type === "Enterprise"
-                          ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
-                          : { background: "rgba(23,50,41,.07)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }}
-                      >
-                        {row.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">{row.company}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.searchType}</td>
-                    <td className="px-4 py-3 text-xs text-slate-500">{row.filters}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-700">{row.results}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">{row.datetime}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      {activeTab === "Search Activity" && <SearchActivityTab />}
+      {activeTab === "Email Unlocks" && <UnlocksTab field="email" />}
+      {activeTab === "Mobile Unlocks" && <UnlocksTab field="mobile" />}
+      {activeTab === "Login History" && <LoginHistoryUnavailable />}
+    </div>
+  );
+}
 
-      {activeTab === "Email Unlocks" && (
-        <div className="bg-white rounded-xl border border-slate-200">
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
-              <option>All Time</option><option>Today</option><option>This Week</option><option>This Month</option>
-            </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
-              <option>All Account Types</option><option>Individual</option><option>Enterprise</option>
-            </select>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
-                  <th className="px-4 py-2.5 text-left">User</th>
-                  <th className="px-4 py-2.5 text-left">Account Type</th>
-                  <th className="px-4 py-2.5 text-left">Company</th>
-                  <th className="px-4 py-2.5 text-left">Contact Name</th>
-                  <th className="px-4 py-2.5 text-left">Date & Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {EMAIL_UNLOCKS.map((row, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
-                        style={row.type === "Enterprise"
-                          ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
-                          : { background: "rgba(23,50,41,.07)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }}
-                      >
-                        {row.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">{row.company}</td>
-                    <td className="px-4 py-3 font-medium text-slate-700">{row.contact}</td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">{row.datetime}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+function SearchActivityTab() {
+  const toast = useToast();
+  const [page, setPage] = useState(1);
+  const [period, setPeriod] = useState("all");
+  const [accountType, setAccountType] = useState("all");
+  const [searchType, setSearchType] = useState("all");
+  const [data, setData] = useState<PagedSearchActivity | null>(null);
+  const [loading, setLoading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-      {activeTab === "Login History" && (
-        <div className="bg-white rounded-xl border border-slate-200">
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
-              <option>All Time</option><option>Today</option><option>This Week</option>
-            </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
-              <option>All Account Types</option><option>Individual</option><option>Enterprise</option><option>Admin</option>
-            </select>
-            <select className="h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-[#173229] focus:outline-none focus:ring-2 focus:ring-[rgba(23,50,41,.06)]">
-              <option>All Statuses</option><option>Successful</option><option>Failed</option>
-            </select>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-xs font-medium text-slate-500">
-                  <th className="px-4 py-2.5 text-left">User</th>
-                  <th className="px-4 py-2.5 text-left">Email</th>
-                  <th className="px-4 py-2.5 text-left">Account Type</th>
-                  <th className="px-4 py-2.5 text-left">Login Date & Time</th>
-                  <th className="px-4 py-2.5 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {LOGIN_HISTORY.map((row, i) => (
-                  <tr
-                    key={i}
-                    className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                    style={row.status === "failed" ? { background: "rgba(177,81,105,.04)" } : {}}
-                  >
-                    <td className="px-4 py-3 font-medium text-slate-800">{row.user}</td>
-                    <td className="px-4 py-3 text-slate-600">{row.email}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border"
-                        style={
-                          row.type === "Enterprise"
-                            ? { background: "#F6ECD4", color: "#8A6222", borderColor: "#E8D5A3" }
-                            : row.type === "Admin"
-                            ? { background: "rgba(23,50,41,.07)", color: "#173229", borderColor: "rgba(23,50,41,.18)" }
-                            : row.type === "—"
-                            ? { background: "#F5E1E6", color: "#B15169", borderColor: "#E0C0C8" }
-                            : { background: "#F1F5F9", color: "#64748B", borderColor: "#CBD5E1" }
-                        }
-                      >
-                        {row.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 text-xs">{row.datetime}</td>
-                    <td className="px-4 py-3"><Badge status={row.status} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+  const fetchData = useCallback(async () => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setLoading(true);
+    try {
+      const res = await listSearchActivity(
+        {
+          page,
+          page_size: PAGE_SIZE,
+          period: period !== "all" ? period : undefined,
+          account_type: accountType !== "all" ? accountType : undefined,
+          search_type: searchType !== "all" ? searchType : undefined,
+        },
+        ctrl.signal,
+      );
+      setData(res);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+      toast.error("Failed to load search activity", "Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, period, accountType, searchType, toast]);
 
-      {activeTab === "Exported Reports" && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {EXPORTED_REPORTS.map((report, i) => (
-            <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 flex flex-col gap-3">
-              <div>
-                <h3 className="font-semibold text-slate-900">{report.name}</h3>
-                <p className="text-sm text-slate-500 mt-1">{report.description}</p>
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-medium text-slate-400 mb-1.5">Contains</p>
-                <p className="text-xs text-slate-600 leading-relaxed">{report.contents}</p>
-              </div>
-              <button
-                type="button"
-                disabled
-                className="flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-500 cursor-not-allowed"
-              >
-                <Download className="h-4 w-4" />
-                Download CSV
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200">
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
+        <select className={SELECT_CLASS} value={period} onChange={(e) => { setPeriod(e.target.value); setPage(1); }}>
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+        <select className={SELECT_CLASS} value={accountType} onChange={(e) => { setAccountType(e.target.value); setPage(1); }}>
+          <option value="all">All Account Types</option>
+          <option value="individual">Individual</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+        <select className={SELECT_CLASS} value={searchType} onChange={(e) => { setSearchType(e.target.value); setPage(1); }}>
+          <option value="all">All Search Types</option>
+          <option value="person">People Search</option>
+          <option value="company">Company Search</option>
+          <option value="agentic">AI Search</option>
+        </select>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+              <th className="px-4 py-2.5 text-left">User</th>
+              <th className="px-4 py-2.5 text-left">Account Type</th>
+              <th className="px-4 py-2.5 text-left">Company</th>
+              <th className="px-4 py-2.5 text-left">Search Type</th>
+              <th className="px-4 py-2.5 text-left">Date & Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && !data && <LoadingRow colSpan={5} />}
+            {!loading && data?.items.length === 0 && <EmptyRow colSpan={5} label="No search activity found." />}
+            {data?.items.map((row) => (
+              <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-3 font-medium text-slate-800">{row.user_name}</td>
+                <td className="px-4 py-3"><AccountTypeBadge type={row.account_type} /></td>
+                <td className="px-4 py-3 text-slate-500">{row.company ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600">{row.search_type}</td>
+                <td className="px-4 py-3 text-slate-500 text-xs">{fmtDate(row.created_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Pagination total={data?.total ?? 0} perPage={PAGE_SIZE} page={page} onChange={setPage} itemLabel="searches" />
+    </div>
+  );
+}
+
+function UnlocksTab({ field }: { field: "email" | "mobile" }) {
+  const toast = useToast();
+  const [page, setPage] = useState(1);
+  const [period, setPeriod] = useState("all");
+  const [accountType, setAccountType] = useState("all");
+  const [data, setData] = useState<PagedUnlocks | null>(null);
+  const [loading, setLoading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const fetchData = useCallback(async () => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setLoading(true);
+    try {
+      const res = await listUnlocks(
+        {
+          field,
+          page,
+          page_size: PAGE_SIZE,
+          period: period !== "all" ? period : undefined,
+          account_type: accountType !== "all" ? accountType : undefined,
+        },
+        ctrl.signal,
+      );
+      setData(res);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+      toast.error(`Failed to load ${field === "email" ? "email" : "mobile"} unlocks`, "Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [field, page, period, accountType, toast]);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  // reset paging/filters when switching between the Email/Mobile tabs
+  useEffect(() => {
+    setPage(1);
+    setPeriod("all");
+    setAccountType("all");
+  }, [field]);
+
+  const valueLabel = field === "email" ? "Unlocked Email" : "Unlocked Number";
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200">
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-4">
+        <select className={SELECT_CLASS} value={period} onChange={(e) => { setPeriod(e.target.value); setPage(1); }}>
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+        <select className={SELECT_CLASS} value={accountType} onChange={(e) => { setAccountType(e.target.value); setPage(1); }}>
+          <option value="all">All Account Types</option>
+          <option value="individual">Individual</option>
+          <option value="enterprise">Enterprise</option>
+        </select>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-slate-50 text-xs font-medium text-slate-500">
+              <th className="px-4 py-2.5 text-left">User</th>
+              <th className="px-4 py-2.5 text-left">Account Type</th>
+              <th className="px-4 py-2.5 text-left">Company</th>
+              <th className="px-4 py-2.5 text-left">{valueLabel}</th>
+              <th className="px-4 py-2.5 text-left">Date & Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && !data && <LoadingRow colSpan={5} />}
+            {!loading && data?.items.length === 0 && (
+              <EmptyRow colSpan={5} label={`No ${field === "email" ? "email" : "mobile"} unlocks found.`} />
+            )}
+            {data?.items.map((row) => (
+              <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                <td className="px-4 py-3 font-medium text-slate-800">{row.user_name}</td>
+                <td className="px-4 py-3"><AccountTypeBadge type={row.account_type} /></td>
+                <td className="px-4 py-3 text-slate-500">{row.company ?? "—"}</td>
+                <td className="px-4 py-3 font-medium text-slate-700">{row.value ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-500 text-xs">{fmtDate(row.unlocked_at)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <Pagination total={data?.total ?? 0} perPage={PAGE_SIZE} page={page} onChange={setPage} itemLabel="unlocks" />
+    </div>
+  );
+}
+
+function LoginHistoryUnavailable() {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-12 text-center">
+      <p className="text-sm font-medium text-slate-600">Login history isn&apos;t tracked yet.</p>
+      <p className="text-xs text-slate-400 mt-1.5 max-w-md mx-auto">
+        The backend doesn&apos;t currently persist login events, so there&apos;s no data to show here.
+        This tab will populate once login auditing is added.
+      </p>
     </div>
   );
 }
