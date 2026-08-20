@@ -5,6 +5,7 @@ import axios from "axios";
 import { Plus, Save, MailWarning, Loader2 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Modal, { Field, FieldInput, FieldSelect, FieldRow } from "@/components/ui/Modal";
+import { SettingsRowSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -281,9 +282,13 @@ export default function SettingsPage() {
       {activeTab === "General Settings" && (
         <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
           {generalLoading && (
-            <div className="flex items-center justify-center px-6 py-12">
-              <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
-            </div>
+            <>
+              <SettingsRowSkeleton />
+              <SettingsRowSkeleton />
+              <SettingsRowSkeleton />
+              <SettingsRowSkeleton control="toggle" />
+              <SettingsRowSkeleton control="toggle" />
+            </>
           )}
           {!generalLoading && general.maintenanceMode && (
             <div
@@ -468,13 +473,11 @@ export default function SettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {adminsLoading && admins.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center">
-                      <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
-                    </td>
-                  </tr>
-                )}
+                {adminsLoading &&
+                  admins.length === 0 &&
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRowSkeleton key={`sk-admin-${i}`} columns={6} />
+                  ))}
                 {!adminsLoading && admins.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-400">

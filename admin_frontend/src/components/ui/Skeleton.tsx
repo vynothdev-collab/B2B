@@ -66,6 +66,22 @@ export function TableRowSkeleton({
   );
 }
 
+export function SettingsRowSkeleton({ control = "input" }: { control?: "input" | "toggle" }) {
+  return (
+    <div className="flex items-center justify-between px-6 py-5" aria-hidden="true">
+      <div className="flex-1 max-w-sm space-y-2">
+        <Bar className="h-3 w-36" />
+        <Bar className="h-2.5 w-56" style={{ opacity: 0.6 }} />
+      </div>
+      {control === "toggle" ? (
+        <div className="h-6 w-11 shrink-0 rounded-full skeleton-shimmer" />
+      ) : (
+        <Bar className="h-9 w-64 rounded-lg" />
+      )}
+    </div>
+  );
+}
+
 export function PlanTableRowSkeleton() {
   return (
     <tr className="border-b border-slate-100" aria-hidden="true">

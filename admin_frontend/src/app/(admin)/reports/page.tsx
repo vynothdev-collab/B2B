@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { Loader2 } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
+import { TableRowSkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import {
   listSearchActivity,
@@ -46,13 +46,13 @@ function AccountTypeBadge({ type }: { type: string }) {
   );
 }
 
-function LoadingRow({ colSpan }: { colSpan: number }) {
+function LoadingRows({ colSpan, rows = 8 }: { colSpan: number; rows?: number }) {
   return (
-    <tr>
-      <td colSpan={colSpan} className="px-4 py-12 text-center">
-        <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
-      </td>
-    </tr>
+    <>
+      {Array.from({ length: rows }).map((_, i) => (
+        <TableRowSkeleton key={`sk-${i}`} columns={colSpan} withAvatar={false} />
+      ))}
+    </>
   );
 }
 
@@ -169,9 +169,9 @@ function SearchActivityTab() {
             </tr>
           </thead>
           <tbody>
-            {loading && !data && <LoadingRow colSpan={5} />}
+            {loading && <LoadingRows colSpan={5} />}
             {!loading && data?.items.length === 0 && <EmptyRow colSpan={5} label="No search activity found." />}
-            {data?.items.map((row) => (
+            {!loading && data?.items.map((row) => (
               <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-slate-800">{row.user_name}</td>
                 <td className="px-4 py-3"><AccountTypeBadge type={row.account_type} /></td>
@@ -262,11 +262,11 @@ function UnlocksTab({ field }: { field: "email" | "mobile" }) {
             </tr>
           </thead>
           <tbody>
-            {loading && !data && <LoadingRow colSpan={5} />}
+            {loading && <LoadingRows colSpan={5} />}
             {!loading && data?.items.length === 0 && (
               <EmptyRow colSpan={5} label={`No ${field === "email" ? "email" : "mobile"} unlocks found.`} />
             )}
-            {data?.items.map((row) => (
+            {!loading && data?.items.map((row) => (
               <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-slate-800">{row.user_name}</td>
                 <td className="px-4 py-3"><AccountTypeBadge type={row.account_type} /></td>
