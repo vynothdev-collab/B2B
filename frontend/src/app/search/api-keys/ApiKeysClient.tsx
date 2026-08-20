@@ -54,15 +54,34 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone: 
   );
 }
 
+function StatCardSkeleton() {
+  return (
+    <div aria-busy="true" className="flex-1 animate-pulse rounded-2xl border border-gray-100 bg-white px-5 py-4">
+      <div className="h-3 w-20 rounded bg-gray-100" />
+      <div className="mt-2 h-8 w-12 rounded bg-gray-200" />
+    </div>
+  );
+}
+
 function KeyRowSkeleton() {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4">
-      <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-gray-100" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3.5 w-32 animate-pulse rounded bg-gray-100" />
-        <div className="h-3 w-48 animate-pulse rounded bg-gray-100" />
+    <div
+      aria-busy="true"
+      aria-label="Loading API key"
+      className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 animate-pulse sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div className="flex items-center gap-3.5">
+        <div className="h-10 w-10 shrink-0 rounded-xl bg-gray-200" />
+        <div className="min-w-0 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-28 rounded bg-gray-200" />
+            <div className="h-5 w-14 rounded-full bg-gray-100" />
+          </div>
+          <div className="h-3 w-32 rounded bg-gray-100" />
+          <div className="h-3 w-52 max-w-full rounded bg-gray-100" />
+        </div>
       </div>
-      <div className="h-6 w-16 animate-pulse rounded-full bg-gray-100" />
+      <div className="h-9 w-20 rounded-xl bg-gray-100" />
     </div>
   );
 }
@@ -147,7 +166,6 @@ export default function ApiKeysClient() {
       <AppHeader title="API Keys" />
 
       <div className="mx-auto w-full max-w-6xl flex-1 space-y-5 p-4 sm:p-6">
-        {/* Intro / hero */}
         <div className="rounded-2xl border border-red-100 bg-white p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-4">
@@ -193,14 +211,19 @@ export default function ApiKeysClient() {
           </div>
         </div>
 
-        {/* Stats */}
-        {!loading && keys.length > 0 && (
+        {loading ? (
+          <div className="flex gap-3" aria-label="Loading API key statistics">
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </div>
+        ) : keys.length > 0 ? (
           <div className="flex gap-3">
             <StatCard label="Total Keys" value={keys.length} tone="gray" />
             <StatCard label="Active" value={activeCount} tone="green" />
             <StatCard label="Revoked" value={revokedCount} tone="red" />
           </div>
-        )}
+        ) : null}
 
         {error && (
           <div className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -208,7 +231,6 @@ export default function ApiKeysClient() {
           </div>
         )}
 
-        {/* Keys list */}
         {loading ? (
           <div className="space-y-3">
             <KeyRowSkeleton />
