@@ -9,14 +9,20 @@ import { SkeletonBar, StatCardSkeleton } from "@/components/ui/Skeleton";
 import { initialsOf, timeAgo } from "@/lib/time";
 import { getCustomerStats, getCustomerPlanBreakdown, listCustomers, type CustomerRole } from "@/services/customers";
 import { getEnterpriseStats, listEnterprises, type Enterprise } from "@/services/enterprises";
-import { listSearchActivity, listUnlocks } from "@/services/reports";
+import { listSearchActivity, listUnlocks, listRecentActivity, type ActivityItem } from "@/services/reports";
 import { getRevenueSummary } from "@/services/plans";
 import {
   OVERVIEW_STATS,
   ALERTS,
   RECENT_TICKETS_PREVIEW,
-  RECENT_ACTIVITY,
 } from "@/data/dashboard";
+
+const ACTIVITY_DOT_COLOR: Record<string, string> = {
+  signup:     "var(--forest)",
+  enterprise: "var(--gold)",
+  plan:       "var(--rust)",
+  credit:     "var(--sage)",
+};
 
 const PRIORITY_STYLE: Record<string, React.CSSProperties> = {
   urgent:  { background: "var(--rose-dim)",  color: "var(--rose)",      border: "1px solid var(--rose)"  },
@@ -114,6 +120,7 @@ export default function DashboardPage() {
   const [individual, setIndividual] = useState<IndividualLive | null>(null);
   const [enterprise, setEnterprise] = useState<EnterpriseLive | null>(null);
   const [signups, setSignups] = useState<SignupItem[] | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[] | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchDashboard = useCallback(async () => {
@@ -138,6 +145,7 @@ export default function DashboardPage() {
         recentCustomers,
         recentEnterprises,
         revenueSummary,
+        recentActivity,
       ] = await Promise.all([
         getCustomerStats({}, ctrl.signal),
         getCustomerStats({ role: "individual" }, ctrl.signal),
@@ -154,6 +162,7 @@ export default function DashboardPage() {
         listCustomers({ page_size: 5 }, ctrl.signal),
         listEnterprises({ page_size: 100 }, ctrl.signal),
         getRevenueSummary("month", ctrl.signal),
+        listRecentActivity(10, ctrl.signal),
       ]);
 
       const searchesThisMonth = individualSearches.total + enterpriseSearches.total;
@@ -229,6 +238,7 @@ export default function DashboardPage() {
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 5);
       setSignups(merged);
+      setActivity(recentActivity.items);
     } catch (err: unknown) {
       if (axios.isCancel(err)) return;
       toast.error("Failed to load dashboard data", "Please try again.");
@@ -638,14 +648,25 @@ export default function DashboardPage() {
           <span className="text-xs text-slate-400">Last 24 hours</span>
         </div>
         <div className="divide-y divide-slate-50">
-          {RECENT_ACTIVITY.map((item, i) => (
+          {loading &&
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-start gap-3 px-5 py-2.5">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full skeleton-shimmer" />
+                <SkeletonBar className="flex-1 h-3" />
+                <SkeletonBar className="h-3 w-14" />
+              </div>
+            ))}
+          {!loading && activity?.length === 0 && (
+            <p className="px-5 py-8 text-center text-sm text-slate-400">No recent activity.</p>
+          )}
+          {!loading && activity?.map((item, i) => (
             <div key={i} className="flex items-start gap-3 px-5 py-2.5">
               <span
                 className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ background: item.dotColor }}
+                style={{ background: ACTIVITY_DOT_COLOR[item.type] ?? "var(--ink-faint)" }}
               />
               <p className="flex-1 text-sm text-slate-600">{item.text}</p>
-              <span className="shrink-0 text-xs text-slate-400 whitespace-nowrap pt-0.5">{item.time}</span>
+              <span className="shrink-0 text-xs text-slate-400 whitespace-nowrap pt-0.5">{timeAgo(item.timestamp)}</span>
             </div>
           ))}
         </div>

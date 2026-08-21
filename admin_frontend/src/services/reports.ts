@@ -66,3 +66,24 @@ export async function listUnlocks(
   });
   return data;
 }
+
+export interface ActivityItem {
+  type: string;
+  text: string;
+  timestamp: string;
+}
+
+export interface RecentActivityResponse {
+  items: ActivityItem[];
+}
+
+export async function listRecentActivity(
+  limit = 10,
+  signal?: AbortSignal,
+): Promise<RecentActivityResponse> {
+  const { data } = await api.get<RecentActivityResponse>("/admin/reports/recent-activity", {
+    params: { limit },
+    signal,
+  });
+  return data;
+}

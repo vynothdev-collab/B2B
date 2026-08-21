@@ -8,9 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_super_admin
 from app.models.contact_unlock import ContactUnlock, ContactUnlockField
+from app.models.credit_transaction import CreditTransaction
 from app.models.enterprise import Enterprise
+from app.models.plan import Plan
 from app.models.search_log import SearchLog
 from app.models.user import User
+from app.models.user_plan import UserPlan
 
 router = APIRouter(dependencies=[Depends(require_super_admin)])
 
@@ -58,6 +61,16 @@ class PagedUnlocks(BaseModel):
     total:     int
     page:      int
     page_size: int
+
+
+class ActivityItem(BaseModel):
+    type:      str
+    text:      str
+    timestamp: datetime
+
+
+class RecentActivityResponse(BaseModel):
+    items: list[ActivityItem]
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -210,3 +223,70 @@ async def list_unlocks(
         )
 
     return PagedUnlocks(items=items, total=total, page=page, page_size=page_size)
+
+
+@router.get("/recent-activity", response_model=RecentActivityResponse)
+async def list_recent_activity(
+    limit: int = Query(default=10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+) -> RecentActivityResponse:
+    fetch_n = limit
+
+    signup_rows = (
+        await db.execute(
+            select(User.email, User.created_at)
+            .where(User.enterprise_id.is_(None))
+            .order_by(User.created_at.desc())
+            .limit(fetch_n)
+        )
+    ).all()
+
+    enterprise_rows = (
+        await db.execute(
+            select(Enterprise.name, Enterprise.created_at)
+            .order_by(Enterprise.created_at.desc())
+            .limit(fetch_n)
+        )
+    ).all()
+
+    plan_rows = (
+        await db.execute(
+            select(User.name, Plan.name, UserPlan.purchased_at)
+            .join(User, User.id == UserPlan.user_id)
+            .join(Plan, Plan.id == UserPlan.plan_id)
+            .order_by(UserPlan.purchased_at.desc())
+            .limit(fetch_n)
+        )
+    ).all()
+
+    credit_rows = (
+        await db.execute(
+            select(CreditTransaction.account_name, CreditTransaction.delta, CreditTransaction.created_at)
+            .where(CreditTransaction.reference_type == "admin")
+            .order_by(CreditTransaction.created_at.desc())
+            .limit(fetch_n)
+        )
+    ).all()
+
+    events: list[ActivityItem] = []
+    for email, created_at in signup_rows:
+        events.append(ActivityItem(type="signup", text=f"New signup: {email}", timestamp=created_at))
+    for name, created_at in enterprise_rows:
+        events.append(ActivityItem(type="enterprise", text=f"Enterprise account created: {name}", timestamp=created_at))
+    for user_name, plan_name, purchased_at in plan_rows:
+        events.append(
+            ActivityItem(type="plan", text=f"{user_name} purchased the {plan_name} plan", timestamp=purchased_at)
+        )
+    for account_name, delta, created_at in credit_rows:
+        sign = "+" if delta >= 0 else ""
+        events.append(
+            ActivityItem(
+                type="credit",
+                text=f"Credits allocated: {sign}{delta:,} to {account_name}",
+                timestamp=created_at,
+            )
+        )
+
+    events.sort(key=lambda e: e.timestamp, reverse=True)
+
+    return RecentActivityResponse(items=events[:limit])

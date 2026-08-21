@@ -81,16 +81,4 @@ export const RECENT_TICKETS_PREVIEW = [
   { id: "#1039", subject: "Request to increase monthly credit limit",       by: "Vantage Capital",priority:"pending", status: "open",        updated: "Yesterday"  },
 ];
 
-export const RECENT_ACTIVITY = [
-  { type: "signup",     dotColor: "var(--forest)", text: "New signup: john.carter@example.com",                          time: "2 min ago"  },
-  { type: "payment",    dotColor: "var(--sage)",   text: "Payment received: $299 — Acme Corp (Business)",                time: "11 min ago" },
-  { type: "enterprise", dotColor: "var(--gold)",   text: "Enterprise account created: Nexus Technologies",               time: "34 min ago" },
-  { type: "ticket",     dotColor: "var(--rose)",   text: "Urgent ticket #1042 opened — Login issue (John Carter)",       time: "1 hr ago"   },
-  { type: "signup",     dotColor: "var(--forest)", text: "New signup: sarah.kim@startup.io",                             time: "1 hr ago"   },
-  { type: "plan",       dotColor: "var(--gold)",   text: "Plan upgraded: DataSync Ltd → Business Plan",                  time: "2 hr ago"   },
-  { type: "payment",    dotColor: "var(--sage)",   text: "Payment received: $49 — Marcus Webb (Pro)",                    time: "3 hr ago"   },
-  { type: "suspend",    dotColor: "var(--ink-faint)", text: "User account suspended: spammer123@mail.com",               time: "4 hr ago"   },
-  { type: "ticket",     dotColor: "var(--rose)",   text: "Ticket #1040 opened — Search not working (Priya Patel)",       time: "4 hr ago"   },
-  { type: "payment",    dotColor: "var(--rust)",   text: "Payment failed: $49 — Ryan Nguyen (Pro renewal)",              time: "6 hr ago"   },
-];
 

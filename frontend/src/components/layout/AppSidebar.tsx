@@ -53,6 +53,10 @@ export default function AppSidebar() {
 
   const showLabels = mobileOpen || !collapsed;
 
+  const creditsPercent = user && user.allocated_credits > 0
+    ? Math.min(100, Math.round((user.used_credits / user.allocated_credits) * 100))
+    : 0;
+
   const navSections = (() => {
     const sections = BASE_NAV_SECTIONS.map((section) => {
       if (section.title !== "Search") return section;
@@ -232,6 +236,66 @@ export default function AppSidebar() {
             </div>
           ))}
         </nav>
+
+        {user && (
+          <div className="border-t border-gray-100 px-3 py-3">
+            {showLabels ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                    Credits Used
+                  </span>
+                  <span className="text-[11px] font-semibold text-gray-700">
+                    {creditsPercent}%
+                  </span>
+                </div>
+                <p className="mt-1 text-sm font-bold text-gray-900">
+                  {user.used_credits.toLocaleString()}
+                  <span className="font-medium text-gray-400"> / {user.allocated_credits.toLocaleString()}</span>
+                </p>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    className={[
+                      "h-full rounded-full transition-all",
+                      creditsPercent >= 90 ? "bg-red-500" : "bg-red-600",
+                    ].join(" ")}
+                    style={{ width: `${creditsPercent}%` }}
+                  />
+                </div>
+                {user.role !== "enterprise_user" && (
+                  <Link
+                    href="/search/plans"
+                    onClick={close}
+                    className="mt-2.5 flex items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-white py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    Upgrade Plan
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <Link
+                href={user.role !== "enterprise_user" ? "/search/plans" : "/search/usage"}
+                onClick={close}
+                title={`Credits Used: ${user.used_credits.toLocaleString()} / ${user.allocated_credits.toLocaleString()}`}
+                className="mx-auto flex h-9 w-9 items-center justify-center"
+              >
+                <svg viewBox="0 0 36 36" className="h-8 w-8 -rotate-90">
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="#e5e7eb" strokeWidth="3.5" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="15.5"
+                    fill="none"
+                    stroke="#dc2626"
+                    strokeWidth="3.5"
+                    strokeDasharray={`${(creditsPercent / 100) * 97.4} 97.4`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </Link>
+            )}
+          </div>
+        )}
 
         <div className="border-t border-gray-100 px-3 py-3">
           <div
