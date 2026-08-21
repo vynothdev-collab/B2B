@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, model_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,6 +35,20 @@ class AdminInfo(BaseModel):
     email: str
     name: str
     role: str
+
+
+class AdminProfileUpdateRequest(BaseModel):
+    name: str
+    current_password: str | None = None
+    new_password: str | None = None
+
+    @model_validator(mode="after")
+    def check_password_pair(self) -> "AdminProfileUpdateRequest":
+        if self.new_password and not self.current_password:
+            raise ValueError("Current password is required to set a new password.")
+        if self.new_password and len(self.new_password) < 8:
+            raise ValueError("New password must be at least 8 characters.")
+        return self
 
 
 class AdminTokenResponse(BaseModel):
@@ -115,6 +129,36 @@ async def admin_logout() -> dict:
 
 @router.get("/me", response_model=AdminInfo)
 async def admin_me(current_admin: AdminUser = Depends(get_current_admin)) -> AdminInfo:
+    return AdminInfo(
+        id=current_admin.id,
+        email=current_admin.email,
+        name=current_admin.name,
+        role=current_admin.role,
+    )
+
+
+@router.patch("/me", response_model=AdminInfo)
+async def update_admin_me(
+    payload: AdminProfileUpdateRequest,
+    current_admin: AdminUser = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
+) -> AdminInfo:
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Name cannot be empty.")
+
+    if payload.new_password:
+        if not verify_password(payload.current_password or "", current_admin.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect.",
+            )
+        current_admin.hashed_password = hash_password(payload.new_password)
+
+    current_admin.name = name
+    await db.commit()
+    await db.refresh(current_admin)
+
     return AdminInfo(
         id=current_admin.id,
         email=current_admin.email,

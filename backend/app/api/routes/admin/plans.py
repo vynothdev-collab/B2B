@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_super_admin
 from app.models.plan import Plan
+from app.models.user_plan import UserPlan, UserPlanStatus
 from app.schemas.plan import CreatePlanPayload, EditPlanPayload, PlanOut
 
 router = APIRouter(dependencies=[Depends(require_super_admin)])
@@ -24,6 +25,23 @@ class PlansSummaryResponse(BaseModel):
     total: int
     active_count: int
     inactive_count: int
+
+
+class RevenueSummaryResponse(BaseModel):
+    revenue_cents:        int
+    active_subscriptions: int
+
+
+def _period_start(period: str | None) -> datetime | None:
+    if not period or period == "all":
+        return None
+    now = datetime.now(UTC)
+    if period == "week":
+        start = now - timedelta(days=now.weekday())
+        return start.replace(hour=0, minute=0, second=0, microsecond=0)
+    if period == "month":
+        return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return None
 
 
 def _plan_out(p: Plan) -> PlanOut:
@@ -68,6 +86,36 @@ async def get_plans_summary(
         await db.execute(select(func.count()).select_from(base.where(Plan.is_active.is_(False)).subquery()))
     ).scalar_one()
     return PlansSummaryResponse(total=total, active_count=active_count, inactive_count=inactive_count)
+
+
+@router.get("/revenue-summary", response_model=RevenueSummaryResponse)
+async def get_revenue_summary(
+    period: str | None = Query(default="month", description="'week', 'month', or 'all' — revenue window"),
+    db: AsyncSession = Depends(get_db),
+) -> RevenueSummaryResponse:
+    revenue_stmt = (
+        select(func.coalesce(func.sum(Plan.price_cents), 0))
+        .select_from(UserPlan)
+        .join(Plan, Plan.id == UserPlan.plan_id)
+        .where(Plan.price_cents > 0)
+    )
+    start = _period_start(period)
+    if start:
+        revenue_stmt = revenue_stmt.where(UserPlan.purchased_at >= start)
+    revenue_cents = (await db.execute(revenue_stmt)).scalar_one()
+
+    active_stmt = (
+        select(func.count(UserPlan.id))
+        .select_from(UserPlan)
+        .join(Plan, Plan.id == UserPlan.plan_id)
+        .where(UserPlan.status == UserPlanStatus.ACTIVE, Plan.price_cents > 0)
+    )
+    active_subscriptions = (await db.execute(active_stmt)).scalar_one()
+
+    return RevenueSummaryResponse(
+        revenue_cents=int(revenue_cents),
+        active_subscriptions=int(active_subscriptions),
+    )
 
 
 @router.get("", response_model=PagedPlansResponse)

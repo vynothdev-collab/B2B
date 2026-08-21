@@ -38,6 +38,7 @@ export interface CustomerStats {
   total: number;
   active: number;
   suspended: number;
+  new_count: number;
 }
 
 export interface PlanBreakdownItem {
@@ -73,7 +74,7 @@ export async function listCustomers(
 }
 
 export async function getCustomerStats(
-  params: { role?: CustomerRole; roles?: CustomerRole[] } = {},
+  params: { role?: CustomerRole; roles?: CustomerRole[]; period?: "week" | "month" } = {},
   signal?: AbortSignal,
 ): Promise<CustomerStats> {
   const { data } = await api.get<CustomerStats>("/admin/customers/stats", { params, signal });

@@ -26,6 +26,11 @@ export interface PlansSummary {
   inactive_count: number;
 }
 
+export interface RevenueSummary {
+  revenue_cents: number;
+  active_subscriptions: number;
+}
+
 export interface CreatePlanPayload {
   name: string;
   description?: string;
@@ -46,6 +51,14 @@ export interface EditPlanPayload {
 
 export async function getPlansSummary(target: string, signal?: AbortSignal): Promise<PlansSummary> {
   const { data } = await api.get<PlansSummary>("/admin/plans/summary", { params: { target }, signal });
+  return data;
+}
+
+export async function getRevenueSummary(
+  period: "week" | "month" | "all" = "month",
+  signal?: AbortSignal,
+): Promise<RevenueSummary> {
+  const { data } = await api.get<RevenueSummary>("/admin/plans/revenue-summary", { params: { period }, signal });
   return data;
 }
 

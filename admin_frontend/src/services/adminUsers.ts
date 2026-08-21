@@ -52,3 +52,23 @@ export async function setAdminAccountStatus(
   });
   return data;
 }
+
+export interface AdminSelfInfo {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
+export interface UpdateOwnProfilePayload {
+  name: string;
+  current_password?: string;
+  new_password?: string;
+}
+
+export async function updateOwnProfile(
+  payload: UpdateOwnProfilePayload,
+): Promise<AdminSelfInfo> {
+  const { data } = await api.patch<AdminSelfInfo>("/admin/auth/me", payload);
+  return data;
+}

@@ -1,80 +1,42 @@
 import { Users, Banknote, CreditCard, Zap, Ticket } from "lucide-react";
 
+// NOTE: `value`/`trend` below are placeholder fallbacks shown only while the
+// live dashboard fetch is loading or if a field fails to populate — real
+// numbers come from the API calls in dashboard/page.tsx (see `overview` state).
 export const OVERVIEW_STATS = [
   {
     label: "Total Platform Users",
-    value: "1,916",
+    value: "—",
     sub: "Individual + Enterprise",
-    trend: "+30 this week",
     icon: Users,
     iconBg: "var(--forest)",
     iconColor: "#EFEAD9",
   },
   {
     label: "Revenue This Month",
-    value: "$18,420",
-    sub: "↑ 9.6% vs last month",
-    trend: "+$1,620 vs Jun",
+    value: "—",
+    sub: "Paid plan purchases",
     icon: Banknote,
     iconBg: "var(--sage)",
     iconColor: "#F4FBF1",
   },
   {
     label: "Active Subscriptions",
-    value: "608",
-    sub: "Pro + Business + Enterprise",
-    trend: "+14 this month",
+    value: "—",
+    sub: "Individual paid plans",
     icon: CreditCard,
     iconBg: "var(--gold)",
     iconColor: "#3C2400",
   },
   {
     label: "Searches This Month",
-    value: "24,381",
-    sub: "↑ 8% vs last month",
-    trend: "+1,811 vs Jun",
+    value: "—",
+    sub: "Individual + Enterprise",
     icon: Zap,
     iconBg: "var(--rust)",
     iconColor: "#FFF0EB",
   },
 ];
-
-export const INDIVIDUAL_STATS = {
-  total: 1284,
-  newThisWeek: 12,
-  newThisMonth: 48,
-  activeThisMonth: 659,
-  inactiveCount: 625,
-  freeCount: 680,
-  paidCount: 604,
-  searchesThisMonth: 18240,
-  unlocksThisMonth: 2180,
-  plans: [
-    { name: "Free",     count: 680, pct: 53, barColor: "var(--ink-faint)" },
-    { name: "Pro",      count: 412, pct: 32, barColor: "var(--forest)"    },
-    { name: "Business", count: 148, pct: 12, barColor: "var(--gold)"      },
-    { name: "Other",    count: 44,  pct: 3,  barColor: "var(--line)"      },
-  ],
-};
-
-export const ENTERPRISE_STATS = {
-  totalAccounts: 48,
-  totalUsers: 632,
-  newAccountsThisMonth: 2,
-  newUsersThisWeek: 18,
-  activeAccounts: 44,
-  suspendedAccounts: 4,
-  searchesThisMonth: 6141,
-  unlocksThisMonth: 962,
-  revenueThisMonth: 9200,
-  topAccounts: [
-    { name: "Vantage Capital",    initials: "VC", plan: "Enterprise", users: 35, status: "active"   },
-    { name: "Nexus Technologies", initials: "NT", plan: "Enterprise", users: 28, status: "active"   },
-    { name: "Acme Corp",          initials: "AC", plan: "Business",   users: 12, status: "active"   },
-    { name: "DataSync Ltd",       initials: "DS", plan: "Business",   users: 7,  status: "active"   },
-    { name: "BrightPath EDU",     initials: "BP", plan: "Business",   users: 5,  status: "inactive" },
-  ],
-};
 
 export const ALERTS = [
   {
@@ -132,7 +94,3 @@ export const RECENT_ACTIVITY = [
   { type: "payment",    dotColor: "var(--rust)",   text: "Payment failed: $49 — Ryan Nguyen (Pro renewal)",              time: "6 hr ago"   },
 ];
 
-export const PLATFORM_USAGE = [
-  { label: "Searches", individual: 18240, enterprise: 6141, color: "bg-blue-500"   },
-  { label: "Unlocks",  individual: 2180,  enterprise: 962,  color: "bg-violet-500" },
-];

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, field_validator
@@ -128,6 +128,7 @@ class EnterpriseStats(BaseModel):
     active:        int
     total_users:   int
     total_credits: int
+    new_count:     int = 0
 
 
 class EnterpriseOption(BaseModel):
@@ -136,6 +137,18 @@ class EnterpriseOption(BaseModel):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _period_start(period: str | None) -> datetime | None:
+    if not period or period == "all":
+        return None
+    now = datetime.now(UTC)
+    if period == "week":
+        start = now - timedelta(days=now.weekday())
+        return start.replace(hour=0, minute=0, second=0, microsecond=0)
+    if period == "month":
+        return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return None
+
 
 async def _load_enterprise(db: AsyncSession, enterprise_id: str) -> Enterprise:
     result = await db.execute(select(Enterprise).where(Enterprise.id == enterprise_id))
@@ -315,7 +328,10 @@ async def list_enterprise_options(db: AsyncSession = Depends(get_db)) -> list[En
 
 
 @router.get("/stats", response_model=EnterpriseStats)
-async def enterprise_stats(db: AsyncSession = Depends(get_db)) -> EnterpriseStats:
+async def enterprise_stats(
+    period: str | None = Query(default=None, description="'week' or 'month' — counts new accounts since period start"),
+    db: AsyncSession = Depends(get_db),
+) -> EnterpriseStats:
     row = (
         await db.execute(
             select(
@@ -336,11 +352,21 @@ async def enterprise_stats(db: AsyncSession = Depends(get_db)) -> EnterpriseStat
         )
     ).scalar_one()
 
+    new_count = 0
+    start = _period_start(period)
+    if start:
+        new_count = (
+            await db.execute(
+                select(func.count(Enterprise.id)).where(Enterprise.created_at >= start)
+            )
+        ).scalar_one()
+
     return EnterpriseStats(
         total=int(row[0]),
         active=int(row[1]),
         total_users=int(total_users),
         total_credits=int(row[2]),
+        new_count=int(new_count),
     )
 
 

@@ -235,7 +235,7 @@ function EnterpriseDetail({
   );
 }
 
-const EMPTY_STATS: EnterpriseStats = { total: 0, active: 0, total_users: 0, total_credits: 0 };
+const EMPTY_STATS: EnterpriseStats = { total: 0, active: 0, total_users: 0, total_credits: 0, new_count: 0 };
 
 export default function EnterprisesPage() {
   const toast = useToast();
@@ -310,7 +310,7 @@ export default function EnterprisesPage() {
   const loadStats = useCallback(async (signal?: AbortSignal) => {
     setStatsLoading(true);
     try {
-      const s = await getEnterpriseStats(signal);
+      const s = await getEnterpriseStats({}, signal);
       setStats(s);
     } catch (err: unknown) {
       if (axios.isCancel(err)) return;

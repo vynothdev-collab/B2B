@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { TrendingUp, Users, Building2, ArrowRight, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Users, Building2, ArrowRight, AlertTriangle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { useToast } from "@/components/ui/Toast";
@@ -10,10 +10,9 @@ import { initialsOf, timeAgo } from "@/lib/time";
 import { getCustomerStats, getCustomerPlanBreakdown, listCustomers, type CustomerRole } from "@/services/customers";
 import { getEnterpriseStats, listEnterprises, type Enterprise } from "@/services/enterprises";
 import { listSearchActivity, listUnlocks } from "@/services/reports";
+import { getRevenueSummary } from "@/services/plans";
 import {
   OVERVIEW_STATS,
-  INDIVIDUAL_STATS,
-  ENTERPRISE_STATS,
   ALERTS,
   RECENT_TICKETS_PREVIEW,
   RECENT_ACTIVITY,
@@ -86,6 +85,7 @@ interface PlanBreakdownRow {
 
 interface IndividualLive {
   total: number;
+  newThisWeek: number;
   activeThisMonth: number;
   inactiveCount: number;
   searchesThisMonth: number;
@@ -98,10 +98,12 @@ interface IndividualLive {
 interface EnterpriseLive {
   totalAccounts: number;
   totalUsers: number;
+  newThisMonth: number;
   activeAccounts: number;
   suspendedAccounts: number;
   searchesThisMonth: number;
   unlocksThisMonth: number;
+  totalCredits: number;
   topAccounts: Enterprise[];
 }
 
@@ -123,6 +125,7 @@ export default function DashboardPage() {
       const [
         allCustomerStats,
         individualCustomerStats,
+        individualNewThisWeek,
         planBreakdown,
         enterpriseStats,
         suspendedEnterprises,
@@ -134,11 +137,13 @@ export default function DashboardPage() {
         enterpriseMobileUnlocks,
         recentCustomers,
         recentEnterprises,
+        revenueSummary,
       ] = await Promise.all([
         getCustomerStats({}, ctrl.signal),
         getCustomerStats({ role: "individual" }, ctrl.signal),
+        getCustomerStats({ role: "individual", period: "week" }, ctrl.signal),
         getCustomerPlanBreakdown(ctrl.signal),
-        getEnterpriseStats(ctrl.signal),
+        getEnterpriseStats({ period: "month" }, ctrl.signal),
         listEnterprises({ status: "suspended", page_size: 1 }, ctrl.signal),
         listSearchActivity({ period: "month", account_type: "individual", page_size: 1 }, ctrl.signal),
         listSearchActivity({ period: "month", account_type: "enterprise", page_size: 1 }, ctrl.signal),
@@ -148,6 +153,7 @@ export default function DashboardPage() {
         listUnlocks({ field: "mobile", period: "month", account_type: "enterprise", page_size: 1 }, ctrl.signal),
         listCustomers({ page_size: 5 }, ctrl.signal),
         listEnterprises({ page_size: 100 }, ctrl.signal),
+        getRevenueSummary("month", ctrl.signal),
       ]);
 
       const searchesThisMonth = individualSearches.total + enterpriseSearches.total;
@@ -155,6 +161,8 @@ export default function DashboardPage() {
       setOverview({
         "Total Platform Users": allCustomerStats.total.toLocaleString(),
         "Searches This Month": searchesThisMonth.toLocaleString(),
+        "Revenue This Month": `$${(revenueSummary.revenue_cents / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+        "Active Subscriptions": revenueSummary.active_subscriptions.toLocaleString(),
       });
 
       const freeItem = planBreakdown.items.find((i) => i.name === "Free");
@@ -173,6 +181,7 @@ export default function DashboardPage() {
 
       setIndividual({
         total: individualCustomerStats.total,
+        newThisWeek: individualNewThisWeek.new_count,
         activeThisMonth: individualCustomerStats.active,
         inactiveCount: individualCustomerStats.suspended,
         searchesThisMonth: individualSearches.total,
@@ -189,10 +198,12 @@ export default function DashboardPage() {
       setEnterprise({
         totalAccounts: enterpriseStats.total,
         totalUsers: enterpriseStats.total_users,
+        newThisMonth: enterpriseStats.new_count,
         activeAccounts: enterpriseStats.active,
         suspendedAccounts: suspendedEnterprises.total,
         searchesThisMonth: enterpriseSearches.total,
         unlocksThisMonth: enterpriseEmailUnlocks.total + enterpriseMobileUnlocks.total,
+        totalCredits: enterpriseStats.total_credits,
         topAccounts,
       });
 
@@ -231,8 +242,8 @@ export default function DashboardPage() {
     return () => abortRef.current?.abort();
   }, [fetchDashboard]);
 
-  const enterpriseHealthTotal = enterprise?.totalAccounts ?? ENTERPRISE_STATS.totalAccounts;
-  const enterpriseHealthActive = enterprise?.activeAccounts ?? ENTERPRISE_STATS.activeAccounts;
+  const enterpriseHealthTotal = enterprise?.totalAccounts ?? 0;
+  const enterpriseHealthActive = enterprise?.activeAccounts ?? 0;
 
   return (
     <div className="space-y-5">
@@ -253,10 +264,6 @@ export default function DashboardPage() {
                     >
                       <Icon className="h-4 w-4" style={{ color: card.iconColor }} />
                     </div>
-                    <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--sage)" }}>
-                      <TrendingUp className="h-3 w-3" />
-                      {card.trend}
-                    </span>
                   </div>
                   <p className="text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
                   <p className="text-sm font-medium text-slate-600 mt-0.5">{card.label}</p>
@@ -293,7 +300,11 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">New This Week</p>
-                <p className="text-lg font-bold" style={{ color: "var(--forest)" }}>+{INDIVIDUAL_STATS.newThisWeek}</p>
+                {loading ? (
+                  <SkeletonBar className="h-5 w-12" />
+                ) : (
+                  <p className="text-lg font-bold" style={{ color: "var(--forest)" }}>+{(individual?.newThisWeek ?? 0).toLocaleString()}</p>
+                )}
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">Active This Month</p>
@@ -405,8 +416,12 @@ export default function DashboardPage() {
                 )}
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
-                <p className="text-xs text-slate-500 mb-1">Revenue (Month)</p>
-                <p className="text-lg font-bold" style={{ color: "var(--sage)" }}>${ENTERPRISE_STATS.revenueThisMonth.toLocaleString()}</p>
+                <p className="text-xs text-slate-500 mb-1">Credits Allocated</p>
+                {loading ? (
+                  <SkeletonBar className="h-5 w-12" />
+                ) : (
+                  <p className="text-lg font-bold" style={{ color: "var(--sage)" }}>{(enterprise?.totalCredits ?? 0).toLocaleString()}</p>
+                )}
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">Searches (Month)</p>
@@ -418,7 +433,11 @@ export default function DashboardPage() {
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">New This Month</p>
-                <p className="text-lg font-bold text-slate-800">+{ENTERPRISE_STATS.newAccountsThisMonth}</p>
+                {loading ? (
+                  <SkeletonBar className="h-5 w-12" />
+                ) : (
+                  <p className="text-lg font-bold text-slate-800">+{(enterprise?.newThisMonth ?? 0).toLocaleString()}</p>
+                )}
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, field_validator
@@ -106,6 +106,7 @@ class CustomerStats(BaseModel):
     total:     int
     active:    int
     suspended: int
+    new_count: int = 0
 
 
 class PlanBreakdownItem(BaseModel):
@@ -119,6 +120,18 @@ class PlanBreakdownResponse(BaseModel):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _period_start(period: str | None) -> datetime | None:
+    if not period or period == "all":
+        return None
+    now = datetime.now(UTC)
+    if period == "week":
+        start = now - timedelta(days=now.weekday())
+        return start.replace(hour=0, minute=0, second=0, microsecond=0)
+    if period == "month":
+        return now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    return None
+
 
 async def _load_user(db: AsyncSession, user_id: str) -> User:
     result = await db.execute(select(User).where(User.id == user_id))
@@ -305,8 +318,9 @@ async def list_customers(
 
 @router.get("/stats", response_model=CustomerStats)
 async def customer_stats(
-    role:  str | None = Query(default=None),
-    roles: list[str] | None = Query(default=None),
+    role:   str | None = Query(default=None),
+    roles:  list[str] | None = Query(default=None),
+    period: str | None = Query(default=None, description="'week' or 'month' — counts new signups since period start"),
     db: AsyncSession = Depends(get_db),
 ) -> CustomerStats:
     stmt = select(
@@ -319,7 +333,17 @@ async def customer_stats(
     row = (await db.execute(stmt)).one()
     total = int(row[0])
     active = int(row[1])
-    return CustomerStats(total=total, active=active, suspended=total - active)
+
+    new_count = 0
+    start = _period_start(period)
+    if start:
+        new_stmt = _apply_customer_filters(
+            select(func.count(User.id)).where(User.created_at >= start),
+            role=role, roles=roles, enterprise_id=None, q=None, status_=None,
+        )
+        new_count = int((await db.execute(new_stmt)).scalar_one())
+
+    return CustomerStats(total=total, active=active, suspended=total - active, new_count=new_count)
 
 
 @router.get("/plan-breakdown", response_model=PlanBreakdownResponse)

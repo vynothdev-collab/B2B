@@ -51,8 +51,25 @@ export interface CreateEnterpriseUserPayload {
   phone?: string;
 }
 
+export interface UpdateMyEnterprisePayload {
+  name?: string;
+  industry?: string | null;
+  website?: string | null;
+  country?: string | null;
+  size?: string | null;
+  phone?: string | null;
+  notes?: string | null;
+}
+
 export async function apiGetMyEnterprise(): Promise<EnterpriseMe> {
   const { data } = await apiClient.get<EnterpriseMe>("/enterprise/me");
+  return data;
+}
+
+export async function apiUpdateMyEnterprise(
+  payload: UpdateMyEnterprisePayload,
+): Promise<EnterpriseMe> {
+  const { data } = await apiClient.patch<EnterpriseMe>("/enterprise/me", payload);
   return data;
 }
 
