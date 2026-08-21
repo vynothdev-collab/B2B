@@ -40,6 +40,16 @@ export interface CustomerStats {
   suspended: number;
 }
 
+export interface PlanBreakdownItem {
+  name: string;
+  count: number;
+}
+
+export interface PlanBreakdownResponse {
+  total: number;
+  items: PlanBreakdownItem[];
+}
+
 export interface CreateCustomerPayload {
   name: string;
   email: string;
@@ -67,6 +77,13 @@ export async function getCustomerStats(
   signal?: AbortSignal,
 ): Promise<CustomerStats> {
   const { data } = await api.get<CustomerStats>("/admin/customers/stats", { params, signal });
+  return data;
+}
+
+export async function getCustomerPlanBreakdown(
+  signal?: AbortSignal,
+): Promise<PlanBreakdownResponse> {
+  const { data } = await api.get<PlanBreakdownResponse>("/admin/customers/plan-breakdown", { signal });
   return data;
 }
 

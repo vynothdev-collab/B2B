@@ -9,7 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import hash_password, require_super_admin
 from app.models.enterprise import Enterprise
+from app.models.plan import Plan
 from app.models.user import User, UserRole
+from app.models.user_plan import UserPlan, UserPlanStatus
 from app.api.routes.admin.credits import log_credit_tx
 
 router = APIRouter(dependencies=[Depends(require_super_admin)])
@@ -104,6 +106,16 @@ class CustomerStats(BaseModel):
     total:     int
     active:    int
     suspended: int
+
+
+class PlanBreakdownItem(BaseModel):
+    name:  str
+    count: int
+
+
+class PlanBreakdownResponse(BaseModel):
+    total: int
+    items: list[PlanBreakdownItem]
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -308,6 +320,49 @@ async def customer_stats(
     total = int(row[0])
     active = int(row[1])
     return CustomerStats(total=total, active=active, suspended=total - active)
+
+
+@router.get("/plan-breakdown", response_model=PlanBreakdownResponse)
+async def customer_plan_breakdown(
+    db: AsyncSession = Depends(get_db),
+) -> PlanBreakdownResponse:
+    total = (
+        await db.execute(
+            select(func.count(User.id)).where(User.role == UserRole.INDIVIDUAL)
+        )
+    ).scalar_one()
+
+    # Most recently purchased active plan per user (a user can hold both an
+    # active PAYG and an active validity plan at once — pick one so counts
+    # don't double up).
+    ranked = (
+        select(
+            UserPlan.user_id,
+            UserPlan.plan_id,
+            func.row_number()
+            .over(partition_by=UserPlan.user_id, order_by=UserPlan.purchased_at.desc())
+            .label("rn"),
+        )
+        .where(UserPlan.status == UserPlanStatus.ACTIVE)
+        .subquery()
+    )
+
+    rows = (
+        await db.execute(
+            select(Plan.name, func.count(ranked.c.user_id))
+            .select_from(ranked)
+            .join(Plan, Plan.id == ranked.c.plan_id)
+            .join(User, User.id == ranked.c.user_id)
+            .where(ranked.c.rn == 1, User.role == UserRole.INDIVIDUAL)
+            .group_by(Plan.name)
+        )
+    ).all()
+
+    items = [PlanBreakdownItem(name=name, count=int(count)) for name, count in rows]
+    paid_total = sum(item.count for item in items)
+    items.insert(0, PlanBreakdownItem(name="Free", count=total - paid_total))
+
+    return PlanBreakdownResponse(total=total, items=items)
 
 
 @router.get("/{user_id}", response_model=CustomerResponse)

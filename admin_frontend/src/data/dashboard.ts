@@ -1,4 +1,4 @@
-import { Users, Banknote, CreditCard, Zap, Ticket, MessageSquare } from "lucide-react";
+import { Users, Banknote, CreditCard, Zap, Ticket } from "lucide-react";
 
 export const OVERVIEW_STATS = [
   {
@@ -101,17 +101,6 @@ export const ALERTS = [
   },
   {
     type: "info",
-    icon: MessageSquare,
-    label: "3 unread live chats",
-    sub: "Waiting for admin response",
-    alertColor: "var(--forest)",
-    alertBg: "var(--sage-dim)",
-    alertBorder: "var(--sage)",
-    action: "Open Chats",
-    href: "/live-chat",
-  },
-  {
-    type: "info",
     icon: Users,
     label: "6 pending invitations",
     sub: "2 enterprise + 4 individual",
@@ -123,25 +112,11 @@ export const ALERTS = [
   },
 ];
 
-export const RECENT_SIGNUPS = [
-  { name: "John Carter",        email: "john.carter@example.com", initials: "JC", plan: "Pro",        type: "Individual", time: "2 min ago" },
-  { name: "Sarah Kim",          email: "sarah.kim@startup.io",    initials: "SK", plan: "Business",   type: "Individual", time: "1 hr ago"  },
-  { name: "Nexus Technologies", email: "laura@nexustech.io",      initials: "NT", plan: "Enterprise", type: "Enterprise", time: "34 min ago"},
-  { name: "David Osei",         email: "d.osei@innovate.gh",      initials: "DO", plan: "Free",       type: "Individual", time: "3 hr ago"  },
-  { name: "Amara Diallo",       email: "amara@datasuite.co",      initials: "AD", plan: "Free",       type: "Individual", time: "5 hr ago"  },
-];
-
 export const RECENT_TICKETS_PREVIEW = [
   { id: "#1042", subject: "Unable to login after password reset",           by: "John Carter",   priority: "urgent",  status: "open",        updated: "5 min ago"  },
   { id: "#1041", subject: "Invoice amount incorrect after offer code",      by: "DataSync Ltd",  priority: "pending", status: "in_progress", updated: "2 hr ago"   },
   { id: "#1040", subject: "Search results returning empty for all filters", by: "Priya Patel",   priority: "urgent",  status: "open",        updated: "4 hr ago"   },
   { id: "#1039", subject: "Request to increase monthly credit limit",       by: "Vantage Capital",priority:"pending", status: "open",        updated: "Yesterday"  },
-];
-
-export const RECENT_CHATS_PREVIEW = [
-  { id: "CHT-001", user: "John Carter",  initials: "JC", subject: "Can't access my account dashboard",    unread: 2, status: "open", last: "5 min ago"  },
-  { id: "CHT-002", user: "Laura Chen",   initials: "LC", subject: "How to add team members to our plan",  unread: 1, status: "open", last: "22 min ago" },
-  { id: "CHT-005", user: "James Okafor", initials: "JO", subject: "Request for custom plan pricing",      unread: 3, status: "open", last: "Yesterday"  },
 ];
 
 export const RECENT_ACTIVITY = [

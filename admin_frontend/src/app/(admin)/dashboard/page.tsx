@@ -1,15 +1,21 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { TrendingUp, Users, Building2, ArrowRight, AlertTriangle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import axios from "axios";
+import { useToast } from "@/components/ui/Toast";
+import { SkeletonBar, StatCardSkeleton } from "@/components/ui/Skeleton";
+import { initialsOf, timeAgo } from "@/lib/time";
+import { getCustomerStats, getCustomerPlanBreakdown, listCustomers, type CustomerRole } from "@/services/customers";
+import { getEnterpriseStats, listEnterprises, type Enterprise } from "@/services/enterprises";
+import { listSearchActivity, listUnlocks } from "@/services/reports";
 import {
   OVERVIEW_STATS,
   INDIVIDUAL_STATS,
   ENTERPRISE_STATS,
   ALERTS,
-  RECENT_SIGNUPS,
   RECENT_TICKETS_PREVIEW,
-  RECENT_CHATS_PREVIEW,
   RECENT_ACTIVITY,
 } from "@/data/dashboard";
 
@@ -24,6 +30,14 @@ const STATUS_STYLE: Record<string, React.CSSProperties> = {
   in_progress: { background: "rgba(23,50,41,.07)", color: "var(--forest)", border: "1px solid var(--forest-line)" },
   resolved:    { background: "var(--sage-dim)",  color: "var(--sage-dark)", border: "1px solid var(--sage)" },
 };
+
+const ROLE_LABEL: Record<CustomerRole, string> = {
+  individual: "Individual",
+  enterprise_admin: "Enterprise Admin",
+  enterprise_user: "Enterprise User",
+};
+
+const PLAN_COLORS = ["var(--forest)", "var(--gold)", "var(--sage)", "var(--rust)", "var(--line)"];
 
 function PlanBadge({ plan }: { plan: string }) {
   const s: React.CSSProperties =
@@ -53,34 +67,203 @@ function SectionHeader({ title, href, label = "View all" }: { title: string; hre
   );
 }
 
+interface SignupItem {
+  id: string;
+  name: string;
+  email: string;
+  initials: string;
+  planLabel: string;
+  type: "Individual" | "Enterprise";
+  created_at: string;
+}
+
+interface PlanBreakdownRow {
+  name: string;
+  count: number;
+  pct: number;
+  barColor: string;
+}
+
+interface IndividualLive {
+  total: number;
+  activeThisMonth: number;
+  inactiveCount: number;
+  searchesThisMonth: number;
+  unlocksThisMonth: number;
+  freeCount: number;
+  paidCount: number;
+  plans: PlanBreakdownRow[];
+}
+
+interface EnterpriseLive {
+  totalAccounts: number;
+  totalUsers: number;
+  activeAccounts: number;
+  suspendedAccounts: number;
+  searchesThisMonth: number;
+  unlocksThisMonth: number;
+  topAccounts: Enterprise[];
+}
+
 export default function DashboardPage() {
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<Record<string, string>>({});
+  const [individual, setIndividual] = useState<IndividualLive | null>(null);
+  const [enterprise, setEnterprise] = useState<EnterpriseLive | null>(null);
+  const [signups, setSignups] = useState<SignupItem[] | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const fetchDashboard = useCallback(async () => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setLoading(true);
+    try {
+      const [
+        allCustomerStats,
+        individualCustomerStats,
+        planBreakdown,
+        enterpriseStats,
+        suspendedEnterprises,
+        individualSearches,
+        enterpriseSearches,
+        individualEmailUnlocks,
+        individualMobileUnlocks,
+        enterpriseEmailUnlocks,
+        enterpriseMobileUnlocks,
+        recentCustomers,
+        recentEnterprises,
+      ] = await Promise.all([
+        getCustomerStats({}, ctrl.signal),
+        getCustomerStats({ role: "individual" }, ctrl.signal),
+        getCustomerPlanBreakdown(ctrl.signal),
+        getEnterpriseStats(ctrl.signal),
+        listEnterprises({ status: "suspended", page_size: 1 }, ctrl.signal),
+        listSearchActivity({ period: "month", account_type: "individual", page_size: 1 }, ctrl.signal),
+        listSearchActivity({ period: "month", account_type: "enterprise", page_size: 1 }, ctrl.signal),
+        listUnlocks({ field: "email", period: "month", account_type: "individual", page_size: 1 }, ctrl.signal),
+        listUnlocks({ field: "mobile", period: "month", account_type: "individual", page_size: 1 }, ctrl.signal),
+        listUnlocks({ field: "email", period: "month", account_type: "enterprise", page_size: 1 }, ctrl.signal),
+        listUnlocks({ field: "mobile", period: "month", account_type: "enterprise", page_size: 1 }, ctrl.signal),
+        listCustomers({ page_size: 5 }, ctrl.signal),
+        listEnterprises({ page_size: 100 }, ctrl.signal),
+      ]);
+
+      const searchesThisMonth = individualSearches.total + enterpriseSearches.total;
+
+      setOverview({
+        "Total Platform Users": allCustomerStats.total.toLocaleString(),
+        "Searches This Month": searchesThisMonth.toLocaleString(),
+      });
+
+      const freeItem = planBreakdown.items.find((i) => i.name === "Free");
+      const freeCount = freeItem?.count ?? 0;
+      const paidCount = planBreakdown.total - freeCount;
+      let paletteIdx = 0;
+      const plans: PlanBreakdownRow[] = planBreakdown.items.map((item) => {
+        const barColor = item.name === "Free" ? "var(--ink-faint)" : PLAN_COLORS[paletteIdx++ % PLAN_COLORS.length];
+        return {
+          name: item.name,
+          count: item.count,
+          pct: planBreakdown.total > 0 ? Math.round((item.count / planBreakdown.total) * 100) : 0,
+          barColor,
+        };
+      });
+
+      setIndividual({
+        total: individualCustomerStats.total,
+        activeThisMonth: individualCustomerStats.active,
+        inactiveCount: individualCustomerStats.suspended,
+        searchesThisMonth: individualSearches.total,
+        unlocksThisMonth: individualEmailUnlocks.total + individualMobileUnlocks.total,
+        freeCount,
+        paidCount,
+        plans,
+      });
+
+      const topAccounts = [...recentEnterprises.items]
+        .sort((a, b) => b.user_count - a.user_count)
+        .slice(0, 5);
+
+      setEnterprise({
+        totalAccounts: enterpriseStats.total,
+        totalUsers: enterpriseStats.total_users,
+        activeAccounts: enterpriseStats.active,
+        suspendedAccounts: suspendedEnterprises.total,
+        searchesThisMonth: enterpriseSearches.total,
+        unlocksThisMonth: enterpriseEmailUnlocks.total + enterpriseMobileUnlocks.total,
+        topAccounts,
+      });
+
+      const customerItems: SignupItem[] = recentCustomers.items.map((c) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        initials: initialsOf(c.name),
+        planLabel: ROLE_LABEL[c.role] ?? c.role,
+        type: c.role === "individual" ? "Individual" : "Enterprise",
+        created_at: c.created_at,
+      }));
+      const enterpriseItems: SignupItem[] = recentEnterprises.items.slice(0, 5).map((e) => ({
+        id: e.id,
+        name: e.name,
+        email: e.admin_email ?? "—",
+        initials: initialsOf(e.name),
+        planLabel: e.plan,
+        type: "Enterprise",
+        created_at: e.created_at,
+      }));
+      const merged = [...customerItems, ...enterpriseItems]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5);
+      setSignups(merged);
+    } catch (err: unknown) {
+      if (axios.isCancel(err)) return;
+      toast.error("Failed to load dashboard data", "Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    void fetchDashboard();
+    return () => abortRef.current?.abort();
+  }, [fetchDashboard]);
+
+  const enterpriseHealthTotal = enterprise?.totalAccounts ?? ENTERPRISE_STATS.totalAccounts;
+  const enterpriseHealthActive = enterprise?.activeAccounts ?? ENTERPRISE_STATS.activeAccounts;
+
   return (
     <div className="space-y-5">
 
       {/* ── Row 1: Overview Metrics ─────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {OVERVIEW_STATS.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ background: card.iconBg }}
-                >
-                  <Icon className="h-4 w-4" style={{ color: card.iconColor }} />
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          : OVERVIEW_STATS.map((card) => {
+              const Icon = card.icon;
+              const value = overview[card.label] ?? card.value;
+              return (
+                <div key={card.label} className="bg-white rounded-xl border border-slate-200 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className="flex h-9 w-9 items-center justify-center rounded-lg"
+                      style={{ background: card.iconBg }}
+                    >
+                      <Icon className="h-4 w-4" style={{ color: card.iconColor }} />
+                    </div>
+                    <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--sage)" }}>
+                      <TrendingUp className="h-3 w-3" />
+                      {card.trend}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-900 tracking-tight">{value}</p>
+                  <p className="text-sm font-medium text-slate-600 mt-0.5">{card.label}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{card.sub}</p>
                 </div>
-                <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "var(--sage)" }}>
-                  <TrendingUp className="h-3 w-3" />
-                  {card.trend}
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-slate-900 tracking-tight">{card.value}</p>
-              <p className="text-sm font-medium text-slate-600 mt-0.5">{card.label}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{card.sub}</p>
-            </div>
-          );
-        })}
+              );
+            })}
       </div>
 
       {/* ── Row 2: Individual vs Enterprise ─────────────────────────── */}
@@ -99,7 +282,11 @@ export default function DashboardPage() {
               <h2 className="text-sm font-semibold text-slate-900">Individual Users</h2>
               <p className="text-xs text-slate-400">Personal accounts</p>
             </div>
-            <span className="text-xl font-bold text-slate-900">{INDIVIDUAL_STATS.total.toLocaleString()}</span>
+            {loading ? (
+              <SkeletonBar className="h-6 w-14" />
+            ) : (
+              <span className="text-xl font-bold text-slate-900">{(individual?.total ?? 0).toLocaleString()}</span>
+            )}
           </div>
 
           <div className="p-5 space-y-5">
@@ -110,36 +297,55 @@ export default function DashboardPage() {
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">Active This Month</p>
-                <p className="text-lg font-bold" style={{ color: "var(--sage)" }}>{INDIVIDUAL_STATS.activeThisMonth.toLocaleString()}</p>
+                {loading ? (
+                  <SkeletonBar className="h-5 w-12" />
+                ) : (
+                  <p className="text-lg font-bold" style={{ color: "var(--sage)" }}>{(individual?.activeThisMonth ?? 0).toLocaleString()}</p>
+                )}
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">Searches (Month)</p>
-                <p className="text-lg font-bold text-slate-800">{INDIVIDUAL_STATS.searchesThisMonth.toLocaleString()}</p>
+                {loading ? (
+                  <SkeletonBar className="h-5 w-12" />
+                ) : (
+                  <p className="text-lg font-bold text-slate-800">{(individual?.searchesThisMonth ?? 0).toLocaleString()}</p>
+                )}
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">Unlocks (Month)</p>
-                <p className="text-lg font-bold text-slate-800">{INDIVIDUAL_STATS.unlocksThisMonth.toLocaleString()}</p>
+                {loading ? (
+                  <SkeletonBar className="h-5 w-12" />
+                ) : (
+                  <p className="text-lg font-bold text-slate-800">{(individual?.unlocksThisMonth ?? 0).toLocaleString()}</p>
+                )}
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-medium text-slate-500">Free vs Paid</p>
-                <div className="flex items-center gap-3 text-xs text-slate-400">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full inline-block" style={{ background: "var(--line)" }} />
-                    Free: {INDIVIDUAL_STATS.freeCount}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full inline-block" style={{ background: "var(--forest)" }} />
-                    Paid: {INDIVIDUAL_STATS.paidCount}
-                  </span>
-                </div>
+                {loading ? (
+                  <SkeletonBar className="h-3 w-28" />
+                ) : (
+                  <div className="flex items-center gap-3 text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full inline-block" style={{ background: "var(--line)" }} />
+                      Free: {individual?.freeCount ?? 0}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full inline-block" style={{ background: "var(--forest)" }} />
+                      Paid: {individual?.paidCount ?? 0}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="h-1.5 w-full rounded-full overflow-hidden flex" style={{ background: "var(--line-soft)" }}>
                 <div
                   className="h-full rounded-l-full"
-                  style={{ width: `${Math.round((INDIVIDUAL_STATS.freeCount / INDIVIDUAL_STATS.total) * 100)}%`, background: "var(--line)" }}
+                  style={{
+                    width: `${individual && individual.total > 0 ? Math.round((individual.freeCount / individual.total) * 100) : 0}%`,
+                    background: "var(--line)",
+                  }}
                 />
                 <div className="h-full rounded-r-full flex-1" style={{ background: "var(--forest)" }} />
               </div>
@@ -147,9 +353,17 @@ export default function DashboardPage() {
 
             <div className="space-y-2.5">
               <p className="text-xs font-medium text-slate-500">Plan Breakdown</p>
-              {INDIVIDUAL_STATS.plans.map((plan) => (
+              {loading &&
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <SkeletonBar className="h-3 w-14" />
+                    <SkeletonBar className="flex-1 h-1.5 rounded-full" />
+                    <SkeletonBar className="h-3 w-8" />
+                  </div>
+                ))}
+              {!loading && individual?.plans.map((plan) => (
                 <div key={plan.name} className="flex items-center gap-3">
-                  <span className="w-14 text-xs text-slate-600 font-medium">{plan.name}</span>
+                  <span className="w-14 text-xs text-slate-600 font-medium truncate">{plan.name}</span>
                   <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--line-soft)" }}>
                     <div className="h-full rounded-full" style={{ width: `${plan.pct}%`, background: plan.barColor }} />
                   </div>
@@ -173,14 +387,22 @@ export default function DashboardPage() {
               <h2 className="text-sm font-semibold text-slate-900">Enterprise Accounts</h2>
               <p className="text-xs text-slate-400">Company accounts & teams</p>
             </div>
-            <span className="text-xl font-bold text-slate-900">{ENTERPRISE_STATS.totalAccounts}</span>
+            {loading ? (
+              <SkeletonBar className="h-6 w-10" />
+            ) : (
+              <span className="text-xl font-bold text-slate-900">{enterprise?.totalAccounts ?? 0}</span>
+            )}
           </div>
 
           <div className="p-5 space-y-5">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">Total Ent. Users</p>
-                <p className="text-lg font-bold" style={{ color: "#8A6222" }}>{ENTERPRISE_STATS.totalUsers.toLocaleString()}</p>
+                {loading ? (
+                  <SkeletonBar className="h-5 w-12" />
+                ) : (
+                  <p className="text-lg font-bold" style={{ color: "#8A6222" }}>{(enterprise?.totalUsers ?? 0).toLocaleString()}</p>
+                )}
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">Revenue (Month)</p>
@@ -188,7 +410,11 @@ export default function DashboardPage() {
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">Searches (Month)</p>
-                <p className="text-lg font-bold text-slate-800">{ENTERPRISE_STATS.searchesThisMonth.toLocaleString()}</p>
+                {loading ? (
+                  <SkeletonBar className="h-5 w-12" />
+                ) : (
+                  <p className="text-lg font-bold text-slate-800">{(enterprise?.searchesThisMonth ?? 0).toLocaleString()}</p>
+                )}
               </div>
               <div className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p className="text-xs text-slate-500 mb-1">New This Month</p>
@@ -202,11 +428,11 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-3 text-xs text-slate-400">
                   <span className="flex items-center gap-1.5">
                     <CheckCircle2 className="h-3 w-3" style={{ color: "var(--sage)" }} />
-                    Active: {ENTERPRISE_STATS.activeAccounts}
+                    Active: {enterprise?.activeAccounts ?? "—"}
                   </span>
                   <span className="flex items-center gap-1.5">
                     <AlertTriangle className="h-3 w-3" style={{ color: "var(--rose)" }} />
-                    Suspended: {ENTERPRISE_STATS.suspendedAccounts}
+                    Suspended: {enterprise?.suspendedAccounts ?? "—"}
                   </span>
                 </div>
               </div>
@@ -214,7 +440,7 @@ export default function DashboardPage() {
                 <div
                   className="h-full rounded-l-full"
                   style={{
-                    width: `${Math.round((ENTERPRISE_STATS.activeAccounts / ENTERPRISE_STATS.totalAccounts) * 100)}%`,
+                    width: `${enterpriseHealthTotal > 0 ? Math.round((enterpriseHealthActive / enterpriseHealthTotal) * 100) : 0}%`,
                     background: "var(--sage)",
                   }}
                 />
@@ -224,17 +450,30 @@ export default function DashboardPage() {
 
             <div className="space-y-2.5">
               <p className="text-xs font-medium text-slate-500">Top Accounts</p>
-              {ENTERPRISE_STATS.topAccounts.map((acc) => (
-                <div key={acc.name} className="flex items-center gap-3">
+              {loading &&
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-7 w-7 shrink-0 rounded-lg skeleton-shimmer" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <SkeletonBar className="h-3 w-24" />
+                      <SkeletonBar className="h-2 w-16" style={{ opacity: 0.6 }} />
+                    </div>
+                  </div>
+                ))}
+              {!loading && enterprise?.topAccounts.length === 0 && (
+                <p className="text-xs text-slate-400">No enterprise accounts yet.</p>
+              )}
+              {!loading && enterprise?.topAccounts.map((acc) => (
+                <div key={acc.id} className="flex items-center gap-3">
                   <div
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
                     style={{ background: "var(--gold-dim)", color: "#8A6222" }}
                   >
-                    {acc.initials}
+                    {initialsOf(acc.name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-slate-800 truncate">{acc.name}</p>
-                    <p className="text-[10px] text-slate-400">{acc.plan} · {acc.users} users</p>
+                    <p className="text-[10px] text-slate-400">{acc.plan} · {acc.user_count} users</p>
                   </div>
                   <span
                     className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
@@ -253,7 +492,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Row 3: Alerts ──────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {ALERTS.map((alert) => {
           const Icon = alert.icon;
           return (
@@ -284,8 +523,8 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* ── Row 4: Recent Signups | Tickets | Chats ─────────────────── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      {/* ── Row 4: Recent Signups | Tickets ──────────────────────────── */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
         {/* Recent Signups */}
         <div className="bg-white rounded-xl border border-slate-200">
@@ -293,8 +532,22 @@ export default function DashboardPage() {
             <SectionHeader title="Recent Signups" href="/users" />
           </div>
           <div className="divide-y divide-slate-50">
-            {RECENT_SIGNUPS.map((u, i) => (
-              <div key={i} className="flex items-center gap-3 px-5 py-3">
+            {loading &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-5 py-3">
+                  <div className="h-8 w-8 shrink-0 rounded-full skeleton-shimmer" />
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <SkeletonBar className="h-3 w-28" />
+                    <SkeletonBar className="h-2 w-36" style={{ opacity: 0.6 }} />
+                  </div>
+                  <SkeletonBar className="h-4 w-12" />
+                </div>
+              ))}
+            {!loading && signups?.length === 0 && (
+              <p className="px-5 py-8 text-center text-sm text-slate-400">No recent signups.</p>
+            )}
+            {!loading && signups?.map((u) => (
+              <div key={u.id} className="flex items-center gap-3 px-5 py-3">
                 <div
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
                   style={
@@ -310,8 +563,8 @@ export default function DashboardPage() {
                   <p className="text-[11px] text-slate-400 truncate">{u.email}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <PlanBadge plan={u.plan} />
-                  <p className="text-[10px] text-slate-400 mt-0.5">{u.time}</p>
+                  <PlanBadge plan={u.planLabel} />
+                  <p className="text-[10px] text-slate-400 mt-0.5">{timeAgo(u.created_at)}</p>
                 </div>
               </div>
             ))}
@@ -352,48 +605,6 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mt-0.5">
                   <p className="text-[11px] text-slate-400">{t.by}</p>
                   <p className="text-[11px] text-slate-400">{t.updated}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Unread Chats */}
-        <div className="bg-white rounded-xl border border-slate-200">
-          <div className="px-5 py-4 border-b border-slate-100">
-            <SectionHeader title="Unread Live Chats" href="/live-chat" />
-          </div>
-          <div className="divide-y divide-slate-50">
-            {RECENT_CHATS_PREVIEW.map((c, i) => (
-              <div key={i} className="flex items-start gap-3 px-5 py-3">
-                <div className="relative shrink-0">
-                  <div
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
-                    style={{ background: "rgba(23,50,41,.08)", color: "var(--forest)" }}
-                  >
-                    {c.initials}
-                  </div>
-                  {c.unread > 0 && (
-                    <span
-                      className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                      style={{ background: "var(--rose)" }}
-                    >
-                      {c.unread}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-slate-800">{c.user}</p>
-                    <p className="text-[10px] text-slate-400 shrink-0">{c.last}</p>
-                  </div>
-                  <p className="text-[11px] text-slate-500 truncate mt-0.5">{c.subject}</p>
-                  <span
-                    className="mt-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-                    style={{ background: "var(--gold-dim)", color: "#8A6222", border: "1px solid var(--gold)" }}
-                  >
-                    waiting
-                  </span>
                 </div>
               </div>
             ))}
