@@ -20,6 +20,7 @@ interface AuthContextValue {
   googleLogin: (credential: string) => Promise<void>;
   applyOAuth: (accessToken: string, refreshToken: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -102,9 +103,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.replace("/login");
   }, [router]);
 
+  const refreshUser = useCallback(async () => {
+    if (!getAccessToken() && !getRefreshToken()) return;
+    try {
+      const u = await apiGetMe();
+      setUser(u);
+    } catch {
+      // ignore — a real auth failure is already handled by the response interceptor
+    }
+  }, []);
+
+  // Any credit-spending request (search, unlock, CRM push) fires this event —
+  // refetch so the sidebar/usage credit numbers stay in sync in real time.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.addEventListener("leadsbuddy:credits-changed", refreshUser);
+    return () => window.removeEventListener("leadsbuddy:credits-changed", refreshUser);
+  }, [refreshUser]);
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user, login, register, googleLogin, applyOAuth, logout }}
+      value={{ user, isLoading, isAuthenticated: !!user, login, register, googleLogin, applyOAuth, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

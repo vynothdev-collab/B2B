@@ -52,13 +52,22 @@ async def get_me(
             )
         )
     ).scalars().all()
-    validity_rem = sum(
-        p.credits_remaining for p in active_plans
+    validity_plans = [
+        p for p in active_plans
         if p.plan_type == "validity" and (p.expires_at is None or p.expires_at > now)
-    )
-    payg_rem = sum(p.credits_remaining for p in active_plans if p.plan_type == "payg")
+    ]
+    payg_plans = [p for p in active_plans if p.plan_type == "payg"]
+
+    validity_total = sum(p.credits_total for p in validity_plans)
+    validity_rem = sum(p.credits_remaining for p in validity_plans)
+    payg_total = sum(p.credits_total for p in payg_plans)
+    payg_rem = sum(p.credits_remaining for p in payg_plans)
+    legacy_total = current_user.allocated_credits
     legacy_rem = max(0, current_user.allocated_credits - current_user.used_credits)
+
+    total_allocated = validity_total + payg_total + legacy_total
     total_rem = validity_rem + payg_rem + legacy_rem
+    total_used = total_allocated - total_rem
 
     return UserResponse(
         id=current_user.id,
@@ -67,8 +76,8 @@ async def get_me(
         role=current_user.role,
         is_active=current_user.is_active,
         enterprise_id=current_user.enterprise_id,
-        allocated_credits=current_user.allocated_credits,
-        used_credits=current_user.used_credits,
+        allocated_credits=total_allocated,
+        used_credits=total_used,
         remaining_credits=total_rem,
     )
 

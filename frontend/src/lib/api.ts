@@ -24,6 +24,21 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Routes that deduct credits server-side — after any of these succeed, tell
+// AuthContext to refetch /users/me so the sidebar's credit balance stays live.
+const CREDIT_SPENDING_ROUTE = /\/search\/(persons|companies|agentic)(\?|$)|\/unlock\/|^\/extension\/search\/|\/integrations\/.+\/push(\?|$)/;
+
+apiClient.interceptors.response.use((response) => {
+  const url = response.config.url ?? "";
+  const method = (response.config.method ?? "get").toLowerCase();
+  if (CREDIT_SPENDING_ROUTE.test(url) && (method === "post" || method === "get")) {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("leadsbuddy:credits-changed"));
+    }
+  }
+  return response;
+});
+
 let isRefreshing = false;
 let waitQueue: Array<{
   resolve: (token: string) => void;
