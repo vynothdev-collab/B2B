@@ -323,7 +323,7 @@ export default function UsageClient() {
     return (
       <>
         <AppHeader title="Usage" />
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-[#F5F4F9] p-4 sm:p-6">
           <div className="mx-auto w-full max-w-7xl space-y-5">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <StatCardSkeleton />
@@ -366,7 +366,7 @@ export default function UsageClient() {
   return (
     <>
       <AppHeader title="Usage" />
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-[#F5F4F9] p-4 sm:p-6">
         <div className="mx-auto w-full max-w-7xl space-y-5">
 
           {allocated === 0 ? (

@@ -1675,7 +1675,7 @@ export default function ListDetailPage() {
     <>
       <AppHeader title={list?.name ?? "List"} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden px-2 py-2 sm:px-3">
-        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm sm:rounded-xl">
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-3 py-2.5 sm:px-4">
             <div className="flex min-w-0 items-center gap-2">
               <button

@@ -8,7 +8,7 @@ export default function SearchLayout({
 }) {
   return (
     <MobileSidebarProvider>
-      <div className="flex h-dvh min-w-0 overflow-hidden bg-gray-50">
+      <div className="flex h-dvh min-w-0 overflow-hidden bg-[#F5F4F9]">
         <AppSidebar />
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {children}

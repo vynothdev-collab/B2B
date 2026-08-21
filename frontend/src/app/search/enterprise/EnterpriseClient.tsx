@@ -133,7 +133,7 @@ export default function EnterpriseClient() {
   return (
     <>
       <AppHeader title="My Team" />
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-[#F5F4F9] p-4 sm:p-6">
         <div className="mx-auto w-full max-w-7xl space-y-5">
 
           {/* ── Page intro + primary action ──────────────────────── */}

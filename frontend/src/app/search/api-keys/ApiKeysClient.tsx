@@ -162,7 +162,7 @@ export default function ApiKeysClient() {
   const revokedCount = keys.length - activeCount;
 
   return (
-    <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50">
+    <div className="flex h-full min-w-0 flex-1 flex-col overflow-y-auto bg-[#F5F4F9]">
       <AppHeader title="API Keys" />
 
       <div className="mx-auto w-full max-w-6xl flex-1 space-y-5 p-4 sm:p-6">
