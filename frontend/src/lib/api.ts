@@ -47,6 +47,14 @@ apiClient.interceptors.response.use(
   async (error) => {
     const original = error.config as RetryConfig | undefined;
     const status = error.response?.status;
+
+    if (status === 503 && error.response?.data?.maintenance_mode) {
+      if (typeof window !== "undefined" && window.location.pathname !== "/maintenance") {
+        window.location.href = "/maintenance";
+      }
+      return Promise.reject(error);
+    }
+
     if (!original || (status !== 401 && status !== 403) || original._retry) {
       return Promise.reject(error);
     }

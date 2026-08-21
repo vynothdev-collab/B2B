@@ -38,6 +38,17 @@ export interface CustomerStats {
   total: number;
   active: number;
   suspended: number;
+  new_count: number;
+}
+
+export interface PlanBreakdownItem {
+  name: string;
+  count: number;
+}
+
+export interface PlanBreakdownResponse {
+  total: number;
+  items: PlanBreakdownItem[];
 }
 
 export interface CreateCustomerPayload {
@@ -63,10 +74,17 @@ export async function listCustomers(
 }
 
 export async function getCustomerStats(
-  params: { role?: CustomerRole; roles?: CustomerRole[] } = {},
+  params: { role?: CustomerRole; roles?: CustomerRole[]; period?: "week" | "month" } = {},
   signal?: AbortSignal,
 ): Promise<CustomerStats> {
   const { data } = await api.get<CustomerStats>("/admin/customers/stats", { params, signal });
+  return data;
+}
+
+export async function getCustomerPlanBreakdown(
+  signal?: AbortSignal,
+): Promise<PlanBreakdownResponse> {
+  const { data } = await api.get<PlanBreakdownResponse>("/admin/customers/plan-breakdown", { signal });
   return data;
 }
 

@@ -165,7 +165,7 @@ function UserDetail({
   );
 }
 
-const EMPTY_STATS: CustomerStats = { total: 0, active: 0, suspended: 0 };
+const EMPTY_STATS: CustomerStats = { total: 0, active: 0, suspended: 0, new_count: 0 };
 
 export default function UsersPage() {
   const toast = useToast();

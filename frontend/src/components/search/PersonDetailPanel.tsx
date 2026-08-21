@@ -22,6 +22,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Loader2,
+  Check,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api";
@@ -31,7 +33,14 @@ import {
   unlockPersonPersonalEmail,
   unlockPersonMobile,
 } from "@/lib/searchApi";
+import { pushToSalesforce } from "@/lib/salesforceApi";
+import { pushToZoho } from "@/lib/zohoApi";
+import { pushToHubspot } from "@/lib/hubspotApi";
 import { toast } from "@/lib/toast";
+import PushToInstantlyModal from "./PushToInstantlyModal";
+import PushToSmartreachModal from "./PushToSmartreachModal";
+import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
+import { useCrmConnections } from "@/hooks/useCrmConnections";
 
 type UnlockField = "work_email" | "personal_email" | "mobile";
 
@@ -625,6 +634,17 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
   const [unlockingField, setUnlockingField] = useState<UnlockField | null>(
     null,
   );
+  const [pushingToSalesforce, setPushingToSalesforce] = useState(false);
+  const [pushedToSalesforce, setPushedToSalesforce] = useState(false);
+  const [pushingToHubspot, setPushingToHubspot] = useState(false);
+  const [pushedToHubspot, setPushedToHubspot] = useState(false);
+  const [pushingToZoho, setPushingToZoho] = useState(false);
+  const [pushedToZoho, setPushedToZoho] = useState(false);
+  const [instantlyModalOpen, setInstantlyModalOpen] = useState(false);
+  const [pushedToInstantly, setPushedToInstantly] = useState(false);
+  const [smartreachModalOpen, setSmartreachModalOpen] = useState(false);
+  const [pushedToSmartreach, setPushedToSmartreach] = useState(false);
+  const { connections } = useCrmConnections();
 
   const skillsRef = useRef<HTMLDivElement>(null);
   const expRef = useRef<HTMLDivElement>(null);
@@ -643,6 +663,11 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
     setDetail(null);
     setUnlockOverrides({});
     setUnlockingField(null);
+    setPushedToSalesforce(false);
+    setPushedToHubspot(false);
+    setPushedToZoho(false);
+    setPushedToInstantly(false);
+    setPushedToSmartreach(false);
     setLoading(true);
     apiClient
       .get<PersonDetail>(`/search/persons/${person.id}/detail`)
@@ -812,6 +837,66 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
       toast.apiError(e);
     } finally {
       setUnlockingField(null);
+    }
+  };
+
+  const handlePushToSalesforce = async () => {
+    if (!person || pushingToSalesforce) return;
+    setPushingToSalesforce(true);
+    try {
+      const result = await pushToSalesforce([
+        { record_id: person.id, item_type: "person", data: {} },
+      ]);
+      if (result.pushed > 0) {
+        toast.success("Pushed to Salesforce.");
+        setPushedToSalesforce(true);
+      } else {
+        toast.error(result.results[0]?.error ?? "Failed to push to Salesforce.");
+      }
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setPushingToSalesforce(false);
+    }
+  };
+
+  const handlePushToHubspot = async () => {
+    if (!person || pushingToHubspot) return;
+    setPushingToHubspot(true);
+    try {
+      const result = await pushToHubspot([
+        { record_id: person.id, item_type: "person", data: {} },
+      ]);
+      if (result.pushed > 0) {
+        toast.success("Pushed to HubSpot.");
+        setPushedToHubspot(true);
+      } else {
+        toast.error(result.results[0]?.error ?? "Failed to push to HubSpot.");
+      }
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setPushingToHubspot(false);
+    }
+  };
+
+  const handlePushToZoho = async () => {
+    if (!person || pushingToZoho) return;
+    setPushingToZoho(true);
+    try {
+      const result = await pushToZoho([
+        { record_id: person.id, item_type: "person", data: {} },
+      ]);
+      if (result.pushed > 0) {
+        toast.success("Pushed to Zoho CRM.");
+        setPushedToZoho(true);
+      } else {
+        toast.error(result.results[0]?.error ?? "Failed to push to Zoho CRM.");
+      }
+    } catch (e: unknown) {
+      toast.apiError(e);
+    } finally {
+      setPushingToZoho(false);
     }
   };
 
@@ -1017,8 +1102,124 @@ export default function PersonDetailPanel({ person, onClose }: Props) {
                 <LinkedInSVG />
               </span>
             )}
+
+            <PushToDropdown
+              className="ml-auto flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+              label={
+                pushedToSalesforce || pushedToHubspot || pushedToZoho || pushedToInstantly || pushedToSmartreach
+                  ? "Pushed"
+                  : "Push to..."
+              }
+              entries={
+                [
+                  {
+                    key: "salesforce",
+                    label: pushedToSalesforce ? "Pushed to Salesforce" : "Salesforce",
+                    icon: pushingToSalesforce ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : pushedToSalesforce ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="SF" bg="#fde8e8" color="#dc2626" />
+                    ),
+                    group: "CRMs",
+                    disabled: !connections.salesforce || pushingToSalesforce || pushedToSalesforce,
+                    disabledReason: !connections.salesforce
+                      ? "Connect Salesforce in Integrations first"
+                      : undefined,
+                    onSelect: handlePushToSalesforce,
+                  },
+                  {
+                    key: "hubspot",
+                    label: pushedToHubspot ? "Pushed to HubSpot" : "HubSpot",
+                    icon: pushingToHubspot ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : pushedToHubspot ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="H" bg="#ffe8df" color="#ff7a59" />
+                    ),
+                    group: "CRMs",
+                    disabled: !connections.hubspot || pushingToHubspot || pushedToHubspot,
+                    disabledReason: !connections.hubspot
+                      ? "Connect HubSpot in Integrations first"
+                      : undefined,
+                    onSelect: handlePushToHubspot,
+                  },
+                  {
+                    key: "zoho",
+                    label: pushedToZoho ? "Pushed to Zoho CRM" : "Zoho CRM",
+                    icon: pushingToZoho ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : pushedToZoho ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="Z" bg="#fde8e8" color="#e42527" />
+                    ),
+                    group: "CRMs",
+                    disabled: !connections.zoho || pushingToZoho || pushedToZoho,
+                    disabledReason: !connections.zoho
+                      ? "Connect Zoho CRM in Integrations first"
+                      : undefined,
+                    onSelect: handlePushToZoho,
+                  },
+                  {
+                    key: "instantly",
+                    label: pushedToInstantly ? "Pushed to Instantly" : "Instantly",
+                    icon: pushedToInstantly ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />
+                    ),
+                    group: "Cold outreach software",
+                    disabled: !connections.instantly || !workEmailUnlocked || pushedToInstantly,
+                    disabledReason: !connections.instantly
+                      ? "Connect Instantly in Integrations first"
+                      : !workEmailUnlocked
+                        ? "Unlock work email — Instantly requires it to add a lead"
+                        : undefined,
+                    onSelect: () => setInstantlyModalOpen(true),
+                  },
+                  {
+                    key: "smartreach",
+                    label: pushedToSmartreach ? "Pushed to Smartreach" : "Smartreach",
+                    icon: pushedToSmartreach ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    ) : (
+                      <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />
+                    ),
+                    group: "Cold outreach software",
+                    disabled: !connections.smartreach || !workEmailUnlocked || pushedToSmartreach,
+                    disabledReason: !connections.smartreach
+                      ? "Connect Smartreach in Integrations first"
+                      : !workEmailUnlocked
+                        ? "Unlock work email — Smartreach requires it to add a prospect"
+                        : undefined,
+                    onSelect: () => setSmartreachModalOpen(true),
+                  },
+                ] as PushToDropdownEntry[]
+              }
+            />
           </div>
         </div>
+
+        {person && (
+          <PushToInstantlyModal
+            open={instantlyModalOpen}
+            onClose={() => setInstantlyModalOpen(false)}
+            items={[{ record_id: person.id, item_type: "person" }]}
+            onPushed={() => setPushedToInstantly(true)}
+          />
+        )}
+
+        {person && (
+          <PushToSmartreachModal
+            open={smartreachModalOpen}
+            onClose={() => setSmartreachModalOpen(false)}
+            items={[{ record_id: person.id, item_type: "person" }]}
+            onPushed={() => setPushedToSmartreach(true)}
+          />
+        )}
 
         <div className="shrink-0 relative flex items-stretch bg-white border-b border-gray-200">
           <button

@@ -70,6 +70,7 @@ export interface EnterpriseStats {
   active: number;
   total_users: number;
   total_credits: number;
+  new_count: number;
 }
 
 export interface EnterpriseOption {
@@ -90,8 +91,11 @@ export async function listEnterpriseOptions(signal?: AbortSignal): Promise<Enter
   return data;
 }
 
-export async function getEnterpriseStats(signal?: AbortSignal): Promise<EnterpriseStats> {
-  const { data } = await api.get<EnterpriseStats>("/admin/enterprises/stats", { signal });
+export async function getEnterpriseStats(
+  params: { period?: "week" | "month" } = {},
+  signal?: AbortSignal,
+): Promise<EnterpriseStats> {
+  const { data } = await api.get<EnterpriseStats>("/admin/enterprises/stats", { params, signal });
   return data;
 }
 

@@ -4,6 +4,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -66,6 +67,23 @@ class CreateEnterpriseUserRequest(BaseModel):
         return v
 
 
+class UpdateMyEnterpriseRequest(BaseModel):
+    name:     str | None = None
+    industry: str | None = None
+    website:  str | None = None
+    country:  str | None = None
+    size:     str | None = None
+    phone:    str | None = None
+    notes:    str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("Name cannot be empty")
+        return v.strip() if v is not None else v
+
+
 class UpdateStatusRequest(BaseModel):
     is_active: bool
 
@@ -122,6 +140,50 @@ async def get_my_enterprise(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Enterprise not found",
         )
+    return EnterpriseMeResponse(
+        id=ent.id,
+        name=ent.name,
+        industry=ent.industry,
+        website=ent.website,
+        country=ent.country,
+        size=ent.size,
+        phone=ent.phone,
+        plan=ent.plan,
+        credits=ent.credits,
+        status=ent.status,
+        notes=ent.notes,
+        created_at=ent.created_at,
+    )
+
+
+@router.patch("/me", response_model=EnterpriseMeResponse)
+async def update_my_enterprise(
+    payload: UpdateMyEnterpriseRequest,
+    user: User = Depends(require_enterprise_admin),
+    db: AsyncSession = Depends(get_db),
+) -> EnterpriseMeResponse:
+    ent = (
+        await db.execute(select(Enterprise).where(Enterprise.id == user.enterprise_id))
+    ).scalar_one_or_none()
+    if not ent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Enterprise not found",
+        )
+
+    updates = payload.model_dump(exclude_unset=True)
+    for field, value in updates.items():
+        setattr(ent, field, value)
+
+    try:
+        await db.flush()
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Update violates a uniqueness constraint (name).",
+        )
+    await db.refresh(ent)
+
     return EnterpriseMeResponse(
         id=ent.id,
         name=ent.name,

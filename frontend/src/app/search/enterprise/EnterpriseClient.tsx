@@ -9,6 +9,7 @@ import {
   Globe,
   Loader2,
   Mail,
+  Pencil,
   Phone,
   Plus,
   Search,
@@ -23,6 +24,7 @@ import {
   apiGetMyEnterprise,
   apiListEnterpriseMembers,
   apiUpdateEnterpriseMemberStatus,
+  apiUpdateMyEnterprise,
   type EnterpriseMe,
   type EnterpriseMember,
 } from "@/lib/enterpriseApi";
@@ -56,6 +58,7 @@ export default function EnterpriseClient() {
   const [pendingToggle, setPendingToggle] = useState<EnterpriseMember | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [allocateTarget, setAllocateTarget] = useState<EnterpriseMember | null>(null);
+  const [editCompanyOpen, setEditCompanyOpen] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -130,7 +133,7 @@ export default function EnterpriseClient() {
   return (
     <>
       <AppHeader title="My Team" />
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-[#F5F4F9] p-4 sm:p-6">
         <div className="mx-auto w-full max-w-7xl space-y-5">
 
           {/* ── Page intro + primary action ──────────────────────── */}
@@ -156,37 +159,49 @@ export default function EnterpriseClient() {
                 <Loader2 className="h-4 w-4 animate-spin" /> loading enterprise…
               </div>
             ) : enterprise ? (
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
-                    <Building2 className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                      Company
-                    </p>
-                    <p className="truncate text-sm font-semibold text-gray-900">{enterprise.name}</p>
-                    <p className="truncate text-xs text-gray-500">{enterprise.industry ?? "—"}</p>
-                  </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-gray-800">Company Details</p>
+                  <button
+                    type="button"
+                    onClick={() => setEditCompanyOpen(true)}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> Edit Company Details
+                  </button>
                 </div>
-                <InfoTile label="Plan" value={enterprise.plan} icon={<CreditCard className="h-4 w-4" />} />
-                <InfoTile
-                  label="Available Pool"
-                  value={`${enterprise.credits.toLocaleString()} credits`}
-                  icon={<CreditCard className="h-4 w-4" />}
-                />
-                {enterprise.website && (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                        Company
+                      </p>
+                      <p className="truncate text-sm font-semibold text-gray-900">{enterprise.name}</p>
+                      <p className="truncate text-xs text-gray-500">{enterprise.industry ?? "—"}</p>
+                    </div>
+                  </div>
+                  <InfoTile label="Plan" value={enterprise.plan} icon={<CreditCard className="h-4 w-4" />} />
                   <InfoTile
-                    label="Website"
-                    value={enterprise.website}
-                    icon={<Globe className="h-4 w-4" />}
+                    label="Available Pool"
+                    value={`${enterprise.credits.toLocaleString()} credits`}
+                    icon={<CreditCard className="h-4 w-4" />}
                   />
-                )}
-                {enterprise.phone && (
-                  <InfoTile label="Phone" value={enterprise.phone} icon={<Phone className="h-4 w-4" />} />
-                )}
-                {enterprise.country && <InfoTile label="Country" value={enterprise.country} />}
-                {enterprise.size && <InfoTile label="Size" value={enterprise.size} />}
+                  {enterprise.website && (
+                    <InfoTile
+                      label="Website"
+                      value={enterprise.website}
+                      icon={<Globe className="h-4 w-4" />}
+                    />
+                  )}
+                  {enterprise.phone && (
+                    <InfoTile label="Phone" value={enterprise.phone} icon={<Phone className="h-4 w-4" />} />
+                  )}
+                  {enterprise.country && <InfoTile label="Country" value={enterprise.country} />}
+                  {enterprise.size && <InfoTile label="Size" value={enterprise.size} />}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-gray-500">Enterprise not found.</p>
@@ -356,6 +371,16 @@ export default function EnterpriseClient() {
 
         </div>
       </div>
+
+      <EditCompanyModal
+        open={editCompanyOpen}
+        enterprise={enterprise}
+        onClose={() => setEditCompanyOpen(false)}
+        onUpdated={(updated) => {
+          setEnterprise(updated);
+          setEditCompanyOpen(false);
+        }}
+      />
 
       <InviteMemberModal
         open={inviteOpen}
@@ -584,6 +609,172 @@ function Field({
         {hint && <span className="ml-1 font-normal text-gray-400">— {hint}</span>}
       </label>
       {children}
+    </div>
+  );
+}
+
+/* ── Edit Company Details modal ───────────────────────────────── */
+
+interface EditCompanyProps {
+  open: boolean;
+  enterprise: EnterpriseMe | null;
+  onClose: () => void;
+  onUpdated: (ent: EnterpriseMe) => void;
+}
+
+function EditCompanyModal({ open, enterprise, onClose, onUpdated }: EditCompanyProps) {
+  const [form, setForm] = useState({
+    name: "",
+    industry: "",
+    website: "",
+    country: "",
+    size: "",
+    phone: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open && enterprise) {
+      setForm({
+        name: enterprise.name ?? "",
+        industry: enterprise.industry ?? "",
+        website: enterprise.website ?? "",
+        country: enterprise.country ?? "",
+        size: enterprise.size ?? "",
+        phone: enterprise.phone ?? "",
+      });
+    }
+  }, [open, enterprise]);
+
+  if (!open || !enterprise) return null;
+
+  const update = <K extends keyof typeof form>(k: K, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleClose = () => {
+    if (submitting) return;
+    onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name.trim()) {
+      toast.warning("Company name is required.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const updated = await apiUpdateMyEnterprise({
+        name: form.name.trim(),
+        industry: form.industry.trim() || null,
+        website: form.website.trim() || null,
+        country: form.country.trim() || null,
+        size: form.size.trim() || null,
+        phone: form.phone.trim() || null,
+      });
+      toast.success("Company details updated.");
+      onUpdated(updated);
+    } catch (e) {
+      toast.apiError(e);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-red-500" />
+            <h2 className="text-sm font-semibold text-gray-900">Edit Company Details</h2>
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={submitting}
+            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
+          >
+            ×
+          </button>
+        </div>
+        <div className="space-y-3 px-5 py-4">
+          <Field label="Company name *">
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => update("name", e.target.value)}
+              placeholder="Acme Inc."
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
+              autoFocus
+            />
+          </Field>
+          <Field label="Industry" hint="optional">
+            <input
+              type="text"
+              value={form.industry}
+              onChange={(e) => update("industry", e.target.value)}
+              placeholder="e.g. Software"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
+            />
+          </Field>
+          <Field label="Website" hint="optional">
+            <input
+              type="text"
+              value={form.website}
+              onChange={(e) => update("website", e.target.value)}
+              placeholder="https://example.com"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
+            />
+          </Field>
+          <Field label="Phone" hint="optional">
+            <input
+              type="text"
+              value={form.phone}
+              onChange={(e) => update("phone", e.target.value)}
+              placeholder="+1 555-0100"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Country" hint="optional">
+              <input
+                type="text"
+                value={form.country}
+                onChange={(e) => update("country", e.target.value)}
+                placeholder="United States"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
+              />
+            </Field>
+            <Field label="Size" hint="optional">
+              <input
+                type="text"
+                value={form.size}
+                onChange={(e) => update("size", e.target.value)}
+                placeholder="e.g. 50-200"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-red-500 focus:outline-none"
+              />
+            </Field>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t border-gray-100 px-5 py-3">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={submitting}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+          >
+            {submitting && <Loader2 className="h-3 w-3 animate-spin" />}
+            {submitting ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

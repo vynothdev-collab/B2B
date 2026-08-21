@@ -15,6 +15,7 @@ const ROUTE_TITLES: Record<string, string> = {
   "/tickets":   "Submitted Tickets",
   "/reports":   "Activity & Reports",
   "/settings":  "Settings",
+  "/profile":   "Profile",
 };
 
 const ROUTE_SUBTITLES: Record<string, string> = {
@@ -29,6 +30,7 @@ const ROUTE_SUBTITLES: Record<string, string> = {
   "/tickets":     "Support ticket queue",
   "/reports":     "Activity logs and analytics",
   "/settings":    "Platform configuration",
+  "/profile":     "Your account details",
 };
 
 export default function AdminHeader() {

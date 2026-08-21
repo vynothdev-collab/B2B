@@ -176,22 +176,31 @@ export default function AdminSidebar() {
           className="flex items-center gap-2.5 rounded-[8px] p-2"
           style={{ background: "#1A3429", border: "1px solid #243D31" }}
         >
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] text-xs font-bold"
-            style={{
-              background: "linear-gradient(135deg, #BC5A34, #8F4426)",
-              color: "#FFF7EC",
-              fontFamily: "var(--font-fraunces)",
-            }}
+          <Link
+            href="/profile"
+            title="Edit profile"
+            className="flex flex-1 min-w-0 items-center gap-2.5 rounded-[6px] text-left transition-colors"
+            style={{ background: "transparent" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.04)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
           >
-            {initials(displayName)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="truncate text-[12.5px] font-semibold leading-tight" style={{ color: "#FFFDF6" }}>{displayName}</p>
-            <p className="truncate text-[10px] leading-tight mt-0.5" style={{ color: "#4E7060", fontFamily: "var(--font-mono)" }}>
-              {displayRole}
-            </p>
-          </div>
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] text-xs font-bold"
+              style={{
+                background: "linear-gradient(135deg, #BC5A34, #8F4426)",
+                color: "#FFF7EC",
+                fontFamily: "var(--font-fraunces)",
+              }}
+            >
+              {initials(displayName)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-[12.5px] font-semibold leading-tight" style={{ color: "#FFFDF6" }}>{displayName}</p>
+              <p className="truncate text-[10px] leading-tight mt-0.5" style={{ color: "#4E7060", fontFamily: "var(--font-mono)" }}>
+                {displayRole}
+              </p>
+            </div>
+          </Link>
           <button
             type="button"
             title="Logout"

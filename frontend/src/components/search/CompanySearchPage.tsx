@@ -11,6 +11,11 @@ import CompanyDetailPanel from "./CompanyDetailPanel";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import AddToListModal from "./AddToListModal";
+import PushToSalesforceModal from "./PushToSalesforceModal";
+import PushToHubspotModal from "./PushToHubspotModal";
+import PushToZohoModal from "./PushToZohoModal";
+import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
+import { useCrmConnections } from "@/hooks/useCrmConnections";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { searchCompanies, agenticSearch } from "@/lib/searchApi";
@@ -40,6 +45,10 @@ export default function CompanySearchPage() {
   const [tokenHistory, setTokenHistory] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
+  const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
+  const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
+  const [zohoPushOpen, setZohoPushOpen] = useState(false);
+  const { connections } = useCrmConnections();
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
   const isAgenticRef = useRef(false);
   const agenticPromptRef = useRef<string>("");
@@ -223,6 +232,54 @@ export default function CompanySearchPage() {
       )
     : [];
 
+  const crmEntries: PushToDropdownEntry[] = [
+    {
+      key: "salesforce",
+      label: "Salesforce",
+      icon: <BrandBadge letter="SF" bg="#fde8e8" color="#dc2626" />,
+      group: "CRMs",
+      disabled: !connections.salesforce,
+      disabledReason: !connections.salesforce ? "Connect Salesforce in Integrations first" : undefined,
+      onSelect: () => setSalesforcePushOpen(true),
+    },
+    {
+      key: "hubspot",
+      label: "HubSpot",
+      icon: <BrandBadge letter="H" bg="#ffe8df" color="#ff7a59" />,
+      group: "CRMs",
+      disabled: !connections.hubspot,
+      disabledReason: !connections.hubspot ? "Connect HubSpot in Integrations first" : undefined,
+      onSelect: () => setHubspotPushOpen(true),
+    },
+    {
+      key: "zoho",
+      label: "Zoho CRM",
+      icon: <BrandBadge letter="Z" bg="#fde8e8" color="#e42527" />,
+      group: "CRMs",
+      disabled: !connections.zoho,
+      disabledReason: !connections.zoho ? "Connect Zoho CRM in Integrations first" : undefined,
+      onSelect: () => setZohoPushOpen(true),
+    },
+    {
+      key: "instantly",
+      label: "Instantly",
+      icon: <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />,
+      group: "Cold outreach software",
+      disabled: true,
+      disabledReason: "Only supports people records",
+      onSelect: () => {},
+    },
+    {
+      key: "smartreach",
+      label: "Smartreach",
+      icon: <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />,
+      group: "Cold outreach software",
+      disabled: true,
+      disabledReason: "Only supports people records",
+      onSelect: () => {},
+    },
+  ];
+
   return (
     <>
       <AppHeader title="Company search" />
@@ -276,6 +333,7 @@ export default function CompanySearchPage() {
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
                 </button>
+                <PushToDropdown disabled={selected.size === 0} entries={crmEntries} />
               </div>
             </div>
 
@@ -325,6 +383,10 @@ export default function CompanySearchPage() {
                     <ListPlus className="h-3 w-3" />
                     Add to list
                   </button>
+                  <PushToDropdown
+                    entries={crmEntries}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
+                  />
                   <button
                     type="button"
                     onClick={() => setSelected(new Set())}
@@ -376,6 +438,24 @@ export default function CompanySearchPage() {
         onClose={() => setListModalItems([])}
         items={listModalItems}
         itemType="company"
+      />
+
+      <PushToSalesforceModal
+        open={salesforcePushOpen}
+        onClose={() => setSalesforcePushOpen(false)}
+        items={selectedCompanies.map((c) => ({ record_id: c.id, item_type: "company" as const }))}
+      />
+
+      <PushToHubspotModal
+        open={hubspotPushOpen}
+        onClose={() => setHubspotPushOpen(false)}
+        items={selectedCompanies.map((c) => ({ record_id: c.id, item_type: "company" as const }))}
+      />
+
+      <PushToZohoModal
+        open={zohoPushOpen}
+        onClose={() => setZohoPushOpen(false)}
+        items={selectedCompanies.map((c) => ({ record_id: c.id, item_type: "company" as const }))}
       />
 
       <ConfirmDialog

@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { Search, Wallet, TrendingUp, Coins, BarChart3, Loader2 } from "lucide-react";
+import { Search, Wallet, TrendingUp, Coins, BarChart3 } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
+import { StatCardSkeleton, TableRowSkeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
@@ -140,6 +141,8 @@ export default function CreditsPage() {
     void fetchTx();
   }, [fetchTx]);
 
+  const statsLoading = loading && !stats;
+
   const outstanding = stats?.total_remaining ?? 0;
   const used        = stats?.total_used      ?? 0;
   const allocated   = stats?.total_allocated ?? 0;
@@ -189,54 +192,65 @@ export default function CreditsPage() {
 
       {/* ── Stat Cards ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: accent.dimBg }}>
-            <Wallet className="h-5 w-5" style={{ color: accent.bg }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Outstanding Balance</p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">{outstanding.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Credits remaining to use</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--rust-dim)" }}>
-            <TrendingUp className="h-5 w-5" style={{ color: "var(--rust)" }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Lifetime Used</p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">{used.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Total consumed to date</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--sage-dim)" }}>
-            <Coins className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Total Allocated</p>
-            <p className="text-2xl font-bold text-slate-900 mt-0.5">{allocated.toLocaleString()}</p>
-            <p className="text-xs text-slate-400 mt-0.5">Credits allocated overall</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-slate-200 px-5 py-4">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--gold-dim)" }}>
-              <BarChart3 className="h-5 w-5" style={{ color: "#8A6222" }} />
+        {statsLoading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: accent.dimBg }}>
+                <Wallet className="h-5 w-5" style={{ color: accent.bg }} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Outstanding Balance</p>
+                <p className="text-2xl font-bold text-slate-900 mt-0.5">{outstanding.toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mt-0.5">Credits remaining to use</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Usage Rate</p>
-              <p className="text-2xl font-bold text-slate-900 mt-0.5">{usageRate}%</p>
-              <p className="text-xs text-slate-400 mt-0.5">Of total allocation</p>
+
+            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--rust-dim)" }}>
+                <TrendingUp className="h-5 w-5" style={{ color: "var(--rust)" }} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Lifetime Used</p>
+                <p className="text-2xl font-bold text-slate-900 mt-0.5">{used.toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mt-0.5">Total consumed to date</p>
+              </div>
             </div>
-          </div>
-          <div className="h-1.5 w-full rounded-full bg-slate-100">
-            <div className="h-1.5 rounded-full transition-all" style={{ width: `${usageRate}%`, background: "#8A6222" }} />
-          </div>
-        </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--sage-dim)" }}>
+                <Coins className="h-5 w-5" style={{ color: "var(--sage-dark, #3E6A44)" }} />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Total Allocated</p>
+                <p className="text-2xl font-bold text-slate-900 mt-0.5">{allocated.toLocaleString()}</p>
+                <p className="text-xs text-slate-400 mt-0.5">Credits allocated overall</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 px-5 py-4">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: "var(--gold-dim)" }}>
+                  <BarChart3 className="h-5 w-5" style={{ color: "#8A6222" }} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ fontFamily: "var(--font-mono)", color: "var(--ink-faint)" }}>Usage Rate</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-0.5">{usageRate}%</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Of total allocation</p>
+                </div>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-slate-100">
+                <div className="h-1.5 rounded-full transition-all" style={{ width: `${usageRate}%`, background: "#8A6222" }} />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Transaction Table Card ────────────────────────────────────── */}
@@ -292,13 +306,10 @@ export default function CreditsPage() {
               </tr>
             </thead>
             <tbody>
-              {loading && !txData && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center">
-                    <Loader2 className="h-5 w-5 animate-spin text-slate-300 mx-auto" />
-                  </td>
-                </tr>
-              )}
+              {loading &&
+                Array.from({ length: 8 }).map((_, i) => (
+                  <TableRowSkeleton key={`sk-${i}`} columns={8} />
+                ))}
               {!loading && txData?.items.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-400">
@@ -306,7 +317,7 @@ export default function CreditsPage() {
                   </td>
                 </tr>
               )}
-              {txData?.items.map((tx) => (
+              {!loading && txData?.items.map((tx) => (
                 <TxRow key={tx.id} tx={tx} />
               ))}
             </tbody>

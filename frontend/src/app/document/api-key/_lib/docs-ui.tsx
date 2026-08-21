@@ -53,6 +53,41 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [{ href: "/document/api-key/autocomplete", label: "Endpoint" }],
   },
   {
+    title: "Salesforce Integration",
+    items: [
+      { href: "/document/api-key/salesforce", label: "Overview & Setup" },
+      { href: "/document/api-key/salesforce/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
+    title: "HubSpot Integration",
+    items: [
+      { href: "/document/api-key/hubspot", label: "Overview & Setup" },
+      { href: "/document/api-key/hubspot/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
+    title: "Zoho CRM Integration",
+    items: [
+      { href: "/document/api-key/zoho", label: "Overview & Setup" },
+      { href: "/document/api-key/zoho/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
+    title: "Instantly Integration",
+    items: [
+      { href: "/document/api-key/instantly", label: "Overview & Setup" },
+      { href: "/document/api-key/instantly/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
+    title: "Smartreach Integration",
+    items: [
+      { href: "/document/api-key/smartreach", label: "Overview & Setup" },
+      { href: "/document/api-key/smartreach/field-mapping", label: "Field Mapping" },
+    ],
+  },
+  {
     title: "Reference",
     items: [{ href: "/document/api-key/errors", label: "Errors" }],
   },

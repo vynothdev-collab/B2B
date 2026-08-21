@@ -23,8 +23,22 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
+from app.services.platform_settings_service import get_platform_settings
 
 router = APIRouter()
+
+
+async def _registrations_open(db: AsyncSession) -> bool:
+    row = await get_platform_settings(db)
+    return row.new_registrations
+
+
+async def _require_registrations_open(db: AsyncSession) -> None:
+    if not await _registrations_open(db):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="New registrations are currently disabled.",
+        )
 
 
 # ── Schemas ────────────────────────────────────────────────────────────────────
@@ -110,6 +124,8 @@ def _token_response(user: User) -> TokenResponse:
 async def register(
     payload: RegisterRequest, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
+    await _require_registrations_open(db)
+
     existing = await db.execute(select(User).where(User.email == payload.email))
     if existing.scalar_one_or_none():
         raise HTTPException(
@@ -230,6 +246,7 @@ async def google_auth(
             await db.flush()
         elif not user:
             # 3) Brand-new user — create account via Google
+            await _require_registrations_open(db)
             user = User(
                 id=str(uuid.uuid4()),
                 email=email,
@@ -437,6 +454,8 @@ async def microsoft_callback(
             await db.flush()
         elif not user:
             # 3) Brand-new user — create account via Microsoft
+            if not await _registrations_open(db):
+                return RedirectResponse(url=f"{frontend_cb}?error=registration_closed", status_code=302)
             user = User(
                 id=str(uuid.uuid4()),
                 email=email,
@@ -543,6 +562,8 @@ async def linkedin_callback(
             await db.flush()
         elif not user:
             # 3) Brand-new user — create account via LinkedIn
+            if not await _registrations_open(db):
+                return RedirectResponse(url=f"{frontend_cb}?error=registration_closed", status_code=302)
             user = User(
                 id=str(uuid.uuid4()),
                 email=email,

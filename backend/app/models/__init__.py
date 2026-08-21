@@ -8,6 +8,12 @@ from app.models.credit_transaction import CreditTransaction
 from app.models.plan import Plan, PlanType
 from app.models.user_plan import UserPlan, UserPlanStatus
 from app.models.api_key import ApiKey
+from app.models.salesforce_connection import SalesforceConnection
+from app.models.hubspot_connection import HubspotConnection
+from app.models.instantly_connection import InstantlyConnection
+from app.models.smartreach_connection import SmartreachConnection
+from app.models.zoho_connection import ZohoConnection
+from app.models.platform_setting import PlatformSetting
 
 __all__ = [
     "User",
@@ -26,4 +32,10 @@ __all__ = [
     "UserPlan",
     "UserPlanStatus",
     "ApiKey",
+    "SalesforceConnection",
+    "HubspotConnection",
+    "InstantlyConnection",
+    "SmartreachConnection",
+    "ZohoConnection",
+    "PlatformSetting",
 ]

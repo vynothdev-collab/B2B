@@ -14,6 +14,13 @@ import PersonDetailPanel from "./PersonDetailPanel";
 import Pagination from "./Pagination";
 import EmptyState from "./EmptyState";
 import AddToListModal from "./AddToListModal";
+import PushToSalesforceModal from "./PushToSalesforceModal";
+import PushToHubspotModal from "./PushToHubspotModal";
+import PushToZohoModal from "./PushToZohoModal";
+import PushToInstantlyModal from "./PushToInstantlyModal";
+import PushToSmartreachModal from "./PushToSmartreachModal";
+import PushToDropdown, { BrandBadge, type PushToDropdownEntry } from "./PushToDropdown";
+import { useCrmConnections } from "@/hooks/useCrmConnections";
 import ColumnSettingsPanel from "./ColumnSettingsPanel";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
@@ -49,6 +56,12 @@ export default function PeopleSearchPage() {
   const [tokenHistory, setTokenHistory] = useState<string[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [listModalItems, setListModalItems] = useState<ListItemPayload[]>([]);
+  const [salesforcePushOpen, setSalesforcePushOpen] = useState(false);
+  const [hubspotPushOpen, setHubspotPushOpen] = useState(false);
+  const [zohoPushOpen, setZohoPushOpen] = useState(false);
+  const [instantlyPushOpen, setInstantlyPushOpen] = useState(false);
+  const [smartreachPushOpen, setSmartreachPushOpen] = useState(false);
+  const { connections } = useCrmConnections();
   const pageCacheRef = useRef<Map<number, SearchResponse>>(new Map());
   const isAgenticRef = useRef(false);
   const agenticPromptRef = useRef<string>("");
@@ -324,6 +337,54 @@ export default function PeopleSearchPage() {
     ? ((results.data ?? []) as PersonResult[]).filter((r) => selected.has(r.id))
     : [];
 
+  const crmEntries: PushToDropdownEntry[] = [
+    {
+      key: "salesforce",
+      label: "Salesforce",
+      icon: <BrandBadge letter="SF" bg="#fde8e8" color="#dc2626" />,
+      group: "CRMs",
+      disabled: !connections.salesforce,
+      disabledReason: !connections.salesforce ? "Connect Salesforce in Integrations first" : undefined,
+      onSelect: () => setSalesforcePushOpen(true),
+    },
+    {
+      key: "hubspot",
+      label: "HubSpot",
+      icon: <BrandBadge letter="H" bg="#ffe8df" color="#ff7a59" />,
+      group: "CRMs",
+      disabled: !connections.hubspot,
+      disabledReason: !connections.hubspot ? "Connect HubSpot in Integrations first" : undefined,
+      onSelect: () => setHubspotPushOpen(true),
+    },
+    {
+      key: "zoho",
+      label: "Zoho CRM",
+      icon: <BrandBadge letter="Z" bg="#fde8e8" color="#e42527" />,
+      group: "CRMs",
+      disabled: !connections.zoho,
+      disabledReason: !connections.zoho ? "Connect Zoho CRM in Integrations first" : undefined,
+      onSelect: () => setZohoPushOpen(true),
+    },
+    {
+      key: "instantly",
+      label: "Instantly",
+      icon: <BrandBadge letter="I" bg="#e0ecff" color="#1a56db" />,
+      group: "Cold outreach software",
+      disabled: !connections.instantly,
+      disabledReason: !connections.instantly ? "Connect Instantly in Integrations first" : undefined,
+      onSelect: () => setInstantlyPushOpen(true),
+    },
+    {
+      key: "smartreach",
+      label: "Smartreach",
+      icon: <BrandBadge letter="S" bg="#e1f8f0" color="#00b67a" />,
+      group: "Cold outreach software",
+      disabled: !connections.smartreach,
+      disabledReason: !connections.smartreach ? "Connect Smartreach in Integrations first" : undefined,
+      onSelect: () => setSmartreachPushOpen(true),
+    },
+  ];
+
   return (
     <>
       <AppHeader title="People search" />
@@ -377,6 +438,7 @@ export default function PeopleSearchPage() {
                   <ListPlus className="h-3.5 w-3.5" />
                   Add to list
                 </button>
+                <PushToDropdown disabled={selected.size === 0} entries={crmEntries} />
               </div>
             </div>
 
@@ -436,6 +498,10 @@ export default function PeopleSearchPage() {
                     <ListPlus className="h-3 w-3" />
                     Add to list
                   </button>
+                  <PushToDropdown
+                    entries={crmEntries}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-600 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-gray-700 sm:px-3 sm:text-xs"
+                  />
                   <button
                     type="button"
                     onClick={() => setSelected(new Set())}
@@ -487,6 +553,36 @@ export default function PeopleSearchPage() {
         onClose={() => setListModalItems([])}
         items={listModalItems}
         itemType="person"
+      />
+
+      <PushToSalesforceModal
+        open={salesforcePushOpen}
+        onClose={() => setSalesforcePushOpen(false)}
+        items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
+      />
+
+      <PushToHubspotModal
+        open={hubspotPushOpen}
+        onClose={() => setHubspotPushOpen(false)}
+        items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
+      />
+
+      <PushToZohoModal
+        open={zohoPushOpen}
+        onClose={() => setZohoPushOpen(false)}
+        items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
+      />
+
+      <PushToInstantlyModal
+        open={instantlyPushOpen}
+        onClose={() => setInstantlyPushOpen(false)}
+        items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
+      />
+
+      <PushToSmartreachModal
+        open={smartreachPushOpen}
+        onClose={() => setSmartreachPushOpen(false)}
+        items={selectedPeople.map((p) => ({ record_id: p.id, item_type: "person" as const }))}
       />
 
       <ConfirmDialog

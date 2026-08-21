@@ -14,6 +14,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   auth_failed: "Authentication failed. Please try again.",
   no_email: "Your account does not have a verified email address.",
   account_disabled: "Your account has been disabled. Please contact support.",
+  registration_closed: "New registrations are currently disabled. Please check back later.",
 };
 
 const PERKS = [

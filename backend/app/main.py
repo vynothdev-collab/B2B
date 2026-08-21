@@ -1,14 +1,24 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import inspect, text
 
 import app.models  # noqa: F401
 from app.api.router import api_router
 from app.api.routes.public_api import public_api_router
 from app.core.config import settings
-from app.core.database import Base, engine
+from app.core.database import AsyncSessionLocal, Base, engine
+from app.services.platform_settings_service import get_platform_settings
+
+# Path prefixes that stay reachable while maintenance mode is on: admins (so
+# they can turn it back off), health checks, and the status endpoint itself.
+_MAINTENANCE_EXEMPT_PREFIXES = (
+    "/api/v1/admin",
+    "/api/v1/health",
+    "/api/v1/platform",
+)
 
 
 def _add_column_if_missing(sync_conn, table: str, column: str, definition: str) -> None:
@@ -34,10 +44,30 @@ def _drop_column_if_exists(sync_conn, table: str, column: str) -> None:
         sync_conn.execute(text(f"ALTER TABLE {table} DROP COLUMN {column}"))
 
 
+def _alter_column_type(sync_conn, table: str, column: str, new_type: str) -> None:
+    insp = inspect(sync_conn)
+    tables = insp.get_table_names()
+    if table in tables:
+        cols = {c["name"]: c for c in insp.get_columns(table)}
+        if column in cols:
+            sync_conn.execute(
+                text(f"ALTER TABLE {table} ALTER COLUMN {column} TYPE {new_type}")
+            )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            _alter_column_type, "instantly_connections", "api_key", "VARCHAR(2048)"
+        )
+        await conn.run_sync(
+            _alter_column_type, "smartreach_connections", "api_key", "VARCHAR(2048)"
+        )
+        await conn.run_sync(
+            _add_column_if_missing, "smartreach_connections", "team_id", "VARCHAR(64)"
+        )
         await conn.run_sync(
             _add_column_if_missing, "lists", "deleted_at", "TIMESTAMPTZ DEFAULT NULL"
         )
@@ -107,6 +137,16 @@ async def lifespan(app: FastAPI):
             _add_column_if_missing, "users", "email_verified",
             "BOOLEAN NOT NULL DEFAULT FALSE"
         )
+        # platform_settings — seed the singleton row (id=1) so concurrent
+        # first-requests to get_platform_settings() never race to insert it.
+        await conn.execute(
+            text(
+                "INSERT INTO platform_settings (id, platform_name, support_email, "
+                "default_plan, new_registrations, maintenance_mode, updated_at) "
+                "VALUES (1, 'LeadsBuddy', 'support@leadsbuddy.ai', 'Free', TRUE, FALSE, NOW()) "
+                "ON CONFLICT (id) DO NOTHING"
+            )
+        )
     yield
 
 
@@ -118,6 +158,32 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+@app.middleware("http")
+async def maintenance_mode_gate(request: Request, call_next):
+    path = request.url.path
+    if request.method == "OPTIONS" or path.startswith(_MAINTENANCE_EXEMPT_PREFIXES):
+        return await call_next(request)
+
+    if path.startswith("/api/v1/") or path.startswith("/public/v1/"):
+        async with AsyncSessionLocal() as db:
+            row = await get_platform_settings(db)
+        if row.maintenance_mode:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "detail": row.maintenance_message
+                    or "The platform is currently undergoing scheduled maintenance. Please check back shortly.",
+                    "maintenance_mode": True,
+                },
+            )
+
+    return await call_next(request)
+
+
+# Registered AFTER the maintenance gate above so it ends up OUTERMOST in the
+# middleware stack (Starlette wraps in reverse-registration order) — that way
+# CORS headers still get attached to the 503 short-circuit response, instead
+# of only to responses that reach call_next().
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,

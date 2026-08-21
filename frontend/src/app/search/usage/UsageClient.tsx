@@ -14,20 +14,15 @@ import {
   type DailyUsage, type RecentSearch, type SearchTypeFilter, type UserInfo,
 } from "@/lib/authApi";
 
-// ── Credit colour helper ──────────────────────────────────────────────────────
-
 function creditColor(remaining: number, allocated: number): string {
   if (remaining <= 0) return "#dc2626";
   if (allocated > 0 && remaining / allocated < 0.2) return "#f59e0b";
   return "#10b981";
 }
 
-// ── Tiny SVG bar chart ────────────────────────────────────────────────────────
-
 function BarChart({ data }: { data: DailyUsage[] }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const maxCount = Math.max(...data.map((d) => d.total), 1);
-  // Round the axis ceiling up to a "nice" number so gridline labels aren't fractional
   const niceMax = Math.max(4, Math.ceil(maxCount / 4) * 4);
   const W = 600;
   const H = 140;
@@ -36,7 +31,6 @@ function BarChart({ data }: { data: DailyUsage[] }) {
   const barW = Math.max(4, Math.floor((chartW - data.length * 2) / data.length));
   const gap = Math.floor((chartW - data.length * barW) / (data.length + 1));
 
-  // Show only the last 14 label dates to avoid clutter
   const labelStep = data.length > 14 ? Math.ceil(data.length / 7) : 2;
 
   const gridFractions = [0, 0.25, 0.5, 0.75, 1];
@@ -47,7 +41,6 @@ function BarChart({ data }: { data: DailyUsage[] }) {
       className="w-full overflow-visible"
       aria-label="Daily credit usage bar chart"
     >
-      {/* gridlines + y-axis scale, so empty regions read as "grid" not "broken" */}
       {gridFractions.map((f) => {
         const y = H - f * H;
         return (
@@ -77,24 +70,19 @@ function BarChart({ data }: { data: DailyUsage[] }) {
             onMouseEnter={() => setHoverIdx(i)}
             onMouseLeave={() => setHoverIdx((cur) => (cur === i ? null : cur))}
           >
-            {/* wide hit area so hover works even on thin/empty bars */}
             <rect x={x - gap / 2} y={0} width={barW + gap} height={H} fill="transparent" />
             {hoverIdx === i && (
               <rect x={x - gap / 2} y={0} width={barW + gap} height={H} fill="#111827" opacity="0.04" />
             )}
-            {/* agentic (top) */}
             {agenticH > 0 && (
               <rect x={x} y={y} width={barW} height={agenticH} fill="#8b5cf6" rx="1.5" />
             )}
-            {/* company (middle) */}
             {companyH > 0 && (
               <rect x={x} y={y + agenticH} width={barW} height={companyH} fill="#f59e0b" rx="1.5" />
             )}
-            {/* person (bottom) */}
             {personH > 0 && (
               <rect x={x} y={y + agenticH + companyH} width={barW} height={personH} fill="#10b981" rx="1.5" />
             )}
-            {/* empty bar placeholder */}
             {d.total === 0 && (
               <rect x={x} y={H - 1.5} width={barW} height={1.5} fill="#e5e7eb" rx="1" />
             )}
@@ -119,8 +107,6 @@ function BarChart({ data }: { data: DailyUsage[] }) {
   );
 }
 
-// ── Search type badge ─────────────────────────────────────────────────────────
-
 function TypeBadge({ type }: { type: string }) {
   if (type === "person")
     return (
@@ -141,35 +127,47 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-// ── Skeletons ──────────────────────────────────────────────────────────────────
-
-function CreditBalanceSkeleton() {
+function StatCardSkeleton() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-100 px-6 py-4 space-y-2">
-        <div className="h-4 w-32 rounded bg-gray-200" />
-        <div className="h-3 w-56 rounded bg-gray-100" />
+    <div aria-busy="true" className="animate-pulse rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="h-11 w-11 shrink-0 rounded-xl bg-gray-200" />
+        <div className="h-3 w-24 rounded bg-gray-100" />
       </div>
-      <div className="px-6 py-5">
-        <div className="mb-4 flex items-end gap-3">
-          <div className="h-9 w-24 rounded bg-gray-200" />
-          <div className="mb-1 h-3 w-28 rounded bg-gray-100" />
-        </div>
-        <div className="h-3 w-full rounded-full bg-gray-100" />
-        <div className="mt-2 h-3 w-48 rounded bg-gray-100" />
-      </div>
+      <div className="mt-3 h-8 w-20 rounded bg-gray-200" />
+      <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100" />
+      <div className="mt-2 h-3 w-36 rounded bg-gray-100" />
     </div>
   );
 }
 
-function StatCardSkeleton() {
+function UsageChartSkeleton() {
   return (
-    <div className="flex animate-pulse items-center gap-4 rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm">
-      <div className="h-11 w-11 shrink-0 rounded-full bg-gray-200" />
-      <div className="space-y-2">
-        <div className="h-3 w-16 rounded bg-gray-100" />
-        <div className="h-6 w-14 rounded bg-gray-200" />
+    <div aria-busy="true" aria-label="Loading usage chart" className="animate-pulse rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+        <div className="space-y-2">
+          <div className="h-4 w-32 rounded bg-gray-200" />
+          <div className="h-3 w-40 rounded bg-gray-100" />
+        </div>
+        <div className="flex gap-1 rounded-lg bg-gray-50 p-1">
+          <div className="h-7 w-9 rounded-md bg-gray-200" />
+          <div className="h-7 w-9 rounded-md bg-gray-100" />
+          <div className="h-7 w-9 rounded-md bg-gray-100" />
+        </div>
+      </div>
+      <div className="flex h-[176px] items-end gap-1 px-6 py-4">
+        {Array.from({ length: 24 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-t bg-gray-100"
+            style={{ height: `${20 + ((i * 37) % 76)}%` }}
+          />
+        ))}
+      </div>
+      <div className="flex gap-4 border-t border-gray-100 px-6 py-3">
         <div className="h-3 w-20 rounded bg-gray-100" />
+        <div className="h-3 w-24 rounded bg-gray-100" />
+        <div className="h-3 w-24 rounded bg-gray-100" />
       </div>
     </div>
   );
@@ -208,6 +206,26 @@ function UsageLogTableSkeleton() {
   );
 }
 
+function UsageLogSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading usage log" className="animate-pulse rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <div className="h-4 w-20 rounded bg-gray-200" />
+          <div className="h-3 w-28 rounded bg-gray-100" />
+        </div>
+        <div className="flex gap-1 rounded-lg bg-gray-50 p-1">
+          <div className="h-7 w-10 rounded-md bg-gray-200" />
+          <div className="h-7 w-14 rounded-md bg-gray-100" />
+          <div className="h-7 w-16 rounded-md bg-gray-100" />
+          <div className="h-7 w-16 rounded-md bg-gray-100" />
+        </div>
+      </div>
+      <UsageLogTableSkeleton />
+    </div>
+  );
+}
+
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
@@ -216,8 +234,6 @@ function fmtDate(iso: string): string {
     hour: "2-digit", minute: "2-digit",
   });
 }
-
-// ── Stat card ─────────────────────────────────────────────────────────────────
 
 function StatCard({
   label, value, sub, color, icon, iconBg, pct,
@@ -249,8 +265,6 @@ function StatCard({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export default function UsageClient() {
   const { user: authUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -260,8 +274,6 @@ export default function UsageClient() {
     daily: DailyUsage[]; recent: RecentSearch[]; total: number; recentTotal: number;
   } | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
-  // historyInitialLoading: true only until the first history fetch ever completes — drives the skeleton.
-  // historyFetching: true for every fetch (incl. filter/page/day changes) — drives a subtle stale-content dim.
   const [historyInitialLoading, setHistoryInitialLoading] = useState(true);
   const [historyFetching, setHistoryFetching] = useState(true);
   const [days, setDays] = useState(30);
@@ -282,8 +294,6 @@ export default function UsageClient() {
       setHistoryFetching(false);
       setHistoryInitialLoading(false);
     } catch {
-      // an aborted (superseded) request must not clear the fetching flag — the request
-      // that replaced it owns that responsibility. A genuine failure should stop the spinner.
       if (!ctrl.signal.aborted) {
         setHistoryFetching(false);
         setHistoryInitialLoading(false);
@@ -295,12 +305,10 @@ export default function UsageClient() {
     if (authLoading) return;
     if (!authUser) { router.replace("/login"); return; }
 
-    // Fetch credits in parallel with history for fast load
     apiGetMe()
       .then(setCredits)
       .catch(() => setCredits(authUser))
       .finally(() => setCreditsLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, authUser, router]);
 
   useEffect(() => {
@@ -315,40 +323,16 @@ export default function UsageClient() {
     return (
       <>
         <AppHeader title="Usage" />
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-[#F5F4F9] p-4 sm:p-6">
           <div className="mx-auto w-full max-w-7xl space-y-5">
-            <CreditBalanceSkeleton />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCardSkeleton />
               <StatCardSkeleton />
               <StatCardSkeleton />
               <StatCardSkeleton />
             </div>
-            <div className="animate-pulse rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-100 px-6 py-4 space-y-2">
-                <div className="h-4 w-32 rounded bg-gray-200" />
-                <div className="h-3 w-40 rounded bg-gray-100" />
-              </div>
-              <div className="flex h-[168px] items-end gap-1 px-6 py-4">
-                {Array.from({ length: 24 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t bg-gray-100"
-                    style={{ height: `${20 + ((i * 37) % 100)}%` }}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="animate-pulse rounded-xl border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-100 px-6 py-4 space-y-2">
-                <div className="h-4 w-32 rounded bg-gray-200" />
-                <div className="h-3 w-24 rounded bg-gray-100" />
-              </div>
-              <div className="space-y-3 px-6 py-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-4 w-full rounded bg-gray-100" />
-                ))}
-              </div>
-            </div>
+            <UsageChartSkeleton />
+            <UsageLogSkeleton />
           </div>
         </div>
       </>
@@ -368,14 +352,12 @@ export default function UsageClient() {
   const daily = history?.daily ?? [];
   const recent = history?.recent ?? [];
 
-  // Chart totals by type
   const totalPerson  = daily.reduce((s, d) => s + d.person, 0);
   const totalCompany = daily.reduce((s, d) => s + d.company, 0);
   const totalAgentic = daily.reduce((s, d) => s + d.agentic, 0);
   const hasActivity  = daily.some((d) => d.total > 0);
   const totalSearches = totalPerson + totalCompany + totalAgentic;
 
-  // Filtering and pagination for the recent-search log are handled server-side.
   const recentTotal = history?.recentTotal ?? 0;
   const pageCount = Math.max(1, Math.ceil(recentTotal / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -384,7 +366,7 @@ export default function UsageClient() {
   return (
     <>
       <AppHeader title="Usage" />
-      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-gray-50 p-4 sm:p-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto bg-[#F5F4F9] p-4 sm:p-6">
         <div className="mx-auto w-full max-w-7xl space-y-5">
 
           {allocated === 0 ? (
@@ -438,7 +420,6 @@ export default function UsageClient() {
             </div>
           )}
 
-          {/* ── Activity chart ──────────────────────────────────────────── */}
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
               <div className="flex items-center gap-2">
@@ -493,7 +474,6 @@ export default function UsageClient() {
               )}
             </div>
 
-            {/* Legend */}
             {hasActivity && (
               <div className="flex flex-wrap items-center gap-4 border-t border-gray-100 px-6 py-3">
                 <LegendDot color="#10b981" label={`People (${totalPerson.toLocaleString()})`} />
@@ -506,7 +486,6 @@ export default function UsageClient() {
             )}
           </div>
 
-          {/* ── Usage log table ──────────────────────────────────────────── */}
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
@@ -615,7 +594,6 @@ export default function UsageClient() {
             )}
           </div>
 
-          {/* ── Context notes ───────────────────────────────────────────── */}
           {isEnterpriseUser && (
             <div className="rounded-xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm text-blue-700">
               <p className="font-medium">How your credits work</p>

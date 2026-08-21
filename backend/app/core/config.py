@@ -66,5 +66,29 @@ class Settings(BaseSettings):
     MICROSOFT_TENANT_ID: str = "common"  # "common" = personal + work/school accounts
     MICROSOFT_CALLBACK_URL: str = ""     # e.g. http://localhost:8000/api/v1/auth/microsoft/callback
 
+    # Salesforce OAuth
+    SALESFORCE_LOGIN_URL: str = "https://login.salesforce.com"  # override with your My Domain URL e.g. https://your-domain.my.salesforce.com if using Local External Client App
+    SALESFORCE_CLIENT_ID: str = ""
+    SALESFORCE_CLIENT_SECRET: str = ""
+    SALESFORCE_CALLBACK_URL: str = ""  # e.g. http://localhost:8000/api/v1/integrations/salesforce/callback
+    SALESFORCE_API_VERSION: str = "v59.0"  # bump when Salesforce deprecates this REST API version
+    SALESFORCE_ENCRYPTION_KEY: str = ""  # used to encrypt stored Salesforce access/refresh tokens at rest
+
+    # Zoho CRM OAuth
+    ZOHO_ACCOUNTS_URL: str = "https://accounts.zoho.com"  # override per data center: .in, .eu, .com.cn, .jp, .au
+    ZOHO_CLIENT_ID: str = ""
+    ZOHO_CLIENT_SECRET: str = ""
+    ZOHO_CALLBACK_URL: str = ""  # e.g. http://localhost:8000/api/v1/integrations/zoho/callback
+    ZOHO_ENCRYPTION_KEY: str = ""  # used to encrypt stored Zoho access/refresh tokens at rest
+
+    # HubSpot (API-key based, no OAuth)
+    HUBSPOT_ENCRYPTION_KEY: str = ""  # used to encrypt stored HubSpot private app access tokens at rest
+
+    # Instantly (API-key based, no OAuth)
+    INSTANTLY_ENCRYPTION_KEY: str = ""  # used to encrypt stored Instantly API keys at rest
+
+    # Smartreach (API-key based, no OAuth)
+    SMARTREACH_ENCRYPTION_KEY: str = ""  # used to encrypt stored Smartreach API keys at rest
+
 
 settings = Settings()

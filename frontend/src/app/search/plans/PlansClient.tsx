@@ -20,11 +20,7 @@ import {
   type BillingHistoryFilter,
 } from "@/lib/plansApi";
 
-// ── Theme ──────────────────────────────────────────────────────────────────────
-
 const RED = "#dc2626";
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function formatPrice(price_cents: number): string {
   if (price_cents === 0) return "$0";
@@ -38,8 +34,6 @@ function formatDate(iso: string): string {
 function daysUntil(isoDate: string): number {
   return Math.max(0, Math.ceil((new Date(isoDate).getTime() - Date.now()) / 86400000));
 }
-
-// ── Current Plan Card ────────────────────────────────────────────────────────────
 
 function CurrentPlanCard({ plan }: { plan: UserPlanOut }) {
   const used = Math.max(0, plan.credits_total - plan.credits_remaining);
@@ -94,8 +88,6 @@ function CurrentPlanCard({ plan }: { plan: UserPlanOut }) {
   );
 }
 
-// ── PAYG Plan Card ─────────────────────────────────────────────────────────────
-
 function PaygPlanCard({ plan }: { plan: UserPlanOut }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-2">
@@ -114,8 +106,6 @@ function PaygPlanCard({ plan }: { plan: UserPlanOut }) {
   );
 }
 
-// ── Queued Plan Row ────────────────────────────────────────────────────────────
-
 function QueuedPlanRow({ plan }: { plan: UserPlanOut }) {
   return (
     <div className="flex items-center gap-4 rounded-xl border border-dashed border-gray-200 bg-gray-50 px-5 py-4">
@@ -132,8 +122,6 @@ function QueuedPlanRow({ plan }: { plan: UserPlanOut }) {
     </div>
   );
 }
-
-// ── Pricing Card ───────────────────────────────────────────────────────────────
 
 function PricingCard({
   plan,
@@ -233,9 +221,6 @@ function PricingCard({
   );
 }
 
-// ── Plan Carousel ──────────────────────────────────────────────────────────────
-// Single horizontal row, left-aligned, with scroll buttons to move through cards.
-
 function PlanCarousel({ children }: { children: React.ReactNode }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -297,11 +282,9 @@ function PlanCarousel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Skeletons ──────────────────────────────────────────────────────────────────
-
 function CurrentPlanCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-100 bg-white p-5">
+    <div aria-busy="true" aria-label="Loading current plan" className="animate-pulse rounded-2xl border border-red-100 bg-white p-5">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="h-11 w-11 shrink-0 rounded-xl bg-gray-200" />
@@ -320,6 +303,7 @@ function CurrentPlanCardSkeleton() {
           <div className="h-3 w-20 rounded bg-gray-100" />
           <div className="h-5 w-24 rounded bg-gray-200" />
           <div className="h-1.5 w-full rounded-full bg-gray-100" />
+          <div className="h-3 w-12 rounded bg-gray-100" />
         </div>
       </div>
     </div>
@@ -328,11 +312,13 @@ function CurrentPlanCardSkeleton() {
 
 function PricingCardSkeleton() {
   return (
-    <div className="flex h-full w-80 shrink-0 snap-start flex-col rounded-2xl border border-gray-200 bg-white p-6 pt-7 animate-pulse">
+    <div aria-busy="true" aria-label="Loading plan" className="flex h-full w-80 shrink-0 snap-start flex-col rounded-2xl border border-gray-200 bg-white p-6 pt-7 animate-pulse">
       <div className="mb-5 h-12 w-12 rounded-2xl bg-gray-200" />
       <div className="h-5 w-28 rounded bg-gray-200" />
-      <div className="mt-2.5 h-3 w-full rounded bg-gray-100" />
-      <div className="mt-1.5 h-3 w-2/3 rounded bg-gray-100" />
+      <div className="mt-2.5 flex min-h-[2.5rem] flex-col gap-1.5">
+        <div className="h-3 w-full rounded bg-gray-100" />
+        <div className="h-3 w-2/3 rounded bg-gray-100" />
+      </div>
 
       <div className="mt-4 h-9 w-20 rounded bg-gray-200" />
       <div className="mt-2 h-5 w-28 rounded-md bg-gray-100" />
@@ -353,7 +339,7 @@ function PricingCardSkeleton() {
 
 function PaygPlanCardSkeleton() {
   return (
-    <div className="animate-pulse space-y-3 rounded-xl border border-gray-200 bg-white p-5">
+    <div aria-busy="true" aria-label="Loading pay-as-you-go plan" className="animate-pulse space-y-3 rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <div className="h-3 w-24 rounded bg-gray-100" />
@@ -366,8 +352,6 @@ function PaygPlanCardSkeleton() {
     </div>
   );
 }
-
-// ── Plan Type Toggle ───────────────────────────────────────────────────────────
 
 function PlanTypeToggle({
   value,
@@ -396,8 +380,6 @@ function PlanTypeToggle({
     </div>
   );
 }
-
-// ── Billing & Credit History ────────────────────────────────────────────────────
 
 type HistoryKind = BillingHistoryItem["kind"];
 
@@ -474,8 +456,6 @@ function HistoryTableSkeleton() {
   );
 }
 
-// ── Main Page ──────────────────────────────────────────────────────────────────
-
 export default function PlansClient() {
   const { user } = useAuth();
   const [myPlans, setMyPlans] = useState<MyPlansResponse | null>(null);
@@ -488,8 +468,6 @@ export default function PlansClient() {
 
   const [billingItems, setBillingItems] = useState<BillingHistoryItem[]>([]);
   const [billingTotal, setBillingTotal] = useState(0);
-  // historyInitialLoading: true only until the first billing-history fetch ever completes — drives the skeleton.
-  // historyFetching: true for every fetch (incl. filter/page changes) — drives a subtle stale-content dim.
   const [historyInitialLoading, setHistoryInitialLoading] = useState(true);
   const [historyFetching, setHistoryFetching] = useState(true);
   const [historyFilter, setHistoryFilter] = useState<BillingHistoryFilter>("all");
@@ -527,8 +505,6 @@ export default function PlansClient() {
       setHistoryFetching(false);
       setHistoryInitialLoading(false);
     } catch {
-      // an aborted (superseded) request must not clear the fetching flag — the request
-      // that replaced it owns that responsibility. A genuine failure should stop the spinner.
       if (!ctrl.signal.aborted) {
         setHistoryFetching(false);
         setHistoryInitialLoading(false);
@@ -578,8 +554,6 @@ export default function PlansClient() {
 
   const validityPlans = availablePlans.filter((p) => p.plan_type === "validity");
   const paygPlans = availablePlans.filter((p) => p.plan_type === "payg");
-
-  // Filtering and pagination for billing history are handled server-side.
   const historyPageCount = Math.max(1, Math.ceil(billingTotal / HISTORY_PAGE_SIZE));
   const safeHistoryPage = Math.min(historyPage, historyPageCount);
   const pagedHistory = billingItems;
@@ -588,7 +562,6 @@ export default function PlansClient() {
     <div className="flex flex-col h-full">
       <AppHeader title="Plans" />
 
-      {/* Toast */}
       {toast && (
         <div
           className="fixed top-4 right-4 z-50 rounded-xl px-4 py-3 text-sm font-medium shadow-lg"
@@ -598,7 +571,6 @@ export default function PlansClient() {
         </div>
       )}
 
-      {/* Confirm modal */}
       {confirmPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl space-y-4">
@@ -633,10 +605,9 @@ export default function PlansClient() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 overflow-y-auto bg-[#F5F4F9] p-4 sm:p-6 lg:p-8">
       <div className="mx-auto w-full max-w-[1440px] space-y-12">
 
-        {/* My Plans */}
         <section>
           {loading && (
             <div className="space-y-3">
@@ -670,7 +641,6 @@ export default function PlansClient() {
           )}
         </section>
 
-        {/* Queued Plans */}
         {!loading && myPlans && myPlans.queued_validity.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-3">
@@ -685,7 +655,6 @@ export default function PlansClient() {
           </section>
         )}
 
-        {/* Available Plans */}
         <section>
           <div className="mb-8 flex flex-col items-center gap-2 text-center">
             <h2 className="text-2xl font-bold text-gray-900">Choose a plan that fits you</h2>
@@ -698,11 +667,11 @@ export default function PlansClient() {
           </div>
 
           {loading && (
-            <div className="flex gap-4 overflow-x-auto px-1 py-2">
+            <PlanCarousel>
               {Array.from({ length: 4 }).map((_, i) => (
                 <PricingCardSkeleton key={i} />
               ))}
-            </div>
+            </PlanCarousel>
           )}
 
           {!loading && availablePlans.length === 0 && (
@@ -737,7 +706,6 @@ export default function PlansClient() {
           })()}
         </section>
 
-        {/* Billing & Credit History */}
         <section>
           <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
